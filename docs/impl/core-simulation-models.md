@@ -1,278 +1,185 @@
-We provide a collection of pre-built epidemiological model templates that implement classical compartmental structures and several specialized extensions for particular use cases such as network mixing, connected populations, and quarantine strategies. Each model is built on the same underlying `Model<TSeq>` interface, and all share the same simulation mechanics: agents are connected in a network, their infection status changes according to defined state update functions, and model-level parameters control the transition rates between compartments. Because these models are implemented as templates, users can either run them directly or use them as examples to define custom variants.
+We provide a collection of pre-built epidemiological model templates that implement classical compartmental structures and a few specialized extensions. A model is a disease: its compartments (states), its parameters, and the rules that move agents between states. Where contacts come from is up to the model's **contact layers** (see `Model::add_layer()`): a network, mixing by group with a contact matrix, contacts within groups such as households, or several of them at once. So there is one SIR model, not one per kind of contact: the same `ModelSIR` runs on a network, on a contact matrix, or on both.
 
-The models included in the core codebase cover a wide range of classical and extended systems:
+The models included in the core codebase are:
 
-- **SIS, SIR, SIRD, SEIR, and SEIRD models**, which represent standard compartmental processes with increasing biological detail.
-- **Mixing and connected population variants**, such as `SIRMixing`, `SEIRMixing`, `SEIRDConnected`, and `SIRConnected`, which introduce multiple subpopulations or group interactions.
-- **Behavioral and policy-based variants**, including `MeaslesMixing`, `MeaslesQuarantine`, `SEIRMixingQuarantine`, and `Surveillance`, which combine epidemiological processes with specific control mechanisms.
-- **Alternative dynamic structures**, like `SIRLogit`, which use probabilistic transition functions rather than deterministic rates.
+- **SIS, SIR, SIRD, SEIR, SEIRD, and SISD models**, which represent standard compartmental processes with increasing biological detail.
+- **`SEIRQuarantine`**, an SEIR model with detection, isolation, contact tracing (from the logs of its layers), and quarantine.
+- **Disease-specific and specialized variants**, including `MeaslesMixing`, `MeaslesMixingRiskQuarantine`, `SIRLogit`, and `Surveillance`.
 - **Supporting modules**, including `init-functions.hpp`, which defines helper functions for initializing model states, and `globalevents.hpp`, which provides tools for defining time-dependent interventions.
 
-Although each model defines a different set of compartments and transitions, they all use the same syntax for parameter definition and initialization. For example, in all models users can adjust parameters such as the transmission rate or recovery rate with:
+Every number a user may set or calibrate is a model parameter. The names say what the code does, in the terms epidemiology uses; most are daily rates, the probability per day of leaving a state, so the mean time in it is 1 / rate days:
+
+| Parameter | Meaning |
+|---|---|
+| "Transmission probability" | Probability that one contact with an infectious agent infects (per contact, not per day). |
+| "Recovery rate" | Daily probability of recovering while infectious; mean infectious period 1 / rate. |
+| "Latent period" | Mean days in Exposed: infected, not yet infectious (daily probability 1 / period). |
+| "Death rate" | Daily probability of dying while infectious. |
+| "Contact rate" | Expected contacts per day, when a mixing layer reads it (see below). |
+
+Parameters can be changed between runs, or during one from a global event, with:
 
 ```cpp
-model.add_param(0.2, "Transmission rate");
-model.add_param(0.1, "Recovery rate");
+model.set_param("Transmission probability", 0.2);
+model.set_param("Recovery rate", 0.1);
 ```
-
-and can initialize the starting infection prevalence using the constructor arguments or through `initial_states()` functions. The following sections describe the conceptual structure, assumptions, and configurable parameters for each of the main model families.
 
 ## SIS Model
 
-The Susceptible–Infected–Susceptible (SIS) model describes diseases for which infection does not confer immunity. Once an agent recovers, they immediately return to the susceptible pool, meaning reinfection is possible indefinitely. The model consists of two compartments: susceptible (S) and infected (I). Transitions occur through infection upon contact and recovery after a certain rate.
+The Susceptible–Infected–Susceptible (SIS) model describes diseases for which infection does not confer immunity. Once an agent recovers, they immediately return to the susceptible pool, meaning reinfection is possible indefinitely.
 
 **Constructor:**
 ```cpp
 ModelSIS(
-    ModelSIS<TSeq> & model,
     const std::string & vname,
+    epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double transmission_rate,
+    epiworld_double transmission_prob,
     epiworld_double recovery_rate
 );
-```
-
-**Parameters:**
-- `vname`: Name of the virus or agent of infection.
-- `prevalence`: Initial fraction of infected individuals in the population.
-- `transmission_rate (β)`: Probability of infection per contact between susceptible and infected.
-- `recovery_rate (γ)`: Probability of recovery per unit time.
-
-**Usage Example:**
-```cpp
-epiworld::ModelSIS<> model("Virus", 0.01, 0.3, 0.1);
-model.agents_smallworld(1000, 10, false, 0.05);
-model.run(100);
 ```
 
 ## SIR Model
 
-The Susceptible–Infected–Recovered (SIR) model adds immunity following recovery. Once an agent recovers, they move into the recovered (R) compartment and cannot be reinfected. This model captures epidemics that eventually die out when the susceptible population is depleted.
+The Susceptible–Infected–Recovered (SIR) model adds immunity following recovery. Once an agent recovers, they move into the recovered (R) compartment and cannot be reinfected.
 
 **Constructor:**
 ```cpp
 ModelSIR(
-    ModelSIR<TSeq> & model,
     const std::string & vname,
+    epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double transmission_rate,
+    epiworld_double transmission_prob,
     epiworld_double recovery_rate
 );
 ```
 
-**Parameters:**
-- `transmission_rate (β)`: Probability of infection per contact.
-- `recovery_rate (γ)`: Probability of recovery per day.
-- `prevalence`: Initial infection prevalence.
-
 **Example:**
 ```cpp
-epiworld::ModelSIR<> model("Influenza", 0.01, 0.25, 0.1);
-model.agents_smallworld(2000, 8, false, 0.05);
+epiworld::epimodels::ModelSIR<> model("Influenza", 2000, 0.01, 0.25, 0.1);
+model.add_layer(epiworld::layer::network(
+    "contacts", epiworld::graph::smallworld<>(8, 0.05)
+));
 model.run(200);
 ```
 
-## SIRD Model
+## SIRD and SISD Models
 
-The SIRD model extends SIR by adding a Dead (D) compartment to represent disease-induced mortality. Upon infection, individuals may either recover or die based on their respective rates.
+The SIRD model extends SIR with a Dead (D) compartment, and SISD does the same for SIS: infected individuals may recover or die ("Death rate").
 
-**Constructor:**
+**Constructors:**
 ```cpp
 ModelSIRD(
-    ModelSIRD<TSeq> & model,
     const std::string & vname,
+    epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double transmission_rate,
-    epiworld_double recovery_rate, 
+    epiworld_double transmission_prob,
+    epiworld_double recovery_rate,
+    epiworld_double death_rate
+);
+
+ModelSISD(
+    const std::string & vname,
+    epiworld_fast_uint n,
+    epiworld_double prevalence,
+    epiworld_double transmission_prob,
+    epiworld_double recovery_rate,
     epiworld_double death_rate
 );
 ```
 
-**Parameters:**
-- `death_rate (μ)`: Probability that an infected individual dies instead of recovering.
-- `transmission_rate`, `recovery_rate`, and `prevalence` as above.
+## SEIR and SEIRD Models
 
-**Example:**
-```cpp
-epiworld::ModelSIRD<> model("Ebola", 0.005, 0.25, 0.1, 0.02);
-model.run(150);
-```
+The Susceptible–Exposed–Infected–Recovered (SEIR) model adds an Exposed compartment: agents who carry the virus but are not infectious yet. Only Infected agents transmit; the model says so with `set_infectious_states()`, and every layer follows it. SEIRD adds a Dead compartment.
 
-## SEIR Model
-
-The Susceptible–Exposed–Infected–Recovered (SEIR) model introduces an Exposed (E) compartment representing individuals who have been infected but are not yet infectious. This incubation period delays the onset of transmission.
-
-**Constructor:**
+**Constructors:**
 ```cpp
 ModelSEIR(
-    ModelSEIR<TSeq> & model,
     const std::string & vname,
+    epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
+    epiworld_double transmission_prob,
+    epiworld_double latent_period,
     epiworld_double recovery_rate
 );
-```
 
-**Parameters:**
-- `avg_incubation_days`: Mean duration (in days) of the latent period before infectiousness.
-- `transmission_rate (β)` and `recovery_rate (γ)` follow SIR definitions.
-
-**Example:**
-```cpp
-epiworld::ModelSEIR<> model("COVID-19", 0.01, 0.25, 4.0, 0.1);
-```
-
-## SEIRD Model
-
-The SEIRD model adds mortality to the SEIR framework, creating five compartments: susceptible, exposed, infected, recovered, and dead. It models diseases with both latency and fatality.
-
-**Constructor:**
-```cpp
 ModelSEIRD(
-    ModelSEIRD<TSeq> & model,
     const std::string & vname,
+    epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
+    epiworld_double transmission_prob,
+    epiworld_double latent_period,
     epiworld_double recovery_rate,
     epiworld_double death_rate
 );
 ```
 
-**Example:**
+## Where contacts come from
+
+Any of the models above takes its contacts from its layers. Three common setups:
+
+**A network.** Ties between agents, drawn by a generator at every run or given as a fixed graph:
+
 ```cpp
-epiworld::ModelSEIRD<> model("SARS-CoV-2", 0.005, 0.2, 3.5, 0.1, 0.01);
+model.add_layer(epiworld::layer::network(
+    "contacts", epiworld::graph::smallworld<>(10, 0.05)
+));
 ```
 
-## Connected Models
+**Mixing by group, with a contact matrix.** Entry `(i, j)` of the column-major matrix is the expected number of contacts per day of an agent in group `i` with agents in group `j` (e.g., age groups):
 
-Connected models simulate interacting subpopulations or spatial regions linked by migration or mobility. Each subpopulation maintains its own dynamics but shares individuals or infections through a contact_rate parameter.
-
-**Examples:**
-
-### ModelSIRCONN
 ```cpp
-ModelSIRCONN(
-    ModelSIRCONN<TSeq> & model,
-    const std::string & vname,
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double recovery_rate
-);
+auto mixing = epiworld::layer::mixing<>("community");
+mixing->set_groups(groups, 2u);          // A group per agent
+mixing->set_contact_matrix({8.0, 1.0, 1.0, 8.0});
+model.add_layer(mixing);
 ```
 
-### ModelSEIRCONN
+**Random mixing.** Everyone meets "Contact rate" others a day, at random (what the former connected models, e.g. `ModelSIRCONN`, did). The contacts are the parameter times the matrix, so a global event or a calibration can change them:
+
 ```cpp
-ModelSEIRCONN(
-    ModelSEIRCONN<TSeq> & model,
-    const std::string & vname,
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
-    epiworld_double recovery_rate
-);
+model.add_param(4.0, "Contact rate");
+auto mixing = epiworld::layer::mixing<>("random mixing");
+mixing->set_groups(std::vector< size_t >(model.size(), 0u), 1u);
+mixing->set_contact_matrix({1.0});
+mixing->set_contact_rate("Contact rate");
+model.add_layer(mixing);
 ```
 
-### ModelSEIRDCONN
-```cpp
-ModelSEIRDCONN(
-    ModelSEIRDCONN<TSeq> & model,
-    const std::string & vname,
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
-    epiworld_double recovery_rate,
-    epiworld_double death_rate
-);
-```
+A mixing layer draws distinct contacts: an agent meets each other agent at most once a day. Every agent of a group counts in its contacts (everyone can be met), and only agents in the model's infectious states transmit. Layers combine: a household layer and a community contact matrix in the same model are exposures of one draw.
 
-**Interpretation:**  
-- `contact_rate`: Average number of contacts per individual per unit time.  
-- These models capture between-region spread or mobility-driven mixing.
+## SEIRQuarantine Model
 
-## Mixing Models
-
-Mixing models introduce structured subpopulations governed by a **contact matrix**, allowing heterogeneous contact rates between groups (e.g., age-structured transmission).
-
-### ModelSIRMixing
-```cpp
-ModelSIRMixing(
-    ModelSIRMixing<TSeq> & model,
-    const std::string & vname,
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double recovery_rate,
-    std::vector< double > contact_matrix
-);
-```
-
-### ModelSEIRMixing
-```cpp
-ModelSEIRMixing(
-    ModelSEIRMixing<TSeq> & model,
-    const std::string & vname,
-    epiworld_fast_uint n,
-    epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
-    epiworld_double recovery_rate,
-    std::vector< double > contact_matrix
-);
-```
-
-**Example:**
-```cpp
-std::vector<double> cm = {1.0, 0.2, 0.2, 1.0};
-epiworld::ModelSEIRMixing<> model("Influenza", 0.01, 1000, 8.0, 0.25, 3.0, 0.1, cm);
-```
-
-## SEIRMixingQuarantine Model
-
-This model adds quarantine and isolation dynamics to the SEIRMixing framework. It introduces policies that reduce contact rates following symptom detection or tracing. It allows modeling interventions such as mandatory quarantine, voluntary isolation, or contact tracing efficiency.
+An SEIR model with detection, isolation, contact tracing, quarantine and hospitalization, on any layers. At reset, the model turns tracing on for each of its layers (`ContactLayer::enable_tracing()`); when an infected agent is detected, its contacts in every layer's log within the tracing window are traced, and those willing to comply are quarantined (or isolated, if infected). Isolated, quarantined and hospitalized agents are out of the mixing layers altogether: they are not met, and their group's contacts go to the others.
 
 **Constructor:**
 ```cpp
-ModelSEIRMixingQuarantine(
-    ModelSEIRMixingQuarantine<TSeq> & model,
+ModelSEIRQuarantine(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
-    epiworld_double contact_rate,
-    epiworld_double transmission_rate,
-    epiworld_double avg_incubation_days,
+    epiworld_double transmission_prob,
+    epiworld_double latent_period,
     epiworld_double recovery_rate,
-    std::vector< double > contact_matrix,
     epiworld_double hospitalization_rate,
     epiworld_double hospitalization_period,
-    epiworld_double days_undetected,
+    epiworld_double detection_delay,
     epiworld_fast_int quarantine_period,
     epiworld_double quarantine_willingness,
     epiworld_double isolation_willingness,
     epiworld_fast_int isolation_period,
-    epiworld_double contact_tracing_success_rate = 1.0,
-    epiworld_fast_uint contact_tracing_days_prior = 4u
+    epiworld_double contact_tracing_prob = 1.0,
+    epiworld_fast_uint contact_tracing_window = 4u
 );
 ```
 
-**Policy Parameters:**
-- `days_undetected`: Mean number of days before detection.  
-- `quarantine_period` and `isolation_period`: Duration of restricted contact.  
-- `quarantine_willingness` and `isolation_willingness`: Compliance probabilities.  
-- `contact_tracing_success_rate`: Fraction of contacts successfully traced.  
-- `hospitalization_rate` and `hospitalization_period`: Define medical intervention timing.
-
-**Use Case:**
-Modeling public health policies like mandatory quarantines or tracing efficiency during outbreaks.
+**Policy parameters:**
+- "Detection delay": mean days infected before detection (0 detects at once, a negative value never).
+- "Quarantine period" and "Isolation period": days of quarantine (from tracing) and isolation (from onset); a negative value turns them off.
+- "Quarantine willingness" and "Isolation willingness": the probability that an agent complies (drawn once per agent and run).
+- "Contact tracing probability": the probability that a contact is traced.
+- "Contact tracing window": days before detection whose contacts are traced.
+- "Hospitalization rate" and "Hospitalization period": daily probability of hospitalization while infected; mean days in hospital.
 
 ## SIRLogit Model
 
@@ -300,22 +207,6 @@ ModelSIRLogit(
 - `coefs_infect` and `coefs_recover` represent regression coefficients for infection and recovery probabilities.  
 - Transition probabilities are computed using the logistic function:  
   `P(event) = 1 / (1 + exp(-Xβ))`.
-
-## SISD Model
-
-This is a mortality-augmented SIS model where infected individuals can either recover or die. It’s useful for recurrent infections that may also cause mortality.
-
-**Constructor:**
-```cpp
-ModelSISD(
-    ModelSISD<TSeq> & model,
-    const std::string & vname,
-    epiworld_double prevalence,
-    epiworld_double transmission_rate,
-    epiworld_double recovery_rate,
-    epiworld_double death_rate
-);
-```
 
 ## Surveillance Model
 
@@ -349,7 +240,7 @@ ModelSURV(
 ## See Also
 
 - [Extending the Library with Models](extending-the-library-with-models.md) — how to create new models by inheriting from `Model`.
-- [Mixing and Entity Distribution](mixing-and-entity-distribution.md) — contact matrices and entity distribution functions used by mixing models.
-- [Sampling Contacts](sampling-contacts.md) — how contacts are drawn in mixing models using binomial sampling.
+- [Mixing and Entity Distribution](mixing-and-entity-distribution.md) — contact matrices and the mixing layer.
+- [Sampling Contacts](sampling-contacts.md) — how a mixing layer draws contacts using binomial sampling.
 - [Virus and Tool Distribution Functions](virus-and-tool-distribution.md) — mechanisms for distributing viruses and tools to agents.
-- [Quarantine, Isolation, and Contact Tracing](quarantine-isolation-and-contact-tracing.md) — quarantine and isolation dynamics used by `SEIRMixingQuarantine` and related models.
+- [Quarantine, Isolation, and Contact Tracing](quarantine-isolation-and-contact-tracing.md) — quarantine and isolation dynamics used by `SEIRQuarantine` and the measles models.

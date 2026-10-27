@@ -38,7 +38,7 @@ std::unique_ptr< epimodels::ModelSIR<> > make(
     );
     model->verbose_off();
 
-    auto hh = layer::mixing<>("households", {1}, {0, 1, 2});
+    auto hh = layer::mixing<>("households");
     hh->set_groups(households(), n_groups);
     contacts(*hh);
     model->add_layer(hh);
@@ -115,7 +115,7 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
         tiny.verbose_off();
         tiny.get_virus(0).set_distribution(distribute_virus_to_set<>({0}));
 
-        auto hh = layer::mixing<>("hh", {1}, {0, 1, 2});
+        auto hh = layer::mixing<>("hh");
         hh->set_groups({0, 0, 1}, 2);
         hh->set_contact_prob(1.0);
         tiny.add_layer(hh);
@@ -232,7 +232,7 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     // Probabilities need the grouping (the queue reads it before the first
     // step)
     epimodels::ModelSIR<> bare("flu", n, 0.02, 0.2, 0.1);
-    auto nogroups = layer::mixing<>("households", {1}, {0, 1, 2});
+    auto nogroups = layer::mixing<>("households");
     nogroups->set_contact_prob(0.5);
     bare.add_layer(nogroups);
     bare.verbose_off();

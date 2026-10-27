@@ -14,7 +14,8 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
     };
     const std::vector< double > closed = {0.0, 0.0, 0.0, 0.0};
 
-    epimodels::ModelSIRMixing<> model("Flu", n, 0.0, 0.5, 0.1, cm);
+    epimodels::ModelSIR<> model("Flu", n, 0.0, 0.5, 0.1);
+    add_entity_mixing(model, cm);
 
     Virus<> v = model.get_virus(0);
     model.rm_virus(0);
@@ -38,7 +39,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     size_t susceptible_end = 0u;
     for (auto & a : model.get_agents())
-        if (a.get_state() == epimodels::ModelSIRMixing<>::SUSCEPTIBLE)
+        if (a.get_state() == epimodels::ModelSIR<>::SUSCEPTIBLE)
             ++susceptible_end;
     REQUIRE(susceptible_end < n / 2u);
 
@@ -56,7 +57,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     size_t susceptible_edit = 0u;
     for (auto & a : model.get_agents())
-        if (a.get_state() == epimodels::ModelSIRMixing<>::SUSCEPTIBLE)
+        if (a.get_state() == epimodels::ModelSIR<>::SUSCEPTIBLE)
             ++susceptible_edit;
     // (the matrix closes after day 1, so only that day's contacts got through)
     REQUIRE(susceptible_edit > n - 40u);
@@ -74,7 +75,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     size_t susceptible_closed = 0u;
     for (auto & a : model.get_agents())
-        if (a.get_state() == epimodels::ModelSIRMixing<>::SUSCEPTIBLE)
+        if (a.get_state() == epimodels::ModelSIR<>::SUSCEPTIBLE)
             ++susceptible_closed;
     REQUIRE(susceptible_closed == n - 1u);
 
@@ -84,16 +85,14 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
     // A copy made during a run is not in a run: an edit on it, after the
     // source's run, sets its baseline. Adding a layer during the run fails.
     model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(cm);
-    std::unique_ptr< epimodels::ModelSIRMixing<> > copy;
+    std::unique_ptr< epimodels::ModelSIR<> > copy;
     model.add_globalevent(
         [&copy](Model<> * m) -> void {
-            copy = std::make_unique< epimodels::ModelSIRMixing<> >(
-                *model_cast< epimodels::ModelSIRMixing<>, int >(m)
+            copy = std::make_unique< epimodels::ModelSIR<> >(
+                *model_cast< epimodels::ModelSIR<>, int >(m)
             );
             REQUIRE_THROWS_AS(
-                m->add_layer(layer::mixing(
-                    "late", std::vector< int >{1}, std::vector< int >{0, 1}
-                )),
+                m->add_layer(layer::mixing("late")),
                 std::logic_error
             );
         },
@@ -111,7 +110,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
     copy->run(30, 77);
     size_t susceptible_copy = 0u;
     for (auto & a : copy->get_agents())
-        if (a.get_state() == epimodels::ModelSIRMixing<>::SUSCEPTIBLE)
+        if (a.get_state() == epimodels::ModelSIR<>::SUSCEPTIBLE)
             ++susceptible_copy;
     REQUIRE(susceptible_copy == n - 1u);
 

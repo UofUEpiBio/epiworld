@@ -27,10 +27,16 @@ flowchart TB
     In --> Ir
     In --> H
 
+    %% Detected agents go to hospital as detected
+    Dh[Detected<br>Hospitalized]
+    In --> Dh
+    Dh --> R
+
     %% Isolated to
     I --> R
     I --> Ir
     I --> H
+    I --> Dh
 
     %% Susceptible quarantined
     S <==> Qs

@@ -20,7 +20,8 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
         0.0, 0.0, 20.0
     };
 
-    epimodels::ModelSIRMixing<> model("Flu", n, 0.0, 1.0, 0.01, cm);
+    epimodels::ModelSIR<> model("Flu", n, 0.0, 1.0, 0.01);
+    add_entity_mixing(model, cm);
 
     Virus<> v = model.get_virus(0);
     model.rm_virus(0);
@@ -44,7 +45,7 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     for (size_t i = 0u; i < n; ++i)
     {
         const bool reached =
-            model.get_agent(i).get_state() != epimodels::ModelSIRMixing<>::SUSCEPTIBLE;
+            model.get_agent(i).get_state() != epimodels::ModelSIR<>::SUSCEPTIBLE;
 
         if (!reached)
             continue;
@@ -74,7 +75,8 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
 
     // The only infectious agent leaves the layer on day 1, when the matrix
     // also opens: from day 2 on there is no one to be infected by
-    epimodels::ModelSIRMixing<> solo("Flu", 100u, 0.0, 1.0, 0.0, {0.0});
+    epimodels::ModelSIR<> solo("Flu", 100u, 0.0, 1.0, 0.0);
+    add_entity_mixing(solo, {0.0});
     solo.rm_virus(0);
     solo.add_virus(v);
     solo.get_layer_as< layer::Mixing<> >("mixing").set_groups(
@@ -93,7 +95,7 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
 
     size_t reached_solo = 0u;
     for (auto & a : solo.get_agents())
-        if (a.get_state() != epimodels::ModelSIRMixing<>::SUSCEPTIBLE)
+        if (a.get_state() != epimodels::ModelSIR<>::SUSCEPTIBLE)
             ++reached_solo;
     REQUIRE(reached_solo == 1u);
 

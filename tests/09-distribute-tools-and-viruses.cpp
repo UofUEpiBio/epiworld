@@ -4,9 +4,10 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
 
-    epimodels::ModelSIRCONN<> model_0(
-        "a virus", 10000u, 0.01, 4.0, 1.0, 1.0/10000.0
+    epimodels::ModelSIR<> model_0(
+        "a virus", 10000u, 0.01, 1.0, 1.0/10000.0
     );
+    add_random_mixing(model_0, 4.0);
     
     Tool<> tool("vax");
     tool.set_susceptibility_reduction(0.5);
@@ -34,9 +35,10 @@ EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
             got_tool.push_back(i);
     }
 
-    epimodels::ModelSIRCONN<> model_1(
-        "a virus", 10000u, 0.01, 4.0, 1.0, 1.0/10000.0
+    epimodels::ModelSIR<> model_1(
+        "a virus", 10000u, 0.01, 1.0, 1.0/10000.0
     );
+    add_random_mixing(model_1, 4.0);
 
     model_1.get_virus(0).set_distribution(
         distribute_virus_to_set<>(got_it)

@@ -25,7 +25,7 @@ std::vector< int > simfun(
 ) {
 
     model.set_param("Recovery rate", params[0u]);
-    model.set_param("Transmission rate", params[1u]);
+    model.set_param("Transmission probability", params[1u]);
 
     model.reset();
     model.run(50);

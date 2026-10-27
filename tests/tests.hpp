@@ -31,6 +31,38 @@ inline bool moreless(T a, T b, T eps = static_cast<T>(1))
     return(std::abs(a-b) > eps);
 }
 
+/**
+ * Puts every agent in one group of a mixing layer, meeting "Contact rate"
+ * others a day at random (what the connected models, e.g. ModelSIRCONN, did).
+ * Adds the parameter to the model.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline void add_random_mixing(epiworld::Model<TSeq> & model, double contact_rate)
+{
+    model.add_param(contact_rate, "Contact rate");
+    auto mix = epiworld::layer::mixing<TSeq>("random mixing");
+    mix->set_groups(std::vector< size_t >(model.size(), 0u), 1u);
+    mix->set_contact_matrix({1.0});
+    mix->set_contact_rate("Contact rate");
+    model.add_layer(mix);
+}
+
+/**
+ * Adds a mixing layer named "mixing" with the contact matrix (column-major),
+ * its groups taken from the model's entities (what ModelSIRMixing and
+ * ModelSEIRMixing did).
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline void add_entity_mixing(
+    epiworld::Model<TSeq> & model,
+    std::vector< double > contact_matrix
+)
+{
+    auto mix = epiworld::layer::mixing<TSeq>("mixing");
+    mix->set_contact_matrix(std::move(contact_matrix));
+    model.add_layer(mix);
+}
+
 inline std::string file_reader(std::string fname)
 {
     // Create a text string, which is used to output the text file

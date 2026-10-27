@@ -19,15 +19,15 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
     };
 
     // Create a simple SEIR mixing model with 100 agents
-    epimodels::ModelSEIRMixing<> model(
+    epimodels::ModelSEIR<> model(
         "TestVirus",    // vname
         100,            // n (number of agents)
         0.01,           // prevalence
-        0.5,            // transmission_rate
-        2.0,            // avg_incubation_days
-        0.3,            // recovery_rate
-        contact_matrix
+        0.5,            // transmission_prob
+        2.0,            // latent_period
+        0.3 // recovery_rate
     );
+    add_entity_mixing(model, contact_matrix);
 
     model.seed(12345);
     model.verbose_off();
@@ -186,16 +186,16 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
     // epiworldR loads it): Entity0 takes agents 0-24 from its own distribution
     // and 25-49 from the ties, and Entity1 gets no ties. The split must hold in
     // every replicate, not just the first
-    auto create_test_model = [&contact_matrix](bool from_ties = false) -> epimodels::ModelSEIRMixing<> {
-        epimodels::ModelSEIRMixing<> m(
+    auto create_test_model = [&contact_matrix](bool from_ties = false) -> epimodels::ModelSEIR<> {
+        epimodels::ModelSEIR<> m(
             "TestVirus",
             100,
             0.01,
             0.5,
             2.0,
-            0.3,
-            contact_matrix
+            0.3
         );
+        add_entity_mixing(m, contact_matrix);
         m.seed(12345);
         m.verbose_off();
 

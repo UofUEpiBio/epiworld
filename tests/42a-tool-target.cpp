@@ -6,12 +6,13 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Tool targeting a virus", "[tool][target]") {
 
     // No recovery: infected agents stay infected
-    epimodels::ModelSIRCONN<> model("A", 1000, 0.01, 4.0, 0.5, 0.0);
+    epimodels::ModelSIR<> model("A", 1000, 0.01, 0.5, 0.0);
+    add_random_mixing(model, 4.0);
     model.verbose_off();
 
     Virus<> virus_b("B", 0.01, true);
     virus_b.set_state(1, 2, 2);
-    virus_b.set_prob_infecting("Transmission rate");
+    virus_b.set_prob_infecting("Transmission probability");
     virus_b.set_prob_recovery("Recovery rate");
 
     // Targeting requires the virus to be in the model

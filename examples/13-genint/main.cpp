@@ -1,109 +1,111 @@
 #include <iostream>
 #include <vector>
-#include <math.h>
-#include <random>
+#include <numeric>
 #include "../../include/epiworld/epiworld.hpp"
 
 using namespace epiworld;
+
+// Everyone meets "Contact rate" others a day, at random: one group, a 1 x 1
+// contact matrix of 1, scaled by the parameter.
+void add_random_mixing(Model<> & model, double contact_rate)
+{
+    model.add_param(contact_rate, "Contact rate");
+    auto mix = layer::mixing<>("random mixing");
+    mix->set_groups(std::vector< size_t >(model.size(), 0u), 1u);
+    mix->set_contact_matrix({1.0});
+    mix->set_contact_rate("Contact rate");
+    model.add_layer(mix);
+}
+
+// Expected generation interval on each of the first `ndays` days, from that
+// day's susceptible agents (gen_int_mean()); the latent period, if any, adds
+// to it.
+std::vector< double > expected_gentime(
+    Model<> & model, size_t ndays, double latent_period
+)
+{
+
+    std::vector< int > date, counts;
+    std::vector< std::string > state;
+    model.get_db().get_hist_total(&date, &state, &counts);
+
+    std::vector< double > S(ndays, 0.0);
+    for (size_t i = 0u; i < date.size(); ++i)
+        if ((state[i] == "Susceptible") && (date[i] < static_cast< int >(ndays)))
+            S[date[i]] += counts[i];
+
+    const double p_c = model("Contact rate") / static_cast< double >(model.size());
+    std::vector< double > res(ndays);
+    for (size_t d = 0u; d < ndays; ++d)
+        res[d] = latent_period + gen_int_mean(
+            S[d], p_c, model("Transmission probability"), model("Recovery rate")
+        );
+
+    return res;
+
+}
+
+// Mean observed generation interval of the infections in the first `ndays`
+// days (the first three quarters of the records)
+double observed_gentime(Model<> & model, size_t ndays)
+{
+
+    std::vector< int > agent, virus, time, gentime;
+    model.get_db().get_generation_time(agent, virus, time, gentime);
+
+    double mean = 0.0;
+    size_t n = 0u;
+    for (size_t i = 0u; i < gentime.size() * 3u / 4u; ++i)
+    {
+        if ((time[i] >= static_cast< int >(ndays)) || (gentime[i] < 0))
+            continue;
+
+        mean += gentime[i];
+        ++n;
+    }
+
+    return mean / static_cast< double >(n);
+
+}
 
 int main()
 {
 
     // Model parameters
-    double r          = 10.0; // Contact rate
-    double popsize    = 5000.0;
-    double prevalence = 0.0005;
-    double p_i        = .1; // Probability of infection
-    double p_r        = 1.0/7.0; // Probability of recovery
-    double incubation = 2.0; // Incubation period
+    const double r          = 10.0;     // Contact rate
+    const size_t popsize    = 5000u;
+    const double prevalence = 0.0005;
+    const double p_i        = .1;       // Transmission probability
+    const double p_r        = 1.0/7.0;  // Recovery rate
+    const double latent     = 2.0;      // Latent period
 
-    size_t nsteps    = 200; // Number of days
-    size_t max_days_for_calc = 20;
+    const size_t nsteps = 200;    // Number of days
+    const size_t ndays  = 20;     // Days used in the comparison
 
-    epiworld::epimodels::ModelSIRCONN<> model(
-        "avirus",
-        popsize,
-        prevalence,
-        r,
-        p_i,
-        p_r
-    );
-
+    epimodels::ModelSIR<> model("avirus", popsize, prevalence, p_i, p_r);
+    add_random_mixing(model, r);
     model.run(nsteps, 554);
     model.print();
 
-    std::vector<int> agent, virus, time, gentime_sir_obs;
-    model.get_db().get_generation_time(agent, virus, time, gentime_sir_obs);
+    auto sir = expected_gentime(model, ndays, 0.0);
 
-    auto gentime_sir = model.generation_time_expected();
-    double gentime_sir_mean = std::accumulate(
-        gentime_sir.begin(), gentime_sir.begin() + max_days_for_calc, 0.0
-        ) / max_days_for_calc;
-
-    // Computing the mean of gentime conditioning on gentime >= 0
-    double gentime_sir_obs_mean = 0.0;
-    size_t n = 0;
-    for (int i = 0; i < static_cast<int>(gentime_sir_obs.size()*3/4); i++)
-    {
-        if (time[i] >= static_cast<int>(max_days_for_calc))
-            continue;
-
-        if (gentime_sir_obs[i] >= 0)
-        {
-            gentime_sir_obs_mean += gentime_sir_obs[i];
-            n++;
-        }
-    }
-
-    gentime_sir_obs_mean /= n;
-
-    // Repeating for ModelSEIRCONN
-    epiworld::epimodels::ModelSEIRCONN<> model2(
-        "avirus",
-        popsize,
-        prevalence,
-        r,
-        p_i,
-        incubation,
-        p_r
+    epimodels::ModelSEIR<> model2(
+        "avirus", popsize, prevalence, p_i, latent, p_r
     );
-
+    add_random_mixing(model2, r);
     model2.run(nsteps, 554);
     model2.print();
 
-    std::vector<int> agent2, virus2, time2, gentime_seir_obs;
-    model2.get_db().get_generation_time(agent2, virus2, time2, gentime_seir_obs);
+    auto seir = expected_gentime(model2, ndays, latent);
 
-    auto gentime_seirconn = model2.generation_time_expected();
-    double gentime_seirconn_mean = std::accumulate(
-        gentime_seirconn.begin(), gentime_seirconn.begin() + max_days_for_calc, 0.0
-        ) / max_days_for_calc;
+    std::cout << "SIR Gen. Int. (obs)       : " << observed_gentime(model, ndays) << std::endl;
+    std::cout << "SIR Gen. Int. (expected)  : " <<
+        std::accumulate(sir.begin(), sir.end(), 0.0) / ndays << std::endl;
 
-    // Computing the mean of gentime conditioning on gentime >= 0
-    double gentime_seir_obs_mean = 0.0;
-    n = 0;
-    for (int i = 0; i < static_cast<int>(gentime_seir_obs.size()*3/4); i++)
-    {
-        if (time[i] >= static_cast<int>(max_days_for_calc))
-            continue;
-        if (gentime_seir_obs[i] >= 0)
-        {
-            gentime_seir_obs_mean += gentime_seir_obs[i];
-            n++;
-        }
-    }
-
-    gentime_seir_obs_mean /= n;
-
-
-    std::cout << "SIR Gen. Int. (obs)       : " << gentime_sir_obs_mean << std::endl;
-    std::cout << "SIR Gen. Int. (expected)  : " << gentime_sir_mean << std::endl;
-
-    std::cout << "SEIR Gen. Int. (obs)      : " << gentime_seir_obs_mean << std::endl;
-    std::cout << "SEIR Gen. Int. (expected) : " << gentime_seirconn_mean << std::endl;
-
+    std::cout << "SEIR Gen. Int. (obs)      : " << observed_gentime(model2, ndays) << std::endl;
+    std::cout << "SEIR Gen. Int. (expected) : " <<
+        std::accumulate(seir.begin(), seir.end(), 0.0) / ndays << std::endl;
 
     return 0;
-
 
 }

@@ -3,7 +3,7 @@
 using namespace epiworld;
 
 /**
- * @brief Test heterogeneous contact rates in ModelSEIRMixingQuarantine
+ * @brief Test heterogeneous contact rates in ModelSEIRQuarantine
  *
  * This test verifies that agents with higher contact rates have higher
  * reproductive numbers. Setup:
@@ -41,22 +41,22 @@ EPIWORLD_TEST_CASE(
     int n_agents = 801;
     size_t nsims = 200;
 
-    epimodels::ModelSEIRMixingQuarantine<> model(
+    epimodels::ModelSEIRQuarantine<> model(
         "Flu",
         n_agents,
         2.0 / n_agents,    // prevalence: 2 infected agents
-        0.05,              // transmission_rate (low to keep outbreaks small)
-        7.0,               // avg_incubation_days
-        1.0 / 7.0,         // recovery_rate
-        contact_matrix,
+        0.05,              // transmission_prob (low to keep outbreaks small)
+        7.0,               // latent_period
+        1.0 / 7.0,
         0.0,               // hospitalization_rate (disabled)
         7.0,               // hospitalization_period
-        -1.0,              // days_undetected (< 0 = never detected → no quarantine)
+        -1.0,              // detection_delay (< 0 = never detected → no quarantine)
         -1,                // quarantine_period (disabled)
         0.0,               // quarantine_willingness
         0.0,               // isolation_willingness
         -1                 // isolation_period (disabled)
     );
+    add_entity_mixing(model, contact_matrix);
 
     // Create groups
     int from = 0;
@@ -112,7 +112,7 @@ EPIWORLD_TEST_CASE(
 
     // Print results
     std::cout << "========================================================" << std::endl;
-    std::cout << "Heterogeneous contact rates test (ModelSEIRMixingQuarantine)" << std::endl;
+    std::cout << "Heterogeneous contact rates test (ModelSEIRQuarantine)" << std::endl;
     std::cout << "Agent 0 (group 0, contact rate " << high_rate
               << "): avg R0 = " << avg_R0_high << std::endl;
     std::cout << "Agent 1 (group 1, contact rate " << low_rate

@@ -86,7 +86,7 @@ void build_seirh(Model<> & model)
     model.add_param(0.15, "Recovery rate");
     model.add_param(0.15, "Hospital recovery rate");
 
-    model.add_state("Susceptible", sampler::make_update_susceptible<>({1u, 3u, 4u}));
+    model.add_state("Susceptible", default_update_susceptible<>);
     model.add_state("Exposed", new_state_update_transition<>({"Incubation rate"}, {2u}));
     model.add_state("Infected", new_state_update_transition<>(
         {"Hospitalization rate", "Recovery rate"}, {3u, 4u}
@@ -95,6 +95,7 @@ void build_seirh(Model<> & model)
         {"Hospital recovery rate"}, {4u}
     ));
     model.add_state("Recovered");
+    model.set_infectious_states({2});
 
     Virus<> v("pathogen", 0.02, true);
     v.set_state(1, 4, 4);

@@ -30,7 +30,7 @@ EPIWORLD_TEST_CASE("Layer contact tracing", "[layer-tracing]") {
 
     auto home = layer::network("home", graph::smallworld<>(4, 0.1));
     auto work = layer::network("work", graph::smallworld<>(6, 0.3));
-    auto hh = layer::mixing<>("households", {1}, {0, 1, 2});
+    auto hh = layer::mixing<>("households");
     std::vector< size_t > groups(600);
     for (size_t i = 0u; i < 600u; ++i)
         groups[i] = i / 4u;

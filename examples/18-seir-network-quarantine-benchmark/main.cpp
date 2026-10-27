@@ -6,18 +6,6 @@
 
 using namespace epiworld;
 
-/**
- * Helper: create an entity distribution that assigns agents in [from, to).
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline EntityToAgentFun<TSeq> range_dist(int from, int to) {
-    return [from, to](Entity<TSeq> & e, Model<TSeq> * m) -> void {
-        auto & agents = m->get_agents();
-        for (int i = from; i < to; ++i)
-            e.add_agent(&agents[i], *m);
-    };
-}
-
 int main() {
 
     // -------------------------------------------------------------------
@@ -46,7 +34,7 @@ int main() {
         }
     }
 
-    // Build a column-major contact matrix for SEIRMixingQuarantine.
+    // Build a column-major contact matrix for the mixing layer.
     // Each entry stores the expected number of contacts per day from a
     // source group to a target group.
     std::vector< double > contact_matrix(n_groups * n_groups, 0.0);
@@ -60,21 +48,21 @@ int main() {
 
     // Common disease parameters
     const double prevalence             = 1.0/static_cast<double>(n_total);
-    const double transmission_rate      = 0.025;
-    const double avg_incubation_days    = 7.0;
+    const double transmission_prob      = 0.025;
+    const double latent_period          = 7.0;
     const double recovery_rate          = 1.0/5.0;
     const double hospitalization_rate   = 0.05;
     const double hospitalization_period = 7.0;
-    const double days_undetected        = 3.0;
+    const double detection_delay        = 3.0;
     const int    quarantine_period      = 7;
     const double quarantine_willingness = 0.8;
     const double isolation_willingness  = 0.9;
     const int    isolation_period       = 10;
 
     // -------------------------------------------------------------------
-    // Benchmark: SEIRMixingQuarantine
+    // Benchmark: ModelSEIRQuarantine on a mixing layer and on a network
     // -------------------------------------------------------------------
-    std::printf("=== Benchmark: SEIRMixingQuarantine vs SEIRNetworkQuarantine ===\n");
+    std::printf("=== Benchmark: SEIRQuarantine, mixing layer vs network ===\n");
     std::printf("Population: %zu agents in %zu groups of %zu\n",
         n_total, n_groups, group_size);
     std::printf("Mean contacts: %.1f, Days: %d, Reps: %d\n\n",
@@ -93,36 +81,32 @@ int main() {
 
     };
 
-    // Create entities for mixing model
+    // Mixing layer: groups of consecutive agents
     {
-        epimodels::ModelSEIRMixingQuarantine<> model_mix(
+        epimodels::ModelSEIRQuarantine<> model_mix(
             "Flu",
             static_cast<epiworld_fast_uint>(n_total),
             prevalence,
-            transmission_rate * .9,
-            avg_incubation_days,
+            transmission_prob * .9,
+            latent_period,
             recovery_rate,
-            contact_matrix,
             hospitalization_rate,
             hospitalization_period,
-            days_undetected,
+            detection_delay,
             quarantine_period,
             quarantine_willingness,
             isolation_willingness,
             isolation_period
         );
 
-        // Create entities (groups) for the mixing model
-        for (size_t g = 0; g < n_groups; ++g)
-        {
-            int from = static_cast<int>(g * group_size);
-            int to   = static_cast<int>((g + 1) * group_size);
-            Entity<> ent(
-                std::string("Group ") + std::to_string(g),
-                range_dist<>(from, to)
-            );
-            model_mix.add_entity(ent);
-        }
+        std::vector< size_t > groups(n_total);
+        for (size_t i = 0; i < n_total; ++i)
+            groups[i] = i / group_size;
+
+        auto mixing = layer::mixing<>("mixing");
+        mixing->set_groups(groups, n_groups);
+        mixing->set_contact_matrix(contact_matrix);
+        model_mix.add_layer(mixing);
 
         model_mix.verbose_off();
 
@@ -141,7 +125,7 @@ int main() {
             total_ms += std::chrono::duration<double, std::milli>(t1 - t0).count();
         }
 
-        std::printf("SEIRMixingQuarantine:  avg time per run = %.2f ms\n",
+        std::printf("Mixing layer: avg time per run = %.2f ms\n",
             total_ms / n_reps);
         model_mix.print(true);
     }
@@ -149,19 +133,19 @@ int main() {
     std::printf("\n");
 
     // -------------------------------------------------------------------
-    // Benchmark: SEIRNetworkQuarantine
+    // Network layer: a stochastic block model with the same mixing
     // -------------------------------------------------------------------
     {
-        epimodels::ModelSEIRNetworkQuarantine<> model_net(
+        epimodels::ModelSEIRQuarantine<> model_net(
             "Flu",
             n_groups * group_size,
             prevalence,
-            transmission_rate,
-            avg_incubation_days,
+            transmission_prob,
+            latent_period,
             recovery_rate,
             hospitalization_rate,
             hospitalization_period,
-            days_undetected,
+            detection_delay,
             quarantine_period,
             quarantine_willingness,
             isolation_willingness,
@@ -190,7 +174,7 @@ int main() {
             avg_outbreak_size_network += get_os(model_net);
         }
 
-        std::printf("SEIRNetworkQuarantine: avg time per run = %.2f ms\n",
+        std::printf("Network:      avg time per run = %.2f ms\n",
             total_ms / n_reps);
         model_net.print(false);
     }

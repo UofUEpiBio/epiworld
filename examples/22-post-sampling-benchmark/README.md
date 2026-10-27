@@ -10,9 +10,9 @@ Scenarios:
 
 - **L**: `ModelSEIR` on a Watts–Strogatz network (mean degree 10), pulling on every day.
 - **U**: the same model, pushing on every day.
-- **S**: `ModelSIRMixing` with 10 equal groups (8 contacts a day within a group, 0.5 with each other group).
-- **E**: `ModelSEIRMixing`, same groups.
-- **Q**: `ModelSEIRMixingQuarantine`, same groups. It records contacts for tracing on its own, so this is the cost of today's inline recording.
+- **S**: `ModelSIR` on a mixing layer with 10 equal groups (8 contacts a day within a group, 0.5 with each other group).
+- **E**: `ModelSEIR`, same layer.
+- **Q**: `ModelSEIRQuarantine`, same layer, which it traces for the quarantine process.
 - **M**: `ModelMeaslesMixing` with one group, 15 contacts a day, and quarantine and contact tracing on.
 
 For each cell, the program prints:
@@ -21,7 +21,7 @@ For each cell, the program prints:
 - the median final size (agents that are neither susceptible nor quarantined-susceptible at the end);
 - a checksum of every replicate's daily counts and transmissions.
 
-Equal checksums mean bit-identical runs. The file only uses the long-standing public API, so it compiles against any version:
+Equal checksums mean bit-identical runs. It compiles against epiworld 1.0.0 (contact layers) and later:
 
 ```sh
 ./main --sizes 20000,100000 --reps 10 --days 40 --scenarios L,U,S,E,Q,M

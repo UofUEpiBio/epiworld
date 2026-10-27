@@ -22,7 +22,8 @@ static std::vector< std::string > split_csv_line(const std::string & line)
 
 EPIWORLD_TEST_CASE("SaverMemory matches the saved files", "[saver-memory]") {
 
-    epimodels::ModelSEIRCONN<> model("a virus", 500, 0.1, 3.0, 0.3, 4.0, 0.2);
+    epimodels::ModelSEIR<> model("a virus", 500, 0.1, 0.3, 4.0, 0.2);
+    add_random_mixing(model, 3.0);
 
     Tool<> tool("a tool");
     tool.set_susceptibility_reduction(.5);

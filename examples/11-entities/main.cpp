@@ -29,15 +29,20 @@ int main() {
         0.5, 1.0, 7.0
     };
 
-    epimodels::ModelSEIRMixing<> model(
+    epimodels::ModelSEIR<> model(
         "Flu", // std::string vname,
         n_agents, // epiworld_fast_uint n,
         0.01,// epiworld_double prevalence,
-        0.1,// epiworld_double transmission_rate,
-        4.0,// epiworld_double avg_incubation_days,
-        1.0/7.0,// epiworld_double recovery_rate,
-        contact_matrix
+        0.1,// epiworld_double transmission_prob,
+        4.0,// epiworld_double latent_period,
+        1.0/7.0 // epiworld_double recovery_rate
     );
+
+    // Contacts by group, from a contact matrix; each agent's group is its
+    // entity (the three below)
+    auto mixing = layer::mixing<>("mixing");
+    mixing->set_contact_matrix(contact_matrix);
+    model.add_layer(mixing);
 
     // Creating three groups
     Entity<> e1("Entity 1", dist_factory<>(0, entity1_end));

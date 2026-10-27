@@ -21,9 +21,10 @@ EPIWORLD_TEST_CASE(
         ToolToAgentFun<> tool_fun, VirusToAgentFun<> virus_fun
     ) -> double {
 
-        epimodels::ModelSIRCONN<> model(
-            "a virus", n, 0.0, 0.0, 0.0, 0.0
+        epimodels::ModelSIR<> model(
+            "a virus", n, 0.0, 0.0, 0.0
         );
+        add_random_mixing(model, 0.0);
         model.get_virus(0).set_distribution(virus_fun);
 
         Tool<> tool("tool");

@@ -14,10 +14,10 @@ EPIWORLD_TEST_CASE("Parameter lookup by name", "[parameters]") {
 
     epimodels::ModelSIR<> model("a virus", 100, 0.01, 0.5, 0.25);
 
-    const std::string long_name = "Transmission rate"; // 17 characters
+    const std::string long_name = "Transmission probability"; // 24 characters
     const std::string_view long_view = long_name;
 
-    REQUIRE_THAT(model.par("Transmission rate"), Catch::Matchers::WithinAbs(0.5, 1e-6));
+    REQUIRE_THAT(model.par("Transmission probability"), Catch::Matchers::WithinAbs(0.5, 1e-6));
     REQUIRE_THAT(model.par(long_name), Catch::Matchers::WithinAbs(0.5, 1e-6));
     REQUIRE_THAT(model.par(long_view), Catch::Matchers::WithinAbs(0.5, 1e-6));
     REQUIRE_THAT(model.get_param(long_view), Catch::Matchers::WithinAbs(0.5, 1e-6));

@@ -958,9 +958,10 @@ draws distinct contacts (D9).
    rate"). This is the contact-level counterpart of `set_weight(param)`, which
    scales the odds, and it binds the same way: the layer keeps the parameter's
    name as a `ParamRef` (as `weight_ref` does) and reads the model's value
-   each time it samples, never a copy taken when the layer is added. A global
-   event or a calibration step that changes "Contact rate" therefore changes
-   the contacts drawn on the next day. Acceptance test: a run whose global
+   at the end of every step, after the global events (in `update()`, which
+   sets up the day's draws), never a copy taken when the layer is added. A
+   global event or a calibration step that changes "Contact rate" therefore
+   changes the contacts drawn on the next day. Acceptance test: a run whose global
    event sets "Contact rate" to 0 on day k has no new exposures after day k,
    while the same seed without the event has some.
 2. **Which states transmit, said once** (settled 2026-10-25). A mixing layer
@@ -993,7 +994,14 @@ draws distinct contacts (D9).
      Quarantined Exposed and Isolated Recovered are excluded. On a network
      layer exclusion means the tie is skipped. D2 removes the internal setter
      and the quarantine model moves to exclusion and layer-targeted tools.
-3. **The one-group cost** (above).
+3. **The one-group cost** (above). Done in the consolidation PR: a layer
+   with a contact matrix sets up each day's binomial draws (one per pair of
+   groups) in `update()`, instead of building the distribution at every
+   draw. The random numbers are the same (the Mixing replacements stay draw
+   for draw identical). One group, 10,000 agents, 100 days, 20 runs: 0.31 s
+   vs 0.26 s CPU for `ModelSIRCONN` (was 1.6 to 2 times); the rest is the
+   generic layer path (weights, targets, tracing), which the old model did
+   not have.
 
 **The merged models.**
 
@@ -1052,6 +1060,16 @@ quarantine model against `ModelSEIRQuarantine` on the equivalent layer:
   a deliberate change listed above (only Infected transmits, the generic
   sampler); the PR reports the failing statistic and its cause, and the user
   decides.
+
+Result (consolidation PR, 2026-10-27): every replacement passes. The
+quarantine models ran with realistic parameters rather than the test suite's
+(transmission 1, which infects everyone at once): transmission 0.1, latent
+period 4, recovery 1/7, hospitalization 0.01 for 7 days, detection delay 3,
+quarantine 14 days, willingness 0.8 and 0.8, isolation 10 days, tracing 0.8
+over 4 days; one mixing group with 4 contacts a day, or a small-world network
+(k = 8, p = 0.1). The largest standardized difference is 0.084 (SIRD final
+size); sd ratios 0.945 to 1.012. The mixing quarantine model is draw for draw
+identical to `ModelSEIRQuarantine` on the same layer.
 
 ### Phase 4 -- participation, tools, schedules, persistence
 
@@ -1333,7 +1351,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-10-25).
+Updated by every epiworld PR into `v1-layers` (last: 2026-10-27).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1342,14 +1360,15 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-25).
 | Phase 3a (+ fixes) | #318, #319 merged | #216 | #33 | #18 | #65 |
 | `downstream.yml` | #321 merged | | | | |
 | Phase 3b | #323 merged (plan: #322; checked accessors: #324 merged) | #218 merged | #35 merged | #19 merged (re-vendor only: no layer objects in JS) | #66 merged (re-vendor only) |
-| Phase 3c-1 (layer logs) | #325 | | | | |
-| Model consolidation | not started (plan: #326) | | | | |
+| Phase 3c-1 (layer logs) | #325 merged (+ #329 merged: `ContactTracing::get_n_agents()`) | #220 merged | #36 merged | #20 merged (re-vendor only) | #67 (re-vendor only) |
+| `master` -> `v1-layers` | #328 merged (#327, the `ModelSEIR` recovery fix) | | | | |
+| Model consolidation | in review (plan: #326 merged) | | | | |
 | Phase 3c-2 (group history) | not started | | | | |
 | Phase 3d | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
-**Next** (as of the date above): the 3c-1 ports (epiworldR first, which also
-drops the R-side size bookkeeping that #218 needed before the accessors were
-checked; then epiworldpy, epiworldjs, measles), then the model consolidation
-(the `ModelSEIR` recovery fix on `master` first), then 3c-2.
+**Next** (as of the date above): the consolidation ports (epiworldR first:
+defunct stubs for the removed models, `layer_mixing()` without state lists,
+the contact rate, the renamed parameters, and the vignettes; then epiworldpy,
+epiworldjs's registry, measles re-vendor), then 3c-2.

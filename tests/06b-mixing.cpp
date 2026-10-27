@@ -40,14 +40,14 @@ EPIWORLD_TEST_CASE(
     int n_agents = 801;
     size_t nsims = 200;
 
-    epimodels::ModelSIRMixing<> model(
+    epimodels::ModelSIR<> model(
         "Flu",
         n_agents,
         2.0 / n_agents,    // prevalence: 2 infected agents
-        0.1,               // transmission_rate (low to keep outbreaks small)
-        1.0 / 7.0,         // recovery_rate
-        contact_matrix
+        0.1,               // transmission_prob (low to keep outbreaks small)
+        1.0 / 7.0 // recovery_rate
     );
+    add_entity_mixing(model, contact_matrix);
 
     // Create groups
     int from = 0;

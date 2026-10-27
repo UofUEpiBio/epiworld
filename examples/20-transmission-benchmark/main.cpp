@@ -119,7 +119,7 @@ static void build_seirh(Model<> & model, size_t n)
     model.add_param(recovery, "Recovery rate");
     model.add_param(1.0 / hosp_days, "Hospital recovery rate");
 
-    model.add_state("Susceptible", sampler::make_update_susceptible<>({1u, 3u, 4u}));
+    model.add_state("Susceptible", default_update_susceptible<>);
     model.add_state("Exposed", new_state_update_transition<>({"Incubation rate"}, {2u}));
     model.add_state("Infected", new_state_update_transition<>(
         {"Hospitalization rate", "Recovery rate"}, {3u, 4u}
@@ -128,6 +128,7 @@ static void build_seirh(Model<> & model, size_t n)
         {"Hospital recovery rate"}, {4u}
     ));
     model.add_state("Recovered");
+    model.set_infectious_states({2});
 
     Virus<> pathogen("Benchmark pathogen", 100.0, false);
     pathogen.set_state(1, 4, 4);
@@ -391,10 +392,6 @@ int main(int argc, char ** argv)
                         10.0 / static_cast< double >(n),
                         0.3, 10.0, 1.0 / 8.0
                     );
-                    // Latent (exposed) agents do not transmit
-                    model.set_state_function(
-                        0u, sampler::make_update_susceptible<>({1u})
-                    );
                     model.seed(20260907);
                     model.add_layer(layer::network(
                         "network", rgraph_smallworld(n, 10, 0.05, false, model)
@@ -408,10 +405,6 @@ int main(int argc, char ** argv)
                         n,
                         100.0 / static_cast< double >(n),
                         0.10, 3.0, 1.0 / 7.0
-                    );
-                    // Latent (exposed) agents do not transmit
-                    model.set_state_function(
-                        0u, sampler::make_update_susceptible<>({1u})
                     );
                     model.seed(20260907);
                     build_heterogeneous(model, n);

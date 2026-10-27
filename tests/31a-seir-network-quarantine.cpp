@@ -11,22 +11,22 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
          0.0, 20.0
     };
 
-    epimodels::ModelSEIRNetworkQuarantine<> model(
+    epimodels::ModelSEIRQuarantine<> model(
         "Flu",      // vname
         std::accumulate(block_sizes.begin(), block_sizes.end(), size_t(0)),
         0.01,       // prevalence
-        1.0,        // transmission_rate
-        2.0,        // avg_incubation_days
+        1.0,        // transmission_prob
+        2.0,        // latent_period
         1.0/2.0,    // recovery_rate
         0.1,        // hospitalization_rate
         5.0,        // hospitalization_period
-        2.0,        // days_undetected
+        2.0,        // detection_delay
         4,          // quarantine_period
         0.9,        // quarantine_willingness
         1.0,        // isolation_willingness
         10,         // isolation_period
-        1.0,        // contact_tracing_success_rate
-        4           // contact_tracing_days_prior
+        1.0,        // contact_tracing_prob
+        4           // contact_tracing_window
     );
 
     // Replace virus to infect only agent 0 (in block 0)
@@ -49,7 +49,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     for (size_t i = 500; i < 1000; ++i)
     {
         const auto & a = model.get_agent(i);
-        if (a.get_state() != epimodels::ModelSEIRNetworkQuarantine<>::SUSCEPTIBLE)
+        if (a.get_state() != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
         {
             n_wrong++;
         }
@@ -63,7 +63,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     for (size_t i = 0; i < 500; ++i)
     {
         const auto & a = model.get_agent(i);
-        if (a.get_state() != epimodels::ModelSEIRNetworkQuarantine<>::SUSCEPTIBLE)
+        if (a.get_state() != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
         {
             n_affected_block0++;
         }
@@ -79,22 +79,22 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
         10.0, 10.0
     };
 
-    epimodels::ModelSEIRNetworkQuarantine<> model2(
+    epimodels::ModelSEIRQuarantine<> model2(
         "Flu",      // vname
         std::accumulate(block_sizes.begin(), block_sizes.end(), size_t(0)),
         0.01,       // prevalence
-        1.0,        // transmission_rate
-        2.0,        // avg_incubation_days
+        1.0,        // transmission_prob
+        2.0,        // latent_period
         1.0/2.0,    // recovery_rate
         0.1,        // hospitalization_rate
         5.0,        // hospitalization_period
-        -1.0,       // days_undetected (no detection - run to completion)
+        -1.0,       // detection_delay (no detection - run to completion)
         4,          // quarantine_period
         0.9,        // quarantine_willingness
         1.0,        // isolation_willingness
         10,         // isolation_period
-        1.0,        // contact_tracing_success_rate
-        4           // contact_tracing_days_prior
+        1.0,        // contact_tracing_prob
+        4           // contact_tracing_window
     );
 
     // Replace virus to infect only agent 0
@@ -118,8 +118,8 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
 
     // Hospitalized agents also recover eventually, so combine
     // hospitalized + recovered for the final check
-    int total_final = totals[epimodels::ModelSEIRNetworkQuarantine<>::RECOVERED] +
-                      totals[epimodels::ModelSEIRNetworkQuarantine<>::HOSPITALIZED];
+    int total_final = totals[epimodels::ModelSEIRQuarantine<>::RECOVERED] +
+                      totals[epimodels::ModelSEIRQuarantine<>::HOSPITALIZED];
 
     // With high transmission and connected graph, we expect most agents to be
     // recovered

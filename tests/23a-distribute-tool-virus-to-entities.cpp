@@ -5,9 +5,10 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("distribute_tool_virus_to_entities_proportions", "[distribute-entities-proportions]") {
 
     // Create a basic SIR model
-    epimodels::ModelSIRCONN<> model(
-        "test virus", 500, 0.0, 0.9, 0.0, 0.0
+    epimodels::ModelSIR<> model(
+        "test virus", 500, 0.0, 0.0, 0.0
     );
+    add_random_mixing(model, 0.9);
 
     // Set seed for reproducibility
     model.seed(123);

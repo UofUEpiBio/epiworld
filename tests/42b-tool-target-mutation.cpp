@@ -6,7 +6,8 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Tool targeting a mutating virus", "[tool][target][mutation]") {
 
     // No recovery: infected agents stay infected
-    epimodels::ModelSIRCONN<> model("A", 1000, 0.0, 4.0, 0.5, 0.0);
+    epimodels::ModelSIR<> model("A", 1000, 0.0, 0.5, 0.0);
+    add_random_mixing(model, 4.0);
     model.verbose_off();
 
     // Seeding the odd agents 1, ..., 39, with a virus that mutates every day
