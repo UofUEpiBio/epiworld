@@ -70,10 +70,11 @@ EPIWORLD_TEST_CASE("Post-sampling callback - mixing and tracing", "[post-samplin
             2.0, 20.0
         };
 
-        epimodels::ModelSEIRMixingQuarantine<> model(
-            "Flu", 2000, 0.01, 0.6, 2.0, 0.25, contact_matrix,
+        epimodels::ModelSEIRQuarantine<> model(
+            "Flu", 2000, 0.01, 0.6, 2.0, 0.25,
             0.1, 5, 2, 4, 0.9, 1.0, 10, 1.0, 4
         );
+        add_entity_mixing(model, contact_matrix);
 
         model.add_entity(Entity<>("A", dist_factory<>(0, 1000)));
         model.add_entity(Entity<>("B", dist_factory<>(1000, 2000)));

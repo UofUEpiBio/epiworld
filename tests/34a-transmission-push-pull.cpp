@@ -45,12 +45,14 @@ void make_star(Model<> & model, int nleaves)
     ));
 }
 
-// Base model: S takes infections from everyone but E; E and I never change.
+// Base model: only I transmits (E carries the virus but does not); E and I
+// never change.
 void add_states(Model<> & model)
 {
-    model.add_state("Susceptible", sampler::make_update_susceptible<>({E_}));
+    model.add_state("Susceptible", default_update_susceptible<>);
     model.add_state("Exposed");
     model.add_state("Infected");
+    model.set_infectious_states({I_});
 }
 
 Virus<> make_virus(

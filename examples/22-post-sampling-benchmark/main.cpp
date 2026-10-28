@@ -27,11 +27,10 @@ using namespace epiworld;
 // L: ModelSEIR on a Watts-Strogatz network (mean degree 10), pulling on every
 //    day.
 // U: the same model, pushing on every day.
-// S: ModelSIRMixing, 10 equal groups (8 contacts a day within a group, 0.5
-//    with each other group).
-// E: ModelSEIRMixing, same groups.
-// Q: ModelSEIRMixingQuarantine, same groups. It records contacts for tracing
-//    itself, so this is today's inline recording cost.
+// S: ModelSIR on a mixing layer, 10 equal groups (8 contacts a day within a
+//    group, 0.5 with each other group).
+// E: ModelSEIR, same layer.
+// Q: ModelSEIRQuarantine, same layer, traced for the quarantine process.
 // M: ModelMeaslesMixing, one group, 15 contacts a day, quarantine and contact
 //    tracing on (specialized one- and two-pool samplers).
 //
@@ -77,21 +76,18 @@ static std::vector< double > contact_matrix()
     return cm;
 }
 
-// Equal groups of agents
-static void add_groups(Model<> & model, size_t n)
+// A mixing layer over equal groups of agents (the last one takes the rest)
+static void add_mixing(Model<> & model, size_t n)
 {
     size_t size = n / N_GROUPS;
-    for (size_t g = 0u; g < N_GROUPS; ++g)
-    {
-        size_t from = g * size;
-        size_t to = (g == N_GROUPS - 1u) ? n : from + size;
-        model.add_entity(Entity<>(
-            "Group " + std::to_string(g),
-            distribute_entity_to_range<>(
-                static_cast< int >(from), static_cast< int >(to)
-            )
-        ));
-    }
+    std::vector< size_t > groups(n);
+    for (size_t i = 0u; i < n; ++i)
+        groups[i] = std::min(i / size, N_GROUPS - 1u);
+
+    auto mixing = layer::mixing<>("mixing");
+    mixing->set_groups(groups, N_GROUPS);
+    mixing->set_contact_matrix(contact_matrix());
+    model.add_layer(mixing);
 }
 
 typedef measles::ModelMeaslesMixing<> ModelMeasles;
@@ -140,41 +136,41 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
 
     if (scen == "S")
     {
-        epimodels::ModelSIRMixing<> model(
+        epimodels::ModelSIR<> model(
             "Benchmark pathogen", static_cast< epiworld_fast_uint >(n),
-            prevalence, 0.05, 0.2, contact_matrix()
+            prevalence, 0.05, 0.2
         );
         model.seed(20260930);
-        add_groups(model, n);
+        add_mixing(model, n);
         return bench::time_runs(model, o.days, o.reps);
     }
 
     if (scen == "E")
     {
-        epimodels::ModelSEIRMixing<> model(
+        epimodels::ModelSEIR<> model(
             "Benchmark pathogen", static_cast< epiworld_fast_uint >(n),
-            prevalence, 0.05, 4.0, 0.2, contact_matrix()
+            prevalence, 0.05, 4.0, 0.2
         );
         model.seed(20260930);
-        add_groups(model, n);
+        add_mixing(model, n);
         return bench::time_runs(model, o.days, o.reps);
     }
 
     if (scen == "Q")
     {
-        epimodels::ModelSEIRMixingQuarantine<> model(
+        epimodels::ModelSEIRQuarantine<> model(
             "Benchmark pathogen", static_cast< epiworld_fast_uint >(n),
-            prevalence, 0.05, 4.0, 0.2, contact_matrix(),
+            prevalence, 0.05, 4.0, 0.2,
             0.05, // Hospitalization rate
             5.0,  // Hospitalization period
-            2.0,  // Days undetected
+            2.0,  // Detection delay
             7,    // Quarantine period
             0.8,  // Quarantine willingness
             0.8,  // Isolation willingness
             5     // Isolation period
         );
         model.seed(20260930);
-        add_groups(model, n);
+        add_mixing(model, n);
         return bench::time_runs(
             model, o.days, o.reps,
             {model.SUSCEPTIBLE, model.QUARANTINED_SUSCEPTIBLE}

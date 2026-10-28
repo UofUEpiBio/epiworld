@@ -4,15 +4,15 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
 
-    // Generating ModelSIRCONN model
-    epimodels::ModelSIRCONN<> model(
+    // Generating an SIR model with random mixing
+    epimodels::ModelSIR<> model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
-        40.0,  // epiworld_double contact_rate,
-        1.0,   // epiworld_double transmission_rate,
+        1.0,   // epiworld_double transmission_prob,
         1.0/2.0// epiworld_double recovery_rate
     );
+    add_random_mixing(model, 40.0);
 
     // Generating two entities, 100 distribution
     auto dfun = epiworld::distribute_entity_randomly<>(5000, false, true);
@@ -60,14 +60,14 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
     int N = 1e5;
     int n = 1e4;
     double p = static_cast<double>(n) / static_cast<double>(N);
-    epimodels::ModelSIRCONN<> model2(
+    epimodels::ModelSIR<> model2(
         "Flu", // std::string vname,
         N, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
-        10.0,  // epiworld_double contact_rate,
-        1.0,   // epiworld_double transmission_rate,
+        1.0,   // epiworld_double transmission_prob,
         1.0/2.0// epiworld_double recovery_rate
     );
+    add_random_mixing(model2, 10.0);
 
     Entity<> e3("Entity 3", distribute_entity_randomly<>(n, false, false));
     Entity<> e4("Entity 4", distribute_entity_randomly<>(n, false, false));
@@ -109,14 +109,14 @@ EPIWORLD_TEST_CASE("Entity member", "[Entity]") {
     };
 
     // Creating a copy of the model
-    epimodels::ModelSIRCONN<> model3(
+    epimodels::ModelSIR<> model3(
         "Flu", // std::string vname,
         N, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
-        10.0,  // epiworld_double contact_rate,
-        1.0,   // epiworld_double transmission_rate,
+        1.0,   // epiworld_double transmission_prob,
         1.0/2.0// epiworld_double recovery_rate
     );
+    add_random_mixing(model3, 10.0);
 
     // Updating the distribution
     e1.set_distribution(distribute_entity_to_set<>(dist[0]));

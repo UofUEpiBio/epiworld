@@ -73,7 +73,7 @@ Run simulate(
     if (plain_scan)
         model.set_state_function(0u, plain_scan_update);
     else
-        model.set_state_function(0u, sampler::make_update_susceptible<>({1u}));
+        model.set_state_function(0u, default_update_susceptible<>);
 
     model.seed(31);
     tests_heterogeneous_network(model, 3000u);

@@ -10,7 +10,7 @@ EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target
     for (auto * v : {&virus_a, &virus_b})
     {
         v->set_state(1, 2, 2);
-        v->set_prob_infecting("Transmission rate");
+        v->set_prob_infecting("Transmission probability");
         v->set_prob_recovery("Recovery rate");
     }
 
@@ -18,8 +18,10 @@ EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target
     virus_b.set_sequence(200);
 
     // No recovery: infected agents stay infected
-    epimodels::ModelSIRCONN<> first("C", 1000, 0.0, 4.0, 0.5, 0.0);
-    epimodels::ModelSIRCONN<> second("C", 1000, 0.0, 4.0, 0.5, 0.0);
+    epimodels::ModelSIR<> first("C", 1000, 0.0, 0.5, 0.0);
+    add_random_mixing(first, 4.0);
+    epimodels::ModelSIR<> second("C", 1000, 0.0, 0.5, 0.0);
+    add_random_mixing(second, 4.0);
     first.verbose_off();
     second.verbose_off();
 

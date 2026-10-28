@@ -9,7 +9,7 @@ Users running large experiments can further optimize memory by minimizing per-ag
 
 ## Parameter Access
 
-Model parameters are stored in a vector, in the order they were added, with a map from each name to its position. A lookup by name (`par("Transmission rate")`, `get_param()`, `set_param()`) searches that map: roughly 20–30 ns per call. That is negligible when it happens once per step, but update functions and virus or tool callbacks run for many agents every day, and there the lookups can add up to a third of the run time.
+Model parameters are stored in a vector, in the order they were added, with a map from each name to its position. A lookup by name (`par("Transmission probability")`, `get_param()`, `set_param()`) searches that map: roughly 20–30 ns per call. That is negligible when it happens once per step, but update functions and virus or tool callbacks run for many agents every day, and there the lookups can add up to a third of the run time.
 
 Code on those paths should read parameters by position instead, at about 2–3 ns per call:
 
@@ -23,7 +23,7 @@ Code on those paths should read parameters by position instead, at about 2–3 n
 - **`ParamRef`** does the same as an object you keep, for example as a member of a class. It resolves the name once per model layout and caches the position, so it gives the right value with any model, including models whose parameters were added in a different order, and it is safe to share between threads.
 - **`get_param_id()`** returns a `ParamId`, read with `par_at()` and written with `set_param_at()`. The position is valid for that model and all its copies (including the copies `run_multiple()` makes), because parameters are never removed.
 
-Only positions are cached, never values, so changes made with `set_param()` (for example by a global event) are seen immediately. Viruses and tools set up with a parameter name (`set_prob_infecting("Transmission rate")` and similar), `new_state_update_transition()`, and the built-in models already read parameters this way.
+Only positions are cached, never values, so changes made with `set_param()` (for example by a global event) are seen immediately. Viruses and tools set up with a parameter name (`set_prob_infecting("Transmission probability")` and similar), `new_state_update_transition()`, and the built-in models already read parameters this way.
 
 ## Parallel Execution Strategies
 We support parallel execution through OpenMP, which is used to distribute workloads across simulation runs. Currently, OpenMP pragmas are applied when running multiple simulations in parallel.

@@ -125,14 +125,14 @@ The rule deliberately ignores the queue. The decision, and therefore the random 
 
 ## Scope
 
-Pushing applies to states whose update function is `default_update_susceptible` or `sampler::make_update_susceptible(exclude)` (which is what epiworldR's `update_fun_susceptible()` uses). This covers the network models `ModelSIR`, `ModelSIS`, `ModelSISD`, `ModelSIRD`, `ModelSEIR`, and `ModelSEIRD`, and custom models built on these functions. A push mirrors the pull exactly:
+Pushing applies to states whose update function is `default_update_susceptible` (which is what epiworldR's `update_fun_susceptible()` uses). This covers `ModelSIR`, `ModelSIS`, `ModelSISD`, `ModelSIRD`, `ModelSEIR`, `ModelSEIRD` and `ModelSEIRQuarantine` on networks, and custom models built on this function. A push mirrors the pull exactly:
 
-- **Sources.** Every neighbor carrying a virus is a source, as in the pull (so, e.g., exposed agents in `ModelSEIR` transmit), except those in the states listed in `exclude`.
+- **Sources.** Every neighbor carrying a virus in one of the model's infectious states (`Model::set_infectious_states()`; by default, every state) is a source, as in the pull: e.g., exposed agents in `ModelSEIR` do not transmit.
 - **Probabilities.** $p_{kj}$ is computed with the same expression, the same tool mixers, and the same virus functions, for exactly the same (target, source) pairs.
 - **Queue.** With queuing on, a susceptible agent is only updated if it is queued, as when pulling.
 - **Errors.** An agent in a susceptible state that carries a virus raises the same error as the pull.
 
-Everything else keeps pulling: states with custom update functions (e.g., `ModelSIRLogit`, `ModelSURV`, `ModelSEIRNetworkQuarantine`, `ModelDiffNet`) and the connected, mixing, and measles models, which sample contacts differently. Directed networks (built with `directed = true`) also always pull, and so does building without RTTI (recognizing the functions uses `std::function::target()`). Pushing relies on every tie being stored at both ends, which is how `epiworld` stores an undirected tie. A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `j` can infect `i`, but not the reverse.
+Everything else keeps pulling: states with custom update functions (e.g., `ModelSIRLogit`, `ModelSURV`, `ModelDiffNet`), models with a mixing layer, and the measles models, which sample contacts differently. Directed networks (built with `directed = true`) also always pull, and so does building without RTTI (recognizing the functions uses `std::function::target()`). Pushing relies on every tie being stored at both ends, which is how `epiworld` stores an undirected tie. A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `j` can infect `i`, but not the reverse.
 
 Both directions draw from the odds: `roulette()` normalizes by $1 + R_j$, as above, rather than by the product of the $(1 - p)$ terms, which underflows to 0 with many high-probability contacts (before epiworld 1.0.0 the pull then fell back to the last contact). Pulling has no limit on the number of contacts carrying a virus either: its scratch arrays grow as needed (before 1.0.0, 1024). The one numerical difference left is precision: pulling sums the odds in `epiworld_double` (a `float` by default), pushing in `double`.
 

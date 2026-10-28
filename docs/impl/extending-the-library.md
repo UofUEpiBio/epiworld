@@ -82,8 +82,8 @@ A global event is defined as a function matching the signature `void fun(Model<T
 ```cpp
 template<typename TSeq>
 void lockdown_event(epiworld::Model<TSeq>* model) {
-    double tr = model->get_param("Transmission rate");
-    model->set_param("Transmission rate", tr * 0.5);
+    double tr = model->get_param("Transmission probability");
+    model->set_param("Transmission probability", tr * 0.5);
 }
 
 model.add_globalevent(lockdown_event<TSeq>, "Lockdown Policy", 30);
@@ -102,7 +102,7 @@ Global events can also interact with the random number generator, the database, 
 template<typename TSeq>
 void new_variant_event(epiworld::Model<TSeq>* model) {
     epiworld::Virus<TSeq> variant("Variant B", 0.01, true);
-    variant.set_prob_infecting("Transmission rate");
+    variant.set_prob_infecting("Transmission probability");
     model->add_virus(variant);
 }
 ```

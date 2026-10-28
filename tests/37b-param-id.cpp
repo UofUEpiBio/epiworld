@@ -18,7 +18,7 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
     ));
     model.verbose_off();
 
-    ParamId beta = model.get_param_id("Transmission rate");
+    ParamId beta = model.get_param_id("Transmission probability");
     ParamId gamma = model.get_param_id("Recovery rate");
 
     REQUIRE(model.get_n_params() == 2u);
@@ -27,13 +27,13 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
 
     // Writes by position and by name reach the same value
     model.set_param_at(beta, 0.1);
-    REQUIRE_THAT(model.par("Transmission rate"), Catch::Matchers::WithinAbs(0.1, 1e-6));
+    REQUIRE_THAT(model.par("Transmission probability"), Catch::Matchers::WithinAbs(0.1, 1e-6));
     model.set_param("Recovery rate", 0.3);
     REQUIRE_THAT(model.par_at(gamma), Catch::Matchers::WithinAbs(0.3, 1e-6));
 
     // Adding a parameter keeps the existing positions
     model.add_param(0.5, "Another parameter");
-    REQUIRE(model.get_param_id("Transmission rate").idx == beta.idx);
+    REQUIRE(model.get_param_id("Transmission probability").idx == beta.idx);
     REQUIRE(model.params().size() == 3u);
 
     // Positions are valid in copies
@@ -92,7 +92,7 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
     model_name.verbose_off();
     model_name.add_param(0.5, "Another parameter");
     model_name.add_globalevent(
-        [](Model<> * m) -> void { m->set_param("Transmission rate", 0.0); },
+        [](Model<> * m) -> void { m->set_param("Transmission probability", 0.0); },
         "stop transmission",
         stop_day
     );

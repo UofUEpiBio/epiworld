@@ -14,9 +14,10 @@ EPIWORLD_TEST_CASE(
     size_t nexperiments = 3000u;
 
     // Tools and virus_randomly(): 3 agents, one recipient each
-    epimodels::ModelSIRCONN<> model(
-        "a virus", 3u, 0.0, 0.0, 0.0, 0.0
+    epimodels::ModelSIR<> model(
+        "a virus", 3u, 0.0, 0.0, 0.0
     );
+    add_random_mixing(model, 0.0);
     model.get_virus(0).set_distribution(
         distribute_virus_randomly<>(1, false)
     );
@@ -56,9 +57,10 @@ EPIWORLD_TEST_CASE(
     );
 
     // virus_to_entities() in a model of its own (an agent holds one virus)
-    epimodels::ModelSIRCONN<> model_entity(
-        "a virus", 3u, 0.0, 0.0, 0.0, 0.0
+    epimodels::ModelSIR<> model_entity(
+        "a virus", 3u, 0.0, 0.0, 0.0
     );
+    add_random_mixing(model_entity, 0.0);
     model_entity.get_virus(0).set_distribution(
         distribute_virus_to_entities<>({1.0}, false)
     );

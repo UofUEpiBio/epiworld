@@ -174,7 +174,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
             m.add_layer(layer::network(
                 "ties", rgraph_smallworld(n, 4, 0.1, false, m)
             ));
-            auto mixing = layer::mixing("crowd", {1}, {0, 1, 2});
+            auto mixing = layer::mixing("crowd");
             mixing->set_groups(std::vector< size_t >(n, 0u), 1u);
             mixing->set_contact_matrix({2.0});
             m.add_layer(mixing);

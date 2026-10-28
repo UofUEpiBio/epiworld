@@ -17,14 +17,14 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
     int n_agents = 2000;
     size_t nsims = 400;
    
-    epimodels::ModelSIRMixing<> model_1(
+    epimodels::ModelSIR<> model_1(
         "Flu", // std::string vname,
         n_agents, // epiworld_fast_uint n,
         static_cast<double>(n_infected)/n_agents,  // epiworld_double prevalence,
-        0.1,   // epiworld_double transmission_rate,
-        1.0/7.0,// epiworld_double recovery_rate,
-        contact_matrix
+        0.1,   // epiworld_double transmission_prob,
+        1.0/7.0 // epiworld_double recovery_rate,
     );
+    add_entity_mixing(model_1, contact_matrix);
 
     // Creating three groups
     Entity<> e1_1("Entity 1", dist_factory<>(0, n_agents/3));
@@ -132,8 +132,8 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
         double (ans_observed) = stats::mean(r0); \
         std::fill(r0.begin(), r0.end(), -1.0); \
         double (ans_expected) = (avg_contact_rate) * \
-            model_1("Prob. Transmission") / \
-            model_1("Prob. Recovery");
+            model_1("Transmission probability") / \
+            model_1("Recovery rate");
 
     // Different runs
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);

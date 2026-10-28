@@ -13,14 +13,13 @@ EPIWORLD_TEST_CASE(
     size_t n_seeds = 5;
     size_t nsims = 400;
 
-    epimodels::ModelSEIRMixingQuarantine<> model(
+    epimodels::ModelSEIRQuarantine<> model(
         "Flu", // std::string vname,
         n, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
-        0.08,   // epiworld_double transmission_rate,
-        4.0,   // epiworld_double avg_incubation_days,
-        1.0/3.5,// epiworld_double recovery_rate,
-        contact_matrix,
+        0.08,   // epiworld_double transmission_prob,
+        4.0,   // epiworld_double latent_period,
+        1.0/3.5,
         .1, // Hospitalization rate
         4, // Hospitalization period
         -1, // Days undetected (negative means no quarantine)
@@ -31,6 +30,7 @@ EPIWORLD_TEST_CASE(
         1.0, // Contact tracing success rate
         4 // Contact tracing days prior
     );
+    add_entity_mixing(model, contact_matrix);
 
     // Copy the original virus
     Virus<> v1 = model.get_virus(0);
@@ -78,8 +78,8 @@ EPIWORLD_TEST_CASE(
     epiworld_double effective_contact_rate =
         std::accumulate(contact_matrix.begin(), contact_matrix.end(), 0.0) / 3.0;
     epiworld_double R0_expected = 
-        effective_contact_rate * model("Prob. Transmission") /
-            (model("Prob. Recovery") + model("Hospitalization rate"));
+        effective_contact_rate * model("Transmission probability") /
+            (model("Recovery rate") + model("Hospitalization rate"));
 
     epiworld_double R0 = 0.0;
     for (size_t i = 0; i < R0s.size(); ++i)
@@ -90,25 +90,28 @@ EPIWORLD_TEST_CASE(
     printf_epiworld("R0 observed: %.2f (expected %.2f)\n", R0, R0_expected);
 
     // Transition to Infected
+    using MQ = epimodels::ModelSEIRQuarantine<>;
     #define mat(i, j) avg_transitions[j * model.get_n_states() + i]
+    // Detected or not, a hospitalization
+    #define hosp(i) (mat(i, MQ::HOSPITALIZED) + mat(i, MQ::DETECTED_HOSPITALIZED))
 
     std::cout << "Transition to infected: " <<
-        mat(1, 2) << " (expected: " << 
-        1.0/model("Avg. Incubation days") << ")" << std::endl;
+        mat(MQ::EXPOSED, MQ::INFECTED) << " (expected: " << 
+        1.0/model("Latent period") << ")" << std::endl;
 
     // Transition to recovered
     std::cout << "Transition to recovered: " <<
-        mat(2, 8) << " (expected: " << 
-        model("Prob. Recovery") << ")" << std::endl;
+        mat(MQ::INFECTED, MQ::RECOVERED) << " (expected: " << 
+        model("Recovery rate") << ")" << std::endl;
 
     // Transition to hospitalized
     std::cout << "Transition to hospitalized: " <<
-        mat(2, 7) << " (expected: " << 
+        hosp(MQ::INFECTED) << " (expected: " << 
         model("Hospitalization rate") << ")" << std::endl;
 
     // Transition from hospitalized
     std::cout << "Transition from hospitalized: " <<
-        mat(7, 8) << " (expected: " << 
+        mat(MQ::HOSPITALIZED, MQ::RECOVERED) << " (expected: " << 
         (1.0 / model("Hospitalization period")) << ")" << std::endl;
 
     // R0
@@ -116,25 +119,26 @@ EPIWORLD_TEST_CASE(
 
     // Transition to infected
     REQUIRE_FALSE(
-        moreless(mat(1, 2), 1.0/model("Avg. Incubation days"), 0.05)
+        moreless(mat(MQ::EXPOSED, MQ::INFECTED), 1.0/model("Latent period"), 0.05)
     );
 
     // Transition to recovered
     REQUIRE_FALSE(
-        moreless(mat(2, 8), model("Prob. Recovery"), 0.05)
+        moreless(mat(MQ::INFECTED, MQ::RECOVERED), model("Recovery rate"), 0.05)
     );
 
     // Transition to hospitalized
     REQUIRE_FALSE(
-        moreless(mat(2, 7), model("Hospitalization rate"), 0.05)
+        moreless(hosp(MQ::INFECTED), model("Hospitalization rate"), 0.05)
     );
 
     // Transition from hospitalized
     REQUIRE_FALSE(
-        moreless(mat(7, 8), 1.0 / model("Hospitalization period"), 0.05)
+        moreless(mat(MQ::HOSPITALIZED, MQ::RECOVERED), 1.0 / model("Hospitalization period"), 0.05)
     );
     
     #undef mat
+    #undef hosp
 
 
 }

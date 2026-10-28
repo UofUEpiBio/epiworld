@@ -12,14 +12,14 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
         0.0, 0.0, 40.0
     };
 
-    epimodels::ModelSIRMixing<> model(
+    epimodels::ModelSIR<> model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
         0.01,// epiworld_double prevalence,
-        1.0,// epiworld_double transmission_rate,
-        1.0/2.0,// epiworld_double recovery_rate,
-        contact_matrix
+        1.0,// epiworld_double transmission_prob,
+        1.0/2.0 // epiworld_double recovery_rate,
     );
+    add_entity_mixing(model, contact_matrix);
 
     // Copy the original virus
     Virus<> v1 = model.get_virus(0);

@@ -13,9 +13,10 @@ EPIWORLD_TEST_CASE(
     for (size_t i = 900u; i < n; ++i)
         set.push_back(i);
 
-    epimodels::ModelSIRCONN<> model(
-        "a virus", n, 0.0, 0.0, 0.0, 0.0
+    epimodels::ModelSIR<> model(
+        "a virus", n, 0.0, 0.0, 0.0
     );
+    add_random_mixing(model, 0.0);
     model.get_virus(0).set_distribution(
         distribute_virus_randomly<>(30, false, set)
     );

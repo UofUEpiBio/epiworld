@@ -89,9 +89,10 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         );
 
     // Trying SIRCONN ----------------------------------------------------------
-    epimodels::ModelSIRCONN<> model_3(
-        "a virus", 10000, 0.01, 2, .5, .3
+    epimodels::ModelSIR<> model_3(
+        "a virus", 10000, 0.01, .5, .3
         );
+    add_random_mixing(model_3, 2);
 
     model_3.initial_states({.5}).
         verbose_off().
@@ -106,9 +107,10 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         );
 
     // Trying SEIRCONN ---------------------------------------------------------
-    epimodels::ModelSEIRCONN<> model_4(
-        "a virus", 10000, 0.01, 2, .5, 7, .1
+    epimodels::ModelSEIR<> model_4(
+        "a virus", 10000, 0.01, .5, 7, .1
     );
+    add_random_mixing(model_4, 2);
 
     model_4.initial_states({.3, .5}).
         verbose_off().
@@ -175,9 +177,10 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         );
 
     // Trying SEIRDCONN --------------------------------------------------------
-    epimodels::ModelSEIRDCONN<> model_7(
-        "a virus", 10000, 0.1, 4, .9, 7, .3, .1
+    epimodels::ModelSEIRD<> model_7(
+        "a virus", 10000, 0.1, .9, 7, .3, .1
     );
+    add_random_mixing(model_7, 4);
 
     model_7.initial_states({0.5, .1, .1}).
         verbose_off().

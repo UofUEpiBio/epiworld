@@ -133,18 +133,8 @@
       ]
     },
     {
-      "title": "Connected Population Models",
-      "purpose": "Well-mixed population variants (SIRCONN, SEIRDCONN, etc.) without explicit networks",
-      "parent": "Pre-built Models",
-      "page_notes": [
-        {
-          "content": ""
-        }
-      ]
-    },
-    {
-      "title": "Mixing Models",
-      "purpose": "SEIRMixing and SIRMixing with contact matrices for heterogeneous populations",
+      "title": "Contact Layers",
+      "purpose": "Where a model's contacts come from: networks, mixing by group (contact matrices, households), random mixing with a contact rate",
       "parent": "Pre-built Models",
       "page_notes": [
         {

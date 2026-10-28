@@ -14,9 +14,7 @@ public:
     SamplerModel(size_t n, std::vector< double > cm)
     {
 
-        auto layer = layer::mixing(
-            "mixing", std::vector< int >({1}), std::vector< int >({0, 1})
-        );
+        auto layer = layer::mixing("mixing");
         layer->set_contact_matrix(cm);
         add_layer(std::move(layer));
 

@@ -6,7 +6,8 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Agent::mutate_virus()", "[mutation]") {
 
     // No transmission and no recovery: the seeded agents stay infected
-    epimodels::ModelSIRCONN<> model("a virus", 50, 0.1, 2.0, 0.0, 0.0);
+    epimodels::ModelSIR<> model("a virus", 50, 0.1, 0.0, 0.0);
+    add_random_mixing(model, 2.0);
     model.verbose_off();
 
     model.get_virus(0).set_mutation(

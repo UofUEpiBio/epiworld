@@ -23,7 +23,7 @@ In this example, the contact matrix specifies that agents in group $A$ interact 
 
 ## The Mixing Layer
 
-The mixing models (`ModelSIRMixing`, `ModelSEIRMixing`, `ModelSEIRMixingQuarantine`) draw their contacts from a *contact layer*, a `layer::Mixing` named `"mixing"` that the model owns as its layer 0. The layer holds the contact matrix, the grouping of the agents, and the pools of infectious agents that `sample()` draws from each step. The model has no contact-matrix methods of its own: everything goes through the layer, which `model.get_layer_as< layer::Mixing<> >("mixing")` returns.
+Mixing by group is a *contact layer*, a `layer::Mixing` added to any model (`model.add_layer(layer::mixing<>("mixing"))`). The layer holds the contact matrix, the grouping of the agents, and the pools of infectious agents that `sample()` draws from each step. The model has no contact-matrix methods of its own: everything goes through the layer, which `model.get_layer_as< layer::Mixing<> >("mixing")` returns. Every agent of a group takes part in the mixing (the contacts are spread over all of them), and the agents in the model's infectious states (`Model::set_infectious_states()`) transmit. With `set_contact_rate(param)`, the contacts are the model parameter `param` times the matrix, so a global event or a calibration can change them.
 
 By default the grouping comes from the entities: at the start of each run the layer assigns every agent to the group of its first entity (agents without entities take no part). From then on the layer works on its own table, so a grouping can also be given directly, without entities:
 
@@ -104,7 +104,7 @@ for (size_t i = 0; i < n_sampled; ++i) {
 
 ## See Also
 
-- [Core Simulation Models](core-simulation-models.md) — pre-built mixing models (`SIRMixing`, `SEIRMixing`, etc.) that use contact matrices and entity distribution.
+- [Core Simulation Models](core-simulation-models.md) — the models, and how to give them a mixing layer.
 - [Sampling Contacts](sampling-contacts.md) — the binomial sampling optimization for drawing contacts from the contact matrix.
 - [Virus and Tool Distribution Functions](virus-and-tool-distribution.md) — analogous distribution functions for assigning viruses and tools to agents.
 - [Library Architecture](library-architecture.md) — the `Entity` class and its role in the simulation framework.

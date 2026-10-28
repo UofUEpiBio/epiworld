@@ -10,24 +10,24 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
         0.0, 0.0, 40.0
     };
 
-    epimodels::ModelSEIRMixingQuarantine<> model(
+    epimodels::ModelSEIRQuarantine<> model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
-        1.0,   // epiworld_double transmission_rate,
-        2.0,   // epiworld_double avg_incubation_days,
-        1.0/2.0,// epiworld_double recovery_rate,
-        contact_matrix,
+        1.0,   // epiworld_double transmission_prob,
+        2.0,   // epiworld_double latent_period,
+        1.0/2.0, // epiworld_double recovery_rate,
         .1,     // epiworld_double hospitalization_rate,
         5,      // epiworld_double hospitalization_period,
-        2,      // epiworld_double days_undetected,
+        2,      // epiworld_double detection_delay,
         4,      // epiworld_fast_int quarantine_period,
         .9,     // epiworld_double quarantine_willingness,
         1.0,     // epiworld_double isolation_willingness,
         10,      // epiworld_fast_int isolation_period
-        1.0,    // epiworld_double contact_tracing_success_rate,
-        4       // epiworld_fast_uint contact_tracing_days_prior
+        1.0,    // epiworld_double contact_tracing_prob,
+        4       // epiworld_fast_uint contact_tracing_window
     );
+    add_entity_mixing(model, contact_matrix);
 
     // Copy the original virus
     Virus<> v1 = model.get_virus(0);
@@ -54,7 +54,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
 
     for (const Agent<> & a : model.get_agents())
     {
-        if (a.get_state() != epimodels::ModelSEIRMixingQuarantine<>::SUSCEPTIBLE)
+        if (a.get_state() != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
         {
             if (a.get_entity(0, model).get_id() == 0)
             {
@@ -98,7 +98,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
         {
             continue;
         }
-        else if (a.get_state() != epimodels::ModelSEIRMixingQuarantine<>::SUSCEPTIBLE)
+        else if (a.get_state() != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
         {
             if (a.get_entity(0, model).get_id() == 1)
             {
@@ -118,7 +118,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
 
     // Running and checking the results
-    model.set_param("Days undetected", -1.0); // No detection
+    model.set_param("Detection delay", -1.0); // No detection
     model.run(50, 123); 
     model.print();
 

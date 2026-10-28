@@ -5,16 +5,18 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("SIRCON", "[SIR connected]") {
 
     // Queuing doesn't matter and get results that are meaningful
-    epimodels::ModelSIRCONN<> model_0(
-        "a virus", 10000u, 0.01, 4.0, .5, 1.0/7.0
+    epimodels::ModelSIR<> model_0(
+        "a virus", 10000u, 0.01, .5, 1.0/7.0
         );
+    add_random_mixing(model_0, 4.0);
     
     model_0.verbose_off();
     model_0.run(100, 131);
 
-    epimodels::ModelSIRCONN<> model_1(
-        "a virus", 10000u, 0.01, 4.0, .5, 1.0/7.0
+    epimodels::ModelSIR<> model_1(
+        "a virus", 10000u, 0.01, .5, 1.0/7.0
         );
+    add_random_mixing(model_1, 4.0);
 
     model_1.queuing_off();
     model_1.verbose_off();

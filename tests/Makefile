@@ -127,7 +127,10 @@ $(NAME)_SOURCES := \
 	46c-layer-ownership.cpp \
 	46d-layer-network-many-exposures.cpp \
 	47a-layer-weights-targets.cpp \
-	48a-layer-mixing-within-groups.cpp
+	48a-layer-mixing-within-groups.cpp \
+	49a-mixing-models.cpp \
+	49b-contact-rate-param.cpp \
+	49c-seir-quarantine-layers.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
 # covered and would inflate the figure.
