@@ -48,17 +48,40 @@ inline void add_random_mixing(epiworld::Model<TSeq> & model, double contact_rate
 }
 
 /**
- * Adds a mixing layer named "mixing" with the contact matrix (column-major),
- * its groups taken from the model's entities (what ModelSIRMixing and
- * ModelSEIRMixing did).
+ * Groups from consecutive blocks of agents: agents `[bounds[g], bounds[g + 1])`
+ * are in group `g`.
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline void add_entity_mixing(
+inline std::vector< size_t > blocks(const std::vector< size_t > & bounds)
+{
+    std::vector< size_t > groups(bounds.back());
+    for (size_t g = 0u; g + 1u < bounds.size(); ++g)
+        for (size_t i = bounds[g]; i < bounds[g + 1u]; ++i)
+            groups[i] = g;
+    return groups;
+}
+
+/**
+ * Adds a mixing layer named "mixing" with the contact matrix (column-major) and
+ * the groups, fixed or a grouping (what ModelSIRMixing and ModelSEIRMixing did
+ * with entities).
+ */
+template<typename TSeq, typename G>
+inline void add_group_mixing(
     epiworld::Model<TSeq> & model,
-    std::vector< double > contact_matrix
+    std::vector< double > contact_matrix,
+    G groups
 )
 {
     auto mix = epiworld::layer::mixing<TSeq>("mixing");
+    if constexpr (std::is_same_v< G, std::vector< size_t > >)
+        mix->set_groups(
+            std::move(groups),
+            static_cast< size_t >(std::lround(
+                std::sqrt(static_cast< double >(contact_matrix.size()))
+            ))
+        );
+    else
+        mix->set_groups(std::move(groups));
     mix->set_contact_matrix(std::move(contact_matrix));
     model.add_layer(mix);
 }

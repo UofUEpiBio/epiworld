@@ -24,16 +24,10 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
         7.0,   // epiworld_double latent_period,
         1.0/7.0 // epiworld_double recovery_rate,
     );
-    add_entity_mixing(model_1, contact_matrix);
+    add_group_mixing(model_1, contact_matrix, blocks({0, n_agents/3, n_agents/3*2, n_agents}));
 
     // Creating three groups
-    Entity<> e1_1("Entity 1", dist_factory<>(0, n_agents/3));
-    Entity<> e2_1("Entity 2", dist_factory<>(n_agents/3, n_agents/3*2));
-    Entity<> e3_1("Entity 3", dist_factory<>(n_agents/3*2, n_agents));
 
-    model_1.add_entity(e1_1);
-    model_1.add_entity(e2_1);
-    model_1.add_entity(e3_1);
 
     model_1.get_virus(0).set_distribution(
         distribute_virus_randomly(n_infected, false)

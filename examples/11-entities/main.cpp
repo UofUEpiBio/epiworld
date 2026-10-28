@@ -3,25 +3,10 @@
 
 using namespace epiworld;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-EntityToAgentFun<TSeq> dist_factory(size_t from, size_t to) {
-    return [from, to](Entity<> & e, Model<> * m) -> void {
-
-            auto & agents = m->get_agents();
-            for (size_t i = from; i < to; ++i)
-            {
-                e.add_agent(&agents[i], *m);
-            }
-            
-            return;
-
-        };
-}
-
 int main() {
     constexpr epiworld_fast_uint n_agents = 5000u;
-    constexpr size_t entity1_end = n_agents * 3u / 10u;
-    constexpr size_t entity2_end = n_agents * 6u / 10u;
+    constexpr size_t group1_end = n_agents * 3u / 10u;
+    constexpr size_t group2_end = n_agents * 6u / 10u;
 
     std::vector< double > contact_matrix = {
         9.0, 1.0, 1.0,
@@ -38,20 +23,16 @@ int main() {
         1.0/7.0 // epiworld_double recovery_rate
     );
 
-    // Contacts by group, from a contact matrix; each agent's group is its
-    // entity (the three below)
+    // Three groups: the first 30% of the agents, the next 30%, and the rest
+    std::vector< size_t > groups(n_agents);
+    for (size_t i = 0u; i < n_agents; ++i)
+        groups[i] = (i < group1_end) ? 0u : ((i < group2_end) ? 1u : 2u);
+
+    // Contacts by group, from a contact matrix
     auto mixing = layer::mixing<>("mixing");
+    mixing->set_groups(groups, 3u);
     mixing->set_contact_matrix(contact_matrix);
     model.add_layer(mixing);
-
-    // Creating three groups
-    Entity<> e1("Entity 1", dist_factory<>(0, entity1_end));
-    Entity<> e2("Entity 2", dist_factory<>(entity1_end, entity2_end));
-    Entity<> e3("Entity 3", dist_factory<>(entity2_end, n_agents));
-
-    model.add_entity(e1);
-    model.add_entity(e2);
-    model.add_entity(e3);
 
     // Running and checking the results
     model.run(50, 123);

@@ -353,10 +353,9 @@ layer; a model pulls if any layer is directed.
 Entities are removed, not kept as a parallel concept: every use moves to a
 layer (entity-level tools and events, `Bubbles`, the measles school and mixing
 models, #311). Distribution helpers become layer-membership builders; the
-random ones keep today's behavior of redrawing at every `reset()`. Until then,
-`layer::Mixing` builds its grouping from the first entity when no grouping is
-given (the one shim left from Phase 1, because the random entity distributions
-the mixing tests use redraw at each reset and have no layer counterpart yet).
+random ones keep today's behavior of redrawing at every `reset()` (3d-1:
+grouping generators, `grouping::random()`). That removed the one shim left
+from Phase 1, `layer::Mixing` building its grouping from the first entity.
 The audit is now only a checklist of call sites, done at the start of the
 removal.
 
@@ -892,7 +891,29 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
     instead of guessing. Models that read it turn tracing on at reset, as
     `ModelSEIRQuarantine` does for the logs.
 - **3d. Entities removed, measles models and the example model on layers**
-  (the acceptance tests of D11).
+  (the acceptance tests of D11), in three PRs (settled 2026-10-28):
+  - **3d-1. Groupings** (as built). `layer::Mixing::set_groups()` takes a
+    vector (fixed) or a `Grouping` generator drawn at every reset, as a
+    network takes a `graph::` generator; `grouping::random(sizes,
+    as_proportion)` draws what the random entity distribution
+    (`distribute_entity_randomly(..., to_unassigned = true)`, epiworldR's
+    `entity()` default) drew, group by group from the agents left -- the same
+    groups and the same random stream for a seed (checked against entities
+    over 5 seeds, counts and proportions). The entity fallback of
+    `layer::Mixing` is gone: a mixing layer needs `set_groups()`. Moves
+    between runs on a drawn grouping throw (they would be lost).
+    `groupmates_of()` windows start on day 1.
+  - **3d-2. Measles models read their groups from a layer** and keep their
+    own samplers (with replacement, the rash pool at rate `r`), so their
+    runs stay draw for draw; their contacts go to the layer's log, and the
+    PEP intervention reads the layer logs. Moving them to the generic
+    sampler waits for Phase 4 (participation covers the rash reduction) and
+    Phase 6 (the rule switch changes results anyway). The risk-quarantine
+    model's "high risk" (same group as the case) reads the layer's
+    `members_of()`.
+  - **3d-3. Entities removed** (class, agent memberships, the entity tool,
+    virus and sampling helpers), with the model's own contact tracer;
+    `Bubbles` complete ties on a within-group layer; the example model.
 
 The list below is the whole of Phase 3.
 
@@ -1408,12 +1429,13 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-28).
 | Phase 3c-1 (layer logs) | #325 merged (+ #329 merged: `ContactTracing::get_n_agents()`) | #220 merged | #36 merged | #20 merged (re-vendor only) | #67 (re-vendor only, with the consolidation) |
 | `master` -> `v1-layers` | #328 merged (#327, the `ModelSEIR` recovery fix) | | | | |
 | Model consolidation | #331 merged (plan: #326; wording: #332) | #222 merged | #37 merged | #21 merged | #67 (re-vendor only) |
-| Phase 3c-2 (group history) | #333 merged | #223 | #38 | #22 (re-vendor only) | after #223 (re-vendor only, on #67) |
-| Phase 3d | not started | | | | |
+| Phase 3c-2 (group history) | #333 merged | #223 merged | #38 merged | #22 merged (re-vendor only) | #67 (re-vendor only) |
+| Phase 3d-1 (groupings) | this PR | | | | |
+| Phase 3d-2, 3d-3 | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
 epiworldRShiny (Section 6): not started; one port after the registry.
 
-**Next** (as of the date above): merging the 3c-2 ports and the measles
-re-vendor, then 3d.
+**Next** (as of the date above): the 3d-1 ports (`set_groups()` with a
+grouping generator; `grouping::random()`), then 3d-2.

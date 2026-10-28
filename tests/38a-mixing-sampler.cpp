@@ -14,7 +14,9 @@ public:
     SamplerModel(size_t n, std::vector< double > cm)
     {
 
+        // Three groups of n / 3
         auto layer = layer::mixing("mixing");
+        layer->set_groups(blocks({0u, n / 3u, 2u * n / 3u, n}), 3u);
         layer->set_contact_matrix(cm);
         add_layer(std::move(layer));
 
@@ -71,17 +73,13 @@ EPIWORLD_TEST_CASE("Mixing sampler: group-specific transmission", "[mixing-sampl
     v.set_state(1, 1, 1);
     model.add_virus(v);
 
-    model.add_entity(Entity<>("G0", dist_factory<>(0, 100)));
-    model.add_entity(Entity<>("G1", dist_factory<>(100, 200)));
-    model.add_entity(Entity<>("G2", dist_factory<>(200, 300)));
-
     model.run(30, 331);
 
     size_t inf[3] = {0u, 0u, 0u};
     for (auto & a : model.get_agents())
     {
         if (a.get_state() == 1u)
-            inf[a.get_entity(0, model).get_id()]++;
+            inf[model.get_layer_as< layer::Mixing<> >(0u).get_group(a.get_id())]++;
     }
 
     // Infection travels 0 -> 0 and 0 -> 1, never into group 2

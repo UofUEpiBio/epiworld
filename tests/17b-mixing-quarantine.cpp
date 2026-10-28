@@ -30,7 +30,7 @@ EPIWORLD_TEST_CASE(
         1.0, // Contact tracing success rate
         4 // Contact tracing days prior
     );
-    add_entity_mixing(model, contact_matrix);
+    add_group_mixing(model, contact_matrix, blocks({0, n/3, n/3 * 2, n}));
 
     // Copy the original virus
     Virus<> v1 = model.get_virus(0);
@@ -40,13 +40,7 @@ EPIWORLD_TEST_CASE(
     model.add_virus(v1);
 
     // Creating three groups
-    Entity<> e1("Entity 1", dist_factory<>(0, n/3));
-    Entity<> e2("Entity 2", dist_factory<>(n/3, n/3 * 2));
-    Entity<> e3("Entity 3", dist_factory<>(n/3 * 2, n));
 
-    model.add_entity(e1);
-    model.add_entity(e2);
-    model.add_entity(e3);
 
     // Setting the distribution function of the initial cases
     model.get_virus(0).set_distribution(
