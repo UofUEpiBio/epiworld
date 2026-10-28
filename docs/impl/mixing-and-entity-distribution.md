@@ -25,13 +25,18 @@ In this example, the contact matrix specifies that agents in group $A$ interact 
 
 Mixing by group is a *contact layer*, a `layer::Mixing` added to any model (`model.add_layer(layer::mixing<>("mixing"))`). The layer holds the contact matrix, the grouping of the agents, and the pools of infectious agents that `sample()` draws from each step. The model has no contact-matrix methods of its own: everything goes through the layer, which `model.get_layer_as< layer::Mixing<> >("mixing")` returns. Every agent of a group takes part in the mixing (the contacts are spread over all of them), and the agents in the model's infectious states (`Model::set_infectious_states()`) transmit. With `set_contact_rate(param)`, the contacts are the model parameter `param` times the matrix, so a global event or a calibration can change them.
 
-By default the grouping comes from the entities: at the start of each run the layer assigns every agent to the group of its first entity (agents without entities take no part). From then on the layer works on its own table, so a grouping can also be given directly, without entities:
+The layer owns its grouping, set with `set_groups()` before the first run, either fixed or drawn at every reset by a generator (as a network layer takes a `graph::` generator), so each run and each replicate of `run_multiple()` gets its own draw:
 
 ```cpp
-// Group of each agent (layer::Mixing<>::NO_GROUP leaves one out), and the
-// number of groups
 auto & mixing = model.get_layer_as< layer::Mixing<> >("mixing");
+
+// Fixed: the group of each agent (layer::Mixing<>::NO_GROUP leaves one out),
+// and the number of groups
 mixing.set_groups(groups, 3u);
+
+// Or random groups of 2,000, 3,000 and 1,000 agents, drawn at every reset
+// (agents left over are in no group)
+mixing.set_groups(grouping::random<>({2000, 3000, 1000}));
 ```
 
 Whether an edit is permanent depends only on when it is made. Edits made during a run (in a global event, say), such as `mixing.set_group(agent, g)`, `mixing.set_contact_matrix(cmat)` or `mixing.set_contact_prob(q)`, apply to that run only: they set the layer's dirty flag, and the next run starts from the baseline again. A move made during a step takes effect at the end of the step, when the pools are rebuilt, so every agent of that step samples from the grouping the step started with. The same calls made between runs set the baseline, so a calibration (ABC, LFMCMC) can reuse one model. `set_groups()` replaces the whole grouping and can only be called between runs.
@@ -42,7 +47,7 @@ A contact matrix suits a few groups that meet each other. For many small groups 
 
 ```cpp
 // Households (group of agent i: i / 10) where everyone meets everyone daily
-auto households = layer::mixing<>("households", {infected}, {s, infected, r});
+auto households = layer::mixing<>("households");
 households->set_groups(groups, n_households);
 households->set_contact_prob(1.0);   // or one probability per household
 model.add_layer(households);

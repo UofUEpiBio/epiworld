@@ -48,19 +48,12 @@ EPIWORLD_TEST_CASE(
         7.0,               // latent_period
         1.0 / 7.0 // recovery_rate
     );
-    add_entity_mixing(model, contact_matrix);
 
-    // Create groups
-    int from = 0;
+    // Create groups: one agent in group 0, 200 in each of the others
+    std::vector< size_t > bounds = {0u};
     for (size_t g = 0; g < ngroups; ++g)
-    {
-        int size = (g == 0) ? 1 : 200;
-        int to = from + size;
-        model.add_entity(
-            Entity<>("Group " + std::to_string(g), dist_factory<>(from, to))
-        );
-        from = to;
-    }
+        bounds.push_back(bounds.back() + ((g == 0) ? 1u : 200u));
+    add_group_mixing(model, contact_matrix, blocks(bounds));
 
     // Override the virus distribution to place exactly 2 infected agents:
     // Agent 0 in group 0 (high contact rate) and agent 1 in group 1

@@ -18,7 +18,9 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         1.0,   // epiworld_double latent_period,
         1.0/2.0 // epiworld_double recovery_rate,
     );
-    add_entity_mixing(model, contact_matrix);
+    // Three groups
+    add_group_mixing(model, contact_matrix, blocks({0u, 3000u, 6000u, 10000u}));
+    auto & mixing = model.get_layer_as< layer::Mixing<> >("mixing");
 
     // Copy the original virus
     Virus<> v1 = model.get_virus(0);
@@ -27,14 +29,6 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     model.add_virus(v1);
 
-    // Creating three groups
-    Entity<> e1("Entity 1", dist_factory<>(0, 3000));
-    Entity<> e2("Entity 2", dist_factory<>(3000, 6000));
-    Entity<> e3("Entity 3", dist_factory<>(6000, 10000));
-
-    model.add_entity(e1);
-    model.add_entity(e2);
-    model.add_entity(e3);
 
     // Running and checking the results
     model.run(50, 123);
@@ -48,7 +42,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     {
         if (static_cast<int>(a.get_state()) != model.state_of("Susceptible"))
         {
-            if (a.get_entity(0, model).get_id() == 0)
+            if (mixing.get_group(a.get_id()) == 0)
             {
                 n_right++;
                 continue;
@@ -67,7 +61,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     contact_matrix[6] = 40.0;
     contact_matrix[4] = 20.0;
     contact_matrix[1] = 20.0;
-    model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
+    mixing.set_contact_matrix(contact_matrix);
 
     // Running and checking the results
     model.run(50, 123);
@@ -86,7 +80,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         }
         else if (static_cast<int>(a.get_state()) != model.state_of("Susceptible"))
         {
-            if (a.get_entity(0, model).get_id() == 1)
+            if (mixing.get_group(a.get_id()) == 1)
             {
                 n_right++;
                 continue;
@@ -102,7 +96,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     // Rerunning with plain mixing
     std::fill(contact_matrix.begin(), contact_matrix.end(), 40.0/3.0);
-    model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
+    mixing.set_contact_matrix(contact_matrix);
 
     // Running and checking the results
     model.run(50, 123);
@@ -118,51 +112,19 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     REQUIRE_THAT(totals, Catch::Equals(expected_totals));
 
-    // If entities don't have a dist function, then it should be
-    // OK
-    e1.set_distribution(distribute_entity_randomly<>(2000, false, true));
-    e2.set_distribution(distribute_entity_randomly<>(2000, false, true));
-    e3.set_distribution(distribute_entity_randomly<>(2000, false, true));
-
-    model.rm_entity(0);
-    model.rm_entity(1);
-    model.rm_entity(2);
-
-    model.add_entity(e1);
-    model.add_entity(e2);
-    model.add_entity(e3);
-
-    // Running and checking the results
+    // Random groups of 2000, drawn at every reset: 6000 agents in a group,
+    // 2000 in each, and the rest in none
+    mixing.set_groups(grouping::random<>({2000.0, 2000.0, 2000.0}));
     model.run(50, 123);
 
-    auto agents1 = model.get_entity(0).get_agents();
-    auto agents2 = model.get_entity(1).get_agents();
-    auto agents3 = model.get_entity(2).get_agents();
-
-    std::vector< int > counts(model.size(), 0);
-    for (size_t a_id : agents1)
-        counts[a_id]++;
-
-    for (size_t a_id : agents2)
-        counts[a_id]++;
-
-    for (size_t a_id : agents3)
-        counts[a_id]++;
-
-    double n0 = 0, n1 = 0, n2 = 0, n3 = 0;
-    for (const auto & c: counts)
+    std::vector< size_t > sizes(4u, 0u);
+    for (size_t i = 0u; i < model.size(); ++i)
     {
-        if (c == 0)
-            n0++;
-        else if (c == 1)
-            n1++;
-        else if (c == 2)
-            n2++;
-        else if (c == 3)
-            n3++;
+        const size_t g = mixing.get_group(i);
+        ++sizes[(g == layer::Mixing<>::NO_GROUP) ? 3u : g];
     }
 
-    REQUIRE_FALSE(!(n0 == 4000 && n1 == 6000 && n2 == 0 && n3 == 0));
+    REQUIRE(sizes == std::vector< size_t >({2000u, 2000u, 2000u, 4000u}));
 
 
 

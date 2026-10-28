@@ -1,3 +1,3 @@
-# Entities
+# Groups
 
-Illustrates how to create structured populations using entities (e.g., groups, households) with contact matrices.
+Illustrates a structured population: agents in three groups that mix through a contact matrix (a `layer::Mixing` layer).

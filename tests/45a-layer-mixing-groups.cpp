@@ -2,9 +2,8 @@
 
 using namespace epiworld;
 
-// A mixing layer groups agents by its own table, not by entities. Here the model
-// has no entities at all: the layer is given a grouping in which an agent's
-// group is its id modulo 3, and some agents are left out of the layer. With
+// A mixing layer groups agents by its own table: here an agent's group is its
+// id modulo 3, and some agents are left out of the layer. With
 // contacts only within groups and a fully transmissible virus, the infection
 // that starts in agent 0 must fill group 0 and nothing else. A group edit made
 // during a step is in force for the next step's contacts.
@@ -21,7 +20,6 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     };
 
     epimodels::ModelSIR<> model("Flu", n, 0.0, 1.0, 0.01);
-    add_entity_mixing(model, cm);
 
     Virus<> v = model.get_virus(0);
     model.rm_virus(0);
@@ -34,8 +32,8 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     for (size_t i = 0u; i < n; ++i)
         groups[i] = (i >= 270u) ? no_group : (i % 3u);
 
+    add_group_mixing(model, cm, groups);
     auto & mixing = model.get_layer_as< layer::Mixing<> >("mixing");
-    mixing.set_groups(groups, 3u);
 
     model.verbose_off();
     model.run(20, 1912);
@@ -76,12 +74,9 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     // The only infectious agent leaves the layer on day 1, when the matrix
     // also opens: from day 2 on there is no one to be infected by
     epimodels::ModelSIR<> solo("Flu", 100u, 0.0, 1.0, 0.0);
-    add_entity_mixing(solo, {0.0});
+    add_group_mixing(solo, {0.0}, std::vector< size_t >(100u, 0u));
     solo.rm_virus(0);
     solo.add_virus(v);
-    solo.get_layer_as< layer::Mixing<> >("mixing").set_groups(
-        std::vector< size_t >(100u, 0u), 1u
-    );
     solo.add_globalevent(
         [no_group](Model<> * m) -> void {
             auto & layer = m->get_layer_as< layer::Mixing<> >("mixing");
@@ -98,5 +93,40 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
         if (a.get_state() != epimodels::ModelSIR<>::SUSCEPTIBLE)
             ++reached_solo;
     REQUIRE(reached_solo == 1u);
+
+    // A grouping drawn at every reset: groups of 100, 100 and 50, the rest in
+    // none; each seed its own draw, the same seed the same draw
+    epimodels::ModelSIR<> drawn("Flu", n, 0.0, 1.0, 0.01);
+    drawn.verbose_off();
+    add_group_mixing(drawn, cm, grouping::random<>({100.0, 100.0, 50.0}));
+    auto & dl = drawn.get_layer_as< layer::Mixing<> >("mixing");
+    auto drawn_groups = [&]() -> std::vector< size_t > {
+        std::vector< size_t > g(n);
+        for (size_t i = 0u; i < n; ++i)
+            g[i] = dl.get_group(i);
+        return g;
+    };
+
+    drawn.run(1, 1);
+    const auto g1 = drawn_groups();
+    drawn.run(1, 2);
+    const auto g2 = drawn_groups();
+    drawn.run(1, 1);
+    REQUIRE(g1 == drawn_groups());
+    REQUIRE(g1 != g2);
+    REQUIRE(std::count(g1.begin(), g1.end(), 0u) == 100);
+    REQUIRE(std::count(g1.begin(), g1.end(), 2u) == 50);
+    REQUIRE(std::count(g1.begin(), g1.end(), no_group) == 50);
+
+    // A move between runs would be lost at the next draw: an error
+    REQUIRE_THROWS(dl.set_group(0u, 1u));
+
+    // A mixing layer needs its groups
+    epimodels::ModelSIR<> ungrouped("Flu", n, 0.0, 1.0, 0.01);
+    ungrouped.verbose_off();
+    auto bare = layer::mixing<>("mixing");
+    bare->set_contact_matrix({1.0});
+    ungrouped.add_layer(bare);
+    REQUIRE_THROWS(ungrouped.run(1, 1));
 
 }

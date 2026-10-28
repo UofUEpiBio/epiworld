@@ -82,8 +82,11 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
     REQUIRE(mates(*hh, 0u, 1, 8) == home);
     REQUIRE(mates(*hh, 0u, 4, 8) == since4);
 
-    // Days after today are not known yet
+    // Days after today are not known yet...
     REQUIRE(mates(*hh, 0u, 1, 100) == mates(*hh, 0u, 1, 8));
+
+    // ...and days before day 1 are left out (contacts start then)
+    REQUIRE(mates(*hh, 0u, 0, 8) == mates(*hh, 0u, 1, 8));
 
     // Moves of one agent in one step count once (review of #333): agent 1
     // leaves agent 0 on day 3 after three moves

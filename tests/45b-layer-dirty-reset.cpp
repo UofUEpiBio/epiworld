@@ -15,15 +15,13 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
     const std::vector< double > closed = {0.0, 0.0, 0.0, 0.0};
 
     epimodels::ModelSIR<> model("Flu", n, 0.0, 0.5, 0.1);
-    add_entity_mixing(model, cm);
+    add_group_mixing(model, cm, blocks({0u, 300u, 600u}));
 
     Virus<> v = model.get_virus(0);
     model.rm_virus(0);
     v.set_distribution(dist_virus<>(0));
     model.add_virus(v);
 
-    model.add_entity(Entity<>("G1", dist_factory<>(0, 300)));
-    model.add_entity(Entity<>("G2", dist_factory<>(300, 600)));
     model.verbose_off();
 
     auto counts = [&model]() -> std::vector< int > {

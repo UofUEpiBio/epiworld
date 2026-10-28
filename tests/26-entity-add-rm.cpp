@@ -27,7 +27,7 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
         2.0,            // latent_period
         0.3 // recovery_rate
     );
-    add_entity_mixing(model, contact_matrix);
+    add_group_mixing(model, contact_matrix, blocks({0u, 50u, 100u}));
 
     model.seed(12345);
     model.verbose_off();
@@ -195,7 +195,7 @@ EPIWORLD_TEST_CASE("Entity add/rm operations", "[entity][add_entity][rm_entity]"
             2.0,
             0.3
         );
-        add_entity_mixing(m, contact_matrix);
+        add_group_mixing(m, contact_matrix, blocks({0u, 50u, 100u}));
         m.seed(12345);
         m.verbose_off();
 

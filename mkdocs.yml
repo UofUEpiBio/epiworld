@@ -75,7 +75,7 @@ nav:
     - SIR with OpenMP (Callbacks): examples/06b-sir-omp.md
     - Surveillance Model: examples/07-surveillance.md
     - Likelihood-Free MCMC: examples/10-likelihood-free-mcmc.md
-    - Entities: examples/11-entities.md
+    - Groups: examples/11-entities.md
     - Generation Interval: examples/13-genint.md
     - Community and Hospital: examples/14-community-hosp.md
     - SEIRD Transitions: examples/15-seird-transitions.md
