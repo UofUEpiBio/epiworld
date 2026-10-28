@@ -449,6 +449,14 @@ capacity. Open:
   `ModelSEIRNetworkQuarantine` traces from the log, so for networks the log
   stays the tool; the sampled-contact log stays opt-in for any layer
   (point 9).
+  - *Log or history on a traced within-group layer (open, for 3d).* In 3c-2,
+    `enable_tracing()` turns on both. Leaning (2026-10-28, favoring speed):
+    a traced within-group layer keeps the history only, and its consumers
+    use `groupmates_of()`. The log writes in the sampling loop at every
+    contact; the history writes only at moves and absences. The cost is the
+    meaning with `q < 1` ("could have met", not "met"), which changes
+    `ModelSEIRQuarantine` runs with household layers. Measure the log's cost
+    in 3d before switching.
 - **Meaning of a contact.** The log holds sampled contacts with infectious
   agents. When the combination rule moves to independent exposures (D1,
   Phase 6) the recorder hooks into the individual exposure events so the meaning
@@ -856,17 +864,20 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
     (before, one log was shared). The measles models do not sample from
     layers until 3d, so they keep the model's log (`contact_tracing_on()`)
     and the PEP intervention reads it; 3d removes it with them.
-  - **3c-2. Group history** (as built). A within-group `Mixing` layer keeps,
-    for the run, one list of changes `(from day, agent, group, present)`,
-    linked per agent and per group left: a move is recorded when `update()`
-    applies it, and an absence when the agent enters or leaves one of the
-    model's excluded states (`set_excluded_states()`; Phase 4 adds
-    isolation), both from the next day. `groupmates_of(agent, d1, d2)`
-    returns each groupmate with the last day and the number of days they
-    shared a group, both present (days after today are left out). Matrix
-    layers keep no history (`groupmates_of()` throws). Agents that never move
-    or leave add nothing to the list; the per-agent index is one integer per
-    agent.
+  - **3c-2. Group history** (as built). A within-group `Mixing` layer with
+    tracing on (`enable_tracing()`, as for the logs) keeps, for the run, the
+    spells `(from day, group, present)` of each agent, contiguous per agent,
+    and the departures from each group: a move is
+    recorded when `update()` applies it, and an absence when the agent enters
+    or leaves one of the model's excluded states (`set_excluded_states()`;
+    Phase 4 adds isolation), both from the next day.
+    `groupmates_of(agent, d1, d2, out)` fills `out` (reused across calls, as
+    `sample()` does) with each groupmate once, with the last day and the
+    number of days they shared a group, both present (days after today are
+    left out). Agents that never change group or presence
+    add nothing; untraced and matrix layers keep no history
+    (`groupmates_of()` throws), and editing the grouping between runs drops
+    it.
 - **3d. Entities removed, measles models and the example model on layers**
   (the acceptance tests of D11).
 

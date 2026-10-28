@@ -83,17 +83,18 @@ std::shared_ptr< Mixing<TSeq> > mixing(std::string name);
  * calibration can reuse one model). `set_groups()` sets the baseline grouping
  * and can only be called between runs.
  *
- * ### History (within groups)
+ * ### History (traced within-group layers)
  *
- * A within-group layer keeps, for the current run, the history of who was in
- * which group and who was absent (in an excluded state), day by day:
- * `groupmates_of(agent, d1, d2)` lists who shared a group with `agent`, both
- * present, between days `d1` and `d2`, with the days they shared. With
- * `q = 1` that is exactly who the agent met; with `q < 1`, who it could have
- * met (contact tracing by membership: "notify the household"). A move or an
- * absence is recorded when it takes effect (the end of the step, so the next
- * day); leaving the layer (`NO_GROUP`) is a move like any other. Agents that
- * never move or leave add nothing to the history.
+ * A within-group layer with tracing on (`enable_tracing()`) keeps, for the
+ * current run, the history of who was in which group and who was absent (in
+ * an excluded state), day by day: `groupmates_of(agent, d1, d2, out)` lists
+ * who shared a group with `agent`, both present, between days `d1` and `d2`, with
+ * the days they shared. With `q = 1` that is exactly who the agent met; with
+ * `q < 1`, who it could have met (contact tracing by membership: "notify the
+ * household"). A move or an absence is recorded when it takes effect (the end
+ * of the step, so the next day); leaving the layer (`NO_GROUP`) is a move like
+ * any other. Agents that never change group or presence add nothing to the
+ * history. Editing the grouping between runs drops it.
  *
  * @tparam TSeq Type of sequence.
  * @ingroup contact_layers
@@ -129,32 +130,40 @@ private:
     /// Moves made during a step (agent, group), applied by `update()`
     std::vector< std::pair< size_t, size_t > > moves;
 
-    // History of the run (within groups only, see groupmates_of())
-    static constexpr size_t NO_INDEX = std::numeric_limits< size_t >::max();
+    // History of the run (traced within-group layers, see groupmates_of())
 
-    /// From day `from` on, `agent` is in `group`, present or absent.
-    struct Change {
+    /// From day `from` on, the agent is in `group`, present or absent.
+    struct Spell {
         int from;
-        size_t agent;
-        size_t group;
         bool present;
-        size_t prev_agent; ///< The agent's previous change, or NO_INDEX
-        size_t prev_left;  ///< The previous departure from the group it left
+        size_t group;
     };
 
-    std::vector< Change > changes;
-    std::vector< size_t > last_change; ///< Per agent (empty: no history)
-    std::vector< size_t > last_left;   ///< Per group, the last departure
-    std::vector< bool > absent;        ///< Per agent, in an excluded state
-    std::vector< size_t > absent_ids;  ///< The agents flagged in `absent`
+    /// An agent left a group on day `day` (its first day elsewhere).
+    struct Departure {
+        int day;
+        size_t agent;
+    };
+
+    bool history = false; ///< Kept this run, and still valid
+    /// Per agent, its spells in order (sized only with a history)
+    std::vector< std::vector< Spell > > spells_of;
+    /// Per group, the departures in order (sized only with a history)
+    std::vector< std::vector< Departure > > departures;
+    std::vector< bool > absent;       ///< Per agent, in an excluded state
+    std::vector< size_t > absent_ids; ///< The agents flagged in `absent`
 
     /// Records the agent's group and presence from tomorrow on.
     void record(size_t agent_id, size_t old_group, int today);
+    void clear_history();
 
     /// Calls `f(group, first, last)` for each span of days in `[a, b]` that
     /// the agent spent in a group, present.
     template<typename F>
     void spells(size_t agent_id, int a, int b, F f) const;
+
+    /// The day the agent last left group `g` (it is no longer there).
+    int last_departure(size_t agent_id, size_t g) const;
 
     std::vector< size_t > pool;      ///< Infectious agents, partitioned by group
     std::vector< size_t > offsets;   ///< Where each group starts in `pool`
@@ -299,12 +308,19 @@ public:
 
     /**
      * @brief Who shared a group with `agent`, both present, between days `d1`
-     * and `d2` (within-group layers; see the class description).
-     * @details Days after today are not known yet and are left out. The
-     * history is that of the current (or last) run.
-     * @return The groupmates, in ascending id order.
+     * and `d2` (traced within-group layers; see the class description).
+     * @details One entry per groupmate, however many times either moved or
+     * was absent in between. Days after today are not known yet and are left
+     * out. The history is that of the current (or last) run.
+     * @param out Replaced by the groupmates, in ascending id order (a vector
+     * reused across calls allocates nothing once it has grown).
      */
-    std::vector< Groupmate > groupmates_of(size_t agent_id, int d1, int d2) const;
+    void groupmates_of(
+        size_t agent_id,
+        int d1,
+        int d2,
+        std::vector< Groupmate > & out
+    ) const;
 
     layer::Mixing<TSeq> * as_mixing() override { return this; }
 
@@ -379,6 +395,7 @@ inline void Mixing<TSeq>::set_groups(
     explicit_groups = true;
     layout_stale    = true;
     rebuild_members();
+    clear_history();
 
 }
 
@@ -427,6 +444,7 @@ inline void Mixing<TSeq>::set_group(size_t agent_id, size_t group)
 
     groups_baseline[agent_id] = group;
     move(agent_id, group, false);
+    clear_history();
 
 }
 
@@ -667,19 +685,13 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
     rebuild_members();
     moves.clear();
 
-    changes.clear();
-    absent_ids.clear();
-    if (within_groups())
+    clear_history();
+    history = within_groups() && this->is_tracing();
+    if (history)
     {
-        last_change.assign(n, NO_INDEX);
-        last_left.assign(n_groups, NO_INDEX);
+        spells_of.resize(n);
+        departures.resize(n_groups);
         absent.assign(n, false);
-    }
-    else
-    {
-        last_change.clear();
-        last_left.clear();
-        absent.clear();
     }
 
     pool.assign(n, 0u);
@@ -710,8 +722,6 @@ inline void Mixing<TSeq>::update(Model<TSeq> & model)
         layout_stale = true;
         rebuild_members();
     }
-
-    const bool history = !last_change.empty();
 
     // Moves made during the step
     for (const auto & [agent_id, group] : moves)
@@ -820,22 +830,24 @@ template<typename TSeq>
 inline void Mixing<TSeq>::record(size_t agent_id, size_t old_group, int today)
 {
 
-    Change c{
-        today + 1, agent_id, groups[agent_id], !absent[agent_id],
-        last_change[agent_id], NO_INDEX
-    };
+    const size_t g = groups[agent_id];
+    spells_of[agent_id].push_back({today + 1, !absent[agent_id], g});
 
-    last_change[agent_id] = changes.size();
+    // Absences do not change the members
+    if ((old_group != NO_GROUP) && (old_group != g))
+        departures[old_group].push_back({today + 1, agent_id});
 
-    // A departure (absences do not change the members)
-    if ((old_group != NO_GROUP) && (old_group != c.group))
-    {
-        c.prev_left = last_left[old_group];
-        last_left[old_group] = changes.size();
-    }
+}
 
-    changes.push_back(c);
-
+template<typename TSeq>
+inline void Mixing<TSeq>::clear_history()
+{
+    history = false;
+    // Freed, not just emptied: an untraced layer holds nothing
+    std::vector< std::vector< Spell > >().swap(spells_of);
+    std::vector< std::vector< Departure > >().swap(departures);
+    std::vector< bool >().swap(absent);
+    absent_ids.clear();
 }
 
 template<typename TSeq>
@@ -843,20 +855,16 @@ template<typename F>
 inline void Mixing<TSeq>::spells(size_t agent_id, int a, int b, F f) const
 {
 
-    // Walking back from the last change, each one holding until the next
+    // Walking back from the last spell, each one holding until the next
     int end = b + 1;
-    for (
-        size_t i = last_change[agent_id];
-        (i != NO_INDEX) && (end > a);
-        i = changes[i].prev_agent
-    )
+    const auto & sp = spells_of[agent_id];
+    for (auto s = sp.rbegin(); (s != sp.rend()) && (end > a); ++s)
     {
-        const auto & c = changes[i];
-        const int first = std::max(c.from, a);
-        if (c.present && (c.group != NO_GROUP) && (first < end))
-            f(c.group, first, end - 1);
+        const int first = std::max(s->from, a);
+        if (s->present && (s->group != NO_GROUP) && (first < end))
+            f(s->group, first, end - 1);
 
-        end = std::min(end, c.from);
+        end = std::min(end, s->from);
     }
 
     // Before its first change, the agent is where the run started
@@ -866,63 +874,83 @@ inline void Mixing<TSeq>::spells(size_t agent_id, int a, int b, F f) const
 }
 
 template<typename TSeq>
-inline std::vector< typename Mixing<TSeq>::Groupmate >
-Mixing<TSeq>::groupmates_of(size_t agent_id, int d1, int d2) const
+inline int Mixing<TSeq>::last_departure(size_t agent_id, size_t g) const
+{
+
+    // The spell after its last one in g (none: it left its starting group)
+    const auto & sp = spells_of[agent_id];
+    for (size_t k = sp.size() - 1u; k > 0u; --k)
+        if (sp[k - 1u].group == g)
+            return sp[k].from;
+
+    return sp[0u].from;
+
+}
+
+template<typename TSeq>
+inline void Mixing<TSeq>::groupmates_of(
+    size_t agent_id,
+    int d1,
+    int d2,
+    std::vector< Groupmate > & out
+) const
 {
 
     check_agent(agent_id);
-    if (last_change.empty())
+    if (!history)
         throw std::logic_error(
-            "Mixing layer '" + this->get_name() + "': groupmates_of() needs a "
-            "layer with contact probabilities (within groups), after reset()."
+            "Mixing layer '" + this->get_name() + "': groupmates_of() needs "
+            "a traced layer (enable_tracing()) with contact probabilities "
+            "(within groups), after a run that no edit to the grouping "
+            "has followed."
         );
 
     d1 = std::max(d1, 0);
     d2 = std::min(d2, this->model->today());
 
-    std::map< size_t, Groupmate > out;
-    std::vector< size_t > candidates;
+    // One entry per shared span, merged per groupmate below
+    out.clear();
     spells(agent_id, d1, d2, [&](size_t g, int a, int b) {
 
-        // The members now and those who left after day a
-        candidates = members[g];
-        for (
-            size_t i = last_left[g];
-            (i != NO_INDEX) && (changes[i].from > a);
-            i = changes[i].prev_left
-        )
-            candidates.push_back(changes[i].agent);
-
-        std::sort(candidates.begin(), candidates.end());
-        candidates.erase(
-            std::unique(candidates.begin(), candidates.end()),
-            candidates.end()
-        );
-
-        for (size_t other : candidates)
-        {
-            if (other == agent_id)
-                continue;
-
+        auto shared = [&](size_t other) {
             spells(other, a, b, [&](size_t h, int first, int last) {
-                if (h != g)
-                    return;
-
-                auto & m = out.try_emplace(other, Groupmate{other, last, 0})
-                    .first->second;
-                m.last_day = std::max(m.last_day, last);
-                m.n_days += last - first + 1;
+                if (h == g)
+                    out.push_back({other, last, last - first + 1});
             });
-        }
+        };
+
+        // The members now
+        for (size_t other : members[g])
+            if (other != agent_id)
+                shared(other);
+
+        // Those who left after day a, each once: at its last departure
+        const auto & left = departures[g];
+        for (auto d = left.rbegin(); (d != left.rend()) && (d->day > a); ++d)
+            if (
+                (d->agent != agent_id) && (groups[d->agent] != g) &&
+                (last_departure(d->agent, g) == d->day)
+            )
+                shared(d->agent);
 
     });
 
-    std::vector< Groupmate > res;
-    res.reserve(out.size());
-    for (const auto & kv : out)
-        res.push_back(kv.second);
+    std::sort(out.begin(), out.end(), [](const auto & x, const auto & y) {
+        return x.agent < y.agent;
+    });
 
-    return res;
+    size_t k = 0u;
+    for (size_t i = 0u; i < out.size(); ++i)
+    {
+        if ((k > 0u) && (out[k - 1u].agent == out[i].agent))
+        {
+            out[k - 1u].last_day = std::max(out[k - 1u].last_day, out[i].last_day);
+            out[k - 1u].n_days  += out[i].n_days;
+        }
+        else
+            out[k++] = out[i];
+    }
+    out.resize(k);
 
 }
 

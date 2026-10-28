@@ -2,37 +2,45 @@
 
 using namespace epiworld;
 
-// A within-group mixing layer keeps the history of who was in which group,
-// and who was absent, and answers groupmates_of(agent, d1, d2). Moves made by
-// a global event on day d count from day d + 1, as do absences (agents in the
-// model's excluded states). In a quarantine model with households, the
-// history matches presence recomputed from the agents' states day by day, and
-// every contact in the layer's log is a groupmate that day.
+// A traced within-group mixing layer keeps the history of who was in which
+// group, and who was absent, and answers groupmates_of(agent, d1, d2, out).
+// Moves made by a global event on day d count from day d + 1, as do absences
+// (agents in the model's excluded states). In a quarantine model with
+// households, the history matches presence recomputed from the agents' states
+// day by day, and every contact in the layer's log is a groupmate that day.
+// Editing the grouping between runs drops the history.
 namespace {
 
 using Mates = std::map< size_t, std::pair< int, int > >; // last day, days
 
 Mates mates(const layer::Mixing<> & l, size_t agent, int d1, int d2)
 {
+    // One buffer for every query, as a tracing loop would keep
+    static std::vector< layer::Mixing<>::Groupmate > buffer;
+    l.groupmates_of(agent, d1, d2, buffer);
+
     Mates out;
-    for (const auto & m : l.groupmates_of(agent, d1, d2))
+    for (const auto & m : buffer)
         out[m.agent] = {m.last_day, m.n_days};
     return out;
 }
+
+std::vector< layer::Mixing<>::Groupmate > unused;
 
 }
 
 EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
 
     // -- moves ----------------------------------------------------------------
-    // Two households of three; agent 2 moves to the second on day 3, and
-    // agent 4 leaves the layer on day 5.
+    // Two households of three; agent 2 moves to the second on day 3 and
+    // back on day 6, and agent 4 leaves the layer on day 5.
     epimodels::ModelSIR<> sir("flu", 6u, 0.0, 0.5, 0.1);
     sir.verbose_off();
 
     auto hh = layer::mixing<>("households");
     hh->set_groups({0, 0, 0, 1, 1, 1}, 2u);
     hh->set_contact_prob(1.0);
+    hh->enable_tracing();
     sir.add_layer(hh);
 
     using L = layer::Mixing<>;
@@ -42,31 +50,47 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
     sir.add_globalevent([](Model<> * m) {
         m->get_layer_as< L >("households").set_group(4u, L::NO_GROUP);
     }, "leave", 5);
+    sir.add_globalevent([](Model<> * m) {
+        m->get_layer_as< L >("households").set_group(2u, 0u);
+    }, "back", 6);
 
     sir.run(8, 1);
 
+    // Agent 2: home on days 1-3 and 7-8, in the second household on 4-6
     const Mates moved = {
-        {0u, {3, 3}}, {1u, {3, 3}}, {3u, {8, 5}}, {4u, {5, 2}}, {5u, {8, 5}}
+        {0u, {8, 5}}, {1u, {8, 5}}, {3u, {6, 3}}, {4u, {5, 2}}, {5u, {6, 3}}
     };
     const Mates left = {{2u, {5, 2}}, {3u, {5, 5}}, {5u, {5, 5}}};
     const Mates window = {{3u, {6, 2}}, {4u, {5, 1}}, {5u, {6, 2}}};
-    const Mates stayed = {{1u, {8, 5}}};
+    const Mates home = {{1u, {8, 8}}, {2u, {8, 5}}};
+    const Mates since4 = {{1u, {8, 5}}, {2u, {8, 2}}};
 
     REQUIRE(mates(*hh, 2u, 1, 8) == moved);
     REQUIRE(mates(*hh, 4u, 1, 8) == left);
     REQUIRE(mates(*hh, 2u, 5, 6) == window);
-    REQUIRE(mates(*hh, 0u, 4, 8) == stayed);
+    REQUIRE(mates(*hh, 0u, 1, 8) == home);
+    REQUIRE(mates(*hh, 0u, 4, 8) == since4);
 
     // Days after today are not known yet
     REQUIRE(mates(*hh, 0u, 1, 100) == mates(*hh, 0u, 1, 8));
 
-    // Only within groups
+    // Agent 5 moves between runs: the last run's history is dropped
+    hh->set_group(5u, 0u);
+    REQUIRE_THROWS(hh->groupmates_of(0u, 1, 8, unused));
+
+    // Only traced layers within groups
+    hh->disable_tracing();
+    sir.run(2, 1);
+    REQUIRE_THROWS(hh->groupmates_of(0u, 0, 2, unused));
+    hh->enable_tracing();
+
     auto everyone = layer::mixing<>("everyone");
     everyone->set_groups(std::vector< size_t >(6u, 0u), 1u);
     everyone->set_contact_matrix({1.0});
+    everyone->enable_tracing();
     sir.add_layer(everyone);
     sir.run(2, 1);
-    REQUIRE_THROWS(everyone->groupmates_of(0u, 0, 2));
+    REQUIRE_THROWS(everyone->groupmates_of(0u, 0, 2, unused));
 
     // -- absences ---------------------------------------------------------------
     // Households of four in a quarantine model: the isolated, quarantined and
