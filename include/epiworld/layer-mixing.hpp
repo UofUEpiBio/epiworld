@@ -1230,16 +1230,16 @@ namespace grouping {
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 inline typename layer::Mixing<TSeq>::Grouping random(
-    std::vector< double > sizes,
+    std::vector< epiworld_double > sizes,
     bool as_proportion = false
 )
 {
 
-    for (double s : sizes)
-        if ((s < 0.0) || (as_proportion && (s > 1.0)))
+    for (epiworld_double s : sizes)
+        if (!std::isfinite(s) || (s < 0.0) || (as_proportion && (s > 1.0)))
             throw std::range_error(
-                "grouping::random(): sizes must be non-negative (proportions "
-                "at most 1); got " + std::to_string(s) + "."
+                "grouping::random(): sizes must be finite and non-negative "
+                "(proportions at most 1); got " + std::to_string(s) + "."
             );
 
     return {
@@ -1268,13 +1268,14 @@ inline typename layer::Mixing<TSeq>::Grouping random(
                     );
                 else
                 {
-                    n_draw = static_cast< size_t >(sizes[g]);
-                    if (n_draw > n)
+                    // Compared before the cast, which a huge size overflows
+                    if (sizes[g] >= static_cast< epiworld_double >(n + 1u))
                         throw std::range_error(
                             "grouping::random(): group " + std::to_string(g) +
-                            " takes " + std::to_string(n_draw) + " agents, "
+                            " takes " + std::to_string(sizes[g]) + " agents, "
                             "but only " + std::to_string(n) + " are left."
                         );
+                    n_draw = static_cast< size_t >(sizes[g]);
                 }
 
                 size_t n_left = n;
