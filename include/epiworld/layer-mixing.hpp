@@ -152,6 +152,8 @@ private:
     std::vector< std::vector< Departure > > departures;
     std::vector< bool > absent;       ///< Per agent, in an excluded state
     std::vector< size_t > absent_ids; ///< The agents flagged in `absent`
+    /// The step's movers and their group before it (scratch of `update()`)
+    std::vector< std::pair< size_t, size_t > > moved_from;
 
     /// Records the agent's group and presence from tomorrow on.
     void record(size_t agent_id, size_t old_group, int today);
@@ -311,7 +313,9 @@ public:
      * and `d2` (traced within-group layers; see the class description).
      * @details One entry per groupmate, however many times either moved or
      * was absent in between. Days after today are not known yet and are left
-     * out. The history is that of the current (or last) run.
+     * out. The history is that of the current (or last) run, and covers it
+     * whole: tracing turned on during a run starts it at the next one.
+     * @throws std::logic_error Without a history (see the class description).
      * @param out Replaced by the groupmates, in ascending id order (a vector
      * reused across calls allocates nothing once it has grown).
      */
@@ -723,15 +727,32 @@ inline void Mixing<TSeq>::update(Model<TSeq> & model)
         rebuild_members();
     }
 
-    // Moves made during the step
+    // Moves made during the step; the history keeps each agent's net change
+    // (several moves of one agent in a step are one, or none if it is back)
+    moved_from.clear();
     for (const auto & [agent_id, group] : moves)
     {
-        const size_t old = groups[agent_id];
+        if (history)
+            moved_from.emplace_back(agent_id, groups[agent_id]);
+
         move(agent_id, group, true);
-        if (history && (old != group))
-            record(agent_id, old, model.today());
     }
     moves.clear();
+
+    // The first entry of each agent has its group before the step
+    std::stable_sort(
+        moved_from.begin(), moved_from.end(),
+        [](const auto & x, const auto & y) { return x.first < y.first; }
+    );
+    for (size_t i = 0u; i < moved_from.size(); ++i)
+    {
+        const auto & [agent_id, old] = moved_from[i];
+        if ((i > 0u) && (moved_from[i - 1u].first == agent_id))
+            continue;
+
+        if (groups[agent_id] != old)
+            record(agent_id, old, model.today());
+    }
 
     if (layout_stale)
         rebuild_layout();
@@ -899,10 +920,14 @@ inline void Mixing<TSeq>::groupmates_of(
     check_agent(agent_id);
     if (!history)
         throw std::logic_error(
-            "Mixing layer '" + this->get_name() + "': groupmates_of() needs "
-            "a traced layer (enable_tracing()) with contact probabilities "
-            "(within groups), after a run that no edit to the grouping "
-            "has followed."
+            "Mixing layer '" + this->get_name() + "': " + (
+                (this->is_tracing() && within_groups()) ?
+                "no history. It covers whole runs: tracing was turned on, "
+                "or the grouping edited, after the last run started; the "
+                "next run keeps one." :
+                "groupmates_of() needs a traced layer (enable_tracing() "
+                "before the run) with contact probabilities (within groups)."
+            )
         );
 
     d1 = std::max(d1, 0);

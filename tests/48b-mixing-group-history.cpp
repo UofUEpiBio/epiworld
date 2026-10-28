@@ -54,9 +54,20 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
         m->get_layer_as< L >("households").set_group(2u, 0u);
     }, "back", 6);
 
+    // Agent 0 is moved four times on day 3 (as separate events could do),
+    // ending where it started: no move at all
+    sir.add_globalevent([](Model<> * m) {
+        auto & l = m->get_layer_as< L >("households");
+        l.set_group(0u, 1u);
+        l.set_group(0u, 0u);
+        l.set_group(0u, 1u);
+        l.set_group(0u, 0u);
+    }, "back and forth", 3);
+
     sir.run(8, 1);
 
-    // Agent 2: home on days 1-3 and 7-8, in the second household on 4-6
+    // Agent 2: home on days 1-3 and 7-8, in the second household on 4-6;
+    // agent 0 never left home
     const Mates moved = {
         {0u, {8, 5}}, {1u, {8, 5}}, {3u, {6, 3}}, {4u, {5, 2}}, {5u, {6, 3}}
     };
@@ -73,6 +84,26 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
 
     // Days after today are not known yet
     REQUIRE(mates(*hh, 0u, 1, 100) == mates(*hh, 0u, 1, 8));
+
+    // Moves of one agent in one step count once (review of #333): agent 1
+    // leaves agent 0 on day 3 after three moves
+    epimodels::ModelSIR<> trio("flu", 3u, 0.0, 0.5, 0.1);
+    trio.verbose_off();
+    auto th = layer::mixing<>("households");
+    th->set_groups({0, 0, 1}, 2u);
+    th->set_contact_prob(1.0);
+    th->enable_tracing();
+    trio.add_layer(th);
+    trio.add_globalevent([](Model<> * m) {
+        auto & l = m->get_layer_as< L >("households");
+        l.set_group(1u, 1u);
+        l.set_group(1u, 0u);
+        l.set_group(1u, 1u);
+    }, "moves", 3);
+    trio.run(5, 1);
+
+    const Mates once = {{1u, {3, 3}}};
+    REQUIRE(mates(*th, 0u, 1, 5) == once);
 
     // Agent 5 moves between runs: the last run's history is dropped
     hh->set_group(5u, 0u);

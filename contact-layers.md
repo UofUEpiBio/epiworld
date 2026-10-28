@@ -867,7 +867,7 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
   - **3c-2. Group history** (as built). A within-group `Mixing` layer with
     tracing on (`enable_tracing()`, as for the logs) keeps, for the run, the
     spells `(from day, group, present)` of each agent, contiguous per agent,
-    and the departures from each group: a move is
+    and the departures from each group: a step's net move is
     recorded when `update()` applies it, and an absence when the agent enters
     or leaves one of the model's excluded states (`set_excluded_states()`;
     Phase 4 adds isolation), both from the next day.
@@ -877,7 +877,10 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
     left out). Agents that never change group or presence
     add nothing; untraced and matrix layers keep no history
     (`groupmates_of()` throws), and editing the grouping between runs drops
-    it.
+    it. The history covers whole runs: tracing turned on during a run starts
+    it at the next one (the earlier moves are unknown), so a query throws
+    instead of guessing. Models that read it turn tracing on at reset, as
+    `ModelSEIRQuarantine` does for the logs.
 - **3d. Entities removed, measles models and the example model on layers**
   (the acceptance tests of D11).
 
