@@ -896,11 +896,12 @@ The list below is the whole of Phase 3.
   - a combined model attributes transmissions to the expected layers (a
     layer with weight 0, or one that excludes the virus, records none).
 
-### Model consolidation -- one model per disease (after the 3c-1 ports)
+### Model consolidation -- one model per compartmental structure (after the 3c-1 ports)
 
-Settled 2026-10-25. Contacts now come from layers, so a model is a disease
-(states, parameters, update rules) and its layers are where contacts come
-from. Models that differ only in where contacts come from go:
+Settled 2026-10-25. Contacts now come from layers, so a model's states,
+parameters and update rules describe the course of infection and its layers
+describe who meets whom. A model can still carry several viruses, which share
+its states. Models that differ only in where contacts come from go:
 
 | Removed | Replaced by |
 |---|---|
@@ -911,7 +912,8 @@ from. Models that differ only in where contacts come from go:
 About 2,500 of the 5,426 lines in `include/epiworld/models/`, plus their
 bindings in every wrapper. It also removes the `*CONN` models from the risk
 "Layers a model ignores" (Section 9). SIS, SISD, SIRLogit, SURV, DiffNet and
-the measles models stay: they differ in the disease, not only in the contacts.
+the measles models stay: they differ in their states and rules, not only in
+the contacts.
 
 **Rules (from the user, 2026-10-25).**
 
