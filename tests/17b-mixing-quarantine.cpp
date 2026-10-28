@@ -30,7 +30,10 @@ EPIWORLD_TEST_CASE(
         1.0, // Contact tracing success rate
         4 // Contact tracing days prior
     );
-    add_group_mixing(model, contact_matrix, blocks({0, n/3, n/3 * 2, n}));
+    const size_t third = size_t(n) / 3u;
+    add_group_mixing(
+        model, contact_matrix, blocks({0u, third, 2u * third, size_t(n)})
+    );
 
     // Copy the original virus
     Virus<> v1 = model.get_virus(0);

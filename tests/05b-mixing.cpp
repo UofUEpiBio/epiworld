@@ -24,7 +24,10 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
         7.0,   // epiworld_double latent_period,
         1.0/7.0 // epiworld_double recovery_rate,
     );
-    add_group_mixing(model_1, contact_matrix, blocks({0, n_agents/3, n_agents/3*2, n_agents}));
+    const size_t third = size_t(n_agents) / 3u;
+    add_group_mixing(
+        model_1, contact_matrix, blocks({0u, third, 2u * third, size_t(n_agents)})
+    );
 
     // Creating three groups
 
