@@ -856,8 +856,17 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
     (before, one log was shared). The measles models do not sample from
     layers until 3d, so they keep the model's log (`contact_tracing_on()`)
     and the PEP intervention reads it; 3d removes it with them.
-  - **3c-2. Group history.** Within-group layers keep the history of moves and
-    absences and answer `groupmates_of(agent, d1, d2)` (D11).
+  - **3c-2. Group history** (as built). A within-group `Mixing` layer keeps,
+    for the run, one list of changes `(from day, agent, group, present)`,
+    linked per agent and per group left: a move is recorded when `update()`
+    applies it, and an absence when the agent enters or leaves one of the
+    model's excluded states (`set_excluded_states()`; Phase 4 adds
+    isolation), both from the next day. `groupmates_of(agent, d1, d2)`
+    returns each groupmate with the last day and the number of days they
+    shared a group, both present (days after today are left out). Matrix
+    layers keep no history (`groupmates_of()` throws). Agents that never move
+    or leave add nothing to the list; the per-agent index is one integer per
+    agent.
 - **3d. Entities removed, measles models and the example model on layers**
   (the acceptance tests of D11).
 
@@ -1353,7 +1362,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-10-27).
+Updated by every epiworld PR into `v1-layers` (last: 2026-10-28).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1362,15 +1371,14 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-27).
 | Phase 3a (+ fixes) | #318, #319 merged | #216 | #33 | #18 | #65 |
 | `downstream.yml` | #321 merged | | | | |
 | Phase 3b | #323 merged (plan: #322; checked accessors: #324 merged) | #218 merged | #35 merged | #19 merged (re-vendor only: no layer objects in JS) | #66 merged (re-vendor only) |
-| Phase 3c-1 (layer logs) | #325 merged (+ #329 merged: `ContactTracing::get_n_agents()`) | #220 merged | #36 merged | #20 merged (re-vendor only) | #67 (re-vendor only) |
+| Phase 3c-1 (layer logs) | #325 merged (+ #329 merged: `ContactTracing::get_n_agents()`) | #220 merged | #36 merged | #20 merged (re-vendor only) | #67 (re-vendor only, with the consolidation) |
 | `master` -> `v1-layers` | #328 merged (#327, the `ModelSEIR` recovery fix) | | | | |
-| Model consolidation | #331 (plan: #326 merged) | | | | |
-| Phase 3c-2 (group history) | not started | | | | |
+| Model consolidation | #331 merged (plan: #326; wording: #332) | #222 merged | #37 merged | #21 merged | #67 (re-vendor only) |
+| Phase 3c-2 (group history) | this PR | | | | |
 | Phase 3d | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
-**Next** (as of the date above): the consolidation ports (epiworldR first:
-defunct stubs for the removed models, `layer_mixing()` without state lists,
-the contact rate, the renamed parameters, and the vignettes; then epiworldpy,
-epiworldjs's registry, measles re-vendor), then 3c-2.
+**Next** (as of the date above): the 3c-2 ports (`groupmates_of()` on the
+mixing layer in epiworldR and epiworldpy; re-vendor in epiworldjs and
+measles), then 3d.

@@ -128,6 +128,7 @@ $(NAME)_SOURCES := \
 	46d-layer-network-many-exposures.cpp \
 	47a-layer-weights-targets.cpp \
 	48a-layer-mixing-within-groups.cpp \
+	48b-mixing-group-history.cpp \
 	49a-mixing-models.cpp \
 	49b-contact-rate-param.cpp \
 	49c-seir-quarantine-layers.cpp
