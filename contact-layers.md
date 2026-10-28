@@ -716,6 +716,16 @@ The work is sequential:
    port the previous one, but not the one after: C++ phase N+1 does not merge
    until every wrapper has merged phase N-1 (in practice, keep them on N).
 
+**epiworldRShiny is ported once, after the registry** (added 2026-10-28). It
+binds no C++ and vendors no headers: it builds models through epiworldR and
+measles (`Imports: epiworldR, measles`). A per-phase port would rewrite its
+model calls twice (for layers, then for the registry's one constructor), so it
+gets one port once construction is final (after "Model registry"). Until then,
+epiworldR's `epiworldRShiny-cran` CI job, which checks the CRAN release of the
+app against epiworldR, fails: its examples call `ModelSEIRCONN()`, defunct
+since the consolidation. The port happens before any release, because CRAN
+checks reverse dependencies (Section 9).
+
 - The wrappers mirror the core API and add none of their own. What the core
   removes becomes a defunct stub (R `.Defunct()`, collected in one file and
   one help page; Python and JS raise or throw), with one message table per
@@ -1131,6 +1141,8 @@ identical to `ModelSEIRQuarantine` on the same layer.
   registered too.
 - The wrappers replace their per-model bindings with the registry (one
   generic constructor); epiworldjs drops its own `cpp/registry.hpp`.
+- Then epiworldRShiny is ported, once (see Section 6): its apps build every
+  model with layers and the registry's constructor.
 
 ### Phase 6 -- independent exposures, 1.0.0, bindings, docs
 
@@ -1139,7 +1151,8 @@ identical to `ModelSEIRQuarantine` on the same layer.
 - Merge `v1-layers` into `master`; release 1.0.0.
 - Wrappers: the port of Phase 6 updates expected values for the new rule; then
   each wrapper's `v1-layers` merges into its `main` and is released after
-  epiworld 1.0.0 (measles after epiworldR is on CRAN).
+  epiworld 1.0.0 (measles after epiworldR is on CRAN, then epiworldRShiny
+  after measles).
 - Docs: new `docs/impl/contact-layers.md`; update
   `mixing-and-entity-distribution.md`, `queueing-system.md`,
   `transmission-sampling.md`; migration guide.
@@ -1215,6 +1228,11 @@ identical to `ModelSEIRQuarantine` on the same layer.
   O(population).
 - **Mixing push (D4).** Until Phase 5, a public mixing layer is pulled for
   every susceptible each step.
+- **CRAN reverse dependencies.** epiworldR 1.0.0 breaks the CRAN releases of
+  measles and epiworldRShiny (defunct models and arguments), and CRAN checks
+  reverse dependencies on submission. Have both ported and ready before
+  epiworldR is submitted, and submit them right after it is accepted (same
+  maintainers); epiworldRShiny also waits for measles.
 
 ## 10. References
 
@@ -1326,6 +1344,7 @@ PR.
 | epiworldpy | `make update EPIWORLD_BRANCH=v1-layers` | `epiworldpy/include/VERSIONS` | `uv pip install .`; `pytest` |
 | epiworldjs | `make update-vendors EPIWORLD_REF=v1-layers` (measles from epiworld's `include/measles`) | `vendor/VERSIONS` | `make check-version test`; `npx playwright test` before a release |
 | measles | `make update EPIWORLD_BRANCH=v1-layers` (`include/measles`) | `inst/include/VERSIONS` | install epiworldR from its `v1-layers` first; tinytest; `R CMD check --no-manual` |
+| epiworldRShiny | -- (no headers; `Remotes:` epiworldR and measles at their `v1-layers`) | -- | install epiworldR and measles from their `v1-layers` first; `R CMD check --no-manual`; start each app once |
 
 **The pre-merge check** (Section 6, step 1) is `.github/workflows/downstream.yml`:
 on every PR into `v1-layers`, one job per wrapper checks out the wrapper's
@@ -1372,7 +1391,8 @@ that on `v1-layers` this plan is the source of truth.
 | Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()`; epiworldjs drops `cpp/registry.hpp`; measles registers its models. |
 | 4 | Exclusion / `isolate(agent, keep)`, layer-targeted tools, schedules, persistence. |
 | 5 | Re-vendor only, unless a push/pull setting becomes public. |
-| 6 | Expected values for the new combination rule; vignettes and migration guide; release in order (epiworld 1.0.0, then epiworldR, epiworldpy, epiworldjs, then measles after epiworldR is on CRAN). |
+| epiworldRShiny (once, after the registry) | Its apps (`inst/models/shiny_*.R`) build every model through the registry and layers: networks from `agents_smallworld()` become a `layer_network()`, the `*CONN` apps a base model with a random-mixing layer (or dropped, since the base apps then cover them), renamed arguments (`transmission_prob`, `latent_period`); the measles app follows the measles port. |
+| 6 | Expected values for the new combination rule; vignettes and migration guide; release in order (epiworld 1.0.0, then epiworldR, epiworldpy, epiworldjs, then measles after epiworldR is on CRAN, then epiworldRShiny). |
 
 ### 11.6 Status
 
@@ -1388,11 +1408,12 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-28).
 | Phase 3c-1 (layer logs) | #325 merged (+ #329 merged: `ContactTracing::get_n_agents()`) | #220 merged | #36 merged | #20 merged (re-vendor only) | #67 (re-vendor only, with the consolidation) |
 | `master` -> `v1-layers` | #328 merged (#327, the `ModelSEIR` recovery fix) | | | | |
 | Model consolidation | #331 merged (plan: #326; wording: #332) | #222 merged | #37 merged | #21 merged | #67 (re-vendor only) |
-| Phase 3c-2 (group history) | this PR | | | | |
+| Phase 3c-2 (group history) | #333 merged | #223 | #38 | #22 (re-vendor only) | after #223 (re-vendor only, on #67) |
 | Phase 3d | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
-**Next** (as of the date above): the 3c-2 ports (`groupmates_of()` on the
-mixing layer in epiworldR and epiworldpy; re-vendor in epiworldjs and
-measles), then 3d.
+epiworldRShiny (Section 6): not started; one port after the registry.
+
+**Next** (as of the date above): merging the 3c-2 ports and the measles
+re-vendor, then 3d.
