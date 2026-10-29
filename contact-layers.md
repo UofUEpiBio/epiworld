@@ -1533,7 +1533,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-29).
 | Model consolidation | #331 merged (plan: #326; wording: #332) | #222 merged | #37 merged | #21 merged | #67 (re-vendor only) |
 | Phase 3c-2 (group history) | #333 merged | #223 merged | #38 merged | #22 merged (re-vendor only) | #67 (re-vendor only) |
 | Phase 3d-1 (groupings) | #335 merged (+ #336 merged) | | | | |
-| 3d-1b (networks without maps, #339) | PRNUM | re-vendor only | re-vendor only | re-vendor only | re-vendor only |
+| 3d-1b (networks without maps, #339) | #341 | re-vendor only | re-vendor only | re-vendor only | re-vendor only |
 | Phase 3d-2, 3d-3 | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
@@ -1547,7 +1547,7 @@ epiworld-benchmark (Section 8, 11.7): `v1-layers` branch; the catch-up (the
 times the 0.x build time and up to 2.6 times the peak memory (the freed
 `std::map`s stay resident); 1,000,000 agents is noisy and rechecked next
 stage. Under the 10% rule, this is looked at before 3d-2 merges: 3d-1b
-(PRNUM) builds networks without maps, then the benchmark reruns as stage 3d-1b.
+(#341) builds networks without maps, then the benchmark reruns as stage 3d-1b.
 
 **Next** (as of the date above): merge 3d-1b and rerun the benchmark (stage
 3d-1b); the 3d-1 ports (`set_groups()` with a grouping generator;
