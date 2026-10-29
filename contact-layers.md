@@ -1496,7 +1496,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-10-28).
+Updated by every epiworld PR into `v1-layers` (last: 2026-10-29).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1507,6 +1507,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-28).
 | Phase 3b | #323 merged (plan: #322; checked accessors: #324 merged) | #218 merged | #35 merged | #19 merged (re-vendor only: no layer objects in JS) | #66 merged (re-vendor only) |
 | Phase 3c-1 (layer logs) | #325 merged (+ #329 merged: `ContactTracing::get_n_agents()`) | #220 merged | #36 merged | #20 merged (re-vendor only) | #67 (re-vendor only, with the consolidation) |
 | `master` -> `v1-layers` | #328 merged (#327, the `ModelSEIR` recovery fix) | | | | |
+| `rgraph_bernoulli()` with `p = 0` (fix applied to both branches: #342 on `master`) | #343 | re-vendor only | re-vendor only | re-vendor only | re-vendor only |
 | Model consolidation | #331 merged (plan: #326; wording: #332) | #222 merged | #37 merged | #21 merged | #67 (re-vendor only) |
 | Phase 3c-2 (group history) | #333 merged | #223 merged | #38 merged | #22 merged (re-vendor only) | #67 (re-vendor only) |
 | Phase 3d-1 (groupings) | #335 merged (+ #336 merged) | | | | |
