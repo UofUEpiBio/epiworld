@@ -100,6 +100,7 @@ $(NAME)_SOURCES := \
 	34e-transmission-auto-choice.cpp \
 	35a-directed-network.cpp \
 	35b-directed-transmission.cpp \
+	35c-bernoulli-extreme-p.cpp \
 	36a-edgelist-neighbors.cpp \
 	36b-edgelist-paths-agree.cpp \
 	37a-parameter-lookup.cpp \
