@@ -121,6 +121,10 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     // A move between runs would be lost at the next draw: an error
     REQUIRE_THROWS(dl.set_group(0u, 1u));
 
+    // Counts are whole numbers of agents (a fraction would be truncated)
+    REQUIRE_THROWS(grouping::random<>({1.9}));
+    REQUIRE_NOTHROW(grouping::random<>({0.5}, true));
+
     // A mixing layer needs its groups
     epimodels::ModelSIR<> ungrouped("Flu", n, 0.0, 1.0, 0.01);
     ungrouped.verbose_off();
