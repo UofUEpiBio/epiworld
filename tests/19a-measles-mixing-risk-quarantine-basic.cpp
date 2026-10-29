@@ -30,7 +30,6 @@ EPIWORLD_TEST_CASE(
         7.0,         // Incubation period
         4.0,         // Prodromal period
         5.0,         // Rash period
-        contact_matrix, // Contact matrix
         0.2,         // Hospitalization rate
         7.0,         // Hospitalization duration
         3.0,         // Days undetected
@@ -50,8 +49,8 @@ EPIWORLD_TEST_CASE(
         4u           // Contact tracing days prior
     );
 
-    // Adding a single entity (population group)
-    model.add_entity(Entity<>("Population", dist_factory<>(0, n)));
+    // Everyone in a single group
+    add_group_mixing(model, contact_matrix, blocks({0u, n}));
 
     // Virus will be distributed to 5 random agents, in each
     // replicate of the model

@@ -5,9 +5,6 @@
 
 using namespace epiworld;
 
-#define MM(i, j, n) \
-    j * n + i
-
 /**
  * @file measlesmixing.hpp
  * @brief Template for a Measles model with population mixing, quarantine, and contact tracing
@@ -45,6 +42,23 @@ using namespace epiworld;
  * - Hospitalized: Individuals requiring hospital care
  * - Recovered: Individuals who have recovered and gained immunity
  *
+ * The contacts come from the model's mixing layer, which the user adds: a
+ * `layer::Mixing` with the groups and a contact matrix (entry `(i, j)` is the
+ * expected number of contacts per day an agent in group `i` has with agents
+ * in group `j`), e.g.,
+ *
+ * ```cpp
+ * auto mix = layer::mixing<>("mixing");
+ * mix->set_groups(grouping::random<>({300, 700}));
+ * mix->set_contact_matrix({10.0, 2.0, 2.0, 5.0});
+ * model.add_layer(mix);
+ * ```
+ *
+ * The model samples from it with its own sampler (contacts drawn with
+ * replacement, Rash agents at the reduced contact rate) and logs the contacts
+ * in it, which the quarantine process reads. It has no other layers (see
+ * `measles_mixing_layer()`).
+ *
  * ![Model Diagram](../assets/img/measlesmixing.png)
  *
  * **Implementation details:**
@@ -56,9 +70,7 @@ using namespace epiworld;
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixing final :
-    public Model<TSeq>,
-    public ContactMatrix
+class ModelMeaslesMixing final : public Model<TSeq>
 {
 private:
 
@@ -112,7 +124,7 @@ public:
     /**
      * @brief Constructs a ModelMeaslesMixing object.
      *
-     * @param n The number of entities in the model.
+     * @param n The number of agents in the model.
      * @param prevalence The initial prevalence of the disease in the model.
      * @param transmission_rate The transmission rate of the disease in the
      * model.
@@ -124,10 +136,6 @@ public:
      * @param prodromal_period The prodromal period of the disease in the
      * model.
      * @param rash_period The rash period of the disease in the model.
-     * @param contact_matrix The contact matrix between entities in the model.
-     * Specified in
-     * column-major order. Each entry (i,j) represents the expected number of
-     * contacts an agent in group i has with agents in group j per day.
      * @param hospitalization_rate The rate at which infected individuals are
      * hospitalized.
      * @param hospitalization_period The average duration of hospitalization in
@@ -157,7 +165,6 @@ public:
         epiworld_double incubation_period,
         epiworld_double prodromal_period,
         epiworld_double rash_period,
-        std::vector< double > contact_matrix,
         epiworld_double hospitalization_rate,
         epiworld_double hospitalization_period,
         // Policy parameters
@@ -240,33 +247,17 @@ inline void ModelMeaslesMixing<TSeq>::reset()
 
     Model<TSeq>::reset();
 
-    // Checking if the model is using the queuing
-    // system
+    // Whether each vaccinated agent is immune is drawn here, in id order (the
+    // susceptible update then skips the immune ones)
     auto & virusptr = Model<TSeq>::viruses[0u];
-    if (this->is_queuing_on())
-    {
-        for (auto & a: this->get_agents())
-        {
+    for (auto & a: this->get_agents())
+        if (a.get_virus() == nullptr)
+            a.get_susceptibility_reduction(virusptr, *this);
 
-            // Some agents are already in the queue
-            if (a.get_virus() != nullptr)
-                continue;
-
-            // Removing the agent from the queue
-            if (a.get_susceptibility_reduction(virusptr, *this) >= 1.0)
-            {
-                this->queue -= &a;
-            }
-            else
-            {
-                this->queue += &a;
-            }
-        }
-    }
-
-    // Checking contact matrix dimensions
-    size_t nentities = this->entities.size();
-    validate_contact_matrix(nentities);
+    // The quarantine process reads the contacts in the layer's log
+    auto & mixing = measles_mixing_layer(*this);
+    if (!mixing.is_tracing())
+        mixing.enable_tracing();
 
     sampler.reset(*this);
 
@@ -303,14 +294,15 @@ inline void ModelMeaslesMixing<TSeq>::_update_susceptible(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    if (p->get_n_entities() == 0)
-        return;
-
     // Downcasting to retrieve the sampler attached to the
     // class
     auto * m_down = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);
 
-    size_t ndraws = m_down->sampler.sample(p, *m_down, *m_down);
+    // An immune agent cannot be infected: no contacts drawn
+    if (p->get_susceptibility_reduction(m_down->viruses[0u], *m) >= 1.0)
+        return;
+
+    size_t ndraws = m_down->sampler.sample(p, *m_down);
     const auto & sampled_agents = m_down->sampler.get_sampled_agents();
 
     #ifdef EPI_DEBUG
@@ -593,8 +585,8 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
 
     auto * model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
 
-    // Process entity-level quarantine
-    auto & ct = model->get_contact_tracing();
+    // The contacts in the log of the mixing layer
+    auto & ct = measles_mixing_layer(*m).get_tracing();
     for (size_t agent_i = 0u; agent_i < m->size(); ++agent_i)
     {
 
@@ -695,7 +687,6 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     epiworld_double incubation_period,
     epiworld_double prodromal_period,
     epiworld_double rash_period,
-    std::vector< double > contact_matrix,
     epiworld_double hospitalization_rate,
     epiworld_double hospitalization_period,
     // Policy parameters
@@ -717,7 +708,6 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     auto max_int = std::numeric_limits< int >::max();
     EpiAssert::check_probability(prevalence, "prevalence", "ModelMeaslesMixing");
     EpiAssert::check_bounds(n, static_cast<size_t>(1), max_uint, "n", "ModelMeaslesMixing");
-    EpiAssert::check_bounds(contact_matrix, 0.0, max_double, "contact_matrix", "ModelMeaslesMixing");
     EpiAssert::check_probability(transmission_rate, "transmission_rate", "ModelMeaslesMixing");
     EpiAssert::check_probability(vax_efficacy, "vax_efficacy", "ModelMeaslesMixing");
     EpiAssert::check_bounds(vax_reduction_recovery_rate, 0.0, 1.0, "vax_reduction_recovery_rate", "ModelMeaslesMixing");
@@ -733,9 +723,6 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     EpiAssert::check_bounds(isolation_period, -1, max_int, "isolation_period", "ModelMeaslesMixing");
     EpiAssert::check_probability(contact_tracing_success_rate, "contact_tracing_success_rate", "ModelMeaslesMixing");
     EpiAssert::check_bounds(rash_reduction_contact_rate, 0.0, 1.0, "rash_reduction_contact_rate", "ModelMeaslesMixing");
-
-    // Setting up the contact matrix
-    this->set_contact_matrix(contact_matrix, true);
 
     // Setting up parameters
     this->add_param(transmission_rate, "Transmission rate");
@@ -801,12 +788,6 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
 
     this->add_tool(vaccine);
 
-    this->queuing_on(); // Queuing is automatic
-
-    // Enable contact tracing for quarantine process
-    this->contact_tracing_on(EPI_MAX_TRACKING);
-    this->set_post_sampling(make_contact_tracing_post_sampling<TSeq>());
-
     // Adding the empty population
     this->set_population_size(n);
 
@@ -836,5 +817,4 @@ inline void ModelMeaslesMixing<TSeq>::next()
     Model<TSeq>::next();
 }
 
-#undef MM
 #endif

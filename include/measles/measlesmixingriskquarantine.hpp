@@ -2,6 +2,8 @@
 #ifndef EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 #define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 
+#include "samplermixing.hpp"
+
 using namespace epiworld;
 
 /**
@@ -15,8 +17,8 @@ using namespace epiworld;
  * This class extends the Measles epidemiological model to support different
  * quarantine strategies based on exposure risk levels:
  * 
- * - **High Risk**: Unvaccinated agents who share entity membership with the case
- * - **Medium Risk**: Unvaccinated agents who contacted an infected individual but don't share entity membership  
+ * - **High Risk**: Unvaccinated agents in the same group as the case
+ * - **Medium Risk**: Unvaccinated agents who contacted an infected individual but are not in its group
  * - **Low Risk**: Other unvaccinated agents
  * 
  * Each risk level can have different quarantine durations, allowing for targeted 
@@ -26,25 +28,31 @@ using namespace epiworld;
  * Disease progression follows the same states as ModelMeaslesMixing:
  * Susceptible → Latent → Prodromal → Rash → Recovered
  * 
+ * The contacts come from the model's mixing layer, which the user adds, as for
+ * ModelMeaslesMixing: a `layer::Mixing` with the groups and a contact matrix.
+ * The model samples from it with its own sampler and logs the contacts in it.
+ *
  * ![Model Diagram](../assets/img/measlesmixingriskquarantine.png)
  * 
  * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixingRiskQuarantine final :
-    public Model<TSeq>,
-    public ContactMatrix
+class ModelMeaslesMixingRiskQuarantine final : public Model<TSeq>
 {
 private:
+    // The model's mixing layer and its contact rate (_update_infectious_list())
+    layer::Mixing<TSeq> * mixing = nullptr;
+    double contact_rate = 1.0;
+
     // Vector of vectors of infected agents (prodromal agents are infectious)
     std::vector< size_t > infectious;
 
     // Number of infectious agents in each group
     std::vector< size_t > n_infectious_per_group;
     
-    // Where the agents start in the `infectious` vector
-    std::vector< size_t > infectious_entity_indices;
+    // Where the groups start in the `infectious` vector
+    std::vector< size_t > group_start;
 
     double m_get_risk_period(size_t agent_id);
 
@@ -139,10 +147,6 @@ public:
      * @param incubation_period The incubation period of the disease in the model.
      * @param prodromal_period The prodromal period of the disease in the model.
      * @param rash_period The rash period of the disease in the model.
-     * @param contact_matrix The contact matrix between entities in the model.
-     * Specified in column-major order. Each entry (i,j) represents the
-     * expected number of contacts an agent in group i has with agents in
-     * group j per day.
      * @param hospitalization_rate The rate at which infected individuals are hospitalized.
      * @param hospitalization_period The average duration of hospitalization in days.
      * @param days_undetected The average number of days an infected individual remains undetected.
@@ -166,7 +170,6 @@ public:
         epiworld_double incubation_period,
         epiworld_double prodromal_period,
         epiworld_double rash_period,
-        std::vector< double > contact_matrix,
         epiworld_double hospitalization_rate,
         epiworld_double hospitalization_period,
         // Policy parameters
@@ -273,44 +276,39 @@ template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_update_infectious_list()
 {
 
-    // Getting the agents from the model
-    auto & agents = this->get_agents();
+    // The groups (which may have changed) and the contact rate
+    mixing = &measles_mixing_layer(*this);
+    contact_rate = mixing->get_contact_rate(*this);
+
+    const size_t ngroups = mixing->get_n_groups();
+    constexpr size_t none = layer::Mixing<TSeq>::NO_GROUP;
 
     // Resetting the infectious list (no infected agents)
-    std::fill(n_infectious_per_group.begin(), n_infectious_per_group.end(), 0u);
+    n_infectious_per_group.assign(ngroups, 0u);
 
     // Resetting the number of available contacts
-    adjusted_contact_rate.assign(this->entities.size(), 0.0);
-    
+    adjusted_contact_rate.assign(ngroups, 0.0);
+
+    // A group takes as many slots in `infectious` as it has members
+    group_start.assign(ngroups, 0u);
+    for (size_t g = 1u; g < ngroups; ++g)
+        group_start[g] = group_start[g - 1] + mixing->members_of(g - 1).size();
+
     // Looping over agents to find the infectious ones
-    for (const auto & a : agents)
+    for (const auto & a : this->get_agents())
     {
 
-        if (a.get_state() == PRODROMAL)
-        {
-            if (a.get_n_entities() > 0u)
-            {
-                const auto & entity = a.get_entity(0u, *this);
-                infectious[
-                    // Position of the group in the `infectious` vector
-                    infectious_entity_indices[entity.get_id()] +
-                    // Position of the agent in the group
-                    n_infectious_per_group[entity.get_id()]++
-                ] = a.get_id();
+        const size_t g = mixing->get_group(a.get_id());
+        if (g == none)
+            continue;
 
-            }
-        }
+        if (a.get_state() == PRODROMAL)
+            infectious[group_start[g] + n_infectious_per_group[g]++] =
+                a.get_id();
 
         // Setting how many agents are available for contact
-        if (
-            ((a.get_state() < RASH) || (a.get_state() == RECOVERED)) &&
-            (a.get_n_entities() > 0u)
-        )
-        {
-            adjusted_contact_rate[
-                a.get_entity(0u, *this).get_id()
-            ] += 1.0;
-        }
+        if ((a.get_state() < RASH) || (a.get_state() == RECOVERED))
+            adjusted_contact_rate[g] += 1.0;
 
     }
 
@@ -337,12 +335,13 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
     )
 {
 
-    // If agent has no entities, then we return 0
-    if (agent->get_n_entities() == 0u)
+    // An agent in no group meets nobody
+    const size_t agent_group_id = mixing->get_group(agent->get_id());
+    if (agent_group_id == layer::Mixing<TSeq>::NO_GROUP)
         return 0u;
 
-    size_t agent_group_id = agent->get_entity(0u, *this).get_id();
-    size_t ngroups = this->entities.size();
+    const size_t ngroups = mixing->get_n_groups();
+    const auto & contact_matrix = mixing->get_contact_matrix();
 
     int samp_id = 0;
     for (size_t g = 0; g < ngroups; ++g)
@@ -353,16 +352,18 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
         if (group_size == 0u)
             continue;
 
-        // How many from this entity?
+        // How many from this group? (contacts per day of the agent's group
+        // with group g; column-major)
         int nsamples = this->rbinom(
             group_size,
-            adjusted_contact_rate[g] * this->get_contact_rate(agent_group_id, g, false)
+            adjusted_contact_rate[g] * contact_rate *
+                contact_matrix[g * ngroups + agent_group_id]
         );
 
         if (nsamples == 0)
             continue;
 
-        // Sampling from the entity
+        // Sampling from the group
         for (int s = 0; s < nsamples; ++s)
         {
 
@@ -375,11 +376,11 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
 
             #ifdef EPI_DEBUG
             auto & a = this->population.at(
-                infectious.at(infectious_entity_indices[g] + which)
+                infectious.at(group_start[g] + which)
             );
             #else
             const auto & a = this->get_agent(
-                infectious[infectious_entity_indices[g] + which]
+                infectious[group_start[g] + which]
             );
             #endif
 
@@ -400,7 +401,8 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
 
     }
 
-    // Each sampled interaction, once, if a post-sampling callback listens
+    // The contacts go to the layer's log, and to the post-sampling callback
+    mixing->trace(sampled_agents.data(), samp_id, agent->get_id());
     if (this->has_post_sampling())
         this->register_sampled_contacts(
             sampled_agents.data(), samp_id, agent->get_id()
@@ -414,11 +416,6 @@ template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_update_susceptible(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
-
-    // If the agent has no entities, then it can't be infected
-    // (e.g., isolated agents)
-    if (p->get_n_entities() == 0)
-        return;
 
     // Downcasting to retrieve the sampler attached to the
     // class
@@ -770,36 +767,24 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
         size_t agent_i_idx = model->agents_triggered_contact_tracing[i];
         auto & agent_i = m->get_agent(agent_i_idx);
 
-        // (A) Checking entity first
+        // (A) Checking the group first
         // It doesn't matter if the agent doesn't have a tool; we will
         // check that later
-        if (agent_i.get_n_entities() != 0u)
+        const size_t group_i = model->mixing->get_group(agent_i_idx);
+        if (group_i != layer::Mixing<TSeq>::NO_GROUP)
         {
-            for (size_t agent_j_idx: agent_i.get_entity(0, *m))
+            for (size_t agent_j_idx: model->mixing->members_of(group_i))
             {
-
-                #ifdef EPI_DEBUG
-                auto & agent_j = m->get_agent(agent_j_idx);
-                if (
-                    agent_j.get_entity(0u, *m).get_id() !=
-                    agent_i.get_entity(0u, *m).get_id()
-                )
-                    throw std::logic_error(
-                        "An agent in a group has a different group id."
-                    );
-                #endif
-
 
                 // Only if not already checked we set to high risk
                 if (can_quarantine[agent_j_idx])
                     model->quarantine_risk_level[agent_j_idx] = RISK_HIGH;
 
-
             }
         }
 
         // (B) Checking the contacts
-        auto & ct = model->get_contact_tracing();
+        auto & ct = model->mixing->get_tracing();
         size_t n_contacts = ct.get_n_contacts(agent_i_idx);
         if (n_contacts > EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
@@ -889,10 +874,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
 
         auto agent_i_idx = model->agents_triggered_contact_tracing[i];
 
-        auto & agent_i = m->get_agent(agent_i_idx);
-
         // We also check who are the contacted agents
-        auto & ct = model->get_contact_tracing();
+        auto & ct = model->mixing->get_tracing();
         size_t n_contacts = ct.get_n_contacts(agent_i_idx);
         if (n_contacts >= EPI_MAX_TRACKING)
             n_contacts = EPI_MAX_TRACKING;
@@ -913,10 +896,10 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
             contacted_agents.insert(contact_id);
         }
 
-        if (agent_i.get_n_entities() == 0u)
+        if (model->mixing->get_group(agent_i_idx) == layer::Mixing<TSeq>::NO_GROUP)
             continue;
 
-        groups_ids.insert(agent_i.get_entity(0u, *m).get_id());
+        groups_ids.insert(model->mixing->get_group(agent_i_idx));
         
     }
 
@@ -925,7 +908,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
     // RISK_HIGH
     for (auto & group: groups_ids)
     {
-        for (auto & agent_i_idx: m->get_entity(group))
+        for (auto & agent_i_idx: model->mixing->members_of(group))
         {
 
             auto & agent_i = m->get_agent(agent_i_idx);
@@ -965,12 +948,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
 
         // Checking the agent is not in a group that triggered
         // contact tracing
-        if (agent_i.get_n_entities() != 0u)
-        {
-            size_t group_id = agent_i.get_entity(0u, *m).get_id();
-            if (groups_ids.find(group_id) != groups_ids.end())
-                continue;
-        }
+        if (groups_ids.count(model->mixing->get_group(agent_i_idx)) != 0u)
+            continue;
 
         if (model->quarantine_risk_level[agent_i_idx] != RISK_MEDIUM)
             throw std::logic_error(
@@ -979,7 +958,7 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
     }
 
     // Tabulating the number of agents per group
-    std::vector< size_t > n_agents_per_group(m->get_entities().size(), 0u);
+    std::vector< size_t > n_agents_per_group(3u, 0u);
     for (auto i: model->quarantine_risk_level)
         n_agents_per_group[i]++;
 
@@ -999,7 +978,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     epiworld_double incubation_period,
     epiworld_double prodromal_period,
     epiworld_double rash_period,
-    std::vector< double > contact_matrix,
     epiworld_double hospitalization_rate,
     epiworld_double hospitalization_period,
     // Policy parameters
@@ -1016,9 +994,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     epiworld_fast_uint contact_tracing_days_window
     )
 {
-
-    // Setting up the contact matrix
-    this->set_contact_matrix(contact_matrix, true);
 
     // Setting up parameters
     this->add_param(transmission_rate, "Transmission rate");
@@ -1091,12 +1066,6 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
 
     this->add_tool(vaccine);
 
-    this->queuing_off(); // No queuing need
-
-    // Enable contact tracing for quarantine process
-    this->contact_tracing_on(EPI_MAX_TRACKING);
-    this->set_post_sampling(make_contact_tracing_post_sampling<TSeq>());
-
     // Adding the empty population
     this->set_population_size(n);
 
@@ -1110,30 +1079,15 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::reset()
 
     Model<TSeq>::reset();
 
-    // Checking contact matrix dimensions
-    size_t nentities = this->entities.size();
-    this->validate_contact_matrix(nentities);
+    // The quarantine process reads the contacts in the layer's log
+    auto & mix = measles_mixing_layer(*this);
+    if (!mix.is_tracing())
+        mix.enable_tracing();
 
-    // Do it the first time only
     sampled_agents.resize(this->size());
 
-    // We only do it once
-    n_infectious_per_group.assign(this->entities.size(), 0u);
-
-    // We are assuming one agent per entity
+    // At most one slot per agent
     infectious.assign(this->size(), 0u);
-
-    // This will say when do the groups start in the `infectious` vector
-    infectious_entity_indices.assign(this->entities.size(), 0u);
-    for (size_t i = 1u; i < this->entities.size(); ++i)
-    {
-
-        infectious_entity_indices[i] +=
-            this->entities[i - 1].size() +
-            infectious_entity_indices[i - 1]
-            ;
-
-    }
 
     this->_update_infectious_list();
 

@@ -164,7 +164,6 @@ static ModelMeasles build_measles(size_t n)
         7.0,  // Incubation period
         4.0,  // Prodromal period
         5.0,  // Rash period
-        {15.0}, // Contact matrix (one group)
         0.2,  // Hospitalization rate
         7.0,  // Hospitalization duration
         3.0,  // Days undetected
@@ -176,7 +175,13 @@ static ModelMeasles build_measles(size_t n)
         1.0,  // Contact tracing success rate
         4u    // Contact tracing days window
     );
-    model.add_entity(Entity<>("Population", distribute_entity_to_range<>(0, static_cast< int >(n))));
+
+    // Everyone in one group, meeting 15 others a day
+    auto mixing = layer::mixing<>("mixing");
+    mixing->set_groups(std::vector< size_t >(n, 0u), 1u);
+    mixing->set_contact_matrix({15.0});
+    model.add_layer(mixing);
+
     return model;
 }
 

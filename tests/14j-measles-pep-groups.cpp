@@ -112,7 +112,7 @@ EPIWORLD_TEST_CASE(
         auto model = make_school();
         auto pep = make_pep();
 
-        model.get_contact_tracing().add_contact(0, 1, 9);
+        model.get_layer("school").get_tracing().add_contact(0, 1, 9);
         model.add_triggering_agent(model, model.get_agent(0), 5);
 
         pep(&model, model.today());
@@ -130,7 +130,7 @@ EPIWORLD_TEST_CASE(
         auto model = make_school();
         auto pep = make_pep(two_groups());
 
-        model.get_contact_tracing().add_contact(0, 1, 9);
+        model.get_layer("school").get_tracing().add_contact(0, 1, 9);
         model.add_triggering_agent(model, model.get_agent(0), 5);
 
         pep(&model, model.today());
@@ -148,7 +148,7 @@ EPIWORLD_TEST_CASE(
         auto model = make_school();
         auto pep = make_pep(two_groups());
 
-        model.get_contact_tracing().add_contact(10, 11, 9);
+        model.get_layer("school").get_tracing().add_contact(10, 11, 9);
         model.add_triggering_agent(model, model.get_agent(10), 5);
 
         pep(&model, model.today());
@@ -174,7 +174,7 @@ EPIWORLD_TEST_CASE(
         auto model = make_school();
         auto pep = make_pep(two_groups());
 
-        auto & ct = model.get_contact_tracing();
+        auto & ct = model.get_layer("school").get_tracing();
         ct.add_contact(0, 1, 9);   // group 0: recent
         ct.add_contact(10, 11, 2); // group 1: stale
 
@@ -197,7 +197,7 @@ EPIWORLD_TEST_CASE(
         auto model = make_school();
         auto pep = make_pep(two_groups());
 
-        auto & ct = model.get_contact_tracing();
+        auto & ct = model.get_layer("school").get_tracing();
         ct.add_contact(0, 1, 9);
         ct.add_contact(10, 11, 8);
 
@@ -223,7 +223,7 @@ EPIWORLD_TEST_CASE(
 
         auto pep = make_pep(groups);
 
-        model.get_contact_tracing().add_contact(0, 1, 9);
+        model.get_layer("school").get_tracing().add_contact(0, 1, 9);
         model.add_triggering_agent(model, model.get_agent(0), 5);
 
         pep(&model, model.today());
@@ -241,7 +241,7 @@ EPIWORLD_TEST_CASE(
         auto model = make_school();
         auto pep = make_pep(std::vector< int >(N_AGENTS - 1u, 0));
 
-        model.get_contact_tracing().add_contact(0, 1, 9);
+        model.get_layer("school").get_tracing().add_contact(0, 1, 9);
         model.add_triggering_agent(model, model.get_agent(0), 5);
 
         REQUIRE_THROWS_AS(pep(&model, model.today()), std::length_error);

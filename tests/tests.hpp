@@ -61,6 +61,22 @@ inline std::vector< size_t > blocks(const std::vector< size_t > & bounds)
 }
 
 /**
+ * Groups from ranges of agents: agents `[from, to)` of the `g`-th range are in
+ * group `g`, and the agents in no range in none.
+ */
+inline std::vector< size_t > ranges(
+    size_t n,
+    const std::vector< std::pair< size_t, size_t > > & from_to
+)
+{
+    std::vector< size_t > groups(n, epiworld::layer::Mixing<>::NO_GROUP);
+    for (size_t g = 0u; g < from_to.size(); ++g)
+        for (size_t i = from_to[g].first; i < from_to[g].second; ++i)
+            groups[i] = g;
+    return groups;
+}
+
+/**
  * Adds a mixing layer named "mixing" with the contact matrix (column-major) and
  * the groups, fixed or a grouping (what ModelSIRMixing and ModelSEIRMixing did
  * with entities).

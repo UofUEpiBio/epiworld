@@ -39,6 +39,8 @@ mixing.set_groups(groups, 3u);
 mixing.set_groups(grouping::random<>({2000, 3000, 1000}));
 ```
 
+Tools and viruses can be given by group: `distribute_tool_to_groups<>("mixing", prevalence)` (and `distribute_virus_to_groups()`) gives the tool to a share of each group of the layer, a proportion (or, with `as_proportion = false`, a count) per group, drawn at every reset, e.g., vaccination rates by school.
+
 Whether an edit is permanent depends only on when it is made. Edits made during a run (in a global event, say), such as `mixing.set_group(agent, g)`, `mixing.set_contact_matrix(cmat)` or `mixing.set_contact_prob(q)`, apply to that run only: they set the layer's dirty flag, and the next run starts from the baseline again. A move made during a step takes effect at the end of the step, when the pools are rebuilt, so every agent of that step samples from the grouping the step started with. The same calls made between runs set the baseline, so a calibration (ABC, LFMCMC) can reuse one model. `set_groups()` replaces the whole grouping and can only be called between runs.
 
 ### Mixing within groups only

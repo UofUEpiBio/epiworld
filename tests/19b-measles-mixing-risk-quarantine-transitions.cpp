@@ -21,7 +21,6 @@ EPIWORLD_TEST_CASE(
         7.0,         // Incubation period
         4.0,         // Prodromal period
         5.0,         // Rash period
-        contact_matrix, // Contact matrix
         0.2,         // Hospitalization rate
         7.0,         // Hospitalization duration
         3.0,         // Days undetected
@@ -37,10 +36,11 @@ EPIWORLD_TEST_CASE(
         4u           // Contact tracing days prior
     );
 
-    // Adding a single entity
-    model.add_entity(Entity<>("Population", dist_factory<>(0, n/3 - 1)));
-    model.add_entity(Entity<>("Population", dist_factory<>(n/3, 2*n/3 - 1)));
-    model.add_entity(Entity<>("Population", dist_factory<>(2*n/3, n - 1)));
+    // Three groups (the last agent of each third is in none)
+    add_group_mixing(
+        model, contact_matrix,
+        ranges(n, {{0u, n/3 - 1}, {n/3, 2*n/3 - 1}, {2*n/3, n - 1}})
+    );
 
     // Moving the virus to the first agent
     model.get_virus(0).set_distribution(

@@ -60,7 +60,6 @@ EPIWORLD_TEST_CASE(
         7.0,         // Incubation period
         4.0,         // Prodromal period
         5.0,         // Rash period
-        contact_matrix, // Contact matrix
         0.2,         // Hospitalization rate
         7.0,         // Hospitalization duration
         0.0,         // Days undetected
@@ -77,9 +76,10 @@ EPIWORLD_TEST_CASE(
     );
 
     // Adding a single entity
-    model.add_entity(Entity<>("Population", dist_factory<>(0, 1)));
-    model.add_entity(Entity<>("Population", dist_factory<>(1, 2*n/3 - 1)));
-    model.add_entity(Entity<>("Population", dist_factory<>(2*n/3, n)));
+    add_group_mixing(
+        model, contact_matrix,
+        ranges(n, {{0u, 1u}, {1u, 2*n/3 - 1}, {2*n/3, n}})
+    );
 
     // Event to count risk levels
     model.add_globalevent(count_risk, "Count risk levels");
