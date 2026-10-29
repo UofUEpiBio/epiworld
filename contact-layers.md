@@ -13,7 +13,9 @@ layer), and after 3a (wrappers follow each merged phase; runbook). Revised
 within groups only (5.1, 5.2, D9). Revised 2026-10-23: within groups, a
 contact probability per pair (`q = 1`: cliques, no ties stored); one sampler
 drawing distinct contacts for both forms; tracing within groups by a history
-of moves and absences (D9, D11).
+of moves and absences (D9, D11). Revised 2026-10-28: epiworld-benchmark
+tracks the work with a 1.0.0 engine, rerun at every merged phase (Sections 6,
+8, 11.7).
 **Goal:** let a single model draw transmission from several contact sources at
 once -- e.g., mixing within households, a workplace network, and mixing in
 public spaces -- each with its own structure, weight, and participation rules.
@@ -725,6 +727,16 @@ app against epiworldR, fails: its examples call `ModelSEIRCONN()`, defunct
 since the consolidation. The port happens before any release, because CRAN
 checks reverse dependencies (Section 9).
 
+**The benchmark follows the core too** (added 2026-10-28), as a measurement,
+not a port. [epiworld-benchmark](https://github.com/UofUEpiBio/epiworld-benchmark)
+keeps a `v1-layers` branch with one more engine, `epiworld-v1`: each scenario's
+C++ runner written for the 1.0.0 API and compiled against a pinned commit of
+epiworld `v1-layers`. Its other engines stay at their 0.x pins, so every rerun
+compares the same model, on the same networks and seeds, under 0.x and under
+the work in progress. Only the C++ library is tracked until 1.0.0; epiworldR
+and epiworldpy join at the release. The stages are in Section 8, the procedure
+in 11.7.
+
 - The wrappers mirror the core API and add none of their own. What the core
   removes becomes a defunct stub (R `.Defunct()`, collected in one file and
   one help page; Python and JS raise or throw), with one message table per
@@ -1237,6 +1249,63 @@ transition rates), as for the consolidated SEIR models.
 - Use CPU time and interleave variants; wall-clock on the macOS host is
   unreliable.
 
+### Tracking the refactor in epiworld-benchmark
+
+Added 2026-10-28. The benchmark's `v1-layers` branch (Section 6) answers one
+question at every stage: did this phase change the time, memory, or results of
+the models the benchmark already runs? Its scenarios are network models (an
+SEIRH on a fixed small-world or GeoPops network; plus a day-0 vaccine; plus a
+transmission tree and transition counts; at up to 1,000,000 agents), so they
+exercise the network layer, the queue, and the single-layer path that every
+0.x network model now takes.
+
+- **Engine.** `epiworld-v1`, with a runner per scenario
+  (`scenario_NN/runners/epiworld-v1/main.cpp`) that builds the model of the
+  `epiworld` runner through the 1.0.0 API (`Model(n)`, `layer::network()`,
+  `set_infectious_states()`), with the same flags and output record. Its pin
+  is `EPIWORLD_V1_REF` in the benchmark's Makefile, a merge commit of epiworld
+  `v1-layers`; records carry the version with that commit (`1.0.0+g<sha>`),
+  so a new pin never reuses old runs.
+- **A rerun.** Both C++ engines, `epiworld` (0.x) and `epiworld-v1`, at the
+  full design of every scenario, in one invocation in the benchmark's
+  container, one replicate at a time, the two engines' replicates
+  interleaved. The 0.x engine is rerun too, so a comparison never spans
+  machines or loads. A script appends the medians per scenario and size
+  (simulation time, build time, peak memory, attack rate; both engines and
+  their ratio) to `results/epiworld-v1-history.csv` under the stage's name,
+  and refreshes the table in `docs/epiworld-v1.md`; the run's environment
+  record is kept as `results/epiworld-v1-environments/<stage>.json`. The ratio, not the
+  absolute time, is what is compared from one stage to the next.
+- **Baseline.** The 0.x engine is the one the benchmark's `main` pins. A change
+  in the ratio from one stage to the next is that stage's; the ratio itself
+  also holds whatever `master` changed between that pin and its last merge
+  into `v1-layers` (on 2026-10-28, the benchmark pins 0.17.1 and `master` is
+  at 0.19.0), so move `main`'s pin first if the level matters.
+- **What counts.** Until Phase 6, the attack rates of the two engines agree
+  within noise (single runs need not match: the network is loaded through
+  another path). A ratio of median simulation time or of peak memory that
+  grows by more than 10% from the previous stage, in any scenario and size,
+  is profiled before the next C++ phase merges, and the finding goes in the
+  stage's note in `docs/epiworld-v1.md`.
+
+| Stage | Rerun at | Runner change | What to look for |
+|---|---|---|---|
+| Catch-up | Phase 3d-1 (through #336) | the `epiworld-v1` runners, written once | a network layer against the in-`Agent` network: build time, memory of the ties, time per step |
+| 3d-2, 3d-3 | each merge | none expected | no change: the scenarios use no entities, so a change is a cost on the shared path |
+| Registry (#312) | its merge | none, unless building a model by hand changes (the runners add their own states) | build time |
+| Phase 4 | each merge | if participation replaces `set_infectious_states()` | cost per step of the participation checks |
+| Phase 5 | its merge | none | no change (push for mixing layers; the scenarios have none) |
+| Phase 6 | its merge | none | the combination rule changes the draws: attack rates are checked against the other engines, and `epiworld-v1` gets calibration factors only if it leaves the agreement the others meet; time per step of independent exposures (Phase 0: about 4 ns per contact) |
+| `master` -> `v1-layers` | a merge that touches the run loop, the queue, or networks | none | as the merged PR describes |
+| 1.0.0 | after epiworld, epiworldR and epiworldpy 1.0.0 are tagged | the swap (below) | the published comparison with the other engines |
+
+**The swap at 1.0.0.** A last PR into the benchmark's `v1-layers` makes the
+`epiworld-v1` runners the `epiworld` runners (the engine is `epiworld` again),
+ports the epiworldR and epiworldpy runners to 1.0.0, moves the three pins to
+the releases, and reruns the family at the full design. The history stays in
+`docs/epiworld-v1.md`; `epiworld-v1` leaves the engines and the results.
+Then `v1-layers` merges into the benchmark's `main`.
+
 ## 9. Risks
 
 - **Random stream changes.** Any change of draw order changes results. Phases
@@ -1333,7 +1402,7 @@ first; this section says how to carry them out.
 Gather the state:
 
 ```sh
-for r in epiworld epiworldR epiworldpy epiworldjs measles; do
+for r in epiworld epiworldR epiworldpy epiworldjs measles epiworld-benchmark; do
   echo "== $r"; gh pr list -R UofUEpiBio/$r --base v1-layers --state open
 done
 gh pr list -R UofUEpiBio/epiworld --base v1-layers --state merged --limit 10
@@ -1347,6 +1416,10 @@ for f in epiworldR:inst/include/VERSIONS epiworldpy:epiworldpy/include/VERSIONS 
     -q .content 2>/dev/null | base64 -d 2>/dev/null | grep '^epiworld' ||
     echo "no VERSIONS file: not caught up yet"
 done
+
+# The epiworld commit the benchmark's epiworld-v1 engine is built from
+gh api "repos/UofUEpiBio/epiworld-benchmark/contents/Makefile?ref=v1-layers" \
+  -q .content | base64 -d | grep '^EPIWORLD_V1_REF'
 ```
 
 Then take the first of these that applies, do it, and stop:
@@ -1355,18 +1428,23 @@ Then take the first of these that applies, do it, and stop:
    comments or failing CI: fix it, push, and reply to each comment with what
    changed. A review finding in vendored code is fixed in epiworld (its own
    PR into `v1-layers`), then re-vendored.
-2. **A wrapper is behind.** Let M be the merge commit of the latest phase PR
-   merged into epiworld `v1-layers`. A wrapper is behind when its vendored
+2. **The benchmark is behind.** Let M be the merge commit of the latest phase
+   PR merged into epiworld `v1-layers`. The benchmark is behind when its
+   `EPIWORLD_V1_REF` is not M and M is a stage of Section 8 (every phase
+   merge is): rerun it (11.7). It goes before the wrappers so that a
+   regression is fixed in C++ before they port the phase.
+3. **A wrapper is behind.** A wrapper is behind when its vendored
    commit is not M or a descendant (`git merge-base --is-ancestor M <sha>`
    fails). Go through the wrappers in order -- epiworldR, epiworldpy,
    epiworldjs, measles -- and port the phase to the first one that is behind
    and has no open port PR (11.4). The next wrapper may start once the
    previous one's PR is open with no unanswered comments; measles waits until
    epiworldR's port has **merged**.
-3. **Every wrapper is on M** (or has its port open with nothing to address):
+4. **Every wrapper is on M** (or has its port open with nothing to address)
+   and the benchmark has been rerun on M with no regression left open:
    start the next C++ phase (the first row of 11.6 not yet merged), as
    Section 6 describes, within the one-phase lag rule.
-4. **Everything waits on the user's merges**: report what is waiting and stop.
+5. **Everything waits on the user's merges**: report what is waiting and stop.
 
 Rules for the agent:
 
@@ -1392,6 +1470,7 @@ PR.
 | epiworldjs | `make update-vendors EPIWORLD_REF=v1-layers` (measles from epiworld's `include/measles`) | `vendor/VERSIONS` | `make check-version test`; `npx playwright test` before a release |
 | measles | `make update EPIWORLD_BRANCH=v1-layers` (`include/measles`) | `inst/include/VERSIONS` | install epiworldR from its `v1-layers` first; tinytest; `R CMD check --no-manual` |
 | epiworldRShiny | -- (no headers; `Remotes:` epiworldR and measles at their `v1-layers`) | -- | install epiworldR and measles from their `v1-layers` first; `R CMD check --no-manual`; start each app once |
+| epiworld-benchmark | `EPIWORLD_V1_REF` in the Makefile (the `epiworld-v1` engine only) | the Makefile; each record's `engine_version` | `make container-image`; `make container-check`; `make container-smoke`; the rerun is `STAGE=<stage> make container-v1-stage` (11.7) |
 
 **The pre-merge check** (Section 6, step 1) is `.github/workflows/downstream.yml`:
 on every PR into `v1-layers`, one job per wrapper checks out the wrapper's
@@ -1445,7 +1524,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-10-28).
+Updated by every epiworld PR into `v1-layers` (last: 2026-10-29).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1456,15 +1535,45 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-28).
 | Phase 3b | #323 merged (plan: #322; checked accessors: #324 merged) | #218 merged | #35 merged | #19 merged (re-vendor only: no layer objects in JS) | #66 merged (re-vendor only) |
 | Phase 3c-1 (layer logs) | #325 merged (+ #329 merged: `ContactTracing::get_n_agents()`) | #220 merged | #36 merged | #20 merged (re-vendor only) | #67 (re-vendor only, with the consolidation) |
 | `master` -> `v1-layers` | #328 merged (#327, the `ModelSEIR` recovery fix) | | | | |
+| `rgraph_bernoulli()` with `p = 0` (fix applied to both branches: #342 on `master`) | #343 | re-vendor only | re-vendor only | re-vendor only | re-vendor only |
 | Model consolidation | #331 merged (plan: #326; wording: #332) | #222 merged | #37 merged | #21 merged | #67 (re-vendor only) |
 | Phase 3c-2 (group history) | #333 merged | #223 merged | #38 merged | #22 merged (re-vendor only) | #67 (re-vendor only) |
 | Phase 3d-1 (groupings) | #335 merged (+ #336 merged: whole-number counts) | #224 merged, #225 | #39 merged, #40 | #23 merged, #24 (re-vendor only) | #67 (re-vendor only) |
-| Phase 3d-2 (measles on layers) | this PR (+ `master`: the queue fix) | | | | |
+| Phase 3d-2 (measles on layers) | #340 (+ `master`: the queue fix, #338) | | | | |
 | Phase 3d-3 | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
 epiworldRShiny (Section 6): not started; one port after the registry.
 
-**Next** (as of the date above): the 3d-2 ports (the measles models take
-their layer from the user; epiworldjs's measles presets add it), then 3d-3.
+epiworld-benchmark (Section 8, 11.7): `v1-layers` branch; the catch-up (the
+`epiworld-v1` engine, stage 3d-1) is UofUEpiBio/epiworld-benchmark#31. Stage
+3d-1 found the same attack rates and simulation as fast or faster up to
+165,865 agents, but building a network layer from an `AdjList` takes 5-9
+times the 0.x build time and up to 2.6 times the peak memory (the freed
+`std::map`s stay resident); 1,000,000 agents is noisy and rechecked next
+stage. Under the 10% rule, this is looked at before 3d-2 merges (a
+`layer::network()` taking the edge list directly is one option).
+
+**Next** (as of the date above): the network-build regression above, before
+#340 (3d-2) merges; then the 3d-2 ports (the measles models take their layer
+from the user; epiworldjs's measles presets add it), then 3d-3.
+
+### 11.7 A benchmark rerun
+
+- **Branch** `port-<epiworld branch>` off the benchmark's `v1-layers` (the
+  first one is `v1-catchup`). **Title** `Rerun epiworld-v1 at <stage>
+  (UofUEpiBio/epiworld#N)`; the body starts with `Pins <sha>
+  (UofUEpiBio/epiworld#N).`
+- **Content**: move `EPIWORLD_V1_REF` to M; change the `epiworld-v1` runners
+  only if the stage changed the API they use (Section 8); `make
+  container-check` and `make container-smoke`; then, with nothing else
+  running, `STAGE=<stage> make container-v1-stage`, which reruns both C++
+  engines and appends the stage to the history. Commit the records, the
+  history and the table. The PR body quotes the stage's rows and says whether
+  any ratio grew by more than 10% from the previous stage.
+- **A regression** is profiled in epiworld; its fix is an epiworld PR into
+  `v1-layers`, followed by another rerun, before the next C++ phase merges.
+- **`main` -> `v1-layers`** merges, as in the wrappers. A conflict under
+  `results/` takes `main`'s side, then `make collect`; the next rerun
+  replaces the two C++ engines' records.
