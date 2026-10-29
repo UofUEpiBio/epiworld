@@ -7135,12 +7135,20 @@ inline void DataBase<TSeq>::get_hospitalizations(
 
 
 /**
- * @brief Adjacency list representation of a network
+ * @brief A network, as the ties of each vertex
+ *
+ * @details Row `i` holds the neighbors of vertex `i` (in a directed network,
+ * the targets of its ties) in ascending order, without repeats; an undirected
+ * tie is in the rows of both ends. The rows are stored back to back
+ * (compressed rows): row `i` is `get_ids()` from `get_start()[i]` to
+ * `get_start()[i + 1]`. A graph cannot be edited once built; the network layer
+ * that loads it can (see `layer::Network`).
  */
 class AdjList {
 private:
 
-    std::vector<std::map<int, int>> dat;
+    std::vector< size_t > start; ///< Where each row starts in `ids` (`N + 1`)
+    std::vector< int > ids;      ///< The rows, back to back
     bool directed = false;
     epiworld_fast_uint N = 0;
     epiworld_fast_uint E = 0;
@@ -7151,10 +7159,11 @@ public:
 
     /**
      * @brief Construct a new Adj List object
-     * 
-     * @details 
-     * Ids in the network are assume to range from `0` to `size - 1`.
-     * 
+     *
+     * @details
+     * Ids in the network are assume to range from `0` to `size - 1`. A tie
+     * given more than once is kept once.
+     *
      * @param source Unsigned int vector with the source
      * @param target Unsigned int vector with the target
      * @param size Number of vertices in the network.
@@ -7167,16 +7176,11 @@ public:
         bool directed
         );
 
-    AdjList(AdjList && a); // Move constructor
-    AdjList(const AdjList & a); // Copy constructor
-    AdjList& operator=(const AdjList& a);
-
-
     /**
      * @brief Read an edgelist
-     * 
+     *
      * Ids in the network are assume to range from `0` to `size - 1`.
-     * 
+     *
      * @param fn Path to the file
      * @param skip Number of lines to skip (e.g., 1 if there's a header)
      * @param directed `true` if the network is directed
@@ -7189,21 +7193,20 @@ public:
         bool directed = true
         );
 
-    std::map<int, int> operator()(
+    /// The neighbors of vertex `i` (a copy of its row).
+    std::vector< int > operator()(
         epiworld_fast_uint i
         ) const;
-        
+
     void print(epiworld_fast_uint limit = 20u) const;
     size_t vcount() const; ///< Number of vertices/nodes in the network.
-    size_t ecount() const; ///< Number of edges/arcs/ties in the network.
-    
-    std::vector<std::map<int,int>> & get_dat() {
-        return dat;
-    };
+    size_t ecount() const; ///< Number of edges given, repeats included.
 
-    const std::vector<std::map<int,int>> & get_dat() const {
-        return dat;
-    };
+    /// Where each row starts in `get_ids()`, with the end as the last entry.
+    const std::vector< size_t > & get_start() const { return start; }
+
+    /// The rows, back to back (see the class description).
+    const std::vector< int > & get_ids() const { return ids; }
 
     bool is_directed() const; ///< `true` if the network is directed.
 
@@ -7211,7 +7214,6 @@ public:
 
 
 #endif
-
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -7234,7 +7236,8 @@ public:
 #define EPIWORLD_ADJLIST_MEAT_HPP
 
 #include <vector>
-#include <map>
+#include <algorithm>
+#include <numeric>
 #include <string>
 #include <stdexcept>
 #include <fstream>
@@ -7261,15 +7264,18 @@ inline AdjList::AdjList(
             std::to_string(target.size()) + ")."
             );
 
-    dat.resize(size, std::map<int,int>({}));
+    N = size;
+    E = source.size();
     int max_id = size - 1;
 
-    int i,j;
-    for (int m = 0; m < static_cast<int>(source.size()); ++m)
+    // Counting sort of the tie ends by vertex: first the size of each row (an
+    // undirected tie counts in both), then the rows themselves
+    start.assign(N + 1u, 0u);
+    for (size_t m = 0u; m < source.size(); ++m)
     {
 
-        i = source[m];
-        j = target[m];
+        int i = source[m];
+        int j = target[m];
 
         if ((i < 0) || (i > max_id))
             throw std::range_error(
@@ -7283,62 +7289,46 @@ inline AdjList::AdjList(
                 " is above the max_id " + std::to_string(max_id)
                 );
 
-        // Adding nodes
-        if (dat[i].find(j) == dat[i].end())
-            dat[i].insert(std::pair<int, int>(j, 1u));
-        else
-            dat[i][j]++; 
-        
+        start[i + 1]++;
         if (!directed)
-        {
-
-            if (dat[j].find(i) == dat[j].end())
-                dat[j].insert(std::pair<int, int>(i, 1u));
-            else
-                dat[j][i]++;
-
-        }
-
-        E++;
+            start[j + 1]++;
 
     }
 
-    N = size;
+    std::partial_sum(start.begin(), start.end(), start.begin());
+
+    ids.resize(start[N]);
+    std::vector< size_t > next(start.begin(), start.end() - 1);
+    for (size_t m = 0u; m < source.size(); ++m)
+    {
+        ids[next[source[m]]++] = target[m];
+        if (!directed)
+            ids[next[target[m]]++] = source[m];
+    }
+
+    // Each row sorted and without repeats, moved down over the repeats
+    // dropped before it
+    size_t kept = 0u;
+    for (size_t i = 0u; i < N; ++i)
+    {
+
+        auto first = ids.begin() + static_cast< std::ptrdiff_t >(start[i]);
+        auto last  = ids.begin() + static_cast< std::ptrdiff_t >(start[i + 1u]);
+
+        std::sort(first, last);
+        last = std::unique(first, last);
+
+        start[i] = kept;
+        for (auto it = first; it != last; ++it)
+            ids[kept++] = *it;
+
+    }
+
+    start[N] = kept;
+    ids.resize(kept);
 
     return;
 
-}
-
-
-inline AdjList::AdjList(AdjList && a) :
-    dat(std::move(a.dat)),
-    directed(a.directed),
-    N(a.N),
-    E(a.E)
-{
-
-}
-
-inline AdjList::AdjList(const AdjList & a) :
-    dat(a.dat),
-    directed(a.directed),
-    N(a.N),
-    E(a.E)
-{
-
-}
-
-inline AdjList& AdjList::operator=(const AdjList& a)
-{
-    if (this == &a)
-        return *this;
-
-    this->dat = a.dat;
-    this->directed = a.directed;
-    this->N = a.N;
-    this->E = a.E;
-
-    return *this;
 }
 
 inline void AdjList::read_edgelist(
@@ -7405,7 +7395,7 @@ inline void AdjList::read_edgelist(
 
 }
 
-inline std::map<int,int> AdjList::operator()(
+inline std::vector< int > AdjList::operator()(
     epiworld_fast_uint i
     ) const {
 
@@ -7414,39 +7404,33 @@ inline std::map<int,int> AdjList::operator()(
             "The vertex id " + std::to_string(i) + " is not in the network."
             );
 
-    return dat[i];
+    return std::vector< int >(
+        ids.begin() + static_cast< std::ptrdiff_t >(start[i]),
+        ids.begin() + static_cast< std::ptrdiff_t >(start[i + 1u])
+    );
 
 }
 
 inline void AdjList::print(epiworld_fast_uint limit) const {
 
-
-    epiworld_fast_uint counter = 0;
     printf_epiworld("Nodeset:\n");
-    int i = -1;
-    for (auto & n : dat)
+    for (epiworld_fast_uint i = 0u; (i < N) && (i <= limit); ++i)
     {
 
-        if (counter++ > limit)
-            break;
+        printf_epiworld("  % 3i: {", static_cast<int>(i));
+        for (size_t k = start[i]; k < start[i + 1u]; ++k)
+        {
+            printf_epiworld("%s%i", (k > start[i]) ? ", " : "", ids[k]);
+        }
+        printf_epiworld("}\n");
 
-        printf_epiworld("  % 3i: {", ++i);
-        int niter = 0;
-        for (auto n_n : n)
-            if (++niter < static_cast<int>(n.size()))
-            {    
-                printf_epiworld("%i, ", static_cast<int>(n_n.first));
-            }
-            else {
-                printf_epiworld("%i}\n", static_cast<int>(n_n.first));
-            }
     }
 
-    if (limit < dat.size())
+    if (limit < N)
     {
         printf_epiworld(
             "  (... skipping %i records ...)\n",
-            static_cast<int>(dat.size() - limit)
+            static_cast<int>(N - limit)
             );
     }
 
@@ -7464,7 +7448,7 @@ inline size_t AdjList::ecount() const
 
 inline bool AdjList::is_directed() const {
 
-    if (dat.size() == 0u)
+    if (N == 0u)
         throw std::logic_error("The edgelist is empty.");
     
     return directed;
@@ -7503,57 +7487,73 @@ class Agent;
 class AdjList;
 
 
+/**
+ * @brief The first `i` with `prob <= cumulative[i]`, or the last index.
+ *
+ * @details The draw of an agent with probability proportional to its weight,
+ * given the cumulative probabilities (non-decreasing); the same index as a
+ * scan from the start, found by bisection.
+ */
+inline size_t pick_cumulative(
+    const std::vector< epiworld_double > & cumulative,
+    epiworld_double prob
+)
+{
+    auto it = std::lower_bound(cumulative.begin(), cumulative.end(), prob);
+    return (it == cumulative.end()) ?
+        cumulative.size() - 1u :
+        static_cast< size_t >(it - cumulative.begin());
+}
+
+/**
+ * @brief Degree-preserving rewiring of a graph under construction (used by
+ * `rgraph_smallworld()`).
+ *
+ * @details `rows[i]` holds the neighbors of `i` in ascending order, without
+ * repeats (in an undirected graph, each tie in the rows of both ends), and is
+ * kept that way. Picks two agents with probability proportional to their
+ * degree and one tie of each, uniformly, and swaps them, skipping swaps that
+ * would create self-ties or repeated ties. A network layer is rewired with
+ * `graph::rewire_degseq()` instead.
+ */
 template<typename TSeq>
-inline void rewire_degseq(
-    AdjList * agents,
-    Model<TSeq> * model,
+inline void rewire_degseq_rows(
+    std::vector< std::vector< int > > & rows,
+    bool directed,
+    Model<TSeq> & model,
     epiworld_double proportion
     )
 {
 
-    // Identifying individuals with degree > 0
-    std::vector< epiworld_fast_int > nties(agents->vcount(), 0);
-
     #ifdef EPI_DEBUG
-    std::vector< int > _degree0(agents->vcount(), 0);
-    for (size_t i = 0u; i < _degree0.size(); ++i)
-        _degree0[i] = agents->get_dat()[i].size();
+    std::vector< size_t > _degree0(rows.size(), 0u);
+    for (size_t i = 0u; i < rows.size(); ++i)
+        _degree0[i] = rows[i].size();
     #endif
-    
+
     std::vector< int > non_isolates;
-    non_isolates.reserve(nties.size());
+    non_isolates.reserve(rows.size());
 
     std::vector< epiworld_double > weights;
-    weights.reserve(nties.size());
+    weights.reserve(rows.size());
 
     epiworld_double nedges = 0.0;
-    auto & dat = agents->get_dat();
-
-    if (dat.size() > nties.size())
-        throw std::logic_error("Inconsistent adjacency list data.");
-
-    for (size_t i = 0u; i < dat.size(); ++i)
-        nties[i] += dat[i].size();
-
-    bool directed = agents->is_directed();
-    for (size_t i = 0u; i < dat.size(); ++i)
+    for (size_t i = 0u; i < rows.size(); ++i)
     {
-        if (nties[i] > 0)
+        if (rows[i].empty())
+            continue;
+
+        non_isolates.push_back(static_cast< int >(i));
+        const epiworld_double nties = static_cast< epiworld_double >(rows[i].size());
+        if (directed)
         {
-            non_isolates.push_back(i);
-            if (directed)
-            {
-                weights.push_back(
-                    static_cast<epiworld_double>(nties[i])
-                );
-                nedges += static_cast<epiworld_double>(nties[i]);
-            }
-            else {
-                weights.push_back(
-                    static_cast<epiworld_double>(nties[i])/2.0
-                );
-                nedges += static_cast<epiworld_double>(nties[i]) / 2.0;
-            }
+            weights.push_back(nties);
+            nedges += nties;
+        }
+        else
+        {
+            weights.push_back(nties / 2.0);
+            nedges += nties / 2.0;
         }
     }
 
@@ -7562,117 +7562,86 @@ inline void rewire_degseq(
 
     // Cumulative probs
     weights[0u] /= nedges;
-    for (epiworld_fast_uint i = 1u; i < non_isolates.size(); ++i)
+    for (size_t i = 1u; i < non_isolates.size(); ++i)
     {
          weights[i] /= nedges;
          weights[i] += weights[i - 1u];
     }
 
-    // Only swap if needed
-    epiworld_fast_uint N = non_isolates.size();
-    epiworld_double prob;
-    int nrewires = floor(proportion * nedges / (
-        agents->is_directed() ? 1.0 : 2.0
-    ));
+    const int N = static_cast< int >(non_isolates.size());
+    int nrewires = floor(proportion * nedges / (directed ? 1.0 : 2.0));
+
+    auto has = [](const std::vector< int > & row, int j) {
+        return std::binary_search(row.begin(), row.end(), j);
+    };
+
+    auto insert = [](std::vector< int > & row, int j) {
+        row.insert(std::lower_bound(row.begin(), row.end(), j), j);
+    };
+
+    auto erase = [](std::vector< int > & row, int j) {
+        row.erase(std::lower_bound(row.begin(), row.end(), j));
+    };
 
     while (nrewires-- > 0)
     {
 
         // Picking egos
-        prob = model->runif();
-        int id0 = N - 1;
-        for (epiworld_fast_uint i = 0u; i < N; ++i)
-            if (prob <= weights[i])
-            {
-                id0 = i;
-                break;
-            }
-
-        prob = model->runif();
-        int id1 = N - 1;
-        for (epiworld_fast_uint i = 0u; i < N; ++i)
-            if (prob <= weights[i])
-            {
-                id1 = i;
-                break;
-            }
+        int id0 = static_cast< int >(pick_cumulative(weights, model.runif()));
+        int id1 = static_cast< int >(pick_cumulative(weights, model.runif()));
 
         // Correcting for under or overflow.
         if (id1 == id0)
             id1++;
 
-        if (id1 >= static_cast<int>(N))
+        if (id1 >= N)
             id1 = 0;
 
-        std::map<int,int> & p0 = agents->get_dat()[non_isolates[id0]];
-        std::map<int,int> & p1 = agents->get_dat()[non_isolates[id1]];
+        const int ego0 = non_isolates[id0];
+        const int ego1 = non_isolates[id1];
+        std::vector< int > & p0 = rows[ego0];
+        std::vector< int > & p1 = rows[ego1];
 
-        // Picking alters (relative location in their lists)
-        // In this case, these are uniformly distributed within the list
-        int id01 = model->runif_index(p0.size());
-        int id11 = model->runif_index(p1.size());
+        // Picking alters (relative location in their lists), uniformly
+        int id01 = model.runif_index(p0.size());
+        int id11 = model.runif_index(p1.size());
 
-        // Since it is a map, we need to find the actual ids (positions)
-        // are not good enough.
+        // From positions to ids. The scan keeps comparing the count with the
+        // id it found (so a later position can replace it), as the version on
+        // std::map did; kept so that the same seed gives the same graph.
         int count = 0;
-        for (auto & n : p0)
+        for (int j : p0)
             if (count++ == id01)
-                id01 = n.first;
+                id01 = j;
 
         count = 0;
-        for (auto & n : p1)
+        for (int j : p1)
             if (count++ == id11)
-                id11 = n.first;
+                id11 = j;
 
-        // When rewiring, we need to actually swap the edges, not just the weights
-        // We'll swap edges: (id0, id01) <-> (id1, id11)
-        // After swap: (id0, id11) and (id1, id01)
-        // But first, check if the swap would create duplicate or self-loop edges
-        
-        // Check for self-loops (new edge would connect node to itself)
-        if (id01 == non_isolates[id1] || id11 == non_isolates[id0]) {
+        // After the swap: (ego0, id11) and (ego1, id01). Skip self-ties,
+        // repeated ties, and swaps of the same neighbor.
+        if (id01 == ego1 || id11 == ego0)
             continue;
-        }
-        
-        // Check for duplicate edges (new edge already exists)
-        if (p0.find(id11) != p0.end() || p1.find(id01) != p1.end()) {
-            continue; // Skip this rewire attempt to avoid duplicate edges
-        }
-        
-        // Check if we're trying to swap the same neighbor
-        if (id01 == id11) {
+
+        if (has(p0, id11) || has(p1, id01))
             continue;
-        }
-        
-        // Save the weights before removing edges
-        int weight_0_01 = p0[id01];
-        int weight_1_11 = p1[id11];
-        
-        // Remove old edges from ego perspectives
-        p0.erase(id01);
-        p1.erase(id11);
-        
-        // Add new edges from ego perspectives with swapped alters
-        p0[id11] = weight_0_01;
-        p1[id01] = weight_1_11;
-        
+
+        if (id01 == id11)
+            continue;
+
+        erase(p0, id01);
+        erase(p1, id11);
+        insert(p0, id11);
+        insert(p1, id01);
+
         // For undirected graphs, also update from alter perspectives
-        if (!agents->is_directed())
+        if (!directed)
         {
-            std::map<int,int> & p01 = agents->get_dat()[id01];
-            std::map<int,int> & p11 = agents->get_dat()[id11];
-            
-            // Save weights from alter perspectives
-            int weight_01_0 = p01[non_isolates[id0]];
-            int weight_11_1 = p11[non_isolates[id1]];
-            
-            // Remove old edges from alter perspectives
-            p01.erase(non_isolates[id0]);
-            p11.erase(non_isolates[id1]);
-            
-            // Add new edges from alter perspectives
-            p01[non_isolates[id1]] = weight_11_1;
-            p11[non_isolates[id0]] = weight_01_0;
+            erase(rows[id01], ego0);
+            erase(rows[id11], ego1);
+            insert(rows[id01], ego1);
+            insert(rows[id11], ego0);
         }
 
     }
@@ -7680,19 +7649,16 @@ inline void rewire_degseq(
     #ifdef EPI_DEBUG
     for (size_t _i = 0u; _i < _degree0.size(); ++_i)
     {
-        if (_degree0[_i] != static_cast<int>(agents->get_dat()[_i].size()))
+        if (_degree0[_i] != rows[_i].size())
             throw std::logic_error(
                 "[epi-debug] Degree does not match afted rewire_degseq. " +
                 std::string("Expected: ") +
                 std::to_string(_degree0[_i]) +
                 std::string(", observed: ") +
-                std::to_string(agents->get_dat()[_i].size())
+                std::to_string(rows[_i].size())
                 );
     }
     #endif
-
-
-    return;
 
 }
 
@@ -7958,11 +7924,35 @@ inline AdjList rgraph_smallworld(
     // Creating the ring lattice
     AdjList ring = rgraph_ring_lattice(n,k,directed);
 
-    // Rewiring and returning
-    if (k > 0u)
-        rewire_degseq(&ring, &model, p);
+    if (k == 0u)
+        return ring;
 
-    return ring;
+    // Rewired as rows, which stay sorted, then loaded back
+    const auto & start = ring.get_start();
+    const auto & ids = ring.get_ids();
+    std::vector< std::vector< int > > rows(n);
+    for (size_t i = 0u; i < n; ++i)
+        rows[i].assign(
+            ids.begin() + static_cast< std::ptrdiff_t >(start[i]),
+            ids.begin() + static_cast< std::ptrdiff_t >(start[i + 1u])
+        );
+
+    rewire_degseq_rows(rows, directed, model, p);
+
+    // Each undirected tie once
+    std::vector< int > source;
+    std::vector< int > target;
+    source.reserve(ids.size());
+    target.reserve(ids.size());
+    for (size_t i = 0u; i < n; ++i)
+        for (int j : rows[i])
+            if (directed || (static_cast< int >(i) <= j))
+            {
+                source.push_back(static_cast< int >(i));
+                target.push_back(j);
+            }
+
+    return AdjList(source, target, static_cast< int >(n), directed);
 
 }
 
@@ -22098,7 +22088,8 @@ private:
     /// Position of each neighbor, only for agents with many ties
     std::unordered_map< size_t, std::unordered_map< size_t, size_t > > index;
 
-    // The fixed graph the next reset restores, one row per agent
+    // The fixed graph the next reset restores, one row per agent; empty until
+    // the first edit
     std::vector< size_t > baseline_start;
     std::vector< size_t > baseline_ids;
     bool baseline_stale = false; ///< Edited between runs
@@ -22270,7 +22261,6 @@ inline Network<TSeq>::Network(std::string name, const AdjList & graph) :
     ContactLayer<TSeq>(std::move(name))
 {
     set_graph(graph);
-    capture_baseline();
 }
 
 template<typename TSeq>
@@ -22293,46 +22283,21 @@ inline void Network<TSeq>::set_graph(const AdjList & graph)
     // AdjList::is_directed() throws on a graph with no vertices
     directed = (n > 0u) && graph.is_directed();
 
-    const auto & dat = graph.get_dat();
+    // Each row of the graph (sorted, without repeats) becomes its agent's
+    // ties. Resizing rather than reassigning keeps the rows' memory from one
+    // draw of a generator to the next.
+    const auto & start = graph.get_start();
+    const auto & ids = graph.get_ids();
 
-    // Counting sort of the tie ends by agent: row i (from start[i] to
-    // start[i + 1]) holds i's neighbors. An undirected tie i - j is written to
-    // both rows, so the result does not depend on the list being symmetric.
-    std::vector< size_t > start(n + 1u, 0u);
-    for (size_t i = 0u; i < n; ++i)
-    {
-        start[i + 1u] += dat[i].size();
-        if (!directed)
-            for (const auto & link : dat[i])
-                start[static_cast< size_t >(link.first) + 1u]++;
-    }
-
-    std::partial_sum(start.begin(), start.end(), start.begin());
-
-    std::vector< size_t > ids(start[n]);
-    std::vector< size_t > next(start.begin(), start.end() - 1);
-    for (size_t i = 0u; i < n; ++i)
-        for (const auto & link : dat[i])
-        {
-            size_t j = static_cast< size_t >(link.first);
-            ids[next[i]++] = j;
-            if (!directed)
-                ids[next[j]++] = i;
-        }
-
-    // Each row becomes its agent's ties: sorted and without repeats
-    ties.assign(n, {});
+    ties.resize(n);
     index.clear();
     for (size_t i = 0u; i < n; ++i)
     {
 
-        auto first = ids.begin() + static_cast< std::ptrdiff_t >(start[i]);
-        auto last  = ids.begin() + static_cast< std::ptrdiff_t >(start[i + 1u]);
-
-        std::sort(first, last);
-        last = std::unique(first, last);
-
-        ties[i].assign(first, last);
+        ties[i].assign(
+            ids.begin() + static_cast< std::ptrdiff_t >(start[i]),
+            ids.begin() + static_cast< std::ptrdiff_t >(start[i + 1u])
+        );
 
         if (ties[i].size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
             build_index(i);
@@ -22482,6 +22447,11 @@ inline void Network<TSeq>::check_endpoints(size_t i, size_t j) const
 template<typename TSeq>
 inline void Network<TSeq>::edit()
 {
+
+    // A fixed graph keeps a copy to restore, taken before its first edit, so
+    // that a graph never edited is held once
+    if (!generator && baseline_start.empty())
+        capture_baseline();
 
     // Between runs, a fixed graph is edited from its baseline: the edits of the
     // last run are dropped first, and the next reset takes the result as the
@@ -22848,23 +22818,8 @@ inline void rewire_degseq(
     {
 
         // Picking egos
-        epiworld_double prob = model.runif();
-        int id0 = static_cast< int >(N) - 1;
-        for (size_t i = 0u; i < N; ++i)
-            if (prob <= weights[i])
-            {
-                id0 = static_cast< int >(i);
-                break;
-            }
-
-        prob = model.runif();
-        int id1 = static_cast< int >(N) - 1;
-        for (size_t i = 0u; i < N; ++i)
-            if (prob <= weights[i])
-            {
-                id1 = static_cast< int >(i);
-                break;
-            }
+        int id0 = static_cast< int >(pick_cumulative(weights, model.runif()));
+        int id1 = static_cast< int >(pick_cumulative(weights, model.runif()));
 
         // Correcting for under or overflow.
         if (id1 == id0)

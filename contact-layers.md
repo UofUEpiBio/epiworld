@@ -225,13 +225,15 @@ turnover is high relative to contacts.
     `agents_smallworld()`, `agents_from_edgelist()` and `agents_from_adjlist()`
     are removed. A different size is a new model.
 20. **Networks come from generators.** A `layer::Network` holds a generator, a
-    function that receives the model and returns a graph (`AdjList` until a
-    flat edge list replaces it), and calls it at every reset, so every run and
+    function that receives the model and returns a graph (an `AdjList`:
+    each vertex's ties as compressed rows, built from an edge list by a
+    counting sort, #339), and calls it at every reset, so every run and
     replicate draws a new network from its own seed. Generators live outside
     the layer (`graph::smallworld(k, p)`, wrappers of the `rgraph_*`
     functions), so adding one is writing a function. A fixed network is built
     from a graph instead (`layer::network(name, adjlist)`), read from a file or
-    drawn once; it is restored at reset if dirty. Rewiring follows the same pattern: the layer holds a
+    drawn once; it is restored at reset if dirty, from a copy taken before
+    its first edit (a network never edited is held once). Rewiring follows the same pattern: the layer holds a
     rewiring function called at the end of each step (degree-preserving
     rewiring is the first; an ERGM-style rewirer can be another), reading its
     rate from a model parameter (point 17).
@@ -915,6 +917,18 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
     `layer::Mixing` is gone: a mixing layer needs `set_groups()`. Moves
     between runs on a drawn grouping throw (they would be lost).
     `groupmates_of()` windows start on day 1.
+  - **3d-1b. Networks built without maps** (#339, as built; a fix the
+    benchmark rule of Section 8 called for, not a phase). `AdjList` holds
+    compressed rows (sorted, without repeats) instead of a `std::map` per
+    vertex, so a layer loads an edge list with one counting sort; its
+    constructor is unchanged (the wrappers only re-vendor), `get_dat()` goes
+    and `operator()(i)` returns a row. A fixed layer copies its graph for
+    reset only before the first edit. `rgraph_smallworld()` rewires on
+    sorted rows, and both rewirings pick egos by bisection
+    (`pick_cumulative()`) instead of a scan of every agent per attempt.
+    The same draws throughout: old and new code agree on histories,
+    transmissions and edge lists (fixed, generated, rewired, edited, and
+    `run_multiple()`) and on small-world graphs up to 100,000 agents.
   - **3d-2. Measles models read their groups from a layer** and keep their
     own samplers (with replacement, the rash pool at rate `r`), so their
     runs stay draw for draw; their contacts go to the layer's log, and the
@@ -1207,6 +1221,14 @@ identical to `ModelSEIRQuarantine` on the same layer.
 - Phase 0: rule overhead on real models.
 - Phase 2: no regression for pull/push on network models; `reset()` cost per
   replicate with the dirty flag vs the full agent backup.
+- Any change to how a network layer is built: build time and peak memory at
+  1,000,000 agents, from an edge list and from a generator (Phase 2 measured
+  the steps but not the build, which #339 found 5-9 times slower than 0.x).
+  Measured for 3d-1b (2026-10-29, devcontainer, g++ -O2, CPU time, medians
+  of 5 interleaved runs; mean degree 10): from an edge list, 1.65 s and
+  823 MiB peak before, 0.16 s and 198 MiB after, at 1,000,000 agents (0.18
+  vs 0.009 s at 100,000); `graph::smallworld()`, which runs at every reset,
+  0.96 vs 0.044 s at 100,000 agents and 75.8 vs 0.46 s at 1,000,000.
 - Phase 3: overhead of a single-layer model through the multi-layer path vs the
   Phase 2 path (to decide whether a fast path must stay).
 - Phase 3b: cost per step of a within-group layer of 100k households
@@ -1265,6 +1287,7 @@ exercise the network layer, the queue, and the single-layer path that every
 | Stage | Rerun at | Runner change | What to look for |
 |---|---|---|---|
 | Catch-up | Phase 3d-1 (through #336) | the `epiworld-v1` runners, written once | a network layer against the in-`Agent` network: build time, memory of the ties, time per step |
+| 3d-1b (#339) | its merge | none | build time and peak memory back to the 0.x level; the 1,000,000-agent simulation times rechecked |
 | 3d-2, 3d-3 | each merge | none expected | no change: the scenarios use no entities, so a change is a cost on the shared path |
 | Registry (#312) | its merge | none, unless building a model by hand changes (the runners add their own states) | build time |
 | Phase 4 | each merge | if participation replaces `set_infectious_states()` | cost per step of the participation checks |
@@ -1496,7 +1519,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-10-28).
+Updated by every epiworld PR into `v1-layers` (last: 2026-10-29).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1510,6 +1533,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-28).
 | Model consolidation | #331 merged (plan: #326; wording: #332) | #222 merged | #37 merged | #21 merged | #67 (re-vendor only) |
 | Phase 3c-2 (group history) | #333 merged | #223 merged | #38 merged | #22 merged (re-vendor only) | #67 (re-vendor only) |
 | Phase 3d-1 (groupings) | #335 merged (+ #336 merged) | | | | |
+| 3d-1b (networks without maps, #339) | PRNUM | re-vendor only | re-vendor only | re-vendor only | re-vendor only |
 | Phase 3d-2, 3d-3 | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
@@ -1522,11 +1546,12 @@ epiworld-benchmark (Section 8, 11.7): `v1-layers` branch; the catch-up (the
 165,865 agents, but building a network layer from an `AdjList` takes 5-9
 times the 0.x build time and up to 2.6 times the peak memory (the freed
 `std::map`s stay resident); 1,000,000 agents is noisy and rechecked next
-stage. Under the 10% rule, this is looked at before 3d-2 merges (a
-`layer::network()` taking the edge list directly is one option).
+stage. Under the 10% rule, this is looked at before 3d-2 merges: 3d-1b
+(PRNUM) builds networks without maps, then the benchmark reruns as stage 3d-1b.
 
-**Next** (as of the date above): the 3d-1 ports (`set_groups()` with a
-grouping generator; `grouping::random()`), then 3d-2.
+**Next** (as of the date above): merge 3d-1b and rerun the benchmark (stage
+3d-1b); the 3d-1 ports (`set_groups()` with a grouping generator;
+`grouping::random()`, re-vendoring through 3d-1b); then 3d-2 (#340).
 
 ### 11.7 A benchmark rerun
 
