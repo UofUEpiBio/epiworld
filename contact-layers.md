@@ -1247,7 +1247,8 @@ exercise the network layer, the queue, and the single-layer path that every
   machines or loads. A script appends the medians per scenario and size
   (simulation time, build time, peak memory, attack rate; both engines and
   their ratio) to `results/epiworld-v1-history.csv` under the stage's name,
-  and refreshes the table in `docs/epiworld-v1.md`. The ratio, not the
+  and refreshes the table in `docs/epiworld-v1.md`; the run's environment
+  record is kept as `results/epiworld-v1-environments/<stage>.json`. The ratio, not the
   absolute time, is what is compared from one stage to the next.
 - **Baseline.** The 0.x engine is the one the benchmark's `main` pins. A change
   in the ratio from one stage to the next is that stage's; the ratio itself
@@ -1443,7 +1444,7 @@ PR.
 | epiworldjs | `make update-vendors EPIWORLD_REF=v1-layers` (measles from epiworld's `include/measles`) | `vendor/VERSIONS` | `make check-version test`; `npx playwright test` before a release |
 | measles | `make update EPIWORLD_BRANCH=v1-layers` (`include/measles`) | `inst/include/VERSIONS` | install epiworldR from its `v1-layers` first; tinytest; `R CMD check --no-manual` |
 | epiworldRShiny | -- (no headers; `Remotes:` epiworldR and measles at their `v1-layers`) | -- | install epiworldR and measles from their `v1-layers` first; `R CMD check --no-manual`; start each app once |
-| epiworld-benchmark | `EPIWORLD_V1_REF` in the Makefile (the `epiworld-v1` engine only) | the Makefile; each record's `engine_version` | `make container-image`; `make container-check`; `make container-smoke`; the rerun is `make container-v1-stage STAGE=<stage>` (11.7) |
+| epiworld-benchmark | `EPIWORLD_V1_REF` in the Makefile (the `epiworld-v1` engine only) | the Makefile; each record's `engine_version` | `make container-image`; `make container-check`; `make container-smoke`; the rerun is `STAGE=<stage> make container-v1-stage` (11.7) |
 
 **The pre-merge check** (Section 6, step 1) is `.github/workflows/downstream.yml`:
 on every PR into `v1-layers`, one job per wrapper checks out the wrapper's
@@ -1516,7 +1517,13 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-28).
 epiworldRShiny (Section 6): not started; one port after the registry.
 
 epiworld-benchmark (Section 8, 11.7): `v1-layers` branch; the catch-up (the
-`epiworld-v1` engine, through 3d-1) is in progress (branch `v1-catchup`).
+`epiworld-v1` engine, stage 3d-1) is UofUEpiBio/epiworld-benchmark#31. Stage
+3d-1 found the same attack rates and simulation as fast or faster up to
+165,865 agents, but building a network layer from an `AdjList` takes 5-9
+times the 0.x build time and up to 2.6 times the peak memory (the freed
+`std::map`s stay resident); 1,000,000 agents is noisy and rechecked next
+stage. Under the 10% rule, this is looked at before 3d-2 merges (a
+`layer::network()` taking the edge list directly is one option).
 
 **Next** (as of the date above): the 3d-1 ports (`set_groups()` with a
 grouping generator; `grouping::random()`), then 3d-2.
@@ -1530,7 +1537,7 @@ grouping generator; `grouping::random()`), then 3d-2.
 - **Content**: move `EPIWORLD_V1_REF` to M; change the `epiworld-v1` runners
   only if the stage changed the API they use (Section 8); `make
   container-check` and `make container-smoke`; then, with nothing else
-  running, `make container-v1-stage STAGE=<stage>`, which reruns both C++
+  running, `STAGE=<stage> make container-v1-stage`, which reruns both C++
   engines and appends the stage to the history. Commit the records, the
   history and the table. The PR body quotes the stage's rows and says whether
   any ratio grew by more than 10% from the previous stage.
