@@ -482,7 +482,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_update_susceptible(
         return;
 
     p->set_virus(*m, *m->array_virus_tmp[which], LATENT);
-    m_down->start_latent(p, m);
 
     return;
 
@@ -499,7 +498,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_update_latent(
     if (model->stage_over(p, m))
     {
         p->change_state(*m, PRODROMAL);
-        model->start_prodromal(p, m);
     }
 
 }
@@ -520,7 +518,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_update_prodromal(
 
         model->day_rash_onset[p->get_id()] = m->today();
         p->change_state(*m, detect_it ? ISOLATED : RASH);
-        model->start_rash(p, m);
 
         if (detect_it)
             model->m_add_contact_tracing(p->get_id());
@@ -664,7 +661,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_update_quarantine_latent(
             (quarantine_period <= days_since) ?
             PRODROMAL : QUARANTINED_PRODROMAL
         );
-        model->start_prodromal(p, m);
         
 
     }
@@ -698,7 +694,6 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_update_quarantine_prodromal
         
         model->day_rash_onset[p->get_id()] = m->today();
         p->change_state(*m, ISOLATED);
-        model->start_rash(p, m);
         
     }
     else if (quarantine_period <= days_since)
