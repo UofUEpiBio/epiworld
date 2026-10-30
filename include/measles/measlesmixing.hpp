@@ -599,11 +599,11 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
             continue;
 
         // Getting the number of contacts, if it is greater
-        // than the maximum, it means that we overflowed, so
-        // we will only quarantine the first EPI_MAX_TRACKING
+        // than the log's capacity, it means that we overflowed, so
+        // we will only quarantine the first get_max_contacts()
         size_t n_contacts = ct.get_n_contacts(agent_i);
-        if (n_contacts >= EPI_MAX_TRACKING)
-            n_contacts = EPI_MAX_TRACKING;
+        if (n_contacts > ct.get_max_contacts())
+            n_contacts = ct.get_max_contacts();
 
         // When the rash onset started (this is for contact tracing)
         int day_rash_onset_agent_i = model->day_rash_onset[agent_i];

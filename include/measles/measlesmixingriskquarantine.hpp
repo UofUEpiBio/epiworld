@@ -786,8 +786,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
         // (B) Checking the contacts
         auto & ct = model->mixing->get_tracing();
         size_t n_contacts = ct.get_n_contacts(agent_i_idx);
-        if (n_contacts > EPI_MAX_TRACKING)
-            n_contacts = EPI_MAX_TRACKING;
+        if (n_contacts > ct.get_max_contacts())
+            n_contacts = ct.get_max_contacts();
 
         for (size_t contact_j_idx = 0u; contact_j_idx < n_contacts; ++contact_j_idx)
         {
@@ -877,8 +877,8 @@ inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TS
         // We also check who are the contacted agents
         auto & ct = model->mixing->get_tracing();
         size_t n_contacts = ct.get_n_contacts(agent_i_idx);
-        if (n_contacts >= EPI_MAX_TRACKING)
-            n_contacts = EPI_MAX_TRACKING;
+        if (n_contacts > ct.get_max_contacts())
+            n_contacts = ct.get_max_contacts();
 
         for (size_t contact_j_idx = 0u; contact_j_idx < n_contacts; ++contact_j_idx)
         {
