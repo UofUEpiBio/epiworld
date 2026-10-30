@@ -1579,7 +1579,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-30).
 | Phase 3d-1 (groupings) | #335 merged (+ #336 merged: whole-number counts) | #224, #225 merged | #39, #40 merged | #23 merged, #24 (superseded by #25: close) | #67 merged (re-vendor only) |
 | 3d-1b (networks without maps, #339) | #341 merged | #227 merged | #42 | #27 | #70 |
 | Phase 3d-2 (measles on layers) | #340 merged (+ `master`: the queue fix, #338; #345 merged: log capacity, group counts) | #226 merged | #41 merged (re-vendor only) | #25 merged | #68 merged |
-| Phase 3d-3a (entities and the model tracer removed) | PRNUM | | | | |
+| Phase 3d-3a (entities and the model tracer removed) | #349 | | | | |
 | Phase 3d-3b (Bubbles on a layer, example model) | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
