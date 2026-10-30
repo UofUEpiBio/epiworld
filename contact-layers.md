@@ -15,7 +15,8 @@ contact probability per pair (`q = 1`: cliques, no ties stored); one sampler
 drawing distinct contacts for both forms; tracing within groups by a history
 of moves and absences (D9, D11). Revised 2026-10-28: epiworld-benchmark
 tracks the work with a 1.0.0 engine, rerun at every merged phase (Sections 6,
-8, 11.7).
+8, 11.7). Appendix A (2026-10-30) records a design still in discussion:
+quarantine, isolation and tracing as layer-targeted interventions.
 **Goal:** let a single model draw transmission from several contact sources at
 once -- e.g., mixing within households, a workplace network, and mixing in
 public spaces -- each with its own structure, weight, and participation rules.
@@ -1185,7 +1186,9 @@ mixing, a network for a network model, both for both; the school model is
 reduction contact rate" becomes the layer's participation of Rash. The
 risk-quarantine model keeps its own policy on the same layers. Contacts are
 then distinct (D9), so results change and the checks are statistical (R0,
-transition rates), as for the consolidated SEIR models.
+transition rates), as for the consolidated SEIR models. Going further --
+quarantine, isolation and tracing as interventions that target layers, so the
+risk-quarantine model goes too -- is in discussion (Appendix A).
 
 ### Phase 5 -- push for mixing layers
 
@@ -1577,3 +1580,79 @@ from the user; epiworldjs's measles presets add it), then 3d-3.
 - **`main` -> `v1-layers`** merges, as in the wrappers. A conflict under
   `results/` takes `main`'s side, then `make collect`; the next rerun
   replaces the two C++ engines' records.
+
+---
+
+## Appendix A. In discussion: quarantine and isolation as layer-targeted interventions
+
+> **Not settled.** Raised on 2026-10-30, while 3d-1b (#341) was open and
+> before 3d-3. Nothing here is a decision yet: it is recorded so the
+> discussion can resume. The settled plan stays as written in Section 6
+> (measles consolidation: the risk-quarantine model keeps its own policy)
+> until this appendix is resolved and moved into the body.
+
+### The idea
+
+With layers, a model only needs to describe the disease. The contact
+structure is the layers the user adds, and the public-health response is a
+set of interventions that target layers by name. For measles, that means one
+`ModelMeasles` (the disease: Exposed, Prodromal, Rash, Hospitalized,
+Recovered) instead of `ModelMeaslesMixing`, `ModelMeaslesSchool` and
+`ModelMeaslesMixingRiskQuarantine`, plus:
+
+- **isolation** of detected cases;
+- **contact quarantine**, traced and applied on chosen layers: with
+  `layers = "school"`, it traces school contacts and keeps the quarantined out
+  of the school only, while the household layer and a population-wide contact
+  matrix keep running. The risk-based policy becomes an option of this
+  intervention ("high risk" = the case's groupmates on the school layer, i.e.
+  tracing by membership);
+- **PEP**, which already works this way: a separate intervention reading every
+  traced layer (`interventionmeaslespep`).
+
+A user can then build, for example, a model with schools (a within-group
+mixing layer), households (cliques) and a community contact matrix, with
+quarantine only at school. Today that needs a new model class. The same move
+turns `ModelSEIRQuarantine` into `ModelSEIR` plus the quarantine
+intervention, which shrinks the model list in every wrapper and in the
+registry. It extends the "shared tracing policy" of Section 4 and the
+per-layer actions of D2: school-and-community tracing in one model is the
+"first real second user" Section 4 waits for.
+
+### Open questions
+
+1. **Quarantine as states or as a flag.** Today quarantine multiplies the
+   disease states (Quarantined Susceptible, Quarantined Exposed, Isolated,
+   Isolated Recovered, ...). Epidemiologically, quarantine is a status
+   orthogonal to the disease. As an intervention it would be a per-agent,
+   per-layer exclusion with a timer (Phase 4's participation, D2), and the
+   disease keeps a small state set. The cost: quarantined counts leave the
+   state history, so the intervention needs its own history (counts by day
+   and layer), and every measles output, vignette and calibration that reports
+   "Quarantined ..." changes. Leaning: flags, since interventions that each add
+   states to a model do not compose.
+2. **Order of interventions.** With several in one step (isolation,
+   quarantine at school, PEP in the community), their order changes the draws
+   and the outcomes. The core needs one rule: e.g., the order in which they
+   were added, run at a fixed point of the step.
+3. **Where detection lives.** Detection ("detected at rash onset with
+   probability p", days undetected) could stay in the disease model, with the
+   response in the intervention. Or it could move into the isolation
+   intervention, so a model without interventions has no detection
+   parameters. The tracing window and success rate belong to the quarantine
+   intervention either way.
+4. **Results change.** Distinct contacts (D9) and a different order of draws
+   mean statistical checks, as for the SEIR consolidation (Section 6). The
+   measles package is used for policy work (e.g., the Short Creek vignette),
+   so the comparison uses realistic parameters, not the test suite's.
+5. **Timing.** It needs Phase 4's exclusion and layer-targeted tools. Proposed
+   order: Phase 4, then a step "tracing, quarantine and isolation as
+   interventions" covering both SEIR and measles, then `ModelMeasles`. The
+   registry lands before Phase 4, so it would briefly register models that go
+   away; their registry entries should stay thin. The removed models become
+   defunct stubs naming `ModelMeasles` (or `ModelSEIR`) plus the
+   interventions.
+6. **Naming.** `ModelMeasles` for the disease; the interventions named by what
+   they do (`isolation`, `quarantine`, `pep`), each taking the layers it acts
+   on. To settle with the wrappers' naming (Section 6, the R prefixed
+   functions).
