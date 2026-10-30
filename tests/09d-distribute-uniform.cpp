@@ -13,7 +13,8 @@ EPIWORLD_TEST_CASE(
 
     size_t nexperiments = 3000u;
 
-    // Tools and virus_randomly(): 3 agents, one recipient each
+    // Tools and virus_randomly(): 3 agents, one recipient each; the mixing
+    // layer puts the three in one group
     epimodels::ModelSIR<> model(
         "a virus", 3u, 0.0, 0.0, 0.0
     );
@@ -21,8 +22,6 @@ EPIWORLD_TEST_CASE(
     model.get_virus(0).set_distribution(
         distribute_virus_randomly<>(1, false)
     );
-
-    model.add_entity(Entity<>("everyone", distribute_entity_to_range<>(0, 3)));
 
     Tool<> tool_set("in set");
     tool_set.set_distribution(distribute_tool_randomly<>(1, false, {0u, 2u}));
@@ -32,12 +31,14 @@ EPIWORLD_TEST_CASE(
     tool_all.set_distribution(distribute_tool_randomly<>(1, false));
     model.add_tool(tool_all);
 
-    Tool<> tool_entity("by entity");
-    tool_entity.set_distribution(distribute_tool_to_entities<>({1.0}, false));
-    model.add_tool(tool_entity);
+    Tool<> tool_group("by group");
+    tool_group.set_distribution(
+        distribute_tool_to_groups<>("random mixing", {1.0}, false)
+    );
+    model.add_tool(tool_group);
 
     std::map< std::string, std::vector< double > > picked;
-    for (auto name : {"virus", "in set", "anyone", "by entity"})
+    for (auto name : {"virus", "in set", "anyone", "by group"})
         picked[name] = std::vector< double >(3u, 0.0);
 
     model.run_multiple(
@@ -56,25 +57,22 @@ EPIWORLD_TEST_CASE(
         true, false
     );
 
-    // virus_to_entities() in a model of its own (an agent holds one virus)
-    epimodels::ModelSIR<> model_entity(
+    // virus_to_groups() in a model of its own (an agent holds one virus)
+    epimodels::ModelSIR<> model_group(
         "a virus", 3u, 0.0, 0.0, 0.0
     );
-    add_random_mixing(model_entity, 0.0);
-    model_entity.get_virus(0).set_distribution(
-        distribute_virus_to_entities<>({1.0}, false)
-    );
-    model_entity.add_entity(
-        Entity<>("everyone", distribute_entity_to_range<>(0, 3))
+    add_random_mixing(model_group, 0.0);
+    model_group.get_virus(0).set_distribution(
+        distribute_virus_to_groups<>("random mixing", {1.0}, false)
     );
 
-    picked["virus by entity"] = std::vector< double >(3u, 0.0);
-    model_entity.run_multiple(
+    picked["virus by group"] = std::vector< double >(3u, 0.0);
+    model_group.run_multiple(
         0, nexperiments, 1231,
         [&picked](size_t, Model<> * m) -> void {
             for (auto & agent : m->get_agents())
                 if (agent.get_virus() != nullptr)
-                    picked["virus by entity"][agent.get_id()] += 1.0;
+                    picked["virus by group"][agent.get_id()] += 1.0;
         },
         true, false
     );
@@ -84,8 +82,8 @@ EPIWORLD_TEST_CASE(
         {"virus",           {1.0/3.0, 1.0/3.0, 1.0/3.0}},
         {"in set",          {0.5,     0.0,     0.5    }},
         {"anyone",          {1.0/3.0, 1.0/3.0, 1.0/3.0}},
-        {"by entity",       {1.0/3.0, 1.0/3.0, 1.0/3.0}},
-        {"virus by entity", {1.0/3.0, 1.0/3.0, 1.0/3.0}}
+        {"by group",        {1.0/3.0, 1.0/3.0, 1.0/3.0}},
+        {"virus by group",  {1.0/3.0, 1.0/3.0, 1.0/3.0}}
     };
 
     for (auto & [name, counts] : picked)

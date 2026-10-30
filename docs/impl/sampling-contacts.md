@@ -144,7 +144,7 @@ Therefore, for example, a vaccinated agent wearing a mask would have a factor of
 ## See Also
 
 - [Push and Pull Transmission](transmission-sampling.md) — the odds form of the probability of infection, and sampling it from the infectious agents.
-- [Mixing and Entity Distribution](mixing-and-entity-distribution.md) — contact matrices and entity distribution functions that define group interactions.
+- [Mixing and Entity Distribution](mixing-and-entity-distribution.md) — contact matrices and the groupings that define group interactions.
 - [Core Simulation Models](core-simulation-models.md) — the mixing and quarantine models that use this contact sampling approach.
 - [Virus and Tool Distribution Functions](virus-and-tool-distribution.md) — how virus transmission probabilities and tool adjustment factors are configured.
 - [Quarantine, Isolation, and Contact Tracing](quarantine-isolation-and-contact-tracing.md) — how quarantine mechanisms modify the available agent pool for contact sampling.

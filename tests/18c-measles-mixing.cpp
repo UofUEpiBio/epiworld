@@ -38,7 +38,7 @@ EPIWORLD_TEST_CASE(
         2u           // Contact tracing days window
     );
 
-    // Adding a single entity (population group)
+    // Adding a single group
     add_group_mixing(
         model_0, contact_matrix, blocks({0u, 3'000u, 6'000u, 9'000u})
     );

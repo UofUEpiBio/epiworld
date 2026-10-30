@@ -79,7 +79,6 @@ EPIWORLD_TEST_CASE("Post-sampling callback - mixing and tracing", "[post-samplin
         model.run(40, 1231);
 
         // Every contact delivered is in the mixing layer's log, once
-        REQUIRE_FALSE(model.is_contact_tracing_on());
         auto & ct = model.get_layer("mixing").get_tracing();
         size_t total = 0u;
         for (size_t i = 0u; i < model.size(); ++i)

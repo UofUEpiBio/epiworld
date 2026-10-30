@@ -19,7 +19,8 @@ using namespace epiworld;
  *     add_contact() returns the same object address.
  *  5. Verify cache invalidation: adding a new contact causes the next call
  *     to get_contacts() to rebuild the cache.
- *  6. Cross-check against the low-level get_contact() API on a model run.
+ *  6. Cross-check against the low-level get_contact() API on a model run,
+ *     reading a network layer's log.
  */
 EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-contacts]") {
 
@@ -173,71 +174,20 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
     }
 
     // -----------------------------------------------------------------------
-    // Cross-check: run a small SIR model and verify that get_contacts()
-    // returns exactly the same (agent, contact_id, day) triples as the
-    // low-level get_contact() API.
+    // Cross-check: run a small SIR model with a traced network layer and
+    // verify that get_contacts() returns exactly the same (agent, contact_id,
+    // day) triples as the low-level get_contact() API.
     // -----------------------------------------------------------------------
-    Model<> model(200);
-
-    auto update_susceptible = [](Agent<> * p, Model<> * m) -> void {
-
-        auto & model_ct = m->get_contact_tracing();
-
-        size_t nviruses_tmp = 0u;
-        for (auto * neighbor : tests_net(*m).neighbors_view(p->get_id()))
-        {
-            if (neighbor->get_virus() == nullptr)
-                continue;
-
-            auto & v = neighbor->get_virus();
-
-            model_ct.add_contact(
-                neighbor->get_id(),
-                p->get_id(),
-                static_cast<size_t>(m->today())
-            );
-
-            m->array_double_tmp[nviruses_tmp] =
-                (1.0 - p->get_susceptibility_reduction(v, *m)) *
-                v->get_prob_infecting(m) *
-                (1.0 - neighbor->get_transmission_reduction(v, *m));
-
-            m->array_virus_tmp[nviruses_tmp++] = &(*v);
-        }
-
-        if (nviruses_tmp == 0u)
-            return;
-
-        int which = roulette(nviruses_tmp, m);
-        if (which < 0)
-            return;
-
-        p->set_virus(*m, *m->array_virus_tmp[which]);
-    };
-
-    model.add_state("Susceptible", update_susceptible);
-    model.add_state("Infected",    default_update_exposed<>);
-    model.add_state("Recovered");
-
-    model.add_param(1.0, "Transmission rate");
-    model.add_param(0.3, "Recovery rate");
-
-    Virus<> virus("MyVirus", 0.05, true);
-    virus.set_state(1, 2, 2);
-    virus.set_prob_infecting("Transmission rate");
-    virus.set_prob_recovery("Recovery rate");
-    model.add_virus(virus);
-
-    model.set_name("SIR get_contacts test");
-    model.contact_tracing_on();
-    model.add_layer(layer::network(
+    epimodels::ModelSIR<> model("MyVirus", 200, 0.05, 1.0, 0.3);
+    auto & net = model.add_layer(layer::network(
         "network", rgraph_smallworld(200, 5, 0.01, false, model)
     ));
+    net.enable_tracing();
     model.seed(42);
     model.verbose_off();
     model.run(30);
 
-    auto & model_ct = model.get_contact_tracing();
+    auto & model_ct = net.get_tracing();
 
     // Ground truth: triples from low-level API.
     using Triple = std::tuple<size_t, size_t, int>;

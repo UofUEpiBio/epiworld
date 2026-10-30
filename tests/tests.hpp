@@ -79,7 +79,7 @@ inline std::vector< size_t > ranges(
 /**
  * Adds a mixing layer named "mixing" with the contact matrix (column-major) and
  * the groups, fixed or a grouping (what ModelSIRMixing and ModelSEIRMixing did
- * with entities).
+ * in epiworld 0.x).
  */
 template<typename TSeq, typename G>
 inline void add_group_mixing(
@@ -197,21 +197,6 @@ inline EpiTempFile epi_temp_file(
         (save_dir / pattern).string(),
         (save_dir / pattern).string()
     };
-}
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline epiworld::EntityToAgentFun<TSeq> dist_factory(int from, int to) {
-    return [from, to](epiworld::Entity<TSeq> & e, epiworld::Model<TSeq> * m) -> void {
-
-            auto & agents = m->get_agents();
-            for (int i = from; i < to; ++i)
-            {
-                e.add_agent(&agents[i], *m);
-            }
-            
-            return;
-
-        };
 }
 
 template<typename TSeq = EPI_DEFAULT_TSEQ>
