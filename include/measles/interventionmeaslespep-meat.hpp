@@ -161,8 +161,6 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     int pep_mmr_window = static_cast<int>(model->par(this->_par_pep_mmr_window));
     int pep_ig_window = static_cast<int>(model->par(this->_par_pep_ig_window)); 
 
-    auto & contact_trace = model->get_contact_tracing();
-
     // Getting the list of agents that triggered the quarantine, together
     // with the day public health considers each of them to have become
     // infectious.
@@ -229,10 +227,6 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
 
         size_t agent_id = cases[t_i];
 
-        auto n_recorded = contact_trace.get_n_contacts(agent_id);
-        if (n_recorded == 0)
-            continue;
-
         // Start of the infectious window as considered by public health:
         // rash onset counted backwards by the prodromal period. Nobody
         // could have been exposed before the simulation began.
@@ -240,25 +234,36 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         if (infectious_since < 0)
             infectious_since = 0;
 
-        // First day the class encountered this index while infectious.
+        // First day the class encountered this index while infectious, in
+        // the contact logs of the model's traced layers.
         //
-        // Contact tracing keeps only the most recent `max_contacts`
-        // encounters per agent, in a circular buffer. Once it has wrapped
-        // around, the earliest encounters have been overwritten, and the
-        // oldest one still on record is *later* than the true first
-        // encounter. Trusting it would shorten `days_since` and hand out
-        // PEP after the window had in fact closed. When we detect that
-        // loss we fall back to the date public health would use with no
-        // contact data at all: the infectious-onset date. That is the
-        // earliest the class could possibly have been exposed, so the
-        // fallback can only withhold PEP, never grant it too late.
+        // A log keeps only the most recent `max_contacts` encounters per
+        // agent, in a circular buffer. Once it has wrapped around, the
+        // earliest encounters have been overwritten, and the oldest one
+        // still on record is *later* than the true first encounter. Trusting
+        // it would shorten `days_since` and hand out PEP after the window had
+        // in fact closed. When we detect that loss we fall back to the date
+        // public health would use with no contact data at all: the
+        // infectious-onset date. That is the earliest the class could
+        // possibly have been exposed, so the fallback can only withhold PEP,
+        // never grant it too late.
         int index_first_seen = -1;
-        if (n_recorded > contact_trace.get_max_contacts())
+        for (size_t layer_i = 0u; layer_i < model->get_n_layers(); ++layer_i)
         {
-            index_first_seen = infectious_since;
-        }
-        else
-        {
+
+            auto & layer = model->get_layer(layer_i);
+            if (!layer.is_tracing())
+                continue;
+
+            auto & contact_trace = layer.get_tracing();
+            auto n_recorded = contact_trace.get_n_contacts(agent_id);
+
+            if (n_recorded > contact_trace.get_max_contacts())
+            {
+                index_first_seen = infectious_since;
+                break;
+            }
+
             for (size_t i = 0u; i < n_recorded; ++i)
             {
                 int contact_day = contact_trace.get_contact(agent_id, i).second;
@@ -271,6 +276,7 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
                 if ((index_first_seen < 0) || (contact_day < index_first_seen))
                     index_first_seen = contact_day;
             }
+
         }
 
         // This index never met the class while infectious (e.g. it was

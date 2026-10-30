@@ -1,12 +1,12 @@
 ## Overview
 
-Agents' interactions in `epiworld` are implemented in various ways. Depending on the model, contacts are drawn either directly from agents' connections (network models) or via binomial sampling over groups defined by a contact matrix (mixing models). This section explains the optimization used in the mixing models to reduce computation time when modeling potentially infectious contacts.
+Agents' interactions in `epiworld` are implemented in various ways. Depending on the model, contacts are drawn either directly from agents' connections (network models) or via binomial sampling over groups defined by a contact matrix (mixing models). This section explains the optimization the measles mixing models use, with their own samplers, to reduce computation time when modeling potentially infectious contacts (the generic sampler of a mixing layer draws distinct contacts instead; see `layer::Mixing`).
 
 ## Drawing contacts
 
 In networked models, we assume that all contacts are drawn at each step of the simulation. The randomness comes from the probability of transmission, which depends on the virus, the infectious agent, and the susceptible agent.
 
-In the mixing models, each agent belongs to a group, and interactions are governed by a contact matrix $C$. Entry $C(g, j)$ is the expected number of contacts that an agent in group $g$ has with agents in group $j$ per day. Internally, the matrix is stored in column-major order, so entry $(g, j)$ is stored at `contact_matrix[j * n_groups + g]`.
+In the measles mixing models, each agent belongs to a group of the model's mixing layer, and interactions are governed by the layer's contact matrix $C$ (times its contact rate, 1 unless set with `set_contact_rate()`). Entry $C(g, j)$ is the expected number of contacts that an agent in group $g$ has with agents in group $j$ per day. Internally, the matrix is stored in column-major order, so entry $(g, j)$ is stored at `contact_matrix[j * n_groups + g]`.
 
 Let $n_{\text{avail}}(j)$ denote the number of agents in group $j$ that are currently available for mixing, and let $n_{\text{inf}}(j)$ denote the number of infectious agents in that group. Then the total number of contacts that an agent in group $g$ has with group $j$ can be written as
 
@@ -25,7 +25,7 @@ This is exactly what the code implements through
 ```cpp
 rbinom(
 	n_inf_in_group_j,
-	adjusted_contact_rate[j] * contact_matrix[j * n_groups + g]
+	adjusted_contact_rate[j] * contact_rate * contact_matrix[j * n_groups + g]
 )
 ```
 
@@ -88,7 +88,7 @@ rbinom(n_primary_infectious_per_group[g], base_rate)
 rbinom(n_reduced_infectious_per_group[g], r * base_rate)
 ```
 
-where `base_rate = adjusted_contact_rate[j] * contact_matrix[j * n_groups + g]` and `r = 1 - model.par("Rash reduction contact rate")`.
+where `base_rate = adjusted_contact_rate[j] * contact_rate * contact_matrix[j * n_groups + g]` and `r = 1 - model.par("Rash reduction contact rate")`.
 
 ### Expected contacts
 

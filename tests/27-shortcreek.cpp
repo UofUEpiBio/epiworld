@@ -5,8 +5,8 @@
  * This program replicates the simulation setup from the R vignette
  * `vignettes/short-creek.qmd` using only the epiworld C++ library and the
  * standard library. It builds a ModelMeaslesMixing model with Short Creek
- * population data, distributes entities and vaccination tools, and runs
- * multiple simulations.
+ * population data, puts the groups in a mixing layer, distributes the
+ * vaccine by group, and runs multiple simulations.
  *
  * @note Compile with:
  *   g++ -std=c++17 -fopenmp -O2 -g -Wall -pedantic \
@@ -198,7 +198,6 @@ EPIWORLD_TEST_CASE("ModelMeaslesMixing with Short Creek data", "[ModelMeaslesMix
         12.0,                                    // incubation_period
         prodromal_period,                        // prodromal_period
         rash_period,                             // rash_period
-        contact_matrix,                          // contact_matrix (column-major)
         h_rate,                                  // hospitalization_rate
         7.0,                                     // hospitalization_period
         2.0,                                     // days_undetected
@@ -212,29 +211,18 @@ EPIWORLD_TEST_CASE("ModelMeaslesMixing with Short Creek data", "[ModelMeaslesMix
     );
 
     // -----------------------------------------------------------------
-    // 5. Add entities from the population data
-    //    (mirrors the R function add_entities_from_dataframe)
+    // 5. The groups, from the population data: each a contiguous range
+    //    of agents, in a mixing layer with the contact matrix
     // -----------------------------------------------------------------
-    int roll_sum = 0;
+    std::vector< size_t > bounds = {0u};
     for (const auto & g : short_creek)
-    {
-        int from = roll_sum;
-        int to   = roll_sum + g.pop;
+        bounds.push_back(bounds.back() + static_cast< size_t >(g.pop));
 
-        // Create an entity and set its distribution to a contiguous
-        // range of agents [from, to).
-        epiworld::Entity<> e(
-            g.name,
-            epiworld::distribute_entity_to_range<>(from, to)
-        );
-
-        measles_model.add_entity(e);
-        roll_sum = to;
-    }
+    add_group_mixing(measles_model, contact_matrix, blocks(bounds));
 
     // -----------------------------------------------------------------
-    // 6. Distribute vaccination tool by entity
-    //    (mirrors distribute_tool_to_entities + set_distribution_tool)
+    // 6. Distribute vaccination tool by group
+    //    (mirrors distribute_tool_to_groups + set_distribution_tool)
     // -----------------------------------------------------------------
     std::vector<double> vacc_rates;
     vacc_rates.reserve(short_creek.size());
@@ -242,7 +230,8 @@ EPIWORLD_TEST_CASE("ModelMeaslesMixing with Short Creek data", "[ModelMeaslesMix
         vacc_rates.push_back(g.vax);
 
     measles_model.get_tool(0).set_distribution(
-        epiworld::distribute_tool_to_entities<>(
+        epiworld::distribute_tool_to_groups<>(
+            "mixing",
             vacc_rates,
             true // as_proportion
         )

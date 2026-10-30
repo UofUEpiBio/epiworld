@@ -3,11 +3,10 @@
 
 using namespace epiworld;
 
-// The post-sampling callback in the mixing models. SEIR mixing with quarantine
-// traces its mixing layer, and the measles models record contacts in the
-// model's log through the callback they install: either way, every sampled
-// contact must end up in the log exactly once, and the log must still drive
-// the quarantine.
+// The post-sampling callback in the mixing models. SEIR with quarantine and
+// the measles models trace their mixing layer: every contact given to the
+// callback must be in the layer's log exactly once, and the log must still
+// drive the quarantine.
 
 namespace {
 
@@ -16,18 +15,15 @@ struct Delivered {
     size_t duplicates = 0u;          // Batches that repeat a contacted agent
 };
 
-// Wraps the tracing callback of the model so the deliveries can be counted
+// A post-sampling callback that counts the contacts it is given
 template<typename TModel>
 void count_deliveries(TModel & model, Delivered & d)
 {
 
     d.per_agent.assign(model.size(), 0u);
-    auto trace = make_contact_tracing_post_sampling<>();
 
     model.set_post_sampling(
-        [&d, trace](Agent<> * p, const SampledContactsView & c, Model<> * m) -> void {
-
-            trace(p, c, m);
+        [&d](Agent<> * p, const SampledContactsView & c, Model<> *) -> void {
 
             d.per_agent[p->get_id()] += c.size();
 
@@ -108,11 +104,11 @@ EPIWORLD_TEST_CASE("Post-sampling callback - mixing and tracing", "[post-samplin
 
         const size_t n = 2000u;
         measles::ModelMeaslesMixing<> model(
-            n, 10.0 / n, 0.2, 0.9, 0.3, 7.0, 4.0, 5.0, {2.0},
+            n, 10.0 / n, 0.2, 0.9, 0.3, 7.0, 4.0, 5.0,
             0.2, 7.0, 3.0, 21, .8, .8, 4, 0.0, 1.0, 4u
         );
 
-        model.add_entity(Entity<>("Population", dist_factory<>(0, n)));
+        add_group_mixing(model, {2.0}, blocks({0u, n}));
         model.get_virus(0).set_distribution(
             [](Virus<> & v, Model<> * m) -> void {
                 for (int i = 0; i < 10; ++i)
@@ -126,7 +122,8 @@ EPIWORLD_TEST_CASE("Post-sampling callback - mixing and tracing", "[post-samplin
         model.verbose_off();
         model.run(60, 1231);
 
-        auto & ct = model.get_contact_tracing();
+        // Every contact delivered is in the mixing layer's log, once
+        auto & ct = model.get_layer("mixing").get_tracing();
         size_t total = 0u;
         for (size_t i = 0u; i < model.size(); ++i)
         {

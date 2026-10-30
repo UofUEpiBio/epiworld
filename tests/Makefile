@@ -48,6 +48,9 @@ $(NAME)_SOURCES := \
 	18d-measles-mixing.cpp \
 	18e-measles-mixing-queue.cpp \
 	18f-measles-mixing-r0s.cpp \
+	18g-measles-mixing-isolated.cpp \
+	18h-measles-mixing-layer.cpp \
+	18i-measles-mixing-small-log.cpp \
 	19a-measles-mixing-risk-quarantine-basic.cpp \
 	19b-measles-mixing-risk-quarantine-transitions.cpp \
 	19c-measles-mixing-risk-quarantine-durations.cpp \
@@ -101,6 +104,7 @@ $(NAME)_SOURCES := \
 	34e-transmission-auto-choice.cpp \
 	35a-directed-network.cpp \
 	35b-directed-transmission.cpp \
+	35c-bernoulli-extreme-p.cpp \
 	36a-edgelist-neighbors.cpp \
 	36b-edgelist-paths-agree.cpp \
 	37a-parameter-lookup.cpp \

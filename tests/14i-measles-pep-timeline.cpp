@@ -104,7 +104,7 @@ EPIWORLD_TEST_CASE(
 
         REQUIRE(model.today() == TODAY);
 
-        auto & ct = model.get_contact_tracing();
+        auto & ct = model.get_layer("school").get_tracing();
         ct.add_contact(0, 1, 8); // first encounter: day 8
         ct.add_contact(0, 2, 9);
 
@@ -135,7 +135,7 @@ EPIWORLD_TEST_CASE(
         auto model = make_school();
         auto pep = make_pep();
 
-        auto & ct = model.get_contact_tracing();
+        auto & ct = model.get_layer("school").get_tracing();
         ct.add_contact(0, 1, 2); // first encounter: day 2
         ct.add_contact(0, 2, 9); // most recent encounter: day 9
 
@@ -158,7 +158,7 @@ EPIWORLD_TEST_CASE(
         auto model = make_school();
         auto pep = make_pep();
 
-        auto & ct = model.get_contact_tracing();
+        auto & ct = model.get_layer("school").get_tracing();
         ct.add_contact(0, 1, 3); // before infectious onset: ignored
         ct.add_contact(0, 2, 9); // first encounter while infectious
 
@@ -182,7 +182,7 @@ EPIWORLD_TEST_CASE(
         auto model = make_school();
         auto pep = make_pep();
 
-        auto & ct = model.get_contact_tracing();
+        auto & ct = model.get_layer("school").get_tracing();
         ct.add_contact(0, 1, 2);   // case A: first encounter day 2
         ct.add_contact(10, 2, 9);  // case B: first encounter day 9
 
@@ -215,7 +215,7 @@ EPIWORLD_TEST_CASE(
         auto model = make_school();
         auto pep = make_pep();
 
-        auto & ct = model.get_contact_tracing();
+        auto & ct = model.get_layer("school").get_tracing();
         ct.add_contact(0, 1, 8); // first day back in session
         ct.add_contact(0, 2, 9);
 
@@ -248,7 +248,7 @@ EPIWORLD_TEST_CASE(
         auto model = make_school();
         auto pep = make_pep();
 
-        auto & ct = model.get_contact_tracing();
+        auto & ct = model.get_layer("school").get_tracing();
         const size_t cap = ct.get_max_contacts();
 
         // Fill the buffer so that the day 5 and day 6 encounters are

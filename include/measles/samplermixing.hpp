@@ -4,13 +4,43 @@
 using namespace epiworld;
 
 /**
+ * @brief The layer a measles mixing model samples its contacts from: the
+ * model's only layer, a `layer::Mixing` with a contact matrix.
+ *
+ * @details The measles models keep their own samplers (with replacement, see
+ * `SamplerMixing`), which read the layer's groups and contact matrix (times
+ * its contact rate) but would ignore any other layer, so a model with none or
+ * with more throws instead.
+ */
+template<typename TSeq>
+inline layer::Mixing<TSeq> & measles_mixing_layer(Model<TSeq> & model)
+{
+
+    auto * mix = (model.get_n_layers() == 1u) ?
+        dynamic_cast< layer::Mixing<TSeq> * >(&model.get_layer(0u)) : nullptr;
+
+    if ((mix == nullptr) || mix->within_groups())
+        throw std::logic_error(
+            model.get_name() + ": the model samples its contacts from one "
+            "mixing layer with a contact matrix (add it with "
+            "add_layer(layer::mixing(...))) and cannot use other layers; it "
+            "has " + std::to_string(model.get_n_layers()) + " layer(s)."
+        );
+
+    return *mix;
+
+}
+
+/**
  * @brief Reusable contact sampler for mixing models with two infectious stages.
  *
- * The sampler keeps the per-entity infectious-agent accounting and contact
- * sampling buffer used by ModelMeaslesMixing. The primary infectious state is
- * sampled at full weight; the reduced infectious state is sampled with a
- * relative contact rate computed as 1 minus a model parameter such as
- * "Rash reduction contact rate".
+ * The sampler keeps the per-group infectious-agent accounting and contact
+ * sampling buffer used by ModelMeaslesMixing; the groups and the contact
+ * matrix (times its contact rate) are those of the model's mixing layer (see
+ * `measles_mixing_layer()`), and the contacts go to its log. The primary
+ * infectious state is sampled at full weight; the reduced infectious state is
+ * sampled with a relative contact rate computed as 1 minus a model parameter
+ * such as "Rash reduction contact rate".
  *
  * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
  * @ingroup disease_specific
@@ -25,13 +55,16 @@ private:
     ParamRef reduced_contact_reduction_param{""};
     std::vector< int > contact_states;
 
+    layer::Mixing<TSeq> * mixing = nullptr; ///< The model's layer (update())
+    double contact_rate = 1.0;              ///< Its contact rate (update())
+
     std::vector< size_t > primary_infectious;
     std::vector< size_t > reduced_infectious;
 
     std::vector< size_t > n_primary_infectious_per_group;
     std::vector< size_t > n_reduced_infectious_per_group;
 
-    std::vector< size_t > entity_indices;
+    std::vector< size_t > group_start; ///< Where each group starts in the pools
     std::vector< double > adjusted_contact_rate;
     std::vector< size_t > sampled_agents;
 
@@ -48,22 +81,6 @@ public:
      * @brief Default constructor.
      */
     SamplerMixing() = default;
-
-    /**
-     * @brief Constructs and configures the sampler.
-     *
-     * @param primary_infectious_state_ State index for fully infectious agents.
-     * @param reduced_infectious_state_ State index for reduced-infectious agents.
-     * @param reduced_contact_reduction_param_ Model parameter name controlling
-     * reduced infectious contact reduction.
-     * @param contact_states_ Explicit states eligible for contact.
-     */
-    SamplerMixing(
-        int primary_infectious_state_,
-        int reduced_infectious_state_,
-        std::string reduced_contact_reduction_param_,
-        std::vector< int > contact_states_
-    );
 
     /**
      * @brief Configures state indices and contact-selection settings.
@@ -84,61 +101,33 @@ public:
     /**
      * @brief Resets internal buffers and recomputes infectious pools.
      *
-     * @param model Model containing current agents and entities.
+     * @param model Model containing current agents and its mixing layer.
      */
     void reset(Model<TSeq> & model);
 
     /**
-     * @brief Updates infectious pools and per-group sampling weights.
+     * @brief Updates infectious pools and per-group sampling weights (and
+     * reads the layer's groups, which may have changed, and contact rate).
      *
-     * @param model Model containing current agents and entities.
+     * @param model Model containing current agents and its mixing layer.
      */
     void update(Model<TSeq> & model);
 
     /**
-     * @brief Samples infectious contacts into the internal sampled-agent buffer.
+     * @brief Samples infectious contacts into the internal sampled-agent
+     * buffer, and logs them in the layer if it is traced.
      *
      * @param agent Agent for which contacts are sampled.
      * @param model Model containing current agent states.
-     * @param contact_matrix Matrix with between-group contact rates.
      *
      * @return Number of sampled contacts written to the internal buffer.
      */
-    size_t sample(
-        Agent<TSeq> * agent,
-        Model<TSeq> & model,
-        const ContactMatrix & contact_matrix
-    );
-
-    /**
-     * @brief Samples infectious contacts into a user-provided buffer.
-     *
-     * @param agent Agent for which contacts are sampled.
-     * @param model Model containing current agent states.
-     * @param contact_matrix Matrix with between-group contact rates.
-     * @param sampled_agents_ Output buffer receiving sampled agent ids.
-     *
-     * @return Number of sampled contacts written to @p sampled_agents_.
-     */
-    size_t sample(
-        Agent<TSeq> * agent,
-        Model<TSeq> & model,
-        const ContactMatrix & contact_matrix,
-        std::vector< size_t > & sampled_agents_
-    );
-
-    /**
-     * @brief Returns the internal sampled-agent buffer (const).
-     */
-    const std::vector< size_t > & get_sampled_agents() const
-    {
-        return sampled_agents;
-    }
+    size_t sample(Agent<TSeq> * agent, Model<TSeq> & model);
 
     /**
      * @brief Returns the internal sampled-agent buffer.
      */
-    std::vector< size_t > & get_sampled_agents()
+    const std::vector< size_t > & get_sampled_agents() const
     {
         return sampled_agents;
     }
@@ -164,22 +153,6 @@ public:
     #endif
 
 };
-
-template<typename TSeq>
-inline SamplerMixing<TSeq>::SamplerMixing(
-    int primary_infectious_state_,
-    int reduced_infectious_state_,
-    std::string reduced_contact_reduction_param_,
-    std::vector< int > contact_states_
-)
-{
-    configure(
-        primary_infectious_state_,
-        reduced_infectious_state_,
-        reduced_contact_reduction_param_,
-        contact_states_
-    );
-}
 
 template<typename TSeq>
 inline void SamplerMixing<TSeq>::configure(
@@ -229,24 +202,9 @@ inline bool SamplerMixing<TSeq>::is_available_for_contact(
 template<typename TSeq>
 inline void SamplerMixing<TSeq>::reset(Model<TSeq> & model)
 {
-    auto & entities = model.get_entities();
-
     sampled_agents.resize(model.size());
-    n_primary_infectious_per_group.assign(entities.size(), 0u);
-    n_reduced_infectious_per_group.assign(entities.size(), 0u);
-
     primary_infectious.assign(model.size(), 0u);
     reduced_infectious.assign(model.size(), 0u);
-
-    entity_indices.assign(entities.size(), 0u);
-
-    for (size_t i = 1u; i < entities.size(); ++i)
-    {
-        entity_indices[i] +=
-            entities[i - 1].size() +
-            entity_indices[i - 1]
-            ;
-    }
 
     update(model);
 }
@@ -254,64 +212,49 @@ inline void SamplerMixing<TSeq>::reset(Model<TSeq> & model)
 template<typename TSeq>
 inline void SamplerMixing<TSeq>::update(Model<TSeq> & model)
 {
-    auto & agents = model.get_agents();
-    auto & entities = model.get_entities();
+    mixing = &measles_mixing_layer(model);
+    contact_rate = mixing->get_contact_rate(model);
 
-    std::fill(
-        n_primary_infectious_per_group.begin(),
-        n_primary_infectious_per_group.end(),
-        0u
-    );
-    std::fill(
-        n_reduced_infectious_per_group.begin(),
-        n_reduced_infectious_per_group.end(),
-        0u
-    );
+    const size_t ngroups = mixing->get_n_groups();
+    constexpr size_t none = layer::Mixing<TSeq>::NO_GROUP;
 
-    adjusted_contact_rate.assign(entities.size(), 0.0);
+    n_primary_infectious_per_group.assign(ngroups, 0u);
+    n_reduced_infectious_per_group.assign(ngroups, 0u);
+    adjusted_contact_rate.assign(ngroups, 0.0);
+
+    // The pools of a group take as many slots as it has members
+    group_start.assign(ngroups, 0u);
+    for (size_t g = 1u; g < ngroups; ++g)
+        group_start[g] = group_start[g - 1] + mixing->members_of(g - 1).size();
 
     double reduced_contact_rate = get_reduced_contact_rate(model);
     bool include_reduced = reduced_contact_rate > 0.0;
 
     // We need to check all agents to see which ones
     // will be included in the infectious pools
-    for (const auto & a : agents)
+    for (const auto & a : model.get_agents())
     {
+        const size_t g = mixing->get_group(a.get_id());
+        if (g == none)
+            continue;
+
         int state = static_cast<int>(a.get_state());
-        auto n_entities = a.get_n_entities();
 
         if (state == primary_infectious_state)
         {
-            if (n_entities > 0u)
-            {
-                const auto & entity = a.get_entity(0u, model);
-                primary_infectious[
-                    entity_indices[entity.get_id()] +
-                    n_primary_infectious_per_group[entity.get_id()]++
-                ] = a.get_id();
-            }
+            primary_infectious[
+                group_start[g] + n_primary_infectious_per_group[g]++
+            ] = a.get_id();
         }
         else if (include_reduced && (state == reduced_infectious_state))
         {
-            if (n_entities > 0u)
-            {
-                const auto & entity = a.get_entity(0u, model);
-                reduced_infectious[
-                    entity_indices[entity.get_id()] +
-                    n_reduced_infectious_per_group[entity.get_id()]++
-                ] = a.get_id();
-            }
+            reduced_infectious[
+                group_start[g] + n_reduced_infectious_per_group[g]++
+            ] = a.get_id();
         }
 
-        if (
-            is_available_for_contact(state, include_reduced) &&
-            (n_entities > 0u)
-        )
-        {
-            adjusted_contact_rate[
-                a.get_entity(0u, model).get_id()
-            ] += 1.0;
-        }
+        if (is_available_for_contact(state, include_reduced))
+            adjusted_contact_rate[g] += 1.0;
     }
 
     for (auto & rate: adjusted_contact_rate)
@@ -329,28 +272,16 @@ inline void SamplerMixing<TSeq>::update(Model<TSeq> & model)
 template<typename TSeq>
 inline size_t SamplerMixing<TSeq>::sample(
     Agent<TSeq> * agent,
-    Model<TSeq> & model,
-    const ContactMatrix & contact_matrix
+    Model<TSeq> & model
 )
 {
-    return sample(agent, model, contact_matrix, sampled_agents);
-}
-
-template<typename TSeq>
-inline size_t SamplerMixing<TSeq>::sample(
-    Agent<TSeq> * agent,
-    Model<TSeq> & model,
-    const ContactMatrix & contact_matrix,
-    std::vector< size_t > & sampled_agents_
-)
-{
-    // If the agent is not in any entity, we cannot 
-    // find them in the contact matrix.
-    if (agent->get_n_entities() == 0u)
+    // An agent in no group meets nobody
+    const size_t agent_group_id = mixing->get_group(agent->get_id());
+    if (agent_group_id == layer::Mixing<TSeq>::NO_GROUP)
         return 0u;
 
-    size_t agent_group_id = agent->get_entity(0u, model).get_id();
-    size_t ngroups = model.get_entities().size();
+    const size_t ngroups = mixing->get_n_groups();
+    const auto & contact_matrix = mixing->get_contact_matrix();
 
     // The reduced-contact rate for the secondary infectious pool (e.g. rash).
     // r = 0  means no contacts at all; r = 1 means full contact rate.
@@ -360,9 +291,10 @@ inline size_t SamplerMixing<TSeq>::sample(
     size_t samp_id = 0u;
     for (size_t g = 0; g < ngroups; ++g)
     {
+        // Contacts per day of the agent's group with group g (column-major)
         double base_rate =
-            adjusted_contact_rate[g] *
-            contact_matrix.get_contact_rate(agent_group_id, g, false);
+            adjusted_contact_rate[g] * contact_rate *
+            contact_matrix[g * ngroups + agent_group_id];
 
         // --- Primary infectious pool (e.g. prodromal) ---
         if (n_primary_infectious_per_group[g] > 0u)
@@ -380,7 +312,7 @@ inline size_t SamplerMixing<TSeq>::sample(
 
                 #ifdef EPI_DEBUG
                 auto & a = model.get_agents().at(
-                    primary_infectious.at(entity_indices[g] + which)
+                    primary_infectious.at(group_start[g] + which)
                 );
                 if (static_cast<int>(a.get_state()) != primary_infectious_state)
                     throw std::logic_error(
@@ -388,14 +320,14 @@ inline size_t SamplerMixing<TSeq>::sample(
                     );
                 #else
                 auto & a = model.get_agent(
-                    primary_infectious[entity_indices[g] + which]
+                    primary_infectious[group_start[g] + which]
                 );
                 #endif
 
                 if (a.get_id() == agent->get_id())
                     continue;
 
-                sampled_agents_[samp_id++] = a.get_id();
+                sampled_agents[samp_id++] = a.get_id();
             }
         }
 
@@ -418,7 +350,7 @@ inline size_t SamplerMixing<TSeq>::sample(
 
                 #ifdef EPI_DEBUG
                 auto & a = model.get_agents().at(
-                    reduced_infectious.at(entity_indices[g] + which)
+                    reduced_infectious.at(group_start[g] + which)
                 );
                 if (static_cast<int>(a.get_state()) != reduced_infectious_state)
                     throw std::logic_error(
@@ -426,22 +358,23 @@ inline size_t SamplerMixing<TSeq>::sample(
                     );
                 #else
                 auto & a = model.get_agent(
-                    reduced_infectious[entity_indices[g] + which]
+                    reduced_infectious[group_start[g] + which]
                 );
                 #endif
 
                 if (a.get_id() == agent->get_id())
                     continue;
 
-                sampled_agents_[samp_id++] = a.get_id();
+                sampled_agents[samp_id++] = a.get_id();
             }
         }
     }
 
-    // Each sampled interaction, once, if a post-sampling callback listens
+    // The contacts go to the layer's log, and to the post-sampling callback
+    mixing->trace(sampled_agents.data(), samp_id, agent->get_id());
     if (model.has_post_sampling())
         model.register_sampled_contacts(
-            sampled_agents_.data(), samp_id, agent->get_id()
+            sampled_agents.data(), samp_id, agent->get_id()
         );
 
     return samp_id;
