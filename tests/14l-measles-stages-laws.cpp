@@ -93,11 +93,12 @@ EPIWORLD_TEST_CASE(
     REQUIRE(max_diff_latent < 0.015);
     REQUIRE(max_diff_recovered < 0.015);
 
-    // Nobody is latent for more than 30 days: the geometric period of mean
-    // 12 days left about 7% of the agents latent that long
+    // About 0.2% of the agents are latent for more than 21 days (the length
+    // of a quarantine); the geometric period of mean 12 days left about 16%
+    // latent that long
     int late = 0;
-    for (int d = 31; d <= 60; ++d)
+    for (int d = 22; d <= 60; ++d)
         late += latent[d];
-    REQUIRE(late == 0);
+    REQUIRE(late < static_cast<int>(n) / 100);
 
 }

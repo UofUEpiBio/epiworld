@@ -56,8 +56,17 @@ protected:
         epiworld_double days = mean;
         if ((sd > 0.0) && (mean > 0.0))
         {
+            // A standard normal from two uniforms (Box-Muller). Unlike
+            // Model::rlognormal(), whose distribution keeps a spare normal
+            // between calls (and across runs, as seeding does not reset it),
+            // this keeps no state, so a run's draws depend only on its seed.
+            epiworld_double u1 = 1.0 - m->runif(); // in (0, 1]
+            epiworld_double u2 = m->runif();
+            epiworld_double z  = std::sqrt(-2.0 * std::log(u1)) *
+                std::cos(2.0 * M_PI * u2);
+
             epiworld_double s2 = std::log(1.0 + (sd * sd) / (mean * mean));
-            days = m->rlognormal(std::log(mean) - s2 / 2.0, std::sqrt(s2));
+            days = std::exp(std::log(mean) - s2 / 2.0 + std::sqrt(s2) * z);
         }
 
         return std::max(1, static_cast<int>(std::lround(days)));
