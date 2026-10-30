@@ -15,7 +15,8 @@ contact probability per pair (`q = 1`: cliques, no ties stored); one sampler
 drawing distinct contacts for both forms; tracing within groups by a history
 of moves and absences (D9, D11). Revised 2026-10-28: epiworld-benchmark
 tracks the work with a 1.0.0 engine, rerun at every merged phase (Sections 6,
-8, 11.7).
+8, 11.7). Revised 2026-10-30: spatial layers on a hex map, as
+`Mixing` with a sparse contact matrix, after 1.0.0 (D12).
 **Goal:** let a single model draw transmission from several contact sources at
 once -- e.g., mixing within households, a workplace network, and mixing in
 public spaces -- each with its own structure, weight, and participation rules.
@@ -474,6 +475,89 @@ capacity. Open:
 - **Per-layer actions** (quarantine from school only, keep household) need the
   per-layer participation of D2. Tracing with per-layer success rates works
   without it; D2 widens what the traced agents can be made to do.
+
+### D12. Spatial layers (proposed 2026-10-30; after 1.0.0)
+
+A spatial layer places agents on a map of hexagons and has them meet people
+in their own cell and in nearby cells. It is **not a new layer kind**: a hex
+map is a grouping (one group per cell) plus a *sparse* contact matrix between
+cells, so it is a `layer::Mixing` built by a factory. Settled with the user
+(2026-10-30):
+
+- **Rates, as with a contact matrix.** An agent makes `c` contacts a day,
+  split across cells; in cell `h` each available person is met with
+  `p = min(1, rate * c(g, h) / others(h))`, the matrix sampler of D9 run over
+  the non-zero entries of the row only. Contacts per person do not depend on
+  how crowded a neighbourhood is (no hard per-pair contact between cells),
+  and the one calibrated level is the layer's contact rate (a model
+  parameter, `set_contact_rate()`, point 17).
+- **A kernel says where the contacts go.** Weights `w_0, ..., w_K` by ring
+  distance sum to 1; ring `k` has `6k` cells, each with `c(g, h) = w_k / 6k`.
+  The default (`K = 1`, `w = {a, 1 - a}`) is a fixed rate in one's own hex and
+  its neighbours; a decaying kernel (linear, exponential, truncated at `K`)
+  reaches further at lower rates; a user may instead give the sparse matrix
+  itself (triplets), e.g., a barrier between two cells. A kernel in physical
+  distance (km) is converted to rings by the factory, so changing the cell
+  size keeps contacts per person and their reach.
+- **Boundaries: no torus.** A cell on the edge has fewer cells per ring; its
+  row is renormalized over the cells that exist (once, when the grid is
+  built), so people on a coast keep `c` contacts and meet more inland. A cell
+  with no agents is skipped, like an empty group today.
+- **Placement at the beginning, never during a run.** Agents get their cell
+  from `set_groups()`: a fixed grouping, or a generator drawn at every reset
+  (one placement per replicate). Generators: `grouping::by_density(w)` (a cell
+  per unit, proportional to per-cell weights, e.g., a population raster);
+  `grouping::in_blocks(layer, inner)` (places the groups of another layer as
+  units, so household members share a cell); `grouping::nearest(layer,
+  cells, eligible)` and a gravity variant (assign eligible agents, e.g.,
+  children, to the groups of a layer by distance from their own cell, e.g.,
+  schools placed on cells). Daily movement (D8 with a hex ring as the pool) is
+  out of scope for now.
+- **Geometry lives outside the layer**, like `graph::` generators (point 20):
+  `geo::HexGrid` (axial coordinates, centres, neighbours, distance) with
+  builders `rectangle(width, height, cell_size)`, `rectangle(rows, cols,
+  scale)` (`scale = s` gives about `s` times as many cells), `polygon(xy,
+  cell_size)` (planar vertices in km, even-odd rule so holes work), and
+  `from_cells(coords, neighbours)`. The core reads no GIS formats: shapefiles
+  and GeoJSON are in latitude/longitude and need GDAL/PROJ to read and
+  project. The R wrapper does it with `sf` (`read_sf()`, `st_transform()`, then
+  vertices), or passes H3 cells (`h3jsr`) to `from_cells()`.
+
+```cpp
+auto grid  = geo::HexGrid::polygon(xy, 1.0);                 // 1 km cells
+auto space = layer::spatial("space", grid, geo::kernel({0.6, 0.4}));
+space->set_contact_rate("Contact rate (space)");
+space->set_groups(grouping::in_blocks("household", grouping::by_density(w)));
+school->set_groups(grouping::nearest("space", school_cells, is_child));
+```
+
+**Cost.** One representation, CSR, built once: `1 + 3K(K + 1)` entries per
+row (7, 19, 37, 61 for `K` = 1..4); 10k cells with `K = 3` is ~3 MB, where a
+dense matrix would be 800 MB. A susceptible costs one pass over its row,
+skipping cells with no infectious agent with one counter check; draws happen
+only where there are infectious agents. `K` is capped (say 5) so the cost
+stays bounded. Not now: a translation-invariant stencil (`K + 1` numbers
+instead of a row per cell), only if profiling shows CSR memory or cache
+misses matter. The queue sees a spatial layer as it sees a within-group one
+(a carrier queues the agents of the cells its row reaches); with a wide
+kernel that is most agents, as with a dense matrix today, until push
+(Phase 5).
+
+**Before 1.0.0** (so the spatial phase is additive):
+
+1. `Mixing` stores its contacts as CSR; `set_contact_matrix()` fills a
+   complete graph in the same order (draw-for-draw identical, checked with
+   the identity harness), within-group `q` stays as it is. Measure the dense
+   path against today's before committing; if CSR is slower for small dense matrices, keep both and
+   share the sampler.
+2. Groups can carry a location (a cell per group), and generators may read
+   layers reset before them. `Grouping::draw` already receives the model; the
+   new rule is the order: layers reset in the order they were added, and a
+   generator reading a later layer throws.
+
+Open: kernel weights given per ring or as a function of distance (both,
+converted to per-ring weights, is the leaning); per-cell incidence output
+(a daily count per group in `Mixing` would serve age groups too).
 
 ---
 
@@ -1159,6 +1243,9 @@ identical to `ModelSEIRQuarantine` on the same layer.
 - Schedules (D10), persistence (D8), membership changes notified to the layer
   queue.
 - Bubbles: exclusion from other layers (the bubble layer itself is Phase 3).
+- For spatial layers after 1.0.0 (D12, "Before 1.0.0"): CSR contacts in
+  `Mixing` (measured against the dense path) and the reset-order rule for
+  generators that read other layers.
 - An example model: the Phase 3 model plus a transit layer (morning and evening
   trips, route pools, `q < 1`, weekdays only). Another: an ERGM-style rewirer
   (tie dissolution plus Metropolis-Hastings toggles on given coefficients;
@@ -1215,6 +1302,22 @@ transition rates), as for the consolidated SEIR models.
 - Docs: new `docs/impl/contact-layers.md`; update
   `mixing-and-entity-distribution.md`, `queueing-system.md`,
   `transmission-sampling.md`; migration guide.
+
+### Spatial layers -- after 1.0.0 (release 1.1.0; D12)
+
+- `geo::HexGrid` and its builders; `geo::kernel()`; `layer::spatial()`
+  building a `Mixing` with a sparse contact matrix and renormalized boundary
+  rows.
+- Generators `grouping::by_density()`, `grouping::in_blocks()`,
+  `grouping::nearest()` (and gravity).
+- Wrappers: R takes an `sf` polygon or H3 cells and passes planar vertices or
+  cells to the core.
+- Example model: households placed by density, a spatial layer with `K = 1`,
+  schools placed on cells and children assigned by distance.
+- Tests (end-to-end): with `K = 1` and one seeded agent, the first
+  generation of spatial transmissions lies in its cell and its neighbours;
+  household members always share a cell; every child attends the nearest
+  school; contacts per person stay the same when `scale` doubles.
 
 ---
 
