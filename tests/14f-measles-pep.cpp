@@ -179,15 +179,16 @@ EPIWORLD_TEST_CASE("Measles PEP intervention", "[ModelMeaslesPEP]") {
         moreless(mat(10, 11), 1.0/model_0("Hospitalization period"), 0.05)
     );
 
-    // We should have some expected transitions away from
-    // quarantine states. Agents still sitting in a quarantine state at a
-    // day boundary are the ones that declined PEP (willingness is drawn
-    // once per agent), so these are the natural end-of-quarantine moves.
-    // Quarantined latent to latent: with a lognormal latent period, almost no
-    // agent is still latent when its 21-day quarantine ends
-    REQUIRE(mat(6, 1) < 0.01);
+    // Transitions away from quarantine states. Agents still sitting in a
+    // quarantine state at a day boundary are the ones that declined PEP
+    // (willingness is drawn once per agent), so these are the natural
+    // end-of-quarantine moves. Susceptible agents are released when the
+    // quarantine ends. Infected ones rarely are: with lognormal stages,
+    // almost no agent is still latent or prodromal when its 21-day quarantine
+    // ends (both moves were common with geometric stages).
     REQUIRE(mat(7, 0) > 0.0);  // Quarantined susceptible to susceptible
-    REQUIRE(mat(8, 2) > 0.0);  // Quarantined prodromal to prodromal
+    REQUIRE(mat(6, 1) < 0.01); // Quarantined latent to latent
+    REQUIRE(mat(8, 2) < 0.01); // Quarantined prodromal to prodromal
 
     // Effective PEP shows up as a transition out of the state the agent
     // held *before* being quarantined: the whole school is quarantined and
