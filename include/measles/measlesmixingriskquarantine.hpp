@@ -366,10 +366,14 @@ inline size_t ModelMeaslesMixingRiskQuarantine<TSeq>::sample_infectious_agents(
         if (group_size == 0u)
             continue;
 
-        // How many from this entity?
+        // How many from this entity? The probability is capped at 1, since
+        // the contacts can outnumber the agents available for contact
         int nsamples = this->rbinom(
             group_size,
-            adjusted_contact_rate[g] * this->get_contact_rate(agent_group_id, g, false)
+            std::min(
+                1.0,
+                adjusted_contact_rate[g] * this->get_contact_rate(agent_group_id, g, false)
+            )
         );
 
         if (nsamples == 0)

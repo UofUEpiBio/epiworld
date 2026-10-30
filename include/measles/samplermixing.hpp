@@ -360,9 +360,15 @@ inline size_t SamplerMixing<TSeq>::sample(
     size_t samp_id = 0u;
     for (size_t g = 0; g < ngroups; ++g)
     {
-        double base_rate =
+        // The probability of contacting each infectious agent of group g:
+        // the contacts per day with g over the agents of g available for
+        // contact. It is capped at 1, since the contacts can outnumber the
+        // available agents (e.g., when most of a small group is quarantined).
+        double base_rate = std::min(
+            1.0,
             adjusted_contact_rate[g] *
-            contact_matrix.get_contact_rate(agent_group_id, g, false);
+            contact_matrix.get_contact_rate(agent_group_id, g, false)
+        );
 
         // --- Primary infectious pool (e.g. prodromal) ---
         if (n_primary_infectious_per_group[g] > 0u)
