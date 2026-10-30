@@ -102,9 +102,9 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
         m.add_layer(layer::network("network", al));
 
         std::vector< std::pair<int,int> > expected;
-        for (size_t i = 0u; i < al.get_dat().size(); ++i)
-            for (const auto & link : al.get_dat()[i])
-                expected.emplace_back(static_cast<int>(i), link.first);
+        for (size_t i = 0u; i < al.vcount(); ++i)
+            for (int j : al(i))
+                expected.emplace_back(static_cast<int>(i), j);
 
         std::sort(expected.begin(), expected.end());
 
