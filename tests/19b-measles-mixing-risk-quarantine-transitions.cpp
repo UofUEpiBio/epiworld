@@ -1,4 +1,5 @@
 #include "tests.hpp"
+#include "measles-stages.hpp"
 #include "../include/measles/measles.hpp"
 
 using namespace epiworld;
@@ -179,10 +180,18 @@ EPIWORLD_TEST_CASE(
         moreless(mat(2, 3) + mat(2, 4), 1.0/model("Prodromal period"), 0.1)
     );
 
-    double p_recovered = 1.0/model("Rash period");
-    REQUIRE_FALSE(
-        moreless(mat(3, 11) + mat(3, 5), p_recovered, 0.1)
+    // Exits from Rash with the drawn rash period (see measles-stages.hpp)
+    auto rash = measles_rash_exits(
+        model("Rash period"),
+        model("Rash period sd"),
+        model("Hospitalization rate"),
+        1.0/model("Days undetected")
     );
+
+    // Agents move between Rash and Isolated (and back when isolation
+    // ends), so the recovery rate of either state depends on the isolation
+    // policy. 14k and 14l test the rash period; the share hospitalized is
+    // checked below.
 
     REQUIRE_FALSE(
         moreless(mat(3, 10), model("Hospitalization rate"), 0.1)
@@ -207,9 +216,7 @@ EPIWORLD_TEST_CASE(
     // Hospitalization probability
     REQUIRE_FALSE(
         moreless(
-            model("Hospitalization rate")/(
-                model("Hospitalization rate") + p_recovered
-            ),
+            rash.p_hospitalized,
             obs_hosp_probability,
             0.1
         )
@@ -219,9 +226,7 @@ EPIWORLD_TEST_CASE(
 
     // Hospitalization probability
     std::cout << "Hospitalization probability: " <<
-        model("Hospitalization rate")/(
-            model("Hospitalization rate") + p_recovered
-        ) << " (observed ~" << obs_hosp_probability << ")" << std::endl;
+        rash.p_hospitalized << " (observed ~" << obs_hosp_probability << ")" << std::endl;
 
     std::cout << "\nTransition matrix validation completed" << std::endl;
 

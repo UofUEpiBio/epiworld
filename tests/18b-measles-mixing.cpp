@@ -1,4 +1,5 @@
 #include "tests.hpp"
+#include "measles-stages.hpp"
 #include "../include/measles/measles.hpp"
 
 using namespace epiworld;
@@ -105,7 +106,13 @@ EPIWORLD_TEST_CASE(
 
     // Checking specific values in the transitions
     #define mat(i, j) avg_transitions[j*n_states + i]
-    double p_recovered = 1.0/model_0("Rash period");
+    // Exits from Rash with the drawn rash period (see measles-stages.hpp)
+    auto rash = measles_rash_exits(
+        model_0("Rash period"),
+        model_0("Rash period sd"),
+        model_0("Hospitalization rate"),
+        1.0/model_0("Days undetected")
+    );
     // Effective contact rate is the row sum of the contact matrix
     // (3 groups, each with 4/3 contacts → total 4.0 per agent)
     double effective_contact_rate = 3.0 * contact_matrix[0]; // = 4.0
@@ -156,8 +163,13 @@ EPIWORLD_TEST_CASE(
     );
 
     // Transition to recovered from rash
-    REQUIRE_FALSE(moreless(mat(3, 5) + mat(3, 11), p_recovered, 0.1));
-    REQUIRE_FALSE(moreless(mat(4, 5) + mat(4, 11), p_recovered, 0.1));
+    // Agents move between Rash and Isolated (and back when isolation
+    // ends), so the recovery rate of either state depends on the isolation
+    // policy. 14k and 14l test the rash period; the share hospitalized is
+    // checked below.
+    // Agents enter Isolated part-way through their rash period, so its
+    // recovery rate has no simple form; 14k-measles-stages.cpp tests that
+    // isolation keeps the rash period.
 
     // Transition from hospitalized to recovered
     REQUIRE_FALSE(moreless(mat(10, 11), 1.0/model_0("Hospitalization period"), 0.1));
@@ -167,9 +179,7 @@ EPIWORLD_TEST_CASE(
     // Hospitalization probability
     REQUIRE_FALSE(
         moreless(
-            model_0("Hospitalization rate")/(
-                model_0("Hospitalization rate") + p_recovered
-            ),
+            rash.p_hospitalized,
             obs_hosp_probability,
             0.1
         )
@@ -218,9 +228,9 @@ EPIWORLD_TEST_CASE(
 
     // Transition to recovered from rash    
     std::cout << "Transition to recovered (rash): "
-              << mat(3, 5) + mat(3, 11) << " (expected ~" << p_recovered << ")" << std::endl;
+              << mat(3, 5) + mat(3, 11) << std::endl;
     std::cout << "Transition to recovered (isolated): "
-              << mat(4, 5) + mat(4, 11) << " (expected ~" << p_recovered << ")" << std::endl;
+              << mat(4, 5) + mat(4, 11) << std::endl;
 
     // Transition from hospitalized to recovered
     std::cout << "Transition from hospitalized to recovered: "
@@ -234,9 +244,7 @@ EPIWORLD_TEST_CASE(
 
     // Hospitalization probability
     std::cout << "Hospitalization probability: "
-              << model_0("Hospitalization rate")/(
-                  model_0("Hospitalization rate") + p_recovered
-              ) << " (observed ~" << obs_hosp_probability << ")" << std::endl;
+              << rash.p_hospitalized << " (observed ~" << obs_hosp_probability << ")" << std::endl;
 
     // Looking at the final outbreak size
     std::vector< size_t > not_infected_states = {0u, 7u};

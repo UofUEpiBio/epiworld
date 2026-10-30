@@ -36,6 +36,8 @@ $(NAME)_SOURCES := \
 	14g-measles-pep.cpp \
 	14i-measles-pep-timeline.cpp \
 	14j-measles-pep-groups.cpp \
+	14k-measles-stages.cpp \
+	14l-measles-stages-laws.cpp \
 	15-edgelist-after-run-multiple.cpp \
 	16-multiple-events.cpp \
 	17a-mixing-quarantine.cpp \
