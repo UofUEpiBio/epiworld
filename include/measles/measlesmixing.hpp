@@ -248,9 +248,15 @@ inline void ModelMeaslesMixing<TSeq>::reset()
         for (auto & a: this->get_agents())
         {
 
-            // Some agents are already in the queue
+            // The initial carriers are queued by their virus, which
+            // deregisters them when they recover; queuing them once more
+            // keeps the states they recover into (e.g., Isolated Recovered)
+            // updated afterwards
             if (a.get_virus() != nullptr)
+            {
+                this->queue += &a;
                 continue;
+            }
 
             // Removing the agent from the queue
             if (a.get_susceptibility_reduction(virusptr, *this) >= 1.0)
