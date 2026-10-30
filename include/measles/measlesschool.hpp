@@ -324,16 +324,18 @@ inline std::unique_ptr<Model<TSeq>> ModelMeaslesSchool<TSeq>::clone_ptr()
 
 LOCAL_UPDATE_FUN(_update_susceptible) {
 
-    // How many contacts to draw
-    int ndraw = m->rbinom();
-
-    if (ndraw == 0)
-        return;
-
+    // Nobody to contact (checked first: the contact distribution has no
+    // agents to draw from)
     auto* model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
     size_t n_infectious = model->infectious.size();
 
     if (n_infectious == 0)
+        return;
+
+    // How many contacts to draw
+    int ndraw = m->rbinom();
+
+    if (ndraw == 0)
         return;
 
     // Drawing from the set
