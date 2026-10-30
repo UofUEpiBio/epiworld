@@ -82,7 +82,7 @@ void Model<TSeq>::set_state_duration(std::vector<int> states, DurationFun<TSeq> 
 
 ### 3.3 The one change in `events_run()`
 
-After `p->state = new_state` (`model-meat.hpp:425`), so the event's virus or
+After `p->state = new_state` (`model-meat.hpp:426`), so the event's virus or
 tool is already on the agent:
 
 ```cpp
