@@ -916,13 +916,25 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
     between runs on a drawn grouping throw (they would be lost).
     `groupmates_of()` windows start on day 1.
   - **3d-2. Measles models read their groups from a layer** and keep their
-    own samplers (with replacement, the rash pool at rate `r`), so their
-    runs stay draw for draw; their contacts go to the layer's log, and the
-    PEP intervention reads the layer logs. Moving them to the generic
-    sampler waits for Phase 4 (participation covers the rash reduction) and
-    Phase 6 (the rule switch changes results anyway). The risk-quarantine
-    model's "high risk" (same group as the case) reads the layer's
-    `members_of()`.
+    own samplers (with replacement, the rash pool at rate `r`); their
+    contacts go to the layer's log, and the PEP intervention reads the layer
+    logs. The risk-quarantine model's "high risk" (same group as the case)
+    reads the layer's `members_of()`. Settled 2026-10-28:
+    - The user adds the layer, as for the base models: the mixing models
+      lose their `contact_matrix` argument and take the one mixing layer
+      with a contact matrix the user adds (`add_layer(model,
+      layer::mixing(...))`); reset throws if there is none, or if there are
+      other layers (their own sampler would ignore them). The school model
+      (one group) builds its own layer, until the measles consolidation.
+    - A matrix layer makes the model visit every agent (D4), which
+      `ModelMeaslesMixing`'s queue did not: it skipped the vaccinated agents
+      found immune at reset (kept: the susceptible update skips fully
+      protected agents) and, by a bug, the initial carriers once they
+      recovered, which stayed in Isolated Recovered for good. The port is
+      checked against the old model with that bug fixed (identical runs);
+      the fix also goes to `master`.
+    - Moving the measles models to the generic sampler is the measles
+      consolidation, after Phase 4 (see there).
   - **3d-3. Entities removed** (class, agent memberships, the entity tool,
     virus and sampling helpers), with the model's own contact tracer;
     `Bubbles` complete ties on a within-group layer; the example model.
@@ -1160,6 +1172,20 @@ identical to `ModelSEIRQuarantine` on the same layer.
     same usual group, with `q = 0` transmissions also cross groups in a pool;
   - when part of a group is excluded, a matrix layer's contact rate stays
     constant and a within-group layer's probability per pair does.
+
+### Measles consolidation -- after Phase 4 (settled 2026-10-28)
+
+The measles models keep their own samplers in 3d-2 because the generic one
+has no reduced contact rate for an infectious state. Once Phase 4's
+participation gives Rash agents a fraction `r` of their contacts (and the
+isolated none), `ModelMeaslesMixing` and `ModelMeaslesSchool` become one
+`ModelMeasles` on the generic sampler, on any layers: a mixing layer for
+mixing, a network for a network model, both for both; the school model is
+`ModelMeasles` with a one-group mixing layer and a contact rate. "Rash
+reduction contact rate" becomes the layer's participation of Rash. The
+risk-quarantine model keeps its own policy on the same layers. Contacts are
+then distinct (D9), so results change and the checks are statistical (R0,
+transition rates), as for the consolidated SEIR models.
 
 ### Phase 5 -- push for mixing layers
 
@@ -1487,6 +1513,8 @@ that on `v1-layers` this plan is the source of truth.
 | 3b | Bind `layer::Mixing` for user-added layers: one constructor with the groups and exactly one of a contact matrix and contact probabilities (vector or one number, `1` for cliques); `set_contact_prob()` / `get_contact_prob()`; `members_of()`, `get_group()`. The queue is internal. Expected values of the mixing models' tests change (distinct contacts, D9). |
 | 3c | Per-layer `enable_tracing()` / `is_tracing()` / `get_tracing()` and its logs (3c-1); `groupmates_of()` on within-group layers (3c-2); whatever the wrapper binds of the model-level tracer (e.g., the quarantine models' parameters) follows the core, and removed accessors become defunct. |
 | Consolidation | The removed models (`ModelSIRMixing`, `ModelSEIRMixing`, the four `*CONN`, the two SEIR quarantine models) become defunct stubs naming the replacement (the plain model + `add_layer()`; `ModelSEIRQuarantine`); the parameter that sets a mixing layer's contact level; tests and the vignettes that use them (epiworldR: getting-started, advanced-modeling, mixing, run-multiple, implementation) rewritten. epiworldjs: registry entries. measles: unaffected. |
+| 3d-1 | `grouping::random()` and the generator form of `set_groups()` (epiworldR `grouping_random()`, epiworldpy `grouping.random()`). |
+| 3d-2 | The measles mixing models lose `contact_matrix`: the user adds the mixing layer (`add_layer(model, layer_mixing("mixing", groups, contact_matrix = cm))`); bind `distribute_tool_to_groups()` / `distribute_virus_to_groups()` (vaccination by school, the measles vignettes); measles R package: constructors, tests and vignettes rewritten for the layer; epiworldjs: the measles presets add the layer instead of entities. |
 | 3d | Membership builders (replacing the entity distribution functions). Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing layers take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
 | Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()`; epiworldjs drops `cpp/registry.hpp`; measles registers its models. |
 | 4 | Exclusion / `isolate(agent, keep)`, layer-targeted tools, schedules, persistence. |
@@ -1510,8 +1538,9 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-29).
 | `rgraph_bernoulli()` with `p = 0` (fix applied to both branches: #342 on `master`) | #343 | re-vendor only | re-vendor only | re-vendor only | re-vendor only |
 | Model consolidation | #331 merged (plan: #326; wording: #332) | #222 merged | #37 merged | #21 merged | #67 (re-vendor only) |
 | Phase 3c-2 (group history) | #333 merged | #223 merged | #38 merged | #22 merged (re-vendor only) | #67 (re-vendor only) |
-| Phase 3d-1 (groupings) | #335 merged (+ #336 merged) | | | | |
-| Phase 3d-2, 3d-3 | not started | | | | |
+| Phase 3d-1 (groupings) | #335 merged (+ #336 merged: whole-number counts) | #224 merged, #225 | #39 merged, #40 | #23 merged, #24 (re-vendor only) | #67 (re-vendor only) |
+| Phase 3d-2 (measles on layers) | #340 (+ `master`: the queue fix, #338) | | | | |
+| Phase 3d-3 | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
@@ -1526,8 +1555,9 @@ times the 0.x build time and up to 2.6 times the peak memory (the freed
 stage. Under the 10% rule, this is looked at before 3d-2 merges (a
 `layer::network()` taking the edge list directly is one option).
 
-**Next** (as of the date above): the 3d-1 ports (`set_groups()` with a
-grouping generator; `grouping::random()`), then 3d-2.
+**Next** (as of the date above): the network-build regression above, before
+#340 (3d-2) merges; then the 3d-2 ports (the measles models take their layer
+from the user; epiworldjs's measles presets add it), then 3d-3.
 
 ### 11.7 A benchmark rerun
 

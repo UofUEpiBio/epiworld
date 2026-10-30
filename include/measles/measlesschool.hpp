@@ -3,6 +3,7 @@
 #define MEASLESSCHOOL_HPP
 
 #include <cassert>
+#include "samplermixing.hpp"
 
 using namespace epiworld;
 
@@ -25,6 +26,12 @@ using namespace epiworld;
  * detected. The agent is then isolated and all agents who are unvaccinated are
  * quarantined. Isolated agents then may be moved out of the isolation in
  * isolation_period days.
+ *
+ * Everyone mixes with everyone, each agent meeting "Contact rate" others a day
+ * (drawn with replacement by the model's own sampler). The model builds its
+ * one layer, a mixing layer named "school" with everyone in one group, a
+ * contact matrix of 1 and "Contact rate" as its contact rate, and logs the
+ * contacts in it (e.g., for InterventionMeaslesPEP).
  * 
  * ![Model Diagram](../assets/img/measlesschool.png)
  * 
@@ -78,6 +85,9 @@ private:
     
     // Update which agents are infectious for contact
     void _update_infectious();
+
+    // The model's layer, which logs the contacts (_update_infectious())
+    layer::Mixing<TSeq> * school = nullptr;
 
 public:
 
@@ -271,6 +281,8 @@ inline void ModelMeaslesSchool<TSeq>::_update_infectious() {
     }
     #endif
 
+    this->school = &measles_mixing_layer(*this);
+
     this->infectious.clear();
     int n_available = 0;
     for (auto & agent: this->get_agents())
@@ -343,6 +355,7 @@ LOCAL_UPDATE_FUN(_update_susceptible) {
         if (neighbor.get_id() == p->get_id())
             continue;
 
+        model->school->trace(neighbor.get_id(), p->get_id());
         if (record)
             m->register_sampled_contact(neighbor.get_id(), p->get_id());
 
@@ -708,9 +721,13 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     // Setting the population
     this->set_population_size(n);
 
-    // Turning on the contact tracing
-    this->contact_tracing_on();
-    this->set_post_sampling(make_contact_tracing_post_sampling<TSeq>());
+    // The layer the contacts are logged in: everyone in one group
+    auto school = layer::mixing<TSeq>("school");
+    school->set_groups(std::vector< size_t >(n, 0u), 1u);
+    school->set_contact_matrix({1.0});
+    school->set_contact_rate("Contact rate");
+    school->enable_tracing();
+    this->add_layer(school);
 
 }
 
