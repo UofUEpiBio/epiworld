@@ -35,6 +35,8 @@ $(NAME)_SOURCES := \
 	14g-measles-pep.cpp \
 	14i-measles-pep-timeline.cpp \
 	14j-measles-pep-groups.cpp \
+	14k-measles-stages.cpp \
+	14l-measles-stages-laws.cpp \
 	15-edgelist-after-run-multiple.cpp \
 	16-multiple-events.cpp \
 	17a-mixing-quarantine.cpp \
@@ -50,6 +52,7 @@ $(NAME)_SOURCES := \
 	18g-measles-mixing-isolated.cpp \
 	18h-measles-mixing-layer.cpp \
 	18i-measles-mixing-small-log.cpp \
+	18j-measles-mixing-contact-cap.cpp \
 	19a-measles-mixing-risk-quarantine-basic.cpp \
 	19b-measles-mixing-risk-quarantine-transitions.cpp \
 	19c-measles-mixing-risk-quarantine-durations.cpp \
@@ -130,7 +133,8 @@ $(NAME)_SOURCES := \
 	48b-mixing-group-history.cpp \
 	49a-mixing-models.cpp \
 	49b-contact-rate-param.cpp \
-	49c-seir-quarantine-layers.cpp
+	49c-seir-quarantine-layers.cpp \
+	50a-rng-seed-reset.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
 # covered and would inflate the figure.
