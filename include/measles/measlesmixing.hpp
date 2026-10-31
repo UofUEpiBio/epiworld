@@ -45,6 +45,9 @@ using namespace epiworld;
  * - Hospitalized: Individuals requiring hospital care
  * - Recovered: Individuals who have recovered and gained immunity
  *
+ * The latent, prodromal and rash stages last a number of days drawn from a
+ * lognormal distribution when the agent enters them (see `MeaslesStages`).
+ *
  * ![Model Diagram](../assets/img/measlesmixing.png)
  *
  * **Implementation details:**
@@ -58,7 +61,8 @@ using namespace epiworld;
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelMeaslesMixing final :
     public Model<TSeq>,
-    public ContactMatrix
+    public ContactMatrix,
+    public MeaslesStages<TSeq, ModelMeaslesMixing<TSeq>>
 {
 private:
 
@@ -147,6 +151,14 @@ public:
      * identifying and tracing contacts (default: 1.0).
      * @param contact_tracing_days_window The number of days prior or after
      * rash onset for which contacts are traced (default: 4).
+     * @param rash_reduction_contact_rate The reduction in contacts of agents
+     * with rash (default: 1.0, no contacts).
+     * @param incubation_period_sd Standard deviation of the incubation
+     * period in days (default: 2.5).
+     * @param prodromal_period_sd Standard deviation of the prodromal period
+     * in days (default: 1.7).
+     * @param rash_period_sd Standard deviation of the rash period in days
+     * (default: 1.0).
      */
     ModelMeaslesMixing(
         epiworld_fast_uint n,
@@ -169,7 +181,10 @@ public:
         epiworld_double prop_vaccinated,
         epiworld_double contact_tracing_success_rate = 1.0,
         epiworld_fast_uint contact_tracing_days_window = 4u,
-        epiworld_double rash_reduction_contact_rate = 1.0
+        epiworld_double rash_reduction_contact_rate = 1.0,
+        epiworld_double incubation_period_sd = 2.5,
+        epiworld_double prodromal_period_sd = 1.7,
+        epiworld_double rash_period_sd = 1.0
     );
 
     /**
@@ -292,6 +307,8 @@ inline void ModelMeaslesMixing<TSeq>::reset()
     day_rash_onset.assign(this->size(), 0);
     day_latent.assign(this->size(), 0);
 
+    this->reset_stages(this);
+
     return;
 
 }
@@ -371,17 +388,12 @@ inline void ModelMeaslesMixing<TSeq>::_update_latent(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    // Getting the virus
-    auto & v = p->get_virus();
+    auto* model = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);
 
     // Does the agent become prodromal (infectious)?
-    if (m->runif() < 1.0/(v->get_incubation(m)))
+    if (model->stage_over(p, m))
     {
-
         p->change_state(*m, PRODROMAL);
-
-        return;
-
     }
 
     return;
@@ -396,7 +408,7 @@ inline void ModelMeaslesMixing<TSeq>::_update_prodromal(
     auto* model = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);
 
     // Does the agent transition to rash?
-    if (m->runif() < 1.0/EPI_PAR(m, "Prodromal period"))
+    if (model->stage_over(p, m))
     {
         model->day_rash_onset[p->get_id()] = m->today();
         p->change_state(*m, RASH);
@@ -425,24 +437,16 @@ inline void ModelMeaslesMixing<TSeq>::_update_rash(
         detected = true;
     }
 
-    // Computing probabilities for state change
-    m->array_double_tmp[0] = 1.0/EPI_PAR(m, "Rash period"); // Recovery
-    m->array_double_tmp[1] = EPI_PAR(m, "Hospitalization rate"); // Hospitalization
-
-    auto which = m->sample_from_probs(2);
-
-    if (which == 0) // Recovers (probability 1/rash_period)
-    {
-        p->rm_virus(*m, detected ? ISOLATED_RECOVERED: RECOVERED);
-    }
-    else if (which == 1) // Hospitalized
+    // Each day with rash, the agent may be hospitalized; otherwise, it
+    // recovers at the end of the rash period
+    if (m->runif() < EPI_PAR(m, "Hospitalization rate"))
     {
         m->record_hospitalization(*p);
         p->change_state(*m, HOSPITALIZED);
     }
-    else if (which > 2)
+    else if (model->stage_over(p, m))
     {
-        throw std::logic_error("The roulette returned an unexpected value.");
+        p->rm_virus(*m, detected ? ISOLATED_RECOVERED: RECOVERED);
     }
     else if (detected)
     {
@@ -471,25 +475,16 @@ inline void ModelMeaslesMixing<TSeq>::_update_isolated(
         (EPI_PAR(m, "Isolation period") <= days_since) ?
         true: false;
 
-    // Sampling from the probabilities of recovery
-    m->array_double_tmp[0] = 1.0/EPI_PAR(m, "Rash period");
-
-    // And hospitalization
-    m->array_double_tmp[1] = EPI_PAR(m, "Hospitalization rate");
-
-    auto which = m->sample_from_probs(2);
-
-    // Recovers (which == 0 fires with probability 1/rash_period)
-    if (which == 0)
+    // Each day with rash, the agent may be hospitalized; otherwise, it
+    // recovers at the end of the rash period
+    if (m->runif() < EPI_PAR(m, "Hospitalization rate"))
     {
-        p->rm_virus(*m, unisolate ? RECOVERED : ISOLATED_RECOVERED);
-    }
-    else if (which == 1)
-    {
-
         m->record_hospitalization(*p);
         p->change_state(*m, HOSPITALIZED);
-
+    }
+    else if (model->stage_over(p, m))
+    {
+        p->rm_virus(*m, unisolate ? RECOVERED : ISOLATED_RECOVERED);
     }
     else if (unisolate)
     {
@@ -536,7 +531,7 @@ inline void ModelMeaslesMixing<TSeq>::_update_quarantine_latent(
         (EPI_PAR(m, "Quarantine period") <= days_since) ?
         true: false;
 
-    if (m->runif() < 1.0/(p->get_virus()->get_incubation(m)))
+    if (model->stage_over(p, m))
     {
         p->change_state(*m, unquarantine ? PRODROMAL : QUARANTINED_PRODROMAL);
     }
@@ -563,7 +558,7 @@ inline void ModelMeaslesMixing<TSeq>::_update_quarantine_prodromal(
         true: false;
 
     // Develops rash?
-    if (m->runif() < (1.0/EPI_PAR(m, "Prodromal period")))
+    if (model->stage_over(p, m))
     {
         model->day_rash_onset[p->get_id()] = m->today();
         p->change_state(*m, ISOLATED);
@@ -743,7 +738,10 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     epiworld_double prop_vaccinated,
     epiworld_double contact_tracing_success_rate,
     epiworld_fast_uint contact_tracing_days_window,
-    epiworld_double rash_reduction_contact_rate
+    epiworld_double rash_reduction_contact_rate,
+    epiworld_double incubation_period_sd,
+    epiworld_double prodromal_period_sd,
+    epiworld_double rash_period_sd
     )
 {
 
@@ -769,6 +767,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     EpiAssert::check_bounds(isolation_period, -1, max_int, "isolation_period", "ModelMeaslesMixing");
     EpiAssert::check_probability(contact_tracing_success_rate, "contact_tracing_success_rate", "ModelMeaslesMixing");
     EpiAssert::check_bounds(rash_reduction_contact_rate, 0.0, 1.0, "rash_reduction_contact_rate", "ModelMeaslesMixing");
+    this->check_stage_sds(incubation_period_sd, prodromal_period_sd, rash_period_sd, "ModelMeaslesMixing");
 
     // Setting up the contact matrix
     this->set_contact_matrix(contact_matrix, true);
@@ -791,6 +790,9 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     this->add_param(vax_efficacy, "Vax efficacy");
     this->add_param(vax_reduction_recovery_rate, "(IGNORED) Vax improved recovery");
     this->add_param(rash_reduction_contact_rate, "Rash reduction contact rate");
+    this->add_param(incubation_period_sd, "Incubation period sd");
+    this->add_param(prodromal_period_sd, "Prodromal period sd");
+    this->add_param(rash_period_sd, "Rash period sd");
 
     sampler.configure(
         PRODROMAL,

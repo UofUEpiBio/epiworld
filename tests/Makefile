@@ -36,6 +36,8 @@ $(NAME)_SOURCES := \
 	14g-measles-pep.cpp \
 	14i-measles-pep-timeline.cpp \
 	14j-measles-pep-groups.cpp \
+	14k-measles-stages.cpp \
+	14l-measles-stages-laws.cpp \
 	15-edgelist-after-run-multiple.cpp \
 	16-multiple-events.cpp \
 	17a-mixing-quarantine.cpp \
@@ -49,6 +51,7 @@ $(NAME)_SOURCES := \
 	18e-measles-mixing-queue.cpp \
 	18f-measles-mixing-r0s.cpp \
 	18g-measles-mixing-isolated.cpp \
+	18h-measles-mixing-contact-cap.cpp \
 	19a-measles-mixing-risk-quarantine-basic.cpp \
 	19b-measles-mixing-risk-quarantine-transitions.cpp \
 	19c-measles-mixing-risk-quarantine-durations.cpp \
