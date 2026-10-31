@@ -3,7 +3,7 @@
 
 /* Versioning */
 #define MEASLES_VERSION_MAJOR 0
-#define MEASLES_VERSION_MINOR 4
+#define MEASLES_VERSION_MINOR 5
 #define MEASLES_VERSION_PATCH 0
 
 #define MEASLES_VERSION_PRERELEASE ""
@@ -35,6 +35,7 @@ namespace measles {
     #include "interventionmeaslespep-meat.hpp"
 
     // Models
+    #include "stages.hpp"
     #include "measlesschool.hpp"
     #include "measlesmixing.hpp"
     #include "measlesmixingriskquarantine.hpp"
