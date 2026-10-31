@@ -1580,7 +1580,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-31).
 | 3d-1b (networks without maps, #339) | #341 merged | #227 merged | #42 | #27 | #70 |
 | Phase 3d-2 (measles on layers) | #340 merged (+ `master`: the queue fix, #338; #345 merged: log capacity, group counts) | #226 merged | #41 merged (re-vendor only) | #25 merged | #68 merged |
 | Phase 3d-3a (entities and the model tracer removed) | #349 merged | | | | |
-| `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #PRNUM | re-vendor (`main` -> `v1-layers`) | re-vendor (`main` -> `v1-layers`) | re-vendor (`main` -> `v1-layers`: epiworldjs#26, #28) | `main` -> `v1-layers` (measles#69) |
+| `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 | re-vendor (`main` -> `v1-layers`) | re-vendor (`main` -> `v1-layers`) | re-vendor (`main` -> `v1-layers`: epiworldjs#26, #28) | `main` -> `v1-layers` (measles#69) |
 | Phase 3d-3b (Bubbles on a layer, example model) | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
