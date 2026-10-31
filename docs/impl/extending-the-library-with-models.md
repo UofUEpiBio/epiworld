@@ -4,7 +4,7 @@ This section highlights some important considerations when using the inheritance
 
 ## Execution workflow: Events
 
-The `epiworld` library is a discrete-time ABM that updates agents' states daily. As such, the framework implements what we call an "events" system that is triggered multiple times at the end of every step. Events essentially accumulate all changes that agents experience during the day, including adding tools, setting or removing viruses, and adding new connections or entities. The events system is implemented using a LIFO (last-in, first-out) schedule, so the last update is the one that takes effect.
+The `epiworld` library is a discrete-time ABM that updates agents' states daily. As such, the framework implements what we call an "events" system that is triggered multiple times at the end of every step. Events essentially accumulate all changes that agents experience during the day, including adding tools, setting or removing viruses, and changing state. The events system is implemented using a LIFO (last-in, first-out) schedule, so the last update is the one that takes effect.
 
 Under the LIFO system, if an agent receives multiple updates in the same step - moving from state A to B, then to C, and finally to D - the last change takes effect and is reflected in the model's accounting. That is, instead of registering transitions A->B, B->C, and C->D, we record A->D.
 
@@ -13,8 +13,8 @@ Under the LIFO system, if an agent receives multiple updates in the same step - 
 The `Model<>::run()` method shows how events are accumulated in the model. The following modified code snippet illustrates this clearly:
 
 ```cpp
-// Resets the entire system, distributing tools, viruses,
-// and entities accordingly 
+// Resets the entire system: the layers, then the viruses
+// and tools
 reset();
 
 // The next function records the current state
@@ -45,7 +45,7 @@ for (int niter = 0; niter < get_ndays(); ++niter)
 }
 ```
 
-The key aspect to notice is that both `Model<TSeq>::update_state()` and `Model<TSeq>::run_globalevents()` call `Model<TSeq>::run_events()`. This means that, after each function is called, the events that change agents' tools, viruses, and entities are dispatched.
+The key aspect to notice is that both `Model<TSeq>::update_state()` and `Model<TSeq>::run_globalevents()` call `Model<TSeq>::run_events()`. This means that, after each function is called, the events that change agents' tools, viruses, and states are dispatched.
 
 In practice, this provides users with a way to modify the state of the model instance on the fly. For example, starting with version 0.15.0.0 of epiworld, the `ModelMeaslesSchool` model includes the class `InterventionMeaslesPEP` (which derives from `GlobalEvent`) that implements an intervention to move quarantined agents out of quarantine if the post-exposure prophylaxis tool is distributed and effective.
 
@@ -126,7 +126,7 @@ int main() {
 
 ## See Also
 
-- [Library Architecture](library-architecture.md) — the `Agent`/`Entity`/`Model` class hierarchy that new models inherit from.
+- [Library Architecture](library-architecture.md) — the `Agent`/`Model` class hierarchy that new models inherit from.
 - [Extending the Library](extending-the-library.md) — defining custom agent behaviors, network structures, and global events.
 - [Core Simulation Models](core-simulation-models.md) — the full catalog of pre-built model templates.
 - [Events and Multi-Event Handling](events-and-multi-event-handling.md) — the LIFO event queue system used during model execution.

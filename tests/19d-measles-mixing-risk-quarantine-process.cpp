@@ -75,7 +75,7 @@ EPIWORLD_TEST_CASE(
         4u           // Contact tracing days prior
     );
 
-    // Adding a single entity
+    // Adding a single group
     add_group_mixing(
         model, contact_matrix,
         ranges(n, {{0u, 1u}, {1u, 2*n/3 - 1}, {2*n/3, n}})

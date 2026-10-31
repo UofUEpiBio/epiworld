@@ -951,7 +951,22 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
       consolidation, after Phase 4 (see there).
   - **3d-3. Entities removed** (class, agent memberships, the entity tool,
     virus and sampling helpers), with the model's own contact tracer;
-    `Bubbles` complete ties on a within-group layer; the example model.
+    `Bubbles` complete ties on a within-group layer; the example model. In
+    two PRs (settled 2026-10-30):
+    - **3d-3a** (as built): `Entity` and its distribution functions,
+      `Agent`'s memberships, the entity events (`AddEntity`,
+      `RemoveEntity`; `Event` and `_add_event()` lose the entity
+      argument), `AgentsSample` from an entity or from an agent's entities
+      (sampling from the model stays), `distribute_tool_to_entities()` and
+      `distribute_virus_to_entities()` (replaced by the `_to_groups()`
+      versions of 3d-2), and the model's contact tracer
+      (`contact_tracing_on()`, `get_contact_tracing()`,
+      `make_contact_tracing_post_sampling()`; a layer keeps its own log).
+      Draw for draw identical for everything that remains.
+    - **3d-3b**: `Bubbles` on a within-group `Mixing` layer (`q = 1`) and the
+      example model. Bubbles' results may change (the order of groupmates
+      differs from the order of the ties it added), as long as it is the
+      cheapest form computationally; it is checked statistically.
 
 The list below is the whole of Phase 3.
 
@@ -1562,9 +1577,10 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-30).
 | Model consolidation | #331 merged (plan: #326; wording: #332) | #222 merged | #37 merged | #21 merged | #67 (re-vendor only) |
 | Phase 3c-2 (group history) | #333 merged | #223 merged | #38 merged | #22 merged (re-vendor only) | #67 (re-vendor only) |
 | Phase 3d-1 (groupings) | #335 merged (+ #336 merged: whole-number counts) | #224, #225 merged | #39, #40 merged | #23 merged, #24 (superseded by #25: close) | #67 merged (re-vendor only) |
-| 3d-1b (networks without maps, #339) | #341 | re-vendor only | re-vendor only | re-vendor only | re-vendor only |
+| 3d-1b (networks without maps, #339) | #341 merged | #227 merged | #42 | #27 | #70 |
 | Phase 3d-2 (measles on layers) | #340 merged (+ `master`: the queue fix, #338; #345 merged: log capacity, group counts) | #226 merged | #41 merged (re-vendor only) | #25 merged | #68 merged |
-| Phase 3d-3 | not started | | | | |
+| Phase 3d-3a (entities and the model tracer removed) | #349 | | | | |
+| Phase 3d-3b (Bubbles on a layer, example model) | not started | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
@@ -1577,12 +1593,16 @@ epiworld-benchmark (Section 8, 11.7): `v1-layers` branch; the catch-up (the
 times the 0.x build time and up to 2.6 times the peak memory (the freed
 `std::map`s stay resident); 1,000,000 agents is noisy and rechecked next
 stage. Under the 10% rule, this was to be fixed before 3d-2 merged; 3d-2
-merged first, and 3d-1b (#341) builds networks without maps, after which the
-benchmark reruns as stage 3d-1b.
+merged first, and 3d-1b (#341) builds networks without maps. Stage 3d-1b
+(UofUEpiBio/epiworld-benchmark#32, merged) has the build at 0.71-0.90 times
+0.x's and peak memory at 0.78-0.99; the simulation ratio rose above 10% up to
+165,865 agents, profiled as page faults moved from the build into the run
+(the 3d-1 build left freed memory the run reused), not a cost per step.
 
-**Next** (as of the date above): merge 3d-1b (#341; it landed after 3d-2,
-so its check against the measles models is the merged suite) and rerun the
-benchmark (stage 3d-1b); re-vendor the wrappers through it; then 3d-3.
+**Next** (as of the date above): the 3d-1b ports (epiworldpy #42,
+epiworldjs #27, measles #70); merge 3d-3a, rerun the benchmark (stage 3d-3a),
+port it to the wrappers (entity functions and the model tracer become defunct
+stubs); then 3d-3b.
 
 ### 11.7 A benchmark rerun
 

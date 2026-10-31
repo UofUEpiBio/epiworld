@@ -9,7 +9,6 @@ PACKAGES := \
 	05-user-data \
 	07-surveillance \
 	10-likelihood-free-mcmc \
-	11-entities \
 	13-genint \
 	14-community-hosp \
 	15-seird-transitions \

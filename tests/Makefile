@@ -18,7 +18,6 @@ $(NAME)_SOURCES := \
 	05d-mixing.cpp \
 	06-mixing.cpp \
 	06b-mixing.cpp \
-	07-entitifuns.cpp \
 	09-distribute-tools-and-viruses.cpp \
 	09b-distribute-randomly-to-set.cpp \
 	09c-distribute-to-set-scaling.cpp \
@@ -61,14 +60,11 @@ $(NAME)_SOURCES := \
 	20c-rewire-degseq-queue.cpp \
 	22a-globalevents.cpp \
 	22b-globalevents.cpp \
-	23a-distribute-tool-virus-to-entities.cpp \
-	23b-distribute-tool-virus-to-entities.cpp \
 	24a-virus-hist-single-run.cpp \
 	24b-csv-output-format.cpp \
 	24c-virus-hist-multiple-sims.cpp \
 	25a-hospitalizationstracker.cpp \
 	25b-hospitalizationstracker-validation.cpp \
-	26-entity-add-rm.cpp \
 	27-shortcreek.cpp \
 	28a-epiassert.cpp \
 	29a-sbm.cpp \
@@ -81,7 +77,6 @@ $(NAME)_SOURCES := \
 	29h-sbm-exchangeability.cpp \
 	29i-sbm-large-blocks.cpp \
 	29a-state-update-transition.cpp \
-	30a-contact-tracing.cpp \
 	30b-contact-tracing.cpp \
 	30c-layer-tracing.cpp \
 	31a-seir-network-quarantine.cpp \

@@ -43,7 +43,7 @@ EPIWORLD_TEST_CASE(
     model_0.set_param("Quarantine period", -1.0);
     model_0.set_param("Isolation period", -1.0);
 
-    // Adding a single entity (population group)
+    // Adding a single group
     add_group_mixing(model_0, contact_matrix, blocks({0u, n_agents_sz}));
 
     // Setting the distribution function of the initial cases

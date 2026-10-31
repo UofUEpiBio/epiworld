@@ -5,7 +5,7 @@ you can extend it with your own modules and code.
 
 ## Architecture and Design
 
-- [Library Architecture](library-architecture.md) — modular structure of the `Agent`, `Entity`, and `Model` classes, the "bones and meat" pattern, and file organization.
+- [Library Architecture](library-architecture.md) — modular structure of the `Agent` and `Model` classes, the "bones and meat" pattern, and file organization.
 - [Performance Optimization](performance-optimization.md) — profiling, memory layout, template inlining, and OpenMP parallelization.
 - [Queueing System](queueing-system.md) — the `Queue` class that selectively activates agents for efficient per-step processing.
 
@@ -17,7 +17,7 @@ you can extend it with your own modules and code.
 ## Models and Simulation
 
 - [Core Simulation Models](core-simulation-models.md) — pre-built model templates (SIS, SIR, SEIR, mixing, quarantine, and more).
-- [Mixing and Entity Distribution](mixing-and-entity-distribution.md) — contact matrices and entity distribution functions for structured group interactions.
+- [Mixing and Entity Distribution](mixing-and-entity-distribution.md) — contact matrices, groupings, and mixing within groups.
 - [Sampling Contacts](sampling-contacts.md) — binomial contact sampling optimization in mixing models.
 - [Combining Exposures](combining-exposures.md) — roulette versus independent exposures when an agent has several infectious contacts.
 - [Push and Pull Transmission](transmission-sampling.md) — why pushing infection odds from infectious agents gives the same outcomes as susceptibles pulling from their neighbors, and how `epiworld` picks the cheaper of the two at each step.

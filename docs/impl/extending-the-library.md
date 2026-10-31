@@ -131,7 +131,7 @@ model.set_user_data({"Prevalence"});
 model.add_globalevent(record_daily_prevalence<TSeq>, "Daily prevalence", -1);
 ```
 
-For more advanced data collection, users can directly access the model’s internals through the `get_agents()`, `get_entities()`, and `get_viruses()` functions to query agent states, infection statuses, or tool distributions at any point during the simulation. Because epiworld maintains all these objects in contiguous containers, iterating over them to compute aggregate statistics is efficient. Users can combine these features to implement real-time monitoring or adaptive experiments where results from one run inform modifications to subsequent runs.
+For more advanced data collection, users can directly access the model’s internals through `get_agents()`, `get_layer()`, and `get_viruses()` to query agent states, infection statuses, or tool distributions at any point during the simulation. Because epiworld maintains all these objects in contiguous containers, iterating over them to compute aggregate statistics is efficient. Users can combine these features to implement real-time monitoring or adaptive experiments where results from one run inform modifications to subsequent runs.
 
 The `make_save_run()` utility function offers another extension point. It returns a callable that can be used in conjunction with `run_multiple()` to define how output is written after each replicate. For example:
 
@@ -159,7 +159,7 @@ Overall, custom data collection in epiworld is best thought of as an open system
 
 ## See Also
 
-- [Library Architecture](library-architecture.md) — the modular `Agent`/`Entity`/`Model` design that these extension points build on.
+- [Library Architecture](library-architecture.md) — the modular `Agent`/`Model` design that these extension points build on.
 - [Extending the Library with Models](extending-the-library-with-models.md) — creating new models via inheritance from `Model`.
 - [Events and Multi-Event Handling](events-and-multi-event-handling.md) — the LIFO event dispatch system used by global events and state update functions.
 - [Data Collection and Analysis](data-collection-and-analysis.md) — the `DataBase` class and built-in recording mechanisms.
