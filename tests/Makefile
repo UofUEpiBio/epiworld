@@ -120,7 +120,8 @@ $(NAME)_SOURCES := \
 	42c-tool-target-reuse.cpp \
 	43-run-multiple-team-size.cpp \
 	44-seir-exposed-not-infectious.cpp \
-	45-seir-recovery-tools.cpp
+	45-seir-recovery-tools.cpp \
+	46a-rng-seed-reset.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
 # covered and would inflate the figure.

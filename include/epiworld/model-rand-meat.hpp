@@ -42,7 +42,10 @@ inline void Model<TSeq>::set_rand_binom(int n, epiworld_double p)
     rbinomd_n = n;
 #ifdef EPI_FAST_BINOM
     rbinomd_fast_lambda = static_cast<epiworld_double>(n) * p;
+    // A Poisson needs a positive mean; with n = 0 or p = 0 the binomial
+    // gives 0 anyway
     rbinomd_use_poisson =
+        (rbinomd_fast_lambda > 0.0) &&
         (p <= static_cast<epiworld_double>(0.01)) &&
         (static_cast<epiworld_double>(n) * p * p <= static_cast<epiworld_double>(0.1));
 #else
@@ -282,7 +285,21 @@ inline size_t Model<TSeq>::sample_from_probs(size_t n) {
 
 template<typename TSeq>
 inline void Model<TSeq>::seed(size_t s) {
+
     this->engine->seed(s);
+
+    // Some distributions keep state between calls (e.g., the normal draws
+    // made in pairs, also inside the binomial); without a reset, a run would
+    // depend on the runs before it, not only on its seed
+    rnormd.reset();
+    rgammad.reset();
+    rlognormald.reset();
+    rexpd.reset();
+    rbinomd.reset();
+    rnbinomd.reset();
+    rgeomd.reset();
+    rpoissd.reset();
+
 }
 
 #endif
