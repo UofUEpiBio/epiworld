@@ -3,6 +3,7 @@
 #define MEASLESSCHOOL_HPP
 
 #include <cassert>
+#include "stages.hpp"
 
 using namespace epiworld;
 
