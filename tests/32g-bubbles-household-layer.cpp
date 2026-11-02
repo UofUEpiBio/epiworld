@@ -1,4 +1,5 @@
 #include "tests.hpp"
+#include <algorithm>
 
 using namespace epiworld;
 
@@ -81,10 +82,11 @@ EPIWORLD_TEST_CASE("Bubbles - complete bubbles in the household layer", "[bubble
     // -- 3. Who infects whom -----------------------------------------------
     // Agent 0 carries the virus, transmission is certain, nobody recovers,
     // and the network layer does not transmit (weight 0; the grouping still
-    // reads it). Within its household only, the virus reaches 3 agents;
-    // completed into one bubble from day 1, all 6, and every transmission
-    // comes from the household layer.
-    auto final_infected = [&](BubbleTies ties) -> size_t {
+    // reads it). Every transmission comes from the household layer. Returns
+    // who got infected; `h < 0` builds the layer without rate parameters.
+    auto infected = [&](
+        BubbleTies ties, double h, double b, int ndays, int seed
+    ) -> std::vector< bool > {
 
         epimodels::ModelSIR<> m("flu", 6, 0.0, 1.0, 0.0);
         m.verbose_off();
@@ -95,28 +97,66 @@ EPIWORLD_TEST_CASE("Bubbles - complete bubbles in the household layer", "[bubble
 
         Bubbles<> p(hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0);
         p.set_ties(BubbleTies::Complete, "household");
-        m.add_layer(p.make_layer());
+        if (h < 0.0)
+            m.add_layer(p.make_layer());
+        else
+        {
+            m.add_param(h, "Household contact probability");
+            m.add_param(b, "Bubble contact probability");
+            m.add_layer(p.make_layer(
+                "Household contact probability", "Bubble contact probability"
+            ));
+        }
         p.set_ties(ties, "household");
         m.add_globalevent(p);
 
-        m.run(10, 3);
+        m.run(static_cast< epiworld_fast_uint >(ndays), seed);
 
         std::vector< int > d, src, tgt, v, se, lay;
         m.get_db().get_transmissions(d, src, tgt, v, se, lay);
         const int hl = static_cast< int >(m.get_layer_id("household"));
-        size_t infected = 0u;
+        std::vector< bool > res(6u, false);
         for (size_t k = 0u; k < tgt.size(); ++k)
         {
-            ++infected;
+            res[static_cast< size_t >(tgt[k])] = true;
             REQUIRE(lay[k] == ((src[k] >= 0) ? hl : -1));
         }
 
-        return infected;
+        return res;
 
     };
 
-    REQUIRE(final_infected(BubbleTies::Existing) == 3u);
-    REQUIRE(final_infected(BubbleTies::Complete) == 6u);
+    auto count = [](const std::vector< bool > & x) {
+        return static_cast< size_t >(std::count(x.begin(), x.end(), true));
+    };
+
+    // Within its household only, the virus reaches 3 agents; completed into
+    // one bubble from day 1, all 6. Rates of 1 are the default layer, and a
+    // bubble rate of 0 keeps the households apart.
+    REQUIRE(count(infected(BubbleTies::Existing, -1.0, 0.0, 10, 3)) == 3u);
+    REQUIRE(count(infected(BubbleTies::Complete, -1.0, 0.0, 10, 3)) == 6u);
+    REQUIRE(
+        infected(BubbleTies::Complete, 1.0, 1.0, 10, 3) ==
+        infected(BubbleTies::Complete, -1.0, 0.0, 10, 3)
+    );
+    REQUIRE(count(infected(BubbleTies::Complete, 1.0, 0.0, 10, 3)) == 3u);
+
+    // On day 1 only agent 0 transmits: a housemate is infected with the
+    // household rate (0.6), an agent of the other household with the bubble
+    // rate (0.3)
+    {
+        const int nsims = 4000;
+        double housemate = 0.0, other = 0.0;
+        for (int sim = 0; sim < nsims; ++sim)
+        {
+            auto x = infected(BubbleTies::Complete, 0.6, 0.3, 1, sim);
+            housemate += x[1];
+            other     += x[3];
+        }
+
+        REQUIRE_THAT(housemate / nsims, Catch::Matchers::WithinAbs(0.6, 0.03));
+        REQUIRE_THAT(other / nsims, Catch::Matchers::WithinAbs(0.3, 0.03));
+    }
 
     // -- 4. Redrawn bubbles: the groups follow the partition ---------------
     // 300 agents in households of 3 on a small world, bubbles of 2

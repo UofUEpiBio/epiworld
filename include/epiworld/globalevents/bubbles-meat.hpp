@@ -335,7 +335,10 @@ inline void Bubbles<TSeq>::partition_peer(Model<TSeq> * model)
 }
 
 template<typename TSeq>
-inline std::shared_ptr< layer::Mixing<TSeq> > Bubbles<TSeq>::make_layer() const
+inline std::shared_ptr< layer::Mixing<TSeq> > Bubbles<TSeq>::make_layer(
+    std::string home_contact_prob,
+    std::string bubble_contact_prob
+) const
 {
 
     if (layer.empty())
@@ -344,11 +347,19 @@ inline std::shared_ptr< layer::Mixing<TSeq> > Bubbles<TSeq>::make_layer() const
             "set_ties(BubbleTies::Complete, name)."
         );
 
-    // Everyone with their household, every day: the bubbles are larger
-    // groups of the same layer (households are never split).
+    // Everyone with their household: the bubbles are larger groups of the
+    // same layer (households are never split), and an agent's home group is
+    // its household. Without parameters, everyone meets every day.
     auto res = layer::mixing<TSeq>(layer);
     res->set_groups(household, n_households);
-    res->set_contact_prob({1.0});
+
+    if (bubble_contact_prob.empty())
+        res->set_contact_prob({1.0});
+    else
+        res->set_contact_prob_param(std::move(bubble_contact_prob));
+
+    if (!home_contact_prob.empty())
+        res->set_home_contact_prob(std::move(home_contact_prob));
 
     return res;
 

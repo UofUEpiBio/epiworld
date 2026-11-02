@@ -120,6 +120,13 @@ public:
 private:
 
     std::optional< ParamRef > rate_ref; ///< Empty: rate 1
+    std::optional< ParamRef > prob_ref; ///< Empty: the `q` vector
+    std::optional< ParamRef > home_ref; ///< Empty: no home rate
+    double home_prob = 1.0;             ///< This step's home rate
+
+    /// Reads the parameters of `set_contact_prob_param()` and
+    /// `set_home_contact_prob()` (at reset and at the end of every step).
+    void read_probs(const Model<TSeq> & model);
 
     // Grouping
     std::vector< size_t > groups;          ///< Group of each agent
@@ -307,6 +314,30 @@ public:
     {
         set_contact_prob(std::vector< double >{q});
     }
+
+    /**
+     * @brief The probability that two members of a group meet on a given day
+     * is the model parameter `param`, the same for every group (read at
+     * reset and at the end of every step, so a change applies from the next
+     * step).
+     * @details Between runs only.
+     */
+    void set_contact_prob_param(std::string param);
+
+    /**
+     * @brief Pairs from the same *home* group meet with the probability in
+     * the model parameter `param`; other pairs of a group, with the layer's
+     * contact probability.
+     *
+     * @details An agent's home is its group at reset (the baseline grouping),
+     * so the rate matters once agents are moved during a run: in a
+     * `Bubbles` household layer, housemates meet at the home rate and the
+     * other households of the bubble at the bubble rate
+     * (`set_contact_prob_param()`).
+     * Read when the contact probabilities are; between runs only, and for a
+     * layer that mixes within groups.
+     */
+    void set_home_contact_prob(std::string param);
 
     /// The within-group contact probabilities (one per group after `reset()`;
     /// empty with a contact matrix).
@@ -557,6 +588,8 @@ inline void Mixing<TSeq>::set_contact_matrix(std::vector< double > cmat)
     {
         contact_matrix_baseline = cmat;
         contact_prob_baseline.clear();
+        prob_ref.reset();
+        home_ref.reset();
     }
     else if (within_groups())
         throw std::logic_error(
@@ -598,6 +631,7 @@ inline void Mixing<TSeq>::set_contact_prob(std::vector< double > q)
     {
         contact_prob_baseline = q;
         contact_matrix_baseline.clear();
+        prob_ref.reset();
     }
     else
     {
@@ -622,6 +656,59 @@ inline void Mixing<TSeq>::set_contact_prob(std::vector< double > q)
     }
 
     contact_prob = std::move(q);
+
+}
+
+template<typename TSeq>
+inline void Mixing<TSeq>::set_contact_prob_param(std::string param)
+{
+
+    if (!this->edits_baseline())
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': a contact probability "
+            "parameter can only be set between runs."
+        );
+
+    // One placeholder probability, replaced by the parameter's value
+    set_contact_prob(std::vector< double >{1.0});
+    prob_ref.emplace(std::move(param));
+
+}
+
+template<typename TSeq>
+inline void Mixing<TSeq>::set_home_contact_prob(std::string param)
+{
+
+    if (!this->edits_baseline())
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': a home contact "
+            "probability can only be set between runs."
+        );
+
+    home_ref.emplace(std::move(param));
+
+}
+
+template<typename TSeq>
+inline void Mixing<TSeq>::read_probs(const Model<TSeq> & model)
+{
+
+    auto read = [&](const ParamRef & ref) -> double {
+        const double x = ref(model);
+        if (!((x >= 0.0) && (x <= 1.0)))
+            throw std::range_error(
+                "Mixing layer '" + this->get_name() + "': the parameter '" +
+                ref.name() + "' is a contact probability, in [0, 1] (" +
+                std::to_string(x) + ")."
+            );
+        return x;
+    };
+
+    if (prob_ref)
+        std::fill(contact_prob.begin(), contact_prob.end(), read(*prob_ref));
+
+    if (home_ref)
+        home_prob = read(*home_ref);
 
 }
 
@@ -715,6 +802,8 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
                 "probabilities (within groups)."
             );
 
+        read_probs(model);
+
     }
     else
     {
@@ -756,6 +845,9 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
 template<typename TSeq>
 inline void Mixing<TSeq>::update(Model<TSeq> & model)
 {
+
+    // This step's parameters (the global events have run)
+    read_probs(model);
 
     // Moves made during the step; the history keeps each agent's net change
     // (several moves of one agent in a step are one, or none if it is back)
@@ -1150,7 +1242,25 @@ inline size_t Mixing<TSeq>::sample(
 
     const size_t own = groups[agent];
 
-    if (within_groups())
+    if (within_groups() && home_ref)
+    {
+        // Each infectious member of the group, met with the home rate if it
+        // shares the agent's home group, with the group's otherwise
+        const size_t home = groups_baseline[agent];
+        const size_t * first = pool.data() + offsets[own];
+        for (size_t k = 0u; k < counts[own]; ++k)
+        {
+            const size_t id = first[k];
+            if (id == agent)
+                continue;
+
+            const double q = (groups_baseline[id] == home) ?
+                home_prob : contact_prob[own];
+            if ((q >= 1.0) || ((q > 0.0) && (model.runif() < q)))
+                out.push_back(id);
+        }
+    }
+    else if (within_groups())
     {
         // Only the agent's own group
         const double q = contact_prob[own];
