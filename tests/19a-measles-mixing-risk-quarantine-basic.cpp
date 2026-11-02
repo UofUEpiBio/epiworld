@@ -1,6 +1,7 @@
 #define N_THREADS 4
 
 #include "tests.hpp"
+#include "measles-stages.hpp"
 #include "../include/measles/measles.hpp"
 
 using namespace epiworld;
@@ -66,7 +67,9 @@ EPIWORLD_TEST_CASE(
     auto saver = tests_create_saver(transitions, R0s, 5, nullptr, &outbreak_sizes, &hospitalizations);
 
     // Run simulation
-    model.run_multiple(100, nsims, 123, saver, true, true, N_THREADS);
+    // Long enough for the outbreaks to end, so the share of cases hospitalized
+    // is not cut short
+    model.run_multiple(200, nsims, 123, saver, true, true, N_THREADS);
     model.print();
 
     auto tmat = tests_calculate_avg_transitions(transitions, model);
@@ -120,11 +123,16 @@ EPIWORLD_TEST_CASE(
         1.0/model("Hospitalization period") << ")" << std::endl;
 
     // Hospitalization probability
-    double p_recovered = 1.0/model("Rash period");
+    // Exits from Rash with the drawn rash period (see measles-stages.hpp)
+    auto rash = measles_rash_exits(
+        model("Rash period"),
+        model("Rash period sd"),
+        model("Hospitalization rate"),
+        0.0 // Isolation is off, so agents with rash are never detected
+    );
+    double p_recovered = rash.recovery_rate;
     std::cout << "Hospitalization probability: " <<
-        model("Hospitalization rate")/(
-            model("Hospitalization rate") + p_recovered
-        ) << " (observed ~" << obs_hosp_probability << ")" << std::endl;
+        rash.p_hospitalized << " (observed ~" << obs_hosp_probability << ")" << std::endl;
 
     // Validating some transitions -------------------------------
     REQUIRE_FALSE(
@@ -138,7 +146,7 @@ EPIWORLD_TEST_CASE(
     REQUIRE_FALSE(
         moreless(
             mat(MSQ::RASH, MSQ::RECOVERED),
-            1.0/model("Rash period"),
+            p_recovered,
             0.1
         )
     );
@@ -154,9 +162,7 @@ EPIWORLD_TEST_CASE(
     // Hospitalization probability
     REQUIRE_FALSE(
         moreless(
-            model("Hospitalization rate")/(
-                model("Hospitalization rate") + p_recovered
-            ),
+            rash.p_hospitalized,
             obs_hosp_probability,
             0.1
         )
