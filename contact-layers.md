@@ -1600,7 +1600,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-02).
 | Phase 3d-2 (measles on layers) | #340 merged (+ `master`: the queue fix, #338; #345 merged: log capacity, group counts) | #226 merged | #41 merged (re-vendor only) | #25 merged | #68 merged |
 | Phase 3d-3a (entities and the model tracer removed) | #349 merged | #228 (with #351) | | | |
 | `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`) | re-vendor (`main` -> `v1-layers`) | re-vendor (`main` -> `v1-layers`: epiworldjs#26, #28) | `main` -> `v1-layers` (measles#69) |
-| Phase 3d-3b (Bubbles on a layer, example model) | this PR | | | | |
+| Phase 3d-3b (Bubbles on a layer, example model) | #353 | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
@@ -1622,7 +1622,7 @@ merged first, and 3d-1b (#341) builds networks without maps. Stage 3d-1b
 **Next** (as of the date above): the 3d-1b ports (epiworldpy #42,
 epiworldjs #27, measles #70) and the 3d-3a port (epiworldR #228) wait to be
 merged; the benchmark rerun at stage 3d-3a (pin 93b9781d); then the 3d-3a
-ports of epiworldpy, epiworldjs and measles; then 3d-3b (this PR) and its
+ports of epiworldpy, epiworldjs and measles; then 3d-3b (#353) and its
 ports; then the registry.
 
 ### 11.7 A benchmark rerun
