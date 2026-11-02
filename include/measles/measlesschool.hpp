@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include "samplermixing.hpp"
+#include "stages.hpp"
 
 using namespace epiworld;
 

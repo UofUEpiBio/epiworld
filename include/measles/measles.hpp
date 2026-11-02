@@ -35,7 +35,6 @@ namespace measles {
     #include "interventionmeaslespep-meat.hpp"
 
     // Models
-    #include "stages.hpp"
     #include "measlesschool.hpp"
     #include "measlesmixing.hpp"
     #include "measlesmixingriskquarantine.hpp"

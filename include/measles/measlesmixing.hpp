@@ -2,6 +2,7 @@
 #define EPIWORLD_MODELS_MEASLESMIXING_HPP
 
 #include "samplermixing.hpp"
+#include "stages.hpp"
 
 using namespace epiworld;
 

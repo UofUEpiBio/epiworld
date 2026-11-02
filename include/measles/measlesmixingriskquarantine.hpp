@@ -3,6 +3,7 @@
 #define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 
 #include "samplermixing.hpp"
+#include "stages.hpp"
 
 using namespace epiworld;
 
