@@ -547,6 +547,20 @@ generative model (e.g., a co-rider network from smart-card records), use a
 `Network` layer whose ties are each active with probability `a` per step -- the
 OpenABM workplace approach, which is one more multiplier on `p` (thinning).
 
+**Schools at city scale (settled 2026-11-02).** A city model with schools and
+age mixing (the measles use case) is three layers: households (within groups,
+`q` near 1), schools (within groups, **one group per school**), and the
+community (a contact matrix across a few age groups, times "Contact rate").
+Age mixing stays small however large the city. A matrix across the classrooms
+of a whole city does not scale (`G x G` entries, a row walked per agent), so
+school-level groups are the default: enrollment by school is the data usually
+at hand, and sampling costs only the agent's own school. Per-school
+probabilities `q[g] = c / (n_g - 1)` give about `c` school contacts a day
+whatever the enrollment. Structure inside schools, when there is data for it,
+is a second within-group layer of grades or classrooms (higher `q`) next to the
+school layer (low `q`), accepting that classmates also meet, rarely, in the
+school layer; one matrix layer per school only suits a handful of schools.
+
 **Same-step exposures.** A step is a day: an agent's bus, workplace, and
 household exposures on one day combine as simultaneous. That is fine with an
 incubation period and is the same assumption as for all layers; finer time
@@ -976,15 +990,15 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
         when it lifts, agents go back to the group they had at reset. Unlike
         the clique ties, households now meet before and after the window.
       - Layers add up: bubblemates also tied in a network layer meet in both.
-      - How often bubblemates meet (added the same day): `make_layer(home,
-        bubble)` takes two model parameters, the daily probability that
-        housemates meet and that two members of a bubble from different
-        households do (default: everyone, every day). They come from two
-        general `layer::Mixing` additions: `set_contact_prob_param()` (`q`
-        as a model parameter, read every step) and
-        `set_home_contact_prob()` (pairs that share their group at reset,
-        the "home", meet at that rate). Leakage stays the transmission
-        factor of the tool.
+      - How often bubblemates meet (settled the same day): contact
+        probabilities per pair (D9: numbers, not model parameters).
+        `make_layer(q_household)` sets the households'; `set_ties(Complete,
+        layer, q_bubble)` the one Bubbles gives a bubble that merged
+        households while the policy is in force (a household on its own
+        keeps its own), through `set_contact_prob()`, restored when it
+        lifts. One probability per group, so in a merged bubble housemates
+        meet at `q_bubble` too; the finer split (subgroups with their own
+        rate) waits for a study that needs it. No `layer::Mixing` changes.
       - Moves are the layer's edits (end of step; a reset restores the
         households; a traced layer records them), so the tie books go: no
         `HeldTies`, no hand-over between policies, no
@@ -1580,7 +1594,7 @@ that on `v1-layers` this plan is the source of truth.
 | Consolidation | The removed models (`ModelSIRMixing`, `ModelSEIRMixing`, the four `*CONN`, the two SEIR quarantine models) become defunct stubs naming the replacement (the plain model + `add_layer()`; `ModelSEIRQuarantine`); the parameter that sets a mixing layer's contact level; tests and the vignettes that use them (epiworldR: getting-started, advanced-modeling, mixing, run-multiple, implementation) rewritten. epiworldjs: registry entries. measles: unaffected. |
 | 3d-1 | `grouping::random()` and the generator form of `set_groups()` (epiworldR `grouping_random()`, epiworldpy `grouping.random()`). |
 | 3d-2 | The measles mixing models lose `contact_matrix`: the user adds the mixing layer (`add_layer(model, layer_mixing("mixing", groups, contact_matrix = cm))`); bind `distribute_tool_to_groups()` / `distribute_virus_to_groups()` (vaccination by school, the measles vignettes); measles R package: constructors, tests and vignettes rewritten for the layer; epiworldjs: the measles presets add the layer instead of entities. |
-| 3d-3b | `layer::Mixing`: `set_contact_prob_param()`, `set_home_contact_prob()`. `Bubbles`: bind `make_layer(home, bubble)` (epiworldR: the layer from the `bubbles()` object, added with `add_layer()`); `ties = "complete"` names the household layer, not a network layer; `get_created_ties()` / `restore_network()` (if bound) become defunct. |
+| 3d-3b | `Bubbles`: bind `make_layer(q_household)` and the bubble contact probability (`set_ties()` / the constructor) (epiworldR: the layer from the `bubbles()` object, added with `add_layer()`); `ties = "complete"` names the household layer, not a network layer; `get_created_ties()` / `restore_network()` (if bound) become defunct. |
 | 3d | Membership builders (replacing the entity distribution functions). Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing layers take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
 | Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()`; epiworldjs drops `cpp/registry.hpp`; measles registers its models. |
 | 4 | Exclusion / `isolate(agent, keep)`, layer-targeted tools, schedules, persistence. |

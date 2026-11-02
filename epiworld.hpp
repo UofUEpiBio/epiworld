@@ -19350,13 +19350,6 @@ public:
 private:
 
     std::optional< ParamRef > rate_ref; ///< Empty: rate 1
-    std::optional< ParamRef > prob_ref; ///< Empty: the `q` vector
-    std::optional< ParamRef > home_ref; ///< Empty: no home rate
-    double home_prob = 1.0;             ///< This step's home rate
-
-    /// Reads the parameters of `set_contact_prob_param()` and
-    /// `set_home_contact_prob()` (at reset and at the end of every step).
-    void read_probs(const Model<TSeq> & model);
 
     // Grouping
     std::vector< size_t > groups;          ///< Group of each agent
@@ -19544,30 +19537,6 @@ public:
     {
         set_contact_prob(std::vector< double >{q});
     }
-
-    /**
-     * @brief The probability that two members of a group meet on a given day
-     * is the model parameter `param`, the same for every group (read at
-     * reset and at the end of every step, so a change applies from the next
-     * step).
-     * @details Between runs only.
-     */
-    void set_contact_prob_param(std::string param);
-
-    /**
-     * @brief Pairs from the same *home* group meet with the probability in
-     * the model parameter `param`; other pairs of a group, with the layer's
-     * contact probability.
-     *
-     * @details An agent's home is its group at reset (the baseline grouping),
-     * so the rate matters once agents are moved during a run: in a
-     * `Bubbles` household layer, housemates meet at the home rate and the
-     * other households of the bubble at the bubble rate
-     * (`set_contact_prob_param()`).
-     * Read when the contact probabilities are; between runs only, and for a
-     * layer that mixes within groups.
-     */
-    void set_home_contact_prob(std::string param);
 
     /// The within-group contact probabilities (one per group after `reset()`;
     /// empty with a contact matrix).
@@ -19818,8 +19787,6 @@ inline void Mixing<TSeq>::set_contact_matrix(std::vector< double > cmat)
     {
         contact_matrix_baseline = cmat;
         contact_prob_baseline.clear();
-        prob_ref.reset();
-        home_ref.reset();
     }
     else if (within_groups())
         throw std::logic_error(
@@ -19861,7 +19828,6 @@ inline void Mixing<TSeq>::set_contact_prob(std::vector< double > q)
     {
         contact_prob_baseline = q;
         contact_matrix_baseline.clear();
-        prob_ref.reset();
     }
     else
     {
@@ -19886,59 +19852,6 @@ inline void Mixing<TSeq>::set_contact_prob(std::vector< double > q)
     }
 
     contact_prob = std::move(q);
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::set_contact_prob_param(std::string param)
-{
-
-    if (!this->edits_baseline())
-        throw std::logic_error(
-            "Mixing layer '" + this->get_name() + "': a contact probability "
-            "parameter can only be set between runs."
-        );
-
-    // One placeholder probability, replaced by the parameter's value
-    set_contact_prob(std::vector< double >{1.0});
-    prob_ref.emplace(std::move(param));
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::set_home_contact_prob(std::string param)
-{
-
-    if (!this->edits_baseline())
-        throw std::logic_error(
-            "Mixing layer '" + this->get_name() + "': a home contact "
-            "probability can only be set between runs."
-        );
-
-    home_ref.emplace(std::move(param));
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::read_probs(const Model<TSeq> & model)
-{
-
-    auto read = [&](const ParamRef & ref) -> double {
-        const double x = ref(model);
-        if (!((x >= 0.0) && (x <= 1.0)))
-            throw std::range_error(
-                "Mixing layer '" + this->get_name() + "': the parameter '" +
-                ref.name() + "' is a contact probability, in [0, 1] (" +
-                std::to_string(x) + ")."
-            );
-        return x;
-    };
-
-    if (prob_ref)
-        std::fill(contact_prob.begin(), contact_prob.end(), read(*prob_ref));
-
-    if (home_ref)
-        home_prob = read(*home_ref);
 
 }
 
@@ -20032,8 +19945,6 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
                 "probabilities (within groups)."
             );
 
-        read_probs(model);
-
     }
     else
     {
@@ -20075,9 +19986,6 @@ inline void Mixing<TSeq>::reset(Model<TSeq> & model)
 template<typename TSeq>
 inline void Mixing<TSeq>::update(Model<TSeq> & model)
 {
-
-    // This step's parameters (the global events have run)
-    read_probs(model);
 
     // Moves made during the step; the history keeps each agent's net change
     // (several moves of one agent in a step are one, or none if it is back)
@@ -20472,25 +20380,7 @@ inline size_t Mixing<TSeq>::sample(
 
     const size_t own = groups[agent];
 
-    if (within_groups() && home_ref)
-    {
-        // Each infectious member of the group, met with the home rate if it
-        // shares the agent's home group, with the group's otherwise
-        const size_t home = groups_baseline[agent];
-        const size_t * first = pool.data() + offsets[own];
-        for (size_t k = 0u; k < counts[own]; ++k)
-        {
-            const size_t id = first[k];
-            if (id == agent)
-                continue;
-
-            const double q = (groups_baseline[id] == home) ?
-                home_prob : contact_prob[own];
-            if ((q >= 1.0) || ((q > 0.0) && (model.runif() < q)))
-                out.push_back(id);
-        }
-    }
-    else if (within_groups())
+    if (within_groups())
     {
         // Only the agent's own group
         const double q = contact_prob[own];
@@ -22334,16 +22224,18 @@ enum class BubbleTies {
     Existing,
     /**
      * The bubble is a group of a within-group mixing layer, the household
-     * layer, in which housemates and the other households of the bubble meet
-     * every day or at the rates of two model parameters. Outside the
-     * policy window each agent is in its household's group; while the policy
-     * is in force it is in its bubble's, and it goes back when the policy
-     * lifts. `Bubbles::make_layer()` builds the layer.
+     * layer (`Bubbles::make_layer()`). Outside the policy window each agent
+     * is in its household's group, where each pair meets with the household
+     * contact probability; while the policy is in force it is in its
+     * bubble's, where each pair meets with the bubble contact probability
+     * (households left on their own keep theirs), and it goes back when the
+     * policy lifts.
      *
      * This is what the modelled policy actually says -- the household you have
      * bubbled with is a household you now see. The force of infection inside a
-     * bubble grows with its size, since every bubblemate is an independent
-     * daily exposure.
+     * bubble grows with its size, since every bubblemate met is an independent
+     * exposure. There is one probability per group, so housemates in a merged
+     * bubble meet at the bubble's, like the other households.
      *
      * Contacts *outside* the bubble (the network layers) are untouched and
      * still damped by the transmission factor, which is what makes the bubble
@@ -22515,21 +22407,24 @@ public:
  * household, whose members need not all be tied to each other.
  *
  * Under **`BubbleTies::Complete`** the bubble is a group of the household
- * layer, a within-group mixing layer with `q = 1` that `make_layer()` builds
- * from `household_id`:
+ * layer, a within-group mixing layer that `make_layer()` builds from
+ * `household_id`:
  *
  * ```cpp
- * bubbles.set_ties(BubbleTies::Complete, "household");
- * model.add_layer(bubbles.make_layer());
+ * // Housemates meet every day; two members of a merged bubble, 3 days in 10
+ * bubbles.set_ties(BubbleTies::Complete, "household", 0.3);
+ * model.add_layer(bubbles.make_layer(1.0));
  * model.add_globalevent(bubbles);
  * ```
  *
- * Outside the policy window everyone meets their household (every day, or at
- * the rate of a model parameter; see `make_layer()`). While the policy is in
- * force each agent is in its bubble's group instead, so merged households
- * meet; when the bubbles are redrawn agents move to the new
- * ones, and when the policy lifts they go back to the group they had when the
- * run started (their household). Moves are a layer's ordinary edits: they
+ * Outside the policy window everyone meets their household, each pair with
+ * the household contact probability. While the policy is in force each agent
+ * is in its bubble's group instead, where each pair meets with the bubble
+ * contact probability; a household that bubbled with nobody keeps its own.
+ * A within-group layer has one probability per group, so in a merged bubble
+ * housemates meet at the bubble's rate too. When the bubbles
+ * are redrawn agents move to the new ones, and when the policy lifts they go
+ * back to the group (and the probability) they had when the run started. Moves are a layer's ordinary edits: they
  * take effect at the end of the step, a reset puts everyone back, and a
  * traced layer records them in its history (`groupmates_of()`). No ties are
  * stored, and the network layers are left alone.
@@ -22537,9 +22432,9 @@ public:
  * Completing a bubble **raises the force of infection inside it**: every
  * bubblemate met is an independent exposure, so with the default (everyone,
  * every day) a bubble of `k` agents gives each member `k - 1` chances a day;
- * the bubble contact probability of `make_layer()` thins the meetings across
- * households (the policy says they may meet, not that they meet daily). A pair of bubblemates that is also
- * tied in a network layer meets in both layers.
+ * a bubble contact probability below 1 thins the meetings (the policy says
+ * the households may meet, not that they meet daily). A pair of bubblemates
+ * that is also tied in a network layer meets in both layers.
  *
  * Contacts *outside* the bubble are untouched by either setting: they stay in
  * the network and are damped by `f`, which is what makes the bubble imperfect.
@@ -22707,6 +22602,7 @@ private:
     std::string param_name;          ///< model parameter holding the transmission factor.
     BubbleTies ties;                 ///< whether bubblemates meet in a layer.
     std::string layer;               ///< the household layer of `BubbleTies::Complete`.
+    double bubble_contact_prob;      ///< daily meeting probability in a merged bubble.
 
     /// The household layer of `BubbleTies::Complete` (throws if there is none).
     layer::Mixing<TSeq> & bubble_layer(Model<TSeq> * model) const;
@@ -22716,6 +22612,7 @@ private:
     std::vector< int > bubble_id;    ///< Per-agent bubble label; -1 = unassigned.
 
     std::vector< size_t > home;      ///< Group of each agent when the policy lifts.
+    std::vector< double > home_prob; ///< Contact probability of each group at reset.
     int placed_epoch = -1;           ///< Partition agents are in (-1: their homes).
     int model_id   = -1;             ///< Sim id this intervention was set up for.
     int last_epoch = -1;             ///< Rewiring epoch the current partition was computed for.
@@ -22798,8 +22695,12 @@ public:
      *        (`BubbleTies::Complete`). See `BubbleTies`.
      * @param layer Name of the household layer of `BubbleTies::Complete`
      *        (required then; see `make_layer()`).
+     * @param bubble_contact_prob With `BubbleTies::Complete`, the probability
+     *        that two members of a bubble that merged households meet on a
+     *        given day, in `[0, 1]`.
      *
-     * @throws std::range_error if `transmission_factor` is outside `[0, 1]`, if
+     * @throws std::range_error if `transmission_factor` or
+     *         `bubble_contact_prob` is outside `[0, 1]`, if
      *         `group_size` is zero for the `Household` flavor, if
      *         `max_households` is less than 2 for the `Peer` flavor, or if
      *         `end_day` is non-negative and not greater than `start_day`.
@@ -22816,7 +22717,8 @@ public:
         size_t max_households = 2u,
         std::string param_name = "Bubble transmission factor",
         BubbleTies ties = BubbleTies::Existing,
-        std::string layer = ""
+        std::string layer = "",
+        double bubble_contact_prob = 1.0
     );
 
     /**
@@ -22866,42 +22768,32 @@ public:
      *
      * @param layer Name of the household layer of `BubbleTies::Complete`
      *        (required then; see `make_layer()`).
+     * @param bubble_contact_prob The probability that two members of a bubble
+     *        that merged households meet on a given day, in `[0, 1]`.
      */
-    void set_ties(BubbleTies ties, std::string layer = "");
+    void set_ties(
+        BubbleTies ties,
+        std::string layer = "",
+        double bubble_contact_prob = 1.0
+    );
 
     /**
      * @brief The household layer of `BubbleTies::Complete`, to add to the
      *        model with `Model::add_layer()`.
      *
      * @details A within-group mixing layer named as in `set_ties()`, with one
-     * group per household (from `household_id`); the policy moves agents to
-     * their bubble's group while it is in force. How often two agents of a
-     * group meet is a model parameter, read every step:
+     * group per household (from `household_id`), in which each pair meets
+     * with probability `household_contact_prob` a day; the policy moves agents
+     * to their bubble's group while it is in force (see `BubbleTies`). The
+     * layer can be changed further before it is added (e.g.,
+     * `enable_tracing()`).
      *
-     * ```cpp
-     * model.add_param(1.0, "Household contact probability");
-     * model.add_param(0.3, "Bubble contact probability");
-     * model.add_layer(bubbles.make_layer(
-     *     "Household contact probability",  // pairs from one household
-     *     "Bubble contact probability"      // other pairs of a bubble
-     * ));
-     * ```
-     *
-     * Outside the policy window only the household rate matters. Without
-     * parameters, everyone in a group meets every day (`q = 1`); with only
-     * the bubble one, housemates meet at that rate too. The layer can be
-     * changed further before it is added (e.g., `enable_tracing()`).
-     *
-     * @param home_contact_prob Model parameter: the daily probability that
-     *        two members of a household meet (empty: as other pairs).
-     * @param bubble_contact_prob Model parameter: the daily probability that
-     *        two members of a bubble from different households meet (empty:
-     *        `1`).
+     * @param household_contact_prob The probability that two housemates meet
+     *        on a given day (`1`: every day).
      * @throws std::logic_error if the layer has no name.
      */
     std::shared_ptr< layer::Mixing<TSeq> > make_layer(
-        std::string home_contact_prob   = "",
-        std::string bubble_contact_prob = ""
+        double household_contact_prob = 1.0
     ) const;
 
     /**
@@ -23019,7 +22911,8 @@ inline Bubbles<TSeq>::Bubbles(
     size_t max_households,
     std::string param_name,
     BubbleTies ties,
-    std::string layer
+    std::string layer,
+    double bubble_contact_prob
 ) :
     flavor(flavor),
     group_size(group_size),
@@ -23030,7 +22923,8 @@ inline Bubbles<TSeq>::Bubbles(
     rewire_every(rewire_every),
     param_name(std::move(param_name)),
     ties(ties),
-    layer(std::move(layer))
+    layer(std::move(layer)),
+    bubble_contact_prob(bubble_contact_prob)
 {
 
     // Households by compact index, in order of first appearance
@@ -23047,6 +22941,11 @@ inline Bubbles<TSeq>::Bubbles(
     if ((this->transmission_factor < 0.0) || (this->transmission_factor > 1.0))
         throw std::range_error(
             "Bubbles: transmission_factor must be in [0, 1]."
+        );
+
+    if (!((bubble_contact_prob >= 0.0) && (bubble_contact_prob <= 1.0)))
+        throw std::range_error(
+            "Bubbles: bubble_contact_prob must be in [0, 1]."
         );
 
     if ((flavor == BubbleFlavor::Household) && (group_size < 1u))
@@ -23291,8 +23190,7 @@ inline void Bubbles<TSeq>::partition_peer(Model<TSeq> * model)
 
 template<typename TSeq>
 inline std::shared_ptr< layer::Mixing<TSeq> > Bubbles<TSeq>::make_layer(
-    std::string home_contact_prob,
-    std::string bubble_contact_prob
+    double household_contact_prob
 ) const
 {
 
@@ -23303,18 +23201,10 @@ inline std::shared_ptr< layer::Mixing<TSeq> > Bubbles<TSeq>::make_layer(
         );
 
     // Everyone with their household: the bubbles are larger groups of the
-    // same layer (households are never split), and an agent's home group is
-    // its household. Without parameters, everyone meets every day.
+    // same layer (households are never split)
     auto res = layer::mixing<TSeq>(layer);
     res->set_groups(household, n_households);
-
-    if (bubble_contact_prob.empty())
-        res->set_contact_prob({1.0});
-    else
-        res->set_contact_prob_param(std::move(bubble_contact_prob));
-
-    if (!home_contact_prob.empty())
-        res->set_home_contact_prob(std::move(home_contact_prob));
+    res->set_contact_prob(household_contact_prob);
 
     return res;
 
@@ -23361,6 +23251,31 @@ inline void Bubbles<TSeq>::sync_groups(Model<TSeq> * model)
         groups.set_group(
             i, want ? static_cast< size_t >(bubble_id[i]) : home[i]
         );
+
+    // One contact probability per group: a bubble that merged households
+    // meets at the bubble's; a household on its own keeps its own
+    if (want)
+    {
+        std::vector< double > q(home_prob.size(), bubble_contact_prob);
+        std::vector< size_t > first(home_prob.size(), layer::Mixing<TSeq>::NO_GROUP);
+        std::vector< bool > merged(home_prob.size(), false);
+        for (size_t i = 0u; i < household.size(); ++i)
+        {
+            const size_t b = static_cast< size_t >(bubble_id[i]);
+            if (first[b] == layer::Mixing<TSeq>::NO_GROUP)
+                first[b] = home[i];
+            else if (first[b] != home[i])
+                merged[b] = true;
+        }
+
+        for (size_t b = 0u; b < q.size(); ++b)
+            if (!merged[b] && (first[b] != layer::Mixing<TSeq>::NO_GROUP))
+                q[b] = home_prob[first[b]];
+
+        groups.set_contact_prob(std::move(q));
+    }
+    else
+        groups.set_contact_prob(home_prob);
 
     placed_epoch = target;
 
@@ -23465,10 +23380,13 @@ inline void Bubbles<TSeq>::_setup(Model<TSeq> * model)
                 "layer's reset puts everyone back in their household)."
             );
 
-        // Where agents go back to when the policy lifts
+        // Where agents go back to when the policy lifts, and how often
+        // each household meets
         home.resize(household.size());
         for (size_t i = 0u; i < household.size(); ++i)
             home[i] = groups.get_group(i);
+
+        home_prob = groups.get_contact_prob();
 
     }
 
@@ -23606,10 +23524,22 @@ inline BubbleTies Bubbles<TSeq>::get_ties() const
 }
 
 template<typename TSeq>
-inline void Bubbles<TSeq>::set_ties(BubbleTies ties, std::string layer)
+inline void Bubbles<TSeq>::set_ties(
+    BubbleTies ties,
+    std::string layer,
+    double bubble_contact_prob
+)
 {
+
+    if (!((bubble_contact_prob >= 0.0) && (bubble_contact_prob <= 1.0)))
+        throw std::range_error(
+            "Bubbles: bubble_contact_prob must be in [0, 1]."
+        );
+
     this->ties = ties;
     this->layer = std::move(layer);
+    this->bubble_contact_prob = bubble_contact_prob;
+
 }
 
 template<typename TSeq>

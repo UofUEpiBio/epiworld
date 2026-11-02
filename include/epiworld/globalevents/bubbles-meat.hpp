@@ -64,7 +64,8 @@ inline Bubbles<TSeq>::Bubbles(
     size_t max_households,
     std::string param_name,
     BubbleTies ties,
-    std::string layer
+    std::string layer,
+    double bubble_contact_prob
 ) :
     flavor(flavor),
     group_size(group_size),
@@ -75,7 +76,8 @@ inline Bubbles<TSeq>::Bubbles(
     rewire_every(rewire_every),
     param_name(std::move(param_name)),
     ties(ties),
-    layer(std::move(layer))
+    layer(std::move(layer)),
+    bubble_contact_prob(bubble_contact_prob)
 {
 
     // Households by compact index, in order of first appearance
@@ -92,6 +94,11 @@ inline Bubbles<TSeq>::Bubbles(
     if ((this->transmission_factor < 0.0) || (this->transmission_factor > 1.0))
         throw std::range_error(
             "Bubbles: transmission_factor must be in [0, 1]."
+        );
+
+    if (!((bubble_contact_prob >= 0.0) && (bubble_contact_prob <= 1.0)))
+        throw std::range_error(
+            "Bubbles: bubble_contact_prob must be in [0, 1]."
         );
 
     if ((flavor == BubbleFlavor::Household) && (group_size < 1u))
@@ -336,8 +343,7 @@ inline void Bubbles<TSeq>::partition_peer(Model<TSeq> * model)
 
 template<typename TSeq>
 inline std::shared_ptr< layer::Mixing<TSeq> > Bubbles<TSeq>::make_layer(
-    std::string home_contact_prob,
-    std::string bubble_contact_prob
+    double household_contact_prob
 ) const
 {
 
@@ -348,18 +354,10 @@ inline std::shared_ptr< layer::Mixing<TSeq> > Bubbles<TSeq>::make_layer(
         );
 
     // Everyone with their household: the bubbles are larger groups of the
-    // same layer (households are never split), and an agent's home group is
-    // its household. Without parameters, everyone meets every day.
+    // same layer (households are never split)
     auto res = layer::mixing<TSeq>(layer);
     res->set_groups(household, n_households);
-
-    if (bubble_contact_prob.empty())
-        res->set_contact_prob({1.0});
-    else
-        res->set_contact_prob_param(std::move(bubble_contact_prob));
-
-    if (!home_contact_prob.empty())
-        res->set_home_contact_prob(std::move(home_contact_prob));
+    res->set_contact_prob(household_contact_prob);
 
     return res;
 
@@ -406,6 +404,31 @@ inline void Bubbles<TSeq>::sync_groups(Model<TSeq> * model)
         groups.set_group(
             i, want ? static_cast< size_t >(bubble_id[i]) : home[i]
         );
+
+    // One contact probability per group: a bubble that merged households
+    // meets at the bubble's; a household on its own keeps its own
+    if (want)
+    {
+        std::vector< double > q(home_prob.size(), bubble_contact_prob);
+        std::vector< size_t > first(home_prob.size(), layer::Mixing<TSeq>::NO_GROUP);
+        std::vector< bool > merged(home_prob.size(), false);
+        for (size_t i = 0u; i < household.size(); ++i)
+        {
+            const size_t b = static_cast< size_t >(bubble_id[i]);
+            if (first[b] == layer::Mixing<TSeq>::NO_GROUP)
+                first[b] = home[i];
+            else if (first[b] != home[i])
+                merged[b] = true;
+        }
+
+        for (size_t b = 0u; b < q.size(); ++b)
+            if (!merged[b] && (first[b] != layer::Mixing<TSeq>::NO_GROUP))
+                q[b] = home_prob[first[b]];
+
+        groups.set_contact_prob(std::move(q));
+    }
+    else
+        groups.set_contact_prob(home_prob);
 
     placed_epoch = target;
 
@@ -510,10 +533,13 @@ inline void Bubbles<TSeq>::_setup(Model<TSeq> * model)
                 "layer's reset puts everyone back in their household)."
             );
 
-        // Where agents go back to when the policy lifts
+        // Where agents go back to when the policy lifts, and how often
+        // each household meets
         home.resize(household.size());
         for (size_t i = 0u; i < household.size(); ++i)
             home[i] = groups.get_group(i);
+
+        home_prob = groups.get_contact_prob();
 
     }
 
@@ -651,10 +677,22 @@ inline BubbleTies Bubbles<TSeq>::get_ties() const
 }
 
 template<typename TSeq>
-inline void Bubbles<TSeq>::set_ties(BubbleTies ties, std::string layer)
+inline void Bubbles<TSeq>::set_ties(
+    BubbleTies ties,
+    std::string layer,
+    double bubble_contact_prob
+)
 {
+
+    if (!((bubble_contact_prob >= 0.0) && (bubble_contact_prob <= 1.0)))
+        throw std::range_error(
+            "Bubbles: bubble_contact_prob must be in [0, 1]."
+        );
+
     this->ties = ties;
     this->layer = std::move(layer);
+    this->bubble_contact_prob = bubble_contact_prob;
+
 }
 
 template<typename TSeq>
