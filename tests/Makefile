@@ -89,10 +89,8 @@ $(NAME)_SOURCES := \
 	32d-bubbles-rewiring.cpp \
 	32e-bubbles-setup-per-run.cpp \
 	32f-bubbles-parallel.cpp \
-	32g-bubbles-ties-complete.cpp \
-	32h-bubbles-ties-withdrawn.cpp \
-	32i-bubbles-ties-interactions.cpp \
-	32j-bubbles-ties-run-zero.cpp \
+	32g-bubbles-household-layer.cpp \
+	32h-bubbles-household-layer-rules.cpp \
 	33a-edges-add-rm.cpp \
 	33b-edges-queue.cpp \
 	34a-transmission-push-pull.cpp \
