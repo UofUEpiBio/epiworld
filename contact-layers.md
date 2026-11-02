@@ -963,10 +963,28 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
       (`contact_tracing_on()`, `get_contact_tracing()`,
       `make_contact_tracing_post_sampling()`; a layer keeps its own log).
       Draw for draw identical for everything that remains.
-    - **3d-3b**: `Bubbles` on a within-group `Mixing` layer (`q = 1`) and the
-      example model. Bubbles' results may change (the order of groupmates
-      differs from the order of the ties it added), as long as it is the
-      cheapest form computationally; it is checked statistically.
+    - **3d-3b** (as built): `Bubbles` with `BubbleTies::Complete` moves
+      agents in a within-group `Mixing` layer, the household layer, instead
+      of adding clique ties to a network. Settled 2026-11-02:
+      - `Bubbles::make_layer()` builds the layer (named in `set_ties()`):
+        one group per household (`household_id`), `q = 1`. The user adds it
+        (`model.add_layer(bubbles.make_layer())`), as every layer.
+      - The bubble layer *is* the household layer, so a model has no second
+        household layer (which would double household contacts): outside
+        the policy window households meet in full; while it is in force each
+        agent is in its bubble's group (a bubble never splits a household);
+        when it lifts, agents go back to the group they had at reset. Unlike
+        the clique ties, households now meet before and after the window.
+      - Layers add up: bubblemates also tied in a network layer meet in both.
+      - Moves are the layer's edits (end of step; a reset restores the
+        households; a traced layer records them), so the tie books go: no
+        `HeldTies`, no hand-over between policies, no
+        `get_created_ties()`/`restore_network()`. Two `Complete` policies
+        need two layers (sharing one throws), and `Complete` runs within
+        `Model::run()`. The grouping reads network layers only, so it is the
+        same draw for draw under either `BubbleTies`.
+      The example model is `examples/23-layers` (households, a work network,
+      public spaces with an age contact matrix).
 
 The list below is the whole of Phase 3.
 
@@ -1553,6 +1571,7 @@ that on `v1-layers` this plan is the source of truth.
 | Consolidation | The removed models (`ModelSIRMixing`, `ModelSEIRMixing`, the four `*CONN`, the two SEIR quarantine models) become defunct stubs naming the replacement (the plain model + `add_layer()`; `ModelSEIRQuarantine`); the parameter that sets a mixing layer's contact level; tests and the vignettes that use them (epiworldR: getting-started, advanced-modeling, mixing, run-multiple, implementation) rewritten. epiworldjs: registry entries. measles: unaffected. |
 | 3d-1 | `grouping::random()` and the generator form of `set_groups()` (epiworldR `grouping_random()`, epiworldpy `grouping.random()`). |
 | 3d-2 | The measles mixing models lose `contact_matrix`: the user adds the mixing layer (`add_layer(model, layer_mixing("mixing", groups, contact_matrix = cm))`); bind `distribute_tool_to_groups()` / `distribute_virus_to_groups()` (vaccination by school, the measles vignettes); measles R package: constructors, tests and vignettes rewritten for the layer; epiworldjs: the measles presets add the layer instead of entities. |
+| 3d-3b | `Bubbles`: bind `make_layer()` (epiworldR: the layer from the `bubbles()` object, added with `add_layer()`); `ties = "complete"` names the household layer, not a network layer; `get_created_ties()` / `restore_network()` (if bound) become defunct. |
 | 3d | Membership builders (replacing the entity distribution functions). Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing layers take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
 | Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()`; epiworldjs drops `cpp/registry.hpp`; measles registers its models. |
 | 4 | Exclusion / `isolate(agent, keep)`, layer-targeted tools, schedules, persistence. |
@@ -1562,7 +1581,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-10-31).
+Updated by every epiworld PR into `v1-layers` (last: 2026-11-02).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1579,9 +1598,9 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-31).
 | Phase 3d-1 (groupings) | #335 merged (+ #336 merged: whole-number counts) | #224, #225 merged | #39, #40 merged | #23 merged, #24 (superseded by #25: close) | #67 merged (re-vendor only) |
 | 3d-1b (networks without maps, #339) | #341 merged | #227 merged | #42 | #27 | #70 |
 | Phase 3d-2 (measles on layers) | #340 merged (+ `master`: the queue fix, #338; #345 merged: log capacity, group counts) | #226 merged | #41 merged (re-vendor only) | #25 merged | #68 merged |
-| Phase 3d-3a (entities and the model tracer removed) | #349 merged | | | | |
-| `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 | re-vendor (`main` -> `v1-layers`) | re-vendor (`main` -> `v1-layers`) | re-vendor (`main` -> `v1-layers`: epiworldjs#26, #28) | `main` -> `v1-layers` (measles#69) |
-| Phase 3d-3b (Bubbles on a layer, example model) | not started | | | | |
+| Phase 3d-3a (entities and the model tracer removed) | #349 merged | #228 (with #351) | | | |
+| `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`) | re-vendor (`main` -> `v1-layers`) | re-vendor (`main` -> `v1-layers`: epiworldjs#26, #28) | `main` -> `v1-layers` (measles#69) |
+| Phase 3d-3b (Bubbles on a layer, example model) | this PR | | | | |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
@@ -1601,9 +1620,10 @@ merged first, and 3d-1b (#341) builds networks without maps. Stage 3d-1b
 (the 3d-1 build left freed memory the run reused), not a cost per step.
 
 **Next** (as of the date above): the 3d-1b ports (epiworldpy #42,
-epiworldjs #27, measles #70); merge 3d-3a, rerun the benchmark (stage 3d-3a),
-port it to the wrappers (entity functions and the model tracer become defunct
-stubs); then 3d-3b.
+epiworldjs #27, measles #70) and the 3d-3a port (epiworldR #228) wait to be
+merged; the benchmark rerun at stage 3d-3a (pin 93b9781d); then the 3d-3a
+ports of epiworldpy, epiworldjs and measles; then 3d-3b (this PR) and its
+ports; then the registry.
 
 ### 11.7 A benchmark rerun
 
