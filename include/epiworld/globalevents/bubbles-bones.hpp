@@ -265,12 +265,14 @@ public:
  * is in its bubble's group instead, where each pair meets with the bubble
  * contact probability; a household that bubbled with nobody keeps its own.
  * A within-group layer has one probability per group, so in a merged bubble
- * housemates meet at the bubble's rate too. When the bubbles
- * are redrawn agents move to the new ones, and when the policy lifts they go
- * back to the group (and the probability) they had when the run started. Moves are a layer's ordinary edits: they
- * take effect at the end of the step, a reset puts everyone back, and a
- * traced layer records them in its history (`groupmates_of()`). No ties are
- * stored, and the network layers are left alone.
+ * housemates meet at the bubble's rate too. When the bubbles are redrawn
+ * agents move to the new ones, and when the policy lifts they go back to
+ * their households (with the probabilities the layer had at reset). Moves are
+ * a layer's ordinary edits: they take effect at the end of the step, a reset
+ * puts everyone back, and a traced layer records them in its history
+ * (`groupmates_of()`). No ties are stored, and the network layers are left
+ * alone. The layer must start each run with one group per household, as
+ * `make_layer()` builds it; setup checks it.
  *
  * Completing a bubble **raises the force of infection inside it**: every
  * bubblemate met is an independent exposure, so with the default (everyone,
@@ -454,7 +456,6 @@ private:
     // each per-thread copy made by run_multiple) owns its own partition.
     std::vector< int > bubble_id;    ///< Per-agent bubble label; -1 = unassigned.
 
-    std::vector< size_t > home;      ///< Group of each agent when the policy lifts.
     std::vector< double > home_prob; ///< Contact probability of each group at reset.
     int placed_epoch = -1;           ///< Partition agents are in (-1: their homes).
     int model_id   = -1;             ///< Sim id this intervention was set up for.
@@ -485,8 +486,8 @@ private:
      *        the next simulation step.
      *
      * @details Into their bubbles when the policy is about to apply (or the
-     * partition was redrawn), back to the group they had at reset when it is
-     * about to lapse. Nothing under `BubbleTies::Existing`.
+     * partition was redrawn), back to their households when it is about to
+     * lapse. Nothing under `BubbleTies::Existing`.
      */
     void sync_groups(Model<TSeq> * model);
 

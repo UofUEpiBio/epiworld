@@ -402,7 +402,7 @@ inline void Bubbles<TSeq>::sync_groups(Model<TSeq> * model)
     auto & groups = bubble_layer(model);
     for (size_t i = 0u; i < household.size(); ++i)
         groups.set_group(
-            i, want ? static_cast< size_t >(bubble_id[i]) : home[i]
+            i, want ? static_cast< size_t >(bubble_id[i]) : household[i]
         );
 
     // One contact probability per group: a bubble that merged households
@@ -416,8 +416,8 @@ inline void Bubbles<TSeq>::sync_groups(Model<TSeq> * model)
         {
             const size_t b = static_cast< size_t >(bubble_id[i]);
             if (first[b] == layer::Mixing<TSeq>::NO_GROUP)
-                first[b] = home[i];
-            else if (first[b] != home[i])
+                first[b] = household[i];
+            else if (first[b] != household[i])
                 merged[b] = true;
         }
 
@@ -533,12 +533,23 @@ inline void Bubbles<TSeq>::_setup(Model<TSeq> * model)
                 "layer's reset puts everyone back in their household)."
             );
 
-        // Where agents go back to when the policy lifts, and how often
-        // each household meets
-        home.resize(household.size());
-        for (size_t i = 0u; i < household.size(); ++i)
-            home[i] = groups.get_group(i);
+        // The policy moves agents from their households and back, so the
+        // layer must start from the household partition (as make_layer()
+        // builds it)
+        bool households = (groups.get_n_groups() == n_households);
+        for (size_t i = 0u; households && (i < household.size()); ++i)
+            households = (groups.get_group(i) == household[i]);
 
+        if (!households)
+            throw std::logic_error(
+                "Bubbles: the layer '" + layer + "' does not have one group "
+                "per household, as make_layer() builds it (" +
+                std::to_string(groups.get_n_groups()) + " groups for " +
+                std::to_string(n_households) + " households); add it with "
+                "model.add_layer(bubbles.make_layer())."
+            );
+
+        // How often each household meets
         home_prob = groups.get_contact_prob();
 
     }

@@ -22422,12 +22422,14 @@ public:
  * is in its bubble's group instead, where each pair meets with the bubble
  * contact probability; a household that bubbled with nobody keeps its own.
  * A within-group layer has one probability per group, so in a merged bubble
- * housemates meet at the bubble's rate too. When the bubbles
- * are redrawn agents move to the new ones, and when the policy lifts they go
- * back to the group (and the probability) they had when the run started. Moves are a layer's ordinary edits: they
- * take effect at the end of the step, a reset puts everyone back, and a
- * traced layer records them in its history (`groupmates_of()`). No ties are
- * stored, and the network layers are left alone.
+ * housemates meet at the bubble's rate too. When the bubbles are redrawn
+ * agents move to the new ones, and when the policy lifts they go back to
+ * their households (with the probabilities the layer had at reset). Moves are
+ * a layer's ordinary edits: they take effect at the end of the step, a reset
+ * puts everyone back, and a traced layer records them in its history
+ * (`groupmates_of()`). No ties are stored, and the network layers are left
+ * alone. The layer must start each run with one group per household, as
+ * `make_layer()` builds it; setup checks it.
  *
  * Completing a bubble **raises the force of infection inside it**: every
  * bubblemate met is an independent exposure, so with the default (everyone,
@@ -22611,7 +22613,6 @@ private:
     // each per-thread copy made by run_multiple) owns its own partition.
     std::vector< int > bubble_id;    ///< Per-agent bubble label; -1 = unassigned.
 
-    std::vector< size_t > home;      ///< Group of each agent when the policy lifts.
     std::vector< double > home_prob; ///< Contact probability of each group at reset.
     int placed_epoch = -1;           ///< Partition agents are in (-1: their homes).
     int model_id   = -1;             ///< Sim id this intervention was set up for.
@@ -22642,8 +22643,8 @@ private:
      *        the next simulation step.
      *
      * @details Into their bubbles when the policy is about to apply (or the
-     * partition was redrawn), back to the group they had at reset when it is
-     * about to lapse. Nothing under `BubbleTies::Existing`.
+     * partition was redrawn), back to their households when it is about to
+     * lapse. Nothing under `BubbleTies::Existing`.
      */
     void sync_groups(Model<TSeq> * model);
 
@@ -23249,7 +23250,7 @@ inline void Bubbles<TSeq>::sync_groups(Model<TSeq> * model)
     auto & groups = bubble_layer(model);
     for (size_t i = 0u; i < household.size(); ++i)
         groups.set_group(
-            i, want ? static_cast< size_t >(bubble_id[i]) : home[i]
+            i, want ? static_cast< size_t >(bubble_id[i]) : household[i]
         );
 
     // One contact probability per group: a bubble that merged households
@@ -23263,8 +23264,8 @@ inline void Bubbles<TSeq>::sync_groups(Model<TSeq> * model)
         {
             const size_t b = static_cast< size_t >(bubble_id[i]);
             if (first[b] == layer::Mixing<TSeq>::NO_GROUP)
-                first[b] = home[i];
-            else if (first[b] != home[i])
+                first[b] = household[i];
+            else if (first[b] != household[i])
                 merged[b] = true;
         }
 
@@ -23380,12 +23381,23 @@ inline void Bubbles<TSeq>::_setup(Model<TSeq> * model)
                 "layer's reset puts everyone back in their household)."
             );
 
-        // Where agents go back to when the policy lifts, and how often
-        // each household meets
-        home.resize(household.size());
-        for (size_t i = 0u; i < household.size(); ++i)
-            home[i] = groups.get_group(i);
+        // The policy moves agents from their households and back, so the
+        // layer must start from the household partition (as make_layer()
+        // builds it)
+        bool households = (groups.get_n_groups() == n_households);
+        for (size_t i = 0u; households && (i < household.size()); ++i)
+            households = (groups.get_group(i) == household[i]);
 
+        if (!households)
+            throw std::logic_error(
+                "Bubbles: the layer '" + layer + "' does not have one group "
+                "per household, as make_layer() builds it (" +
+                std::to_string(groups.get_n_groups()) + " groups for " +
+                std::to_string(n_households) + " households); add it with "
+                "model.add_layer(bubbles.make_layer())."
+            );
+
+        // How often each household meets
         home_prob = groups.get_contact_prob();
 
     }

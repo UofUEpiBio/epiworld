@@ -88,6 +88,31 @@ EPIWORLD_TEST_CASE("Bubbles - household layer rules", "[bubbles]") {
         REQUIRE_THROWS_WITH(m.run(5, 1), Catch::Matchers::Contains("make_layer"));
     }
 
+    // A within-group layer by that name whose groups are not the households:
+    // fewer groups, or as many but with other members
+    for (size_t n_groups : {50u, 100u})
+    {
+        epimodels::ModelSIR<> m("flu", n, 0.01, 0.2, 0.1);
+        m.verbose_off();
+        m.add_layer(layer::network("network", graph::smallworld<>(6, 0.1)));
+
+        std::vector< size_t > other(n);
+        for (size_t i = 0u; i < n; ++i)
+            other[i] = i % n_groups;
+
+        auto wrong = layer::mixing<>("household");
+        wrong->set_groups(other, n_groups);
+        wrong->set_contact_prob(1.0);
+        m.add_layer(wrong);
+
+        Bubbles<> p(hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0,
+            "Social bubble", 2u, "Bubble transmission factor",
+            BubbleTies::Complete, "household");
+        m.add_globalevent(p);
+
+        REQUIRE_THROWS_WITH(m.run(5, 1), Catch::Matchers::Contains("one group per household"));
+    }
+
     {
         epimodels::ModelSIR<> m("flu", n, 0.01, 0.2, 0.1);
         m.verbose_off();
