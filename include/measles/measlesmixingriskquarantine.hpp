@@ -2,6 +2,8 @@
 #ifndef EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 #define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 
+#include "stages.hpp"
+
 using namespace epiworld;
 
 /**
