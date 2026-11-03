@@ -1623,7 +1623,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-02).
 | Phase 3d-2 (measles on layers) | #340 merged (+ `master`: the queue fix, #338; #345 merged: log capacity, group counts) | #226 merged | #41 merged (re-vendor only) | #25 merged | #68 merged |
 | Phase 3d-3a (entities and the model tracer removed) | #349 merged | #228 merged (with #351) | with 3d-3b | with 3d-3b | with 3d-3b |
 | `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`), #228 merged | #43 (`main` -> `v1-layers`: epiworldpy#34) | #29 (`main` -> `v1-layers`: epiworldjs#26, #28) | #71 (`main` -> `v1-layers`: measles#69) |
-| Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged | #43 (with 3d-3a, #351; re-vendor only: epiworldpy binds no `Bubbles`) | #29 (with 3d-3a, #351; re-vendor only) | #71 (with 3d-3a, #351 and measles#69; re-vendor only) |
+| Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged | #43 (with 3d-3a, #351; first `Bubbles` binding: `epiworldpy.Bubbles`, `make_layer()`, `add_globalevent()`) | #29 (with 3d-3a, #351; re-vendor only) | #71 (with 3d-3a, #351 and measles#69; re-vendor only) |
 | Registry (#312) | not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
