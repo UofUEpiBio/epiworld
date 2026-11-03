@@ -1653,7 +1653,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-03).
 | Phase 3d-3a (entities and the model tracer removed) | #349 merged | #228 merged (with #351) | with 3d-3b (#43 merged) | with 3d-3b (#29 merged) | with 3d-3b (#71 merged) |
 | `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`), #228 merged | #43 merged (`main` -> `v1-layers`: epiworldpy#34) | #29 merged (`main` -> `v1-layers`: epiworldjs#26, #28) | #71 merged (`main` -> `v1-layers`: measles#69) |
 | Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged (+ #230: the peer row is an approximation) | #43 merged (with 3d-3a, #351; first `Bubbles` binding: `epiworldpy.Bubbles`, `make_layer()`, `add_globalevent()`) | #29 merged (with 3d-3a, #351; re-vendor only) | #71 merged (with 3d-3a, #351 and measles#69; re-vendor only) |
-| Registry (#312) | REGISTRY_PR | | | | |
+| Registry (#312) | #356 | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
 epiworldRShiny (Section 6): not started; one port after the registry.
@@ -1674,7 +1674,7 @@ Stages 3d-3a (#33) and 3d-3b (#34, pin 07ed7a0d) are merged with no
 regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 0.91 because the 0.x run happened to be faster (the 1.0 run was faster too).
 
-**Next** (as of the date above): the registry (REGISTRY_PR) waits to be
+**Next** (as of the date above): the registry (#356) waits to be
 merged; then its ports, epiworldR first, and the epiworldRShiny port; then
 Phase 4.
 
