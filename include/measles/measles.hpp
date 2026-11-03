@@ -38,6 +38,9 @@ namespace measles {
     #include "measlesschool.hpp"
     #include "measlesmixing.hpp"
     #include "measlesmixingriskquarantine.hpp"
+
+    // The registry entries of the models above
+    #include "registry.hpp"
 }
 
 #endif

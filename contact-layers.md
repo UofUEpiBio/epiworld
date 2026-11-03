@@ -1272,6 +1272,35 @@ transition rates), as for the consolidated SEIR models.
   generic constructor); epiworldjs drops its own `cpp/registry.hpp`.
 - Then epiworldRShiny is ported, once (see Section 6): its apps build every
   model with layers and the registry's constructor.
+- **As built** (settled 2026-11-03):
+  - `epimodels::ModelRegistry` is a value, not global state:
+    `epimodels::model_registry()` returns one with the core models, and
+    `measles::register_models(registry)` adds the measles models (the core
+    does not include `include/measles`). Other libraries add theirs with
+    `add()`. Every model has the same API: `list_models()`,
+    `get_model_info(id)` and `make_model(id, values, virus_name)`.
+  - `make_model()` builds the model only. It has no layers, which the user adds
+    as for a model built directly; epiworldjs keeps its population presets
+    (random mixing, a contact matrix, a network) on top of the registry.
+  - Each `ParamInfo` carries both names: `arg`, the argument every wrapper
+    takes (`transmission_prob`, epiworldR's names), and `name`, the model
+    parameter it sets (`"Transmission probability"`; empty for `n` and the
+    prevalence). It also has the default, hard limits (checked before
+    building), whether the value is whole, and a description. Values are
+    numbers only: with entities gone and contact matrices on the layers, no
+    registered model takes anything else.
+  - Each entry holds its **infection states** (`InfectionStates`: init, post,
+    removed), the states any virus added to the model needs; `apply(virus)`
+    sets them. A model still carries any number of viruses: this replaces
+    epiworldR's per-model `add_virus.*` methods.
+  - Registered: SIS, SIR, SEIR, SISD, SIRD, SEIRD, SEIRQuarantine, SURV, and
+    the three measles models. `ModelSIRLogit` and `ModelDiffNet` take data
+    arrays and keep their own bindings.
+  - The defaults follow the wrappers' examples (epiworldjs' registry and the
+    measles R package). JS slider steps are not in the core.
+  - Measles' natural history lives in the model, not the virus, so a second
+    virus in a measles model inherits its timing: #355, independent of the
+    registry.
 
 ### Phase 6 -- independent exposures, 1.0.0, bindings, docs
 
@@ -1596,7 +1625,7 @@ that on `v1-layers` this plan is the source of truth.
 | 3d-2 | The measles mixing models lose `contact_matrix`: the user adds the mixing layer (`add_layer(model, layer_mixing("mixing", groups, contact_matrix = cm))`); bind `distribute_tool_to_groups()` / `distribute_virus_to_groups()` (vaccination by school, the measles vignettes); measles R package: constructors, tests and vignettes rewritten for the layer; epiworldjs: the measles presets add the layer instead of entities. |
 | 3d-3b | `Bubbles`: bind `make_layer(q_household)` and the bubble contact probability (`set_ties()` / the constructor) (epiworldR, as built in #229: `bubbles(ties = "complete", layer, household_contact_prob, bubble_contact_prob)` builds the layer with `make_layer()` and adds it itself; the docs say which flavor and ties match which policy); `ties = "complete"` names the household layer, not a network layer; `get_created_ties()` / `restore_network()` (if bound) become defunct. |
 | 3d | Membership builders (replacing the entity distribution functions). Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing layers take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
-| Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()`; epiworldjs drops `cpp/registry.hpp`; measles registers its models. |
+| Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()` (plus `get_model_info()`), with the named constructors kept as thin shims taking `ParamInfo::arg` names; `add_virus()` sets the entry's infection states (epiworldR's `add_virus.*` methods go); epiworldjs builds from the core registry and keeps only its population presets and slider steps; measles calls `measles::register_models()`. |
 | 4 | Exclusion / `isolate(agent, keep)`, layer-targeted tools, schedules, persistence. |
 | 5 | Re-vendor only, unless a push/pull setting becomes public. |
 | epiworldRShiny (once, after the registry) | Its apps (`inst/models/shiny_*.R`) build every model through the registry and layers: networks from `agents_smallworld()` become a `layer_network()`, the `*CONN` apps a base model with a random-mixing layer (or dropped, since the base apps then cover them), renamed arguments (`transmission_prob`, `latent_period`); the measles app follows the measles port. |
@@ -1604,7 +1633,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-11-02).
+Updated by every epiworld PR into `v1-layers` (last: 2026-11-03).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1621,10 +1650,10 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-02).
 | Phase 3d-1 (groupings) | #335 merged (+ #336 merged: whole-number counts) | #224, #225 merged | #39, #40 merged | #23 merged, #24 (superseded by #25: close) | #67 merged (re-vendor only) |
 | 3d-1b (networks without maps, #339) | #341 merged | #227 merged | #42 merged | #27 merged | #70 merged |
 | Phase 3d-2 (measles on layers) | #340 merged (+ `master`: the queue fix, #338; #345 merged: log capacity, group counts) | #226 merged | #41 merged (re-vendor only) | #25 merged | #68 merged |
-| Phase 3d-3a (entities and the model tracer removed) | #349 merged | #228 merged (with #351) | with 3d-3b | with 3d-3b | with 3d-3b |
-| `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`), #228 merged | #43 (`main` -> `v1-layers`: epiworldpy#34) | #29 (`main` -> `v1-layers`: epiworldjs#26, #28) | #71 (`main` -> `v1-layers`: measles#69) |
-| Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged (+ #230: the peer row is an approximation) | #43 (with 3d-3a, #351; first `Bubbles` binding: `epiworldpy.Bubbles`, `make_layer()`, `add_globalevent()`) | #29 (with 3d-3a, #351; re-vendor only) | #71 (with 3d-3a, #351 and measles#69; re-vendor only) |
-| Registry (#312) | not started | | | | |
+| Phase 3d-3a (entities and the model tracer removed) | #349 merged | #228 merged (with #351) | with 3d-3b (#43 merged) | with 3d-3b (#29 merged) | with 3d-3b (#71 merged) |
+| `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`), #228 merged | #43 merged (`main` -> `v1-layers`: epiworldpy#34) | #29 merged (`main` -> `v1-layers`: epiworldjs#26, #28) | #71 merged (`main` -> `v1-layers`: measles#69) |
+| Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged (+ #230: the peer row is an approximation) | #43 merged (with 3d-3a, #351; first `Bubbles` binding: `epiworldpy.Bubbles`, `make_layer()`, `add_globalevent()`) | #29 merged (with 3d-3a, #351; re-vendor only) | #71 merged (with 3d-3a, #351 and measles#69; re-vendor only) |
+| Registry (#312) | REGISTRY_PR | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
 epiworldRShiny (Section 6): not started; one port after the registry.
@@ -1645,9 +1674,9 @@ Stages 3d-3a (#33) and 3d-3b (#34, pin 07ed7a0d) are merged with no
 regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 0.91 because the 0.x run happened to be faster (the 1.0 run was faster too).
 
-**Next** (as of the date above): the 3d-3a + 3d-3b ports of epiworldpy
-(#43), epiworldjs (#29) and measles (#71) wait to be merged; then
-the registry (#312).
+**Next** (as of the date above): the registry (REGISTRY_PR) waits to be
+merged; then its ports, epiworldR first, and the epiworldRShiny port; then
+Phase 4.
 
 ### 11.7 A benchmark rerun
 

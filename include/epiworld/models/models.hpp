@@ -118,6 +118,8 @@ namespace epimodels {
     #include "sirlogit.hpp"
     #include "diffnet.hpp"
     #include "seirquarantine.hpp"
+
+    #include "registry.hpp"
 }
 
 #endif
