@@ -22448,6 +22448,20 @@ public:
  * within `Model::run()` (or `run_multiple()`): a move outside a run would edit
  * the layer's baseline.
  *
+ * ### Matching a policy
+ *
+ * Two combinations match the rules used during COVID-19:
+ *
+ * | Policy                                              | Flavor      | Ties       |
+ * |-----------------------------------------------------|-------------|------------|
+ * | Households join one or a few others (New Zealand;   | `Household` | `Complete` |
+ * | UK support bubbles; Belgium, May 2020)              |             |            |
+ * | One close contact per person (Belgium, Oct. 2020)   | `Peer`      | `Existing` |
+ *
+ * `Peer` with `Complete` has both households meet in full, not just the two
+ * people: more contact than the one-contact rule allows. It is still allowed,
+ * for the case where a person brings their household along.
+ *
  * ## The algorithms
  *
  * Both rules start from the **household contact graph**: one node per
