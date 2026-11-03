@@ -22448,6 +22448,29 @@ public:
  * within `Model::run()` (or `run_multiple()`): a move outside a run would edit
  * the layer's baseline.
  *
+ * ### Matching a policy
+ *
+ * These are the closest settings for two styles of rule used during
+ * COVID-19, not exact matches:
+ *
+ * | Policy style                                       | Settings                                       |
+ * |----------------------------------------------------|------------------------------------------------|
+ * | Households join one or a few others (New Zealand;  | `Household`, `group_size` = households per     |
+ * | UK support bubbles; Belgium, May 2020)             | bubble, `Complete`                             |
+ * | One close contact per person (Belgium, Oct. 2020)  | `Peer`, `max_households = 2` (the default),    |
+ * |                                                    | `Existing`                                     |
+ *
+ * The second is an approximation. `Peer` commits whole households, so with
+ * `max_households = 2` one accepted choice pairs two households and the other
+ * members of either can choose no one else (`group_size` then has no effect;
+ * see *The algorithms*). Under `Existing` every tie between the two households
+ * is spared, not only the chosen one. The model therefore gives a household
+ * one partner household where the rule gives each person their own contact. A
+ * larger `max_households` lets more members choose, at the cost of larger
+ * bubbles. `Peer` with `Complete` has both households meet in full: more
+ * contact than the rule allows, but still allowed, for the case where a
+ * person brings their household along.
+ *
  * ## The algorithms
  *
  * Both rules start from the **household contact graph**: one node per
