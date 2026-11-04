@@ -276,32 +276,52 @@ branching, no duplicated rules and no hand-written timer bookkeeping.
 
 ## 7. Engine changes
 
-- **`NaturalHistory`** (new): stages (label, update function, duration and
-  next stage), the infection and recovery stages, and the per-agent arrays of
-  Section 3.1. It is owned by the model (`Model::add_natural_history`).
-- **`Virus::set_natural_history(k)`**: the virus follows the model's natural
-  history `k`. Adding the virus to an agent starts an episode in the infection
-  stage; removing it moves the agent to the recovery stage. Neither changes
-  the status unless asked.
-- **`Agent::get_stage()` / `Agent::change_stage()`**, and a `ChangeStage`
-  event action with the stage it leaves and the episode.
-- **The update loop** calls each natural history's stage update, then the
-  status function. A model with natural histories updates every agent each step.
-  This is the simplest correct answer to the queue pitfall (a quarantined,
-  uninfected agent far from any case still has its status updated). Smarter
-  active sets come after measurement. Push transmission is off in such models
-  until the generic samplers read stage attributes.
-- **The Database** gets, per natural history and per recorded day:
-  - the count of agents in each stage;
-  - a stage transition matrix (from the stage at the previous record to the
-    current one; the diagonal holds the agents who stayed), the same
-    convention as the status matrix;
-  - the joint table, status × stage.
+Revised in NH-2 (2026-11-04). NH-1 kept stages in separate per-agent arrays,
+with their own events, update loop and database tables. Porting every model
+showed that the engine's existing machinery (push and pull transmission, the
+agents-by-state index, the queue, the state transition bookkeeping with
+same-day undo) is all keyed on the agent's single state, and duplicating it
+for stages was the expensive part. So NH-2 keeps one state per agent and
+**builds the states from the statuses and the stages**:
 
-  All three are computed **by one scan of the agents at each record**,
-  rather than updated event by event. They are correct by construction, so
-  there is no undo bookkeeping to get wrong. The cost is one pass over the
-  agents per recorded day, which is measured.
+- **States are pairs, built by the engine.** `add_state()` adds a status.
+  With natural histories, the model's states are every combination of a
+  status and a stage (status + nstatuses × stage), rebuilt whenever a status
+  or a natural history is added. Models never write these pairs:
+  `Agent::change_status()` and `Agent::change_stage()` change one part and
+  keep the other, and `get_status()`/`get_stage()` read them back. A state's
+  update runs the stage's update function, then the status's; a single
+  function is used as is, so the samplers still recognize
+  `default_update_susceptible` and push transmission works unchanged.
+- **With one status, the states are the stages**, with the same codes and
+  labels. So the SIR family on natural histories gives bit-identical
+  histories to the old models, and their tests and outputs are unchanged.
+- **`NaturalHistory`** keeps the stages (label, update function, duration
+  and next stage, infectious flag), the infection, recovery and death stages,
+  and the per-agent lifecycle arrays of Section 3.1 (episode, entry days, end
+  of the current duration). The stage itself is part of the state.
+- **Events.** A change of status (`ChangeStatus`) or of stage
+  (`ChangeStage`, with the stage it leaves and the episode, dropped if
+  stale) is turned into a change of state when it is applied, from the
+  agent's state at that moment. Gaining or losing a virus that follows a
+  natural history moves the stage (to the infection, recovery or death
+  stage) and keeps the status. After each event, the engine updates the
+  lifecycle arrays of the stages entered and calls the stage hook.
+- **Masks.** Infectiousness comes from the stages' flags combined with
+  `set_infectious_states()`; with natural histories, `set_excluded_states()`
+  lists statuses. Excluded agents are not infected by
+  `default_update_susceptible`.
+- **The queue.** Models with several statuses with update functions, or with
+  stage durations, update every agent each step (the queue pitfall);
+  single-status models keep the queue.
+- **The Database records states, which are the joint counts**, so nothing
+  new is recorded. `get_hist_status()`, `get_hist_stage()`,
+  `get_hist_joint()`, their transition matrices and probabilities, and
+  `get_today_status()`/`get_today_stage()` add the state histories up. This
+  replaced NH-1's per-record scan.
+- **Initial states.** `create_init_function_stages()` moves shares of the
+  initial cases and of the others to given stages (the old initializers
+  moved agents to SEIR state codes, wrong in the quarantine models).
 
 ## 8. API sketch
 
@@ -406,9 +426,12 @@ where the combined states hurt most.
   own tests: hospitalization does not pause the rash clock; the quarantine
   exemption depends on immunity rather than on holding any tool; Prodromal
   counts as symptomatic for symptom-onset outputs.
-- **NH-2: the other measles models** (`ModelMeaslesSchool`,
-  `ModelMeaslesMixingRiskQuarantine`, the PEP intervention), then
-  `ModelSEIRQuarantine`.
+- **NH-2: every model on natural histories** (done, 2026-11-04). The
+  engine builds the states from statuses × stages (Section 7). SIR, SIS,
+  SIRD, SISD, SEIR, SEIRD, SIRLogit and DiffNet have one status, so their
+  states are the stages, unchanged. SEIRQuarantine, the three measles models
+  and Surveillance have several statuses. The PEP intervention keeps taking
+  states (`ModelMeaslesSchool::state(status, stage)`).
 - **NH-0: the virus registry**, gated by the benchmark in Section 4.3.
 - **NH-3: wrappers.** Accessors for stage histories, transitions and the
   joint table in epiworldR, epiworldpy and epiworldjs.
@@ -532,8 +555,8 @@ the absence of a virus (Section 3).
 | Phase | PR | State |
 |---|---|---|
 | Plan | #358 | revised after the first review |
-| NH-1 engine + measles mixing pilot | (this PR's follow-up) | done on `nh-1-measles`; see `complexity-report.md` |
+| NH-1 engine + measles mixing pilot | #359 | done; see `complexity-report.md` |
+| NH-2 states built from statuses × stages; every model ported | (stacked on #359) | in review |
 | NH-1b policy corrections | | not started |
-| NH-2 other measles models, SEIRQuarantine | | not started |
 | NH-0 registry | | waits on the benchmark |
 | NH-3 wrappers | | not started |

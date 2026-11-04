@@ -25,8 +25,8 @@ private:
 public:
 
     // Statuses
-    static const int NONADOPTER = 0;
-    static const int ADOPTER    = 1;
+    static constexpr int NONADOPTER = 0;
+    static constexpr int ADOPTER    = 1;
 
     ModelDiffNet() = delete;
 
@@ -94,7 +94,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
             ++n_neighbors;
 
-            if (neighbor->get_state() == ModelDiffNet<TSeq>::ADOPTER)
+            if (neighbor->get_stage(*m) == ModelDiffNet<TSeq>::ADOPTER)
             {
 
                 auto & v = neighbor->get_virus();
@@ -148,10 +148,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
             return;
 
         // Otherwise, it is adopted from any of the neighbors
-        agent.set_virus(*m, 
-            *innovations.at(which),
-            ADOPTER
-        );
+                agent.set_virus(*m, *innovations.at(which));
 
         return;
 
@@ -160,9 +157,13 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     // Adding agents data
     this->set_agents_data(agents_data, data_ncols);
     
-    // Adding statuses
-    this->add_state("Non adopters", update_non_adopters);
-    this->add_state("Adopters");
+        // The natural history (its stages are the model's states): adopting
+    // is for good
+    NaturalHistory<TSeq> nh("Diffusion");
+    nh.add_stage("Non adopters", update_non_adopters);
+    nh.add_stage("Adopters");
+    nh.set_infection(ADOPTER, ADOPTER);
+    this->add_natural_history(nh);
 
     // Adding parameters
     std::string parname = std::string("Prob. Adopting ") + innovation_name;
@@ -170,7 +171,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> innovation(innovation_name, prevalence, true);
-    innovation.set_state(1,1,1);
+        innovation.set_natural_history(0);
     
     innovation.set_prob_infecting(parname);
     

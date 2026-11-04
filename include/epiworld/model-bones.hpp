@@ -427,6 +427,9 @@ protected:
     /// Schedules a move of the agent to stage `to` of natural history `k`.
     void _add_stage_event(Agent<TSeq> * agent_, size_t k, int to);
 
+    /// print() of models with several statuses: by status and by stage.
+    void print_by_groups() const;
+
     /**
      * @name Tool Mixers
      *

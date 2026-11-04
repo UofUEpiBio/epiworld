@@ -8,7 +8,7 @@
 
 /**
  * Probability that a measles stage lasts d days, d = 1, ..., dmax (entry
- * d - 1): the lognormal draw of `MeaslesStages::draw_days()`, rounded to whole
+ * d - 1): the lognormal draw of `measles_draw_days()`, rounded to whole
  * days with a minimum of one.
  */
 inline std::vector< double > measles_stage_pmf(

@@ -101,6 +101,12 @@ public:
     static constexpr int RECOVERED   = 3;
     ///@}
 
+    /// The model's state with this status and stage.
+    static constexpr epiworld_fast_uint state(int status, int stage)
+    {
+        return static_cast< epiworld_fast_uint >(status + 4 * stage);
+    }
+
     static const size_t QUARANTINE_PROCESS_INACTIVE = 0u;
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
     static const size_t QUARANTINE_PROCESS_DONE     = 2u;

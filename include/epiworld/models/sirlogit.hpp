@@ -38,9 +38,9 @@ template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSIRLogit : public Model<TSeq>
 {
 public:
-    static const int SUSCEPTIBLE = 0;
-    static const int INFECTED    = 1;
-    static const int RECOVERED   = 2;
+    static constexpr int SUSCEPTIBLE = 0;
+    static constexpr int INFECTED    = 1;
+    static constexpr int RECOVERED   = 2;
 
     ModelSIRLogit() = delete;
 
@@ -255,10 +255,13 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
         };
 
-    // state
-    this->add_state("Susceptible", update_susceptible);
-    this->add_state("Infected", update_infected);
-    this->add_state("Recovered");
+        // The natural history (its stages are the model's states)
+    NaturalHistory<TSeq> nh("SIR");
+    nh.add_stage("Susceptible", update_susceptible);
+    nh.add_stage("Infected", update_infected);
+    nh.add_stage("Recovered");
+    nh.set_infection(INFECTED, RECOVERED);
+    this->add_natural_history(nh);
 
     // Setting up parameters
     // this->add_param(contact_rate, "Contact rate");
@@ -268,7 +271,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(INFECTED, RECOVERED, RECOVERED);
+        virus.set_natural_history(0);
 
     virus.set_prob_infecting("Transmission probability");
     virus.set_prob_recovery("Recovery rate");

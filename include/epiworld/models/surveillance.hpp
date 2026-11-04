@@ -11,15 +11,27 @@ template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelSURV : public Model<TSeq> {
 
 public:
-    // state
-    static constexpr int SUSCEPTIBLE           = 0;
-    static constexpr int LATENT                = 1;
-    static constexpr int SYMPTOMATIC           = 2;
-    static constexpr int SYMPTOMATIC_ISOLATED  = 3; // sampled and discovered
-    static constexpr int ASYMPTOMATIC          = 4;
-    static constexpr int ASYMPTOMATIC_ISOLATED = 5;
-    static constexpr int RECOVERED             = 6;
-    static constexpr int REMOVED               = 7;
+        /// @name Statuses (isolated: sampled and discovered)
+    ///@{
+    static constexpr int FREE     = 0;
+    static constexpr int ISOLATED = 1;
+    ///@}
+
+    /// @name Stages of the natural history (`get_natural_history(0)`)
+    ///@{
+    static constexpr int SUSCEPTIBLE  = 0;
+    static constexpr int LATENT       = 1;
+    static constexpr int SYMPTOMATIC  = 2;
+    static constexpr int ASYMPTOMATIC = 3;
+    static constexpr int RECOVERED    = 4;
+    static constexpr int REMOVED      = 5;
+    ///@}
+
+    /// The model's state with this status and stage.
+    static constexpr epiworld_fast_uint state(int status, int stage)
+    {
+        return static_cast< epiworld_fast_uint >(status + 2 * stage);
+    }
 
     /**
      * @brief Vector of days spent in latent and infectious states
@@ -54,16 +66,10 @@ public:
      * @param prob_noreinfect Double. Probability of no re-infection.
      * 
      * @details
-     * This model features the following states:
-     * 
-     * - Susceptible
-     * - Latent
-     * - Symptomatic
-     * - Symptomatic isolated
-     * - Asymptomatic
-     * - Asymptomatic isolated
-     * - Recovered
-     * - Removed    
+          * Each agent has a status, Free or Isolated (sampled and discovered,
+     * for the rest of the run), and a stage: Susceptible, Latent,
+     * Symptomatic, Asymptomatic, Recovered or Removed. Latent and isolated
+     * agents do not transmit.    
      * 
      * @returns An object of class `epiworld_surv`
      * 
@@ -180,11 +186,11 @@ inline ModelSURV<TSeq>::ModelSURV(
         epiworld_double p_die = v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, *m));
         
         epiworld_fast_uint days_since_exposed = m->today() - v->get_date();
-        epiworld_fast_uint state = p->get_state();
+                const int stage = p->get_stage(*m);
 
         // Figuring out latent period
         auto & dat = model_surv->days_latent_and_infectious;
-        if (dat[p->get_id()] < 0)
+                if (dat[p->get_id() * 2u] < 0)
         {
             epiworld_double latent_days = m->rgamma(
                 EPI_PAR(m, "Latent period"), 1.0
@@ -209,14 +215,14 @@ inline ModelSURV<TSeq>::ModelSURV(
         }
 
         // If it is infected, then it can be asymptomatic or symptomatic
-        if (state == ModelSURV<TSeq>::LATENT)
+                if (stage == ModelSURV<TSeq>::LATENT)
         {
 
             // Will be symptomatic?
             if (EPI_RUNIF() < EPI_PAR(m, "Prob of symptoms"))
-                p->change_state(*m, ModelSURV<TSeq>::SYMPTOMATIC);
+                p->change_stage(*m, ModelSURV<TSeq>::SYMPTOMATIC);
             else
-                p->change_state(*m, ModelSURV<TSeq>::ASYMPTOMATIC);
+                p->change_stage(*m, ModelSURV<TSeq>::ASYMPTOMATIC);
             
             return;
 
@@ -225,7 +231,11 @@ inline ModelSURV<TSeq>::ModelSURV(
         // Otherwise, it can be removed
         if (EPI_RUNIF() < p_die)
         {
-            p->change_state(*m, ModelSURV<TSeq>::REMOVED, -1);
+                        p->rm_virus(
+                *m,
+                m->state_with(p->get_state(), -1, 0u, ModelSURV<TSeq>::REMOVED),
+                -1
+            );
             return;
         }
         
@@ -233,16 +243,10 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     };
 
-    std::vector< unsigned int > exposed_state = {
-        SYMPTOMATIC,
-        SYMPTOMATIC_ISOLATED,
-        ASYMPTOMATIC,
-        ASYMPTOMATIC_ISOLATED,
-        LATENT
-    };
+    
 
     GlobalFun<TSeq> surveillance_program = 
-    [exposed_state](
+    [](
         Model<TSeq>* m
         ) -> void
     {
@@ -272,20 +276,17 @@ inline ModelSURV<TSeq>::ModelSURV(
             Agent<TSeq> * p = &pop[i];
             
             // If still exposed for the next term
-            if (IN(p->get_state(), exposed_state ))
+                        const int stage = p->get_stage(*m);
+            if (
+                (stage == ModelSURV<TSeq>::LATENT) ||
+                (stage == ModelSURV<TSeq>::SYMPTOMATIC) ||
+                (stage == ModelSURV<TSeq>::ASYMPTOMATIC)
+            )
             {
-
                 ndetected += 1.0;
-                if (p->get_state() == ModelSURV<TSeq>::ASYMPTOMATIC)
-                {
+                if (stage == ModelSURV<TSeq>::ASYMPTOMATIC)
                     ndetected_asympt += 1.0;
-                    p->change_state(*m, ModelSURV<TSeq>::ASYMPTOMATIC_ISOLATED);
-                }
-                else 
-                {
-                    p->change_state(*m, ModelSURV<TSeq>::SYMPTOMATIC_ISOLATED);
-                }
-
+                p->change_status(*m, ModelSURV<TSeq>::ISOLATED);
             }
 
         }
@@ -298,21 +299,30 @@ inline ModelSURV<TSeq>::ModelSURV(
                 static_cast<epiworld_double>(nsampled),
                 ndetected,
                 ndetected_asympt,
-                static_cast<epiworld_double>(totals[ModelSURV<TSeq>::ASYMPTOMATIC])
+                static_cast<epiworld_double>(totals[
+                    ModelSURV<TSeq>::state(
+                        ModelSURV<TSeq>::FREE, ModelSURV<TSeq>::ASYMPTOMATIC
+                    )
+                ])
             }
             );
 
 
     };
 
-    this->add_state("Susceptible", surveillance_update_susceptible);
-    this->add_state("Latent", surveillance_update_exposed);
-    this->add_state("Symptomatic", surveillance_update_exposed);
-    this->add_state("Symptomatic isolated", surveillance_update_exposed);
-    this->add_state("Asymptomatic", surveillance_update_exposed);
-    this->add_state("Asymptomatic isolated", surveillance_update_exposed);
-    this->add_state("Recovered");
-    this->add_state("Removed");
+        // Statuses and the natural history
+    this->add_state("Free");
+    this->add_state("Isolated");
+
+    NaturalHistory<TSeq> nh("Surveillance");
+    nh.add_stage("Susceptible", surveillance_update_susceptible);
+    nh.add_stage("Latent", surveillance_update_exposed);
+    nh.add_stage("Symptomatic", surveillance_update_exposed);
+    nh.add_stage("Asymptomatic", surveillance_update_exposed);
+    nh.add_stage("Recovered");
+    nh.add_stage("Removed");
+    nh.set_infection(LATENT, RECOVERED, REMOVED);
+    this->add_natural_history(nh);
 
     // General model parameters
     this->add_param(latent_period, "Latent period");
@@ -327,7 +337,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     // Virus ------------------------------------------------------------------
     Virus<TSeq> covid(vname, prevalence, false);
-    covid.set_state(LATENT, RECOVERED, REMOVED);
+        covid.set_natural_history(0);
     covid.set_post_immunity("Prob. no reinfect");
     covid.set_prob_death("Prob. death");
 
@@ -338,12 +348,10 @@ inline ModelSURV<TSeq>::ModelSURV(
         ) -> epiworld_double
     {
         // No chance of infecting
-        epiworld_fast_uint  s = p->get_state();
-        if (s == ModelSURV<TSeq>::LATENT)
-            return static_cast<epiworld_double>(0.0);
-        else if (s == ModelSURV<TSeq>::SYMPTOMATIC_ISOLATED)
-            return static_cast<epiworld_double>(0.0);
-        else if (s == ModelSURV<TSeq>::ASYMPTOMATIC_ISOLATED)
+                if (
+            (p->get_stage(*m) == ModelSURV<TSeq>::LATENT) ||
+            (p->get_status(*m) == ModelSURV<TSeq>::ISOLATED)
+        )
             return static_cast<epiworld_double>(0.0);
 
         // Otherwise

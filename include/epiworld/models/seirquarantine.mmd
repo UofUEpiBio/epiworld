@@ -1,52 +1,26 @@
-flowchart TB
+flowchart LR
 
-    %% Disease progression states
-    subgraph Main[Disease Progression]
-        direction TB
-        S[Susceptible]
-        E[Exposed]
-        In[Infected]
-        H[Hospitalized]
-        R[Recovered]
+    %% The natural history: what the disease does (every agent has a stage)
+    subgraph Stages[Stages: natural history]
+        direction LR
+        S[Susceptible] -->|infection, if free| E[Exposed]
+        E -->|latent period| I[Infected]
+        I -->|recovery rate,<br>or discharge| R[Recovered]
     end
 
-    S --> E
-    E --> In
-    In --> H
-    H --> R
-    In --> R
-
-    %% Quarantine states
-    Qs[Quarantined<br>Susceptible]
-    Qe[Quarantined<br>Exposed]
-    I[Isolated]
-    Ir[Isolated<br>Recovered]
-
-    %% Infected to
-    In <==> I
-    In --> Ir
-    In --> H
-
-    %% Detected agents go to hospital as detected
-    Dh[Detected<br>Hospitalized]
-    In --> Dh
-    Dh --> R
-
-    %% Isolated to
-    I --> R
-    I --> Ir
-    I --> H
-    I --> Dh
-
-    %% Susceptible quarantined
-    S <==> Qs
-
-    %% Exposed
-    E <==> Qe
-
-    Qe --> I
-    Qe --> In
-
-    %% Isolated recovered
-    Ir --> R
-    
+    %% The statuses: where the agent is (who it meets)
+    subgraph Statuses[Statuses: the model's states]
+        direction LR
+        F[Free]
+        Q[Quarantined]
+        Is[Isolated]
+        H[Hospitalized]
+        F -->|traced contact| Q
+        Q -->|period over| F
+        F -->|detected, if willing;<br>traced while infected| Is
+        Q -->|onset| Is
+        Is -->|period over| F
+        F -->|infected: daily risk| H
+        Is -->|infected: daily risk| H
+        H -->|discharge| F
+    end

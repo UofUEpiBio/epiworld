@@ -292,7 +292,7 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
             std::string("s : %i\n");
     }
         
-    if (today() != 0)
+    if ((today() != 0) && (natural_histories.empty() || (status_labels.size() <= 1u)))
     {
         printf_epiworld("\nDistribution of the population at time %i:\n", today());
         for (size_t s = 0u; s < nstates; ++s)
@@ -309,10 +309,92 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
         }
     }
 
+    // With several statuses, the states are pairs of a status and a stage:
+    // the summary shows the statuses and the stages
+    if ((today() != 0) && !natural_histories.empty() && (status_labels.size() > 1u))
+    {
+        print_by_groups();
+        return *this;
+    }
+
     if (today() != 0)
         (void) db.get_transition_probability(true);
 
     return *this;
+
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::print_by_groups() const
+{
+
+    // Prints the counts at the first record and now, and the transition
+    // probabilities, of one grouping (the statuses, or one natural history's
+    // stages)
+    auto print_group = [this](
+        const std::string & what,
+        const std::vector< std::string > & labels,
+        const std::vector< int > & counts,
+        const std::vector< epiworld_double > & probs
+    ) -> void {
+
+        const size_t n = labels.size();
+        size_t nchar = 0u;
+        for (const auto & l : labels)
+            nchar = std::max(nchar, l.length());
+
+        printf_epiworld(
+            "\nDistribution of the population at time %i (%s):\n",
+            today(), what.c_str()
+        );
+
+        const size_t last = counts.size() - n;
+        for (size_t i = 0u; i < n; ++i)
+        {
+            printf_epiworld(
+                "  - %-*s : %i -> %i\n", static_cast< int >(nchar),
+                labels[i].c_str(), counts[i], counts[last + i]
+            );
+        }
+
+        printf_epiworld("\nTransition Probabilities (%s):\n", what.c_str());
+        for (size_t i = 0u; i < n; ++i)
+        {
+            printf_epiworld(" - %-*s", static_cast< int >(nchar), labels[i].c_str());
+            for (size_t j = 0u; j < n; ++j)
+            {
+                if (probs[i + j * n] == 0.0)
+                {
+                    printf_epiworld("     -");
+                }
+                else
+                {
+                    printf_epiworld(" % 4.2f", probs[i + j * n]);
+                }
+            }
+            printf_epiworld("\n");
+        }
+
+    };
+
+    std::vector< int > date, counts;
+    std::vector< std::string > labels;
+
+    db.get_hist_status(date, labels, counts);
+    print_group(
+        "statuses", status_labels, counts,
+        db.get_status_transition_probability(true)
+    );
+
+    for (size_t k = 0u; k < natural_histories.size(); ++k)
+    {
+        db.get_hist_stage(k, date, labels, counts);
+        print_group(
+            natural_histories[k].get_name() + " stages",
+            natural_histories[k].get_stages(), counts,
+            db.get_stage_transition_probability(k, true)
+        );
+    }
 
 }
 

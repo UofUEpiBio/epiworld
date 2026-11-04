@@ -234,7 +234,10 @@ int main(int argc, char ** argv)
                 model.seed(20260928);
                 res = bench::time_runs(
                     model, o.days, o.reps,
-                    {model.SUSCEPTIBLE, model.QUARANTINED_SUSCEPTIBLE}
+                    {
+                model.state(model.FREE, model.SUSCEPTIBLE),
+                model.state(model.QUARANTINED, model.SUSCEPTIBLE)
+            }
                 );
             }
             else

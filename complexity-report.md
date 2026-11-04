@@ -1,18 +1,78 @@
-# Complexity report: the measles mixing model with statuses and stages
+# Complexity report: models with statuses and stages
 
-NH-1 of `natural-history.md`. This report compares `ModelMeaslesMixing`
-before the change (the `natural-history` branch, 12 combined states) and
-after it (4 statuses × 5 stages of a natural history). It answers one
-question: did the model become simpler, and what did that cost in the
-engine?
+This report covers NH-1 (the measles mixing pilot, Sections 1 to 8 below,
+written for PR #359) and **NH-2, every model ported (Section 0, measured)**.
+Both compare against the `natural-history` branch, the code before any of
+this work.
 
 **How it was measured.** Cyclomatic complexity (CCN) and non-comment lines
 of code (NLOC) per function come from [lizard](https://github.com/terryyin/lizard)
-1.25.0, run on `include/measles/measlesmixing.hpp` at both commits and on
-the parts of `include/measles/stages.hpp` the old model used. The other
-counts are greps over the same files (commands at the end). CCN counts the
-decision points in a function plus one, so it measures how many paths there
-are to test.
+1.25.0. "Logic" counts the functions that hold the disease and policy rules:
+the update functions, the quarantine processes, the stage hook, the
+hospitalization helper, the models' own samplers, and, before, the
+`MeaslesStages` helpers. The constructors are left out: they declare
+parameters, states and stages. The other counts are greps.
+
+## 0. NH-2: every model (measured)
+
+| Model | States written by hand | Now: statuses × stages | Logic functions | Logic NLOC | Logic CCN | File lines |
+|---|---:|---:|---:|---:|---:|---:|
+| `ModelMeaslesMixing` | 12 | 4 × 5 | 15 → 9 | 244 → 138 | 61 → 43 | 824 → 705 |
+| `ModelMeaslesSchool` | 12 | 4 × 5 | 13 → 9 | 264 → 187 | 71 → 55 | 742 → 626 |
+| `ModelMeaslesMixingRiskQuarantine` | 12 | 4 × 5 | 17 → 13 | 410 → 336 | 111 → 94 | 1,164 → 1,069 |
+| `ModelSEIRQuarantine` | 10 | 4 × 4 | 10 → 9 | 260 → 145 | 54 → 42 | 696 → 575 |
+| `MeaslesStages` (`stages.hpp`, shared) | | | 3 → 0 | 49 → 0 | 13 → 0 | 171 → 82 |
+| **The models with statuses** | **46** | **16 statuses, 19 stages** | **58 → 40** | **1,227 → 806 (−34%)** | **310 → 234 (−25%)** | **3,597 → 3,057 (−15%)** |
+| `ModelSURV` (surveillance) | 8 | 2 × 6 | (lambdas in the constructor) | | | 372 → 380 |
+| SIR, SIS, SIRD, SISD, SEIR, SEIRD, SIRLogit, DiffNet | 2 to 5 each | 1 status: the states are the stages | unchanged | unchanged | unchanged | +1 to +3 lines each |
+
+- **The combined states are gone.** 46 hand-written combined states in the
+  four quarantine models are now 16 statuses and 19 stages, declared
+  separately; the engine builds the pairs. No model writes "Quarantined
+  Latent" or keeps a twin mapping.
+- **The release rules are written once per status.** The mixing model went
+  from 6 copies of "is the period over" to 2, and the others likewise.
+- **Timers moved to the engine.** `MeaslesStages` (stage durations, the
+  stage-of-state mapping, and its per-agent vectors) is gone; durations are
+  drawn on entry by the natural history. `stages.hpp` keeps the lognormal
+  draw.
+- **Where it stayed complex.** The quarantine processes, which mostly read
+  contact logs and risk levels: the risk model's is still 149 NLOC with CCN 47.
+  The single-status models gained 1 to 3 lines each and are otherwise
+  unchanged, because they never had combined states.
+
+**The cost in the engine** grew from NH-1's 570 code lines to **about 1,000
+code lines** (1,421 with documentation, in `include/epiworld/`):
+`NaturalHistory` (333 lines), the status, stage and joint views of the
+database (375), the states built from statuses × stages, the stage events,
+the masks and the lifecycle bookkeeping in the model (503), the status and
+stage summary in `print()` (84), and the agent, virus and event API (126). **In lines alone, the model logic shed about 420 NLOC for
+about 1,000 of engine**, so the net count went up. What the engine adds is
+shared by every model and is new capability: per-disease stage histories
+and transitions, joint status × stage tables, episode data with a defined
+lifecycle (entry days, sampled durations), and statuses that any model,
+including the SIR family, can now gain without writing combined states.
+
+**Bugs found and fixed by the port:**
+
+- `ModelSEIRQuarantine`: an agent detected on the day it recovered moved to
+  "Isolated Recovered" without losing its virus, and kept it for the rest of
+  the run.
+- `initial_states()` of the quarantine and measles models reused the SEIR
+  state codes, which in those models moved agents meant to start recovered
+  into Rash (measles) or Isolated (SEIR quarantine).
+- `ModelSURV`: a sampled latent agent became "Symptomatic isolated" (and
+  then never developed symptoms or not); dead agents kept their virus; and
+  the latent and infectious periods were looked up at the wrong index for
+  every agent but the first.
+- Test 14g ("PEP reduces outbreak size") quarantined everyone at the first
+  detection, so PEP had nothing left to prevent and the two arms were within
+  noise (29.4 vs 29.5 cases on the old code). With half the population
+  willing to quarantine, PEP cuts the outbreak from 59 to 37 cases.
+
+---
+
+# NH-1: the measles mixing model (PR #359)
 
 ## 1. Summary
 
@@ -143,7 +203,7 @@ Tests (end to end):
   events, the hook's timing, copying, and that the stage counts, the joint
   table and the statuses add up every day.
 
-## 6. The other models (measured now, projected after a port)
+## 6. The other models (projected before NH-2; Section 0 has the measured numbers)
 
 This PR does not touch the other models. The only shared files it changes are
 `stages.hpp`, where the lognormal draw becomes a free function that both

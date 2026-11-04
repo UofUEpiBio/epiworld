@@ -178,7 +178,10 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
         add_mixing(model, n);
         return bench::time_runs(
             model, o.days, o.reps,
-            {model.SUSCEPTIBLE, model.QUARANTINED_SUSCEPTIBLE}
+            {
+                model.state(model.FREE, model.SUSCEPTIBLE),
+                model.state(model.QUARANTINED, model.SUSCEPTIBLE)
+            }
         );
     }
 
@@ -186,7 +189,10 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
     model.seed(20260930);
     return bench::time_runs(
         model, o.days, o.reps,
-        {model.SUSCEPTIBLE, model.QUARANTINED_SUSCEPTIBLE}
+        {
+                model.state(model.FREE, model.SUSCEPTIBLE),
+                model.state(model.QUARANTINED, model.SUSCEPTIBLE)
+            }
     );
 }
 
