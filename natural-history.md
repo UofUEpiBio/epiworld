@@ -240,10 +240,16 @@ branching, no duplicated rules and no hand-written timer bookkeeping.
 
 ## 6. Update order, conflicts and competing risks
 
-- **One update per agent per step.** The engine calls the agent's status
-  update function, then the stage update of each natural history. All of
-  them only schedule events. The events apply at the end of the step, as
-  today.
+- **One update per agent per step.** The engine calls the stage update of
+  each natural history, then the agent's status update function: the disease
+  first, then the model. All of them only schedule events, which apply at the
+  end of the step in the order they were scheduled. So a stage change is
+  applied before the status changes of the same step, the stage hook sees the
+  status the agent had at the start of the step, and the events the hook
+  schedules come last (they win). Found in the measles port: with the
+  opposite order, a quarantine release scheduled on the day of rash onset was
+  applied before the rash, the hook missed the quarantined agent, and the
+  model needed a special case.
 - **Stage events carry an identity.** A stage change records the stage it
   leaves and the episode. When it is applied, an event whose agent is no
   longer in that stage, or in that episode, is **stale and dropped**. So the
@@ -279,8 +285,8 @@ branching, no duplicated rules and no hand-written timer bookkeeping.
   the status unless asked.
 - **`Agent::get_stage()` / `Agent::change_stage()`**, and a `ChangeStage`
   event action with the stage it leaves and the episode.
-- **The update loop** calls the status function, then each natural history's
-  stage update. A model with natural histories updates every agent each step.
+- **The update loop** calls each natural history's stage update, then the
+  status function. A model with natural histories updates every agent each step.
   This is the simplest correct answer to the queue pitfall (a quarantined,
   uninfected agent far from any case still has its status updated). Smarter
   active sets come after measurement. Push transmission is off in such models
@@ -526,7 +532,7 @@ the absence of a virus (Section 3).
 | Phase | PR | State |
 |---|---|---|
 | Plan | #358 | revised after the first review |
-| NH-1 engine + measles mixing pilot | | in progress |
+| NH-1 engine + measles mixing pilot | (this PR's follow-up) | done on `nh-1-measles`; see `complexity-report.md` |
 | NH-1b policy corrections | | not started |
 | NH-2 other measles models, SEIRQuarantine | | not started |
 | NH-0 registry | | waits on the benchmark |

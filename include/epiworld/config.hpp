@@ -124,6 +124,14 @@ using UpdateFun = std::function<void(Agent<TSeq>*,Model<TSeq>*)>;
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 using GlobalFun = std::function<void(Model<TSeq>*)>;
 
+/// Draws the number of days a stage of a natural history lasts.
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+using StageDurationFun = std::function<int(Agent<TSeq>*,Model<TSeq>*)>;
+
+/// Called when an agent's stage changes: (agent, natural history, from, to, model).
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+using StageHookFun = std::function<void(Agent<TSeq>*,size_t,int,int,Model<TSeq>*)>;
+
 template<typename TSeq>
 struct Event;
 
@@ -135,7 +143,8 @@ enum class EventAction : uint8_t {
     AddTool,
     RemoveVirus,
     RemoveTool,
-    ChangeState
+    ChangeState,
+    ChangeStage ///< Moves the agent to another stage of a natural history
 };
 
 /**
@@ -211,6 +220,17 @@ struct Event {
     epiworld_fast_int queue;
     EventAction action;
     int layer = -1; ///< Layer of the contact that transmitted the virus, if any
+
+    /// @name Stage changes (`EventAction::ChangeStage`)
+    /// The natural history, the stage the agent leaves and the one it
+    /// enters, and the episode. The event is stale, and dropped, if the agent
+    /// left that stage or episode before it is applied.
+    ///@{
+    int nh         = -1;
+    int stage_from = -1;
+    int stage_to   = -1;
+    int episode    = -1;
+    ///@}
 public:
 /**
      * @brief Construct a new Event object

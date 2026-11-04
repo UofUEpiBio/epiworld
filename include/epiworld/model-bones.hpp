@@ -168,6 +168,9 @@ protected:
     std::vector< UpdateFun<TSeq> >    state_fun = {};                  ///< Functions to update states
     std::vector< std::string >        states_labels = {};              ///< Labels of the states
 
+    std::vector< NaturalHistory<TSeq> > natural_histories = {}; ///< See NaturalHistory
+    StageHookFun<TSeq> stage_hook = nullptr;                    ///< See set_stage_hook()
+
     /** Function to distribute states. Goes along with the function  */
     std::function<void(Model<TSeq>*)> initial_states_fun = [](Model<TSeq> * /**/)
     -> void {};
@@ -409,7 +412,14 @@ protected:
     void _event_rm_virus(Event<TSeq> & a);
     void _event_rm_tool(Event<TSeq> & a);
     void _event_change_state(Event<TSeq> & a);
+    void _event_change_stage(Event<TSeq> & a);
     ///@}
+
+    /// Schedules a move of the agent to stage `to` of natural history `k`.
+    void _add_stage_event(Agent<TSeq> * agent_, size_t k, int to);
+
+    /// Runs the agent's stage updates, then its state (status) update.
+    void update_agent(Agent<TSeq> & p);
 
     /**
      * @name Tool Mixers
@@ -729,6 +739,34 @@ public:
     size_t get_n_states() const;
     const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
     void print_state_codes() const;
+    ///@}
+
+    /**
+     * @name Natural histories
+     *
+     * @details The model's states are the agents' *statuses* (where an agent
+     * is: free, quarantined, isolated...). A natural history describes what a
+     * disease does, with a stage for every agent (see `NaturalHistory`).
+     * Viruses follow one (`Virus::set_natural_history()`). A model with
+     * natural histories updates every agent each step: first the stage's
+     * update function, then the state's.
+     *
+     * `set_stage_hook()` sets a function called each time an agent's stage
+     * changes, right after the change is applied (so it sees the new stage),
+     * with the agent, the natural history, and the stages left and entered.
+     * Stage changes are applied before the status changes scheduled in the
+     * same step, so the hook sees the status the agent had at the start of
+     * the step; the events it schedules are applied last.
+     * It is where the model reacts to the disease (e.g., isolating a
+     * quarantined agent at rash onset). Events it schedules are applied in
+     * the same step.
+     */
+    ///@{
+    size_t add_natural_history(NaturalHistory<TSeq> nh);
+    NaturalHistory<TSeq> & get_natural_history(size_t k = 0u);
+    const NaturalHistory<TSeq> & get_natural_history(size_t k = 0u) const;
+    size_t get_n_natural_histories() const noexcept;
+    void set_stage_hook(StageHookFun<TSeq> fun);
     ///@}
 
     /**

@@ -59,6 +59,8 @@ inline void DataBase<TSeq>::reset()
     hist_total_counts.clear();
     hist_transition_matrix.clear();
 
+    stage_hist.assign(model->natural_histories.size(), StageHistory());
+
     transmission_date.clear();
     transmission_virus.clear();
     transmission_source.clear();
@@ -119,6 +121,7 @@ inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
     transmission_source_exposure_date(db.transmission_source_exposure_date),
     transmission_layer(db.transmission_layer),
     transition_matrix(db.transition_matrix),
+    stage_hist(db.stage_hist),
     user_data(nullptr)
 {}
 
@@ -295,6 +298,8 @@ inline void DataBase<TSeq>::record()
             hist_total_state.push_back(s);
             hist_total_counts.push_back(today_total[s]);
         }
+
+        record_stages();
 
         for (const auto& cell : transition_matrix)
             hist_transition_matrix.push_back(cell);
@@ -1458,6 +1463,173 @@ inline void DataBase<TSeq>::get_reproductive_number(
 
     write_table(fn, get_run_outputs({"reproductive"}).at("reproductive"));
 
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::record_stages()
+{
+
+    const size_t nstates = model->nstates;
+    for (size_t k = 0u; k < model->natural_histories.size(); ++k)
+    {
+
+        auto & nh = model->natural_histories[k];
+        auto & h  = stage_hist[k];
+        const size_t ns = nh.size();
+
+        const size_t c0 = h.counts.size();
+        const size_t t0 = h.transitions.size();
+        const size_t j0 = h.joint.size();
+        h.date.push_back(model->today());
+        h.counts.resize(c0 + ns, 0);
+        h.transitions.resize(t0 + ns * ns, 0);
+        h.joint.resize(j0 + nstates * ns, 0);
+
+        for (const auto & p : model->population)
+        {
+            const size_t id = static_cast< size_t >(p.get_id());
+            const size_t s  = static_cast< size_t >(nh.stage[id]);
+            const size_t r  = static_cast< size_t >(nh.recorded[id]);
+            h.counts[c0 + s]++;
+            h.transitions[t0 + r + s * ns]++;
+            h.joint[j0 + p.get_state() + s * nstates]++;
+            nh.recorded[id] = nh.stage[id];
+        }
+
+    }
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_hist_stage(
+    size_t k,
+    std::vector< int > & date,
+    std::vector< std::string > & stage,
+    std::vector< int > & counts
+) const
+{
+
+    const auto & labels = model->get_natural_history(k).get_stages();
+    const auto & h = stage_hist.at(k);
+    date.clear();
+    stage.clear();
+    counts.assign(h.counts.begin(), h.counts.end());
+    for (auto d : h.date)
+        for (const auto & l : labels)
+        {
+            date.push_back(d);
+            stage.push_back(l);
+        }
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_hist_joint(
+    size_t k,
+    std::vector< int > & date,
+    std::vector< std::string > & state,
+    std::vector< std::string > & stage,
+    std::vector< int > & counts
+) const
+{
+
+    const auto & labels = model->get_natural_history(k).get_stages();
+    const auto & states = model->get_states();
+    const auto & h = stage_hist.at(k);
+    date.clear();
+    state.clear();
+    stage.clear();
+    counts.assign(h.joint.begin(), h.joint.end());
+    for (auto d : h.date)
+        for (const auto & l : labels)
+            for (const auto & st : states)
+            {
+                date.push_back(d);
+                state.push_back(st);
+                stage.push_back(l);
+            }
+
+}
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_hist_stage_transition_matrix(
+    size_t k,
+    std::vector< std::string > & stage_from,
+    std::vector< std::string > & stage_to,
+    std::vector< int > & date,
+    std::vector< int > & counts
+) const
+{
+
+    const auto & labels = model->get_natural_history(k).get_stages();
+    const size_t ns = labels.size();
+    const auto & h = stage_hist.at(k);
+    stage_from.clear();
+    stage_to.clear();
+    date.clear();
+    counts.clear();
+    for (size_t i = 0u; i < h.transitions.size(); ++i)
+    {
+        if (h.transitions[i] == 0)
+            continue;
+        const size_t cell = i % (ns * ns);
+        stage_from.push_back(labels[cell % ns]);
+        stage_to.push_back(labels[cell / ns]);
+        date.push_back(h.date[i / (ns * ns)]);
+        counts.push_back(h.transitions[i]);
+    }
+
+}
+
+template<typename TSeq>
+inline std::vector< epiworld_double >
+DataBase<TSeq>::get_stage_transition_probability(
+    size_t k,
+    bool normalize
+) const
+{
+
+    const size_t ns = model->get_natural_history(k).size();
+    const auto & h = stage_hist.at(k);
+    std::vector< epiworld_double > res(ns * ns, 0.0);
+    for (size_t i = 0u; i < h.transitions.size(); ++i)
+        res[i % (ns * ns)] += h.transitions[i];
+
+    if (normalize)
+        for (size_t from = 0u; from < ns; ++from)
+        {
+            epiworld_double total = 0.0;
+            for (size_t to = 0u; to < ns; ++to)
+                total += res[from + to * ns];
+
+            if (total > 0.0)
+                for (size_t to = 0u; to < ns; ++to)
+                    res[from + to * ns] /= total;
+        }
+
+    return res;
+
+}
+
+template<typename TSeq>
+inline std::vector< int > DataBase<TSeq>::get_today_stage(size_t k) const
+{
+    const size_t ns = model->get_natural_history(k).size();
+    const auto & h = stage_hist.at(k);
+    if (h.counts.size() < ns)
+        return std::vector< int >(ns, 0);
+    return std::vector< int >(h.counts.end() - ns, h.counts.end());
+}
+
+template<typename TSeq>
+inline int DataBase<TSeq>::get_today_stage(
+    size_t k,
+    std::string_view stage
+) const
+{
+    return get_today_stage(k)[
+        model->get_natural_history(k).stage_of(stage)
+    ];
 }
 
 template<typename TSeq>

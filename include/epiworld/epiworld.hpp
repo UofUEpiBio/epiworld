@@ -105,6 +105,7 @@ namespace epiworld {
     #include "globalevent-bones.hpp"
     #include "globalevent-meat.hpp"
 
+    #include "naturalhistory-bones.hpp"
     #include "model-bones.hpp"
     #include "model-rand-meat.hpp"
     #include "model-meat.hpp"
@@ -125,6 +126,7 @@ namespace epiworld {
     #include "agent-meat-state.hpp"
     #include "agent-bones.hpp"
     #include "agent-meat.hpp"
+    #include "naturalhistory-meat.hpp"
     #include "model-meat-transmission.hpp"
     #include "layer-mixing.hpp"
     #include "layer-network.hpp"

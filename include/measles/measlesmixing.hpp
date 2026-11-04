@@ -21,27 +21,39 @@ using namespace epiworld;
  * - Measles-specific disease progression: Susceptible → Latent → Prodromal → Rash
  * - Prodromal individuals are infectious (replace the "Infected" state in SEIR)
  * - Rash individuals can have reduced infectious contact and can be detected for isolation
- * - Quarantine measures for latent contacts during contact tracing
+ * - Quarantine measures for contacts found by contact tracing
  * - Isolation policies for detected individuals during the rash state
  * - Contact tracing with configurable success rates
  * - Hospitalization of severe cases
  * - Individual willingness to comply with public health measures
  *
- * The model supports 13 distinct states:
+ * Each agent has a **status** (the model's states) and a **stage** of the
+ * measles natural history (see `NaturalHistory`):
  *
- * - Susceptible: Individuals who can become infected
- * - Latent: Infected but not yet infectious (incubation period)
- * - Prodromal: Infectious individuals in the community (replaces "Infected" in SEIR)
- * - Rash: Individuals with visible symptoms; detection and reduced-contact sampling occur here
- * - Isolated: Detected individuals in self-isolation
- * - Isolated Recovered: Recovered individuals still in isolation
- * - Detected Hospitalized: Hospitalized individuals who were contact-traced
- * - Quarantined Latent: Latent individuals in quarantine due to contact tracing
- * - Quarantined Susceptible: Susceptible individuals in quarantine due to contact tracing
- * - Quarantined Prodromal: Prodromal individuals in quarantine due to contact tracing
- * - Quarantined Recovered: Recovered individuals in quarantine due to contact tracing
- * - Hospitalized: Individuals requiring hospital care
- * - Recovered: Individuals who have recovered and gained immunity
+ * | Statuses (states) | Stages (natural history "Measles") |
+ * |---|---|
+ * | Free         | Susceptible |
+ * | Quarantined  | Latent |
+ * | Isolated     | Prodromal (infectious) |
+ * | Hospitalized | Rash (infectious at a reduced contact rate) |
+ * |              | Recovered |
+ *
+ * The status says where the agent is, and who it can meet: only free agents
+ * are in contact. The stage says what the disease does: the latent,
+ * prodromal and rash stages last a number of days drawn from a lognormal
+ * distribution on entry (`measles_stage_days()`), whatever the status.
+ *
+ * - A free susceptible agent can be infected by its contacts (unless immune).
+ * - A free agent with rash may be detected (which starts contact tracing,
+ *   and isolates the agent) or hospitalized, each day.
+ * - Quarantine (traced contacts) lasts "Quarantine period" days from the
+ *   day the agent was flagged; a quarantined agent who develops rash is
+ *   isolated.
+ * - Isolation lasts "Isolation period" days from rash onset. An isolated
+ *   agent with rash may be hospitalized each day.
+ * - Hospitalized agents are discharged, free and recovered, with daily
+ *   probability 1 / "Hospitalization period". The rash stage does not end in
+ *   hospital: hospitalized agents recover at discharge.
  *
  * The contacts come from the model's mixing layer, which the user adds: a
  * `layer::Mixing` with the groups and a contact matrix (entry `(i, j)` is the
@@ -60,9 +72,6 @@ using namespace epiworld;
  * in it, which the quarantine process reads. It has no other layers (see
  * `measles_mixing_layer()`).
  *
- * The latent, prodromal and rash stages last a number of days drawn from a
- * lognormal distribution when the agent enters them (see `MeaslesStages`).
- *
  * ![Model Diagram](../assets/img/measlesmixing.png)
  *
  * **Implementation details:**
@@ -74,52 +83,54 @@ using namespace epiworld;
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixing final :
-    public Model<TSeq>,
-    public MeaslesStages<TSeq, ModelMeaslesMixing<TSeq>>
+class ModelMeaslesMixing final : public Model<TSeq>
 {
 private:
 
     SamplerMixing<TSeq> sampler;
-    void _update_infectious_list();
 
-    // Update functions
-    static void _update_susceptible(Agent<TSeq> * p, Model<TSeq> * m);
-    static void _update_latent(Agent<TSeq> * p, Model<TSeq> * m);
-    static void _update_prodromal(Agent<TSeq> * p, Model<TSeq> * m);
-    static void _update_rash(Agent<TSeq> * p, Model<TSeq> * m);
+    // Statuses
+    static void _update_free(Agent<TSeq> * p, Model<TSeq> * m);
+    static void _update_quarantined(Agent<TSeq> * p, Model<TSeq> * m);
     static void _update_isolated(Agent<TSeq> * p, Model<TSeq> * m);
-    static void _update_isolated_recovered(Agent<TSeq> * p, Model<TSeq> * m);
-    static void _update_quarantine_suscep(Agent<TSeq> * p, Model<TSeq> * m);
-    static void _update_quarantine_latent(Agent<TSeq> * p, Model<TSeq> * m);
-    static void _update_quarantine_prodromal(Agent<TSeq> * p, Model<TSeq> * m);
-    static void _update_quarantine_recovered(Agent<TSeq> * p, Model<TSeq> * m);
     static void _update_hospitalized(Agent<TSeq> * p, Model<TSeq> * m);
+
+    // Stages (Latent and Prodromal just last their drawn duration)
+    static void _update_rash(Agent<TSeq> * p, Model<TSeq> * m);
+
+    static void _on_stage_change(
+        Agent<TSeq> * p, size_t k, int from, int to, Model<TSeq> * m
+    );
+
+    static void _quarantine_process(Model<TSeq> * m);
+
+    /// Hospitalizes the agent with the daily probability (agents with rash)
+    static bool _hospitalize(Agent<TSeq> * p, Model<TSeq> * m);
 
     // Data about the quarantine process
     std::vector< bool > quarantine_willingness; ///< Indicator for quarantine willingness
     std::vector< bool > isolation_willingness; ///< Indicator for isolation willingness
     std::vector< size_t > agent_quarantine_triggered; ///< Whether the quarantine process has started
-    std::vector< int > day_flagged; ///< Either detected or started quarantine
-    std::vector< int > day_rash_onset; ///< Day of rash onset
-    std::vector< int > day_latent; ///< Day of latent infection
-
-    static void _quarantine_process(Model<TSeq> * m);
+    std::vector< int > day_flagged; ///< Day the agent was quarantined or isolated
 
 public:
 
-    static const int SUSCEPTIBLE              = 0;
-    static const int LATENT                   = 1;
-    static const int PRODROMAL                = 2;
-    static const int RASH                     = 3;
-    static const int ISOLATED                 = 4;
-    static const int ISOLATED_RECOVERED       = 5;
-    static const int QUARANTINED_LATENT       = 6;
-    static const int QUARANTINED_SUSCEPTIBLE  = 7;
-    static const int QUARANTINED_PRODROMAL    = 8;
-    static const int QUARANTINED_RECOVERED    = 9;
-    static const int HOSPITALIZED             = 10;
-    static const int RECOVERED                = 11;
+    /// @name Statuses (the model's states)
+    ///@{
+    static const int FREE         = 0;
+    static const int QUARANTINED  = 1;
+    static const int ISOLATED     = 2;
+    static const int HOSPITALIZED = 3;
+    ///@}
+
+    /// @name Stages of the natural history (`get_natural_history(0)`)
+    ///@{
+    static const int SUSCEPTIBLE = 0;
+    static const int LATENT      = 1;
+    static const int PRODROMAL   = 2;
+    static const int RASH        = 3;
+    static const int RECOVERED   = 4;
+    ///@}
 
     static const size_t QUARANTINE_PROCESS_INACTIVE = 0u;
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
@@ -210,9 +221,10 @@ public:
     /**
      * @brief Set the initial states of the model
      * @param proportions_ Double vector with two elements:
-     * - [0]: The proportion of initially infected individuals who start in the latent state.
-     * - [1]: The proportion of initially non-infected individuals who have recovered (immune).
-     * @param queue_ Optional vector for queuing specifications (default: empty).
+     * - [0]: The proportion of the initial cases who start in the prodromal
+     *   stage (the rest start latent).
+     * - [1]: The proportion of the other agents who start recovered (immune).
+     * @param queue_ Ignored.
      */
     ModelMeaslesMixing<TSeq> & initial_states(
         std::vector< double > proportions_,
@@ -249,14 +261,7 @@ public:
     // Overriding the next() function to include the model update
     void next() override;
 
-
 };
-
-template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::_update_infectious_list()
-{
-    sampler.update(*this);
-}
 
 template<typename TSeq>
 inline void ModelMeaslesMixing<TSeq>::reset()
@@ -291,10 +296,6 @@ inline void ModelMeaslesMixing<TSeq>::reset()
 
     agent_quarantine_triggered.assign(this->size(), 0u);
     day_flagged.assign(this->size(), 0);
-    day_rash_onset.assign(this->size(), 0);
-    day_latent.assign(this->size(), 0);
-
-    this->reset_stages(this);
 
     return;
 
@@ -309,278 +310,147 @@ inline std::unique_ptr<Model<TSeq>> ModelMeaslesMixing<TSeq>::clone_ptr()
 }
 
 template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::_update_susceptible(
+inline bool ModelMeaslesMixing<TSeq>::_hospitalize(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    // Downcasting to retrieve the sampler attached to the
-    // class
-    auto * m_down = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);
+    if (m->runif() >= EPI_PAR(m, "Hospitalization rate"))
+        return false;
 
-    // An immune agent cannot be infected: no contacts drawn
-    if (p->get_susceptibility_reduction(m_down->viruses[0u], *m) >= 1.0)
-        return;
+    m->record_hospitalization(*p);
+    p->change_state(*m, HOSPITALIZED);
+    return true;
 
-    size_t ndraws = m_down->sampler.sample(p, *m_down);
-    const auto & sampled_agents = m_down->sampler.get_sampled_agents();
-
-    #ifdef EPI_DEBUG
-    m_down->sampler.record_sampled_size(ndraws);
-    #endif
-
-    if (ndraws == 0u)
-        return;
-
-    Virus<TSeq> * virus = m->sample_virus(
-        p, sampled_agents.data(), ndraws
-    );
-    if (virus != nullptr)
-        p->set_virus(*m, *virus, LATENT);
-
-    return;
-
-};
+}
 
 template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::_update_latent(
+inline void ModelMeaslesMixing<TSeq>::_update_free(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto* model = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);
+    auto * model = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);
+    const int stage = p->get_stage(*m);
 
-    // Does the agent become prodromal (infectious)?
-    if (model->stage_over(p, m))
+    if (stage == SUSCEPTIBLE)
     {
-        p->change_state(*m, PRODROMAL);
+
+        // An immune agent cannot be infected: no contacts drawn
+        if (p->get_susceptibility_reduction(model->viruses[0u], *m) >= 1.0)
+            return;
+
+        size_t ndraws = model->sampler.sample(p, *model);
+
+        #ifdef EPI_DEBUG
+        model->sampler.record_sampled_size(ndraws);
+        #endif
+
+        if (ndraws == 0u)
+            return;
+
+        Virus<TSeq> * virus = m->sample_virus(
+            p, model->sampler.get_sampled_agents().data(), ndraws
+        );
+        if (virus != nullptr)
+            p->set_virus(*m, *virus);
+
+    }
+    else if (stage == RASH)
+    {
+
+        // Detection starts contact tracing and isolates the agent, unless
+        // it is hospitalized
+        bool detected =
+            (EPI_PAR(m, "Isolation period") >= 0) &&
+            (m->runif() < 1.0/EPI_PAR(m, "Days undetected"));
+
+        if (detected)
+            model->agent_quarantine_triggered[p->get_id()] =
+                QUARANTINE_PROCESS_ACTIVE;
+
+        if (!_hospitalize(p, m) && detected)
+        {
+            p->change_state(*m, ISOLATED);
+            model->day_flagged[p->get_id()] = m->today();
+        }
+
     }
 
-    return;
-
-};
+}
 
 template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::_update_prodromal(
+inline void ModelMeaslesMixing<TSeq>::_update_quarantined(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto* model = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);
+    auto * model = model_cast<ModelMeaslesMixing<TSeq>, TSeq>(m);
 
-    // Does the agent transition to rash?
-    if (model->stage_over(p, m))
-    {
-        model->day_rash_onset[p->get_id()] = m->today();
-        p->change_state(*m, RASH);
-    }
+    int days_since = m->today() - model->day_flagged[p->get_id()];
+    if (EPI_PAR(m, "Quarantine period") <= days_since)
+        p->change_state(*m, FREE);
 
-    return ;
-
-};
-
-template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::_update_rash(
-    Agent<TSeq> * p, Model<TSeq> * m
-) {
-
-    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
-
-    // Checking if the agent will be detected or not
-    bool detected = false;
-    if (
-        (EPI_PAR(m, "Isolation period") >= 0) &&
-        (m->runif() < 1.0/EPI_PAR(m, "Days undetected"))
-    )
-    {
-        model->agent_quarantine_triggered[p->get_id()] =
-            QUARANTINE_PROCESS_ACTIVE;
-        detected = true;
-    }
-
-    // Each day with rash, the agent may be hospitalized; otherwise, it
-    // recovers at the end of the rash period
-    if (m->runif() < EPI_PAR(m, "Hospitalization rate"))
-    {
-        m->record_hospitalization(*p);
-        p->change_state(*m, HOSPITALIZED);
-    }
-    else if (model->stage_over(p, m))
-    {
-        p->rm_virus(*m, detected ? ISOLATED_RECOVERED: RECOVERED);
-    }
-    else if (detected)
-    {
-        // If the agent is not hospitalized or recovered, then it is moved to
-        // isolation.
-        p->change_state(*m, ISOLATED);
-        model->day_flagged[p->get_id()] = m->today();
-    }
-
-    return ;
-
-};
+}
 
 template<typename TSeq>
 inline void ModelMeaslesMixing<TSeq>::_update_isolated(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
+    // Isolation lasts from rash onset, also for agents who recovered
+    const auto & nh = m->get_natural_history();
+    if ((p->get_stage(*m) == RASH) && _hospitalize(p, m))
+        return;
 
-    // Figuring out if the agent can be released from isolation
-    // if the isolation period is over.
-    int days_since = m->today() - model->day_rash_onset[p->get_id()];
+    int days_since = m->today() - nh.entered(*p, RASH);
+    if (EPI_PAR(m, "Isolation period") <= days_since)
+        p->change_state(*m, FREE);
 
-    bool unisolate =
-        (EPI_PAR(m, "Isolation period") <= days_since) ?
-        true: false;
-
-    // Each day with rash, the agent may be hospitalized; otherwise, it
-    // recovers at the end of the rash period
-    if (m->runif() < EPI_PAR(m, "Hospitalization rate"))
-    {
-        m->record_hospitalization(*p);
-        p->change_state(*m, HOSPITALIZED);
-    }
-    else if (model->stage_over(p, m))
-    {
-        p->rm_virus(*m, unisolate ? RECOVERED : ISOLATED_RECOVERED);
-    }
-    else if (unisolate)
-    {
-        p->change_state(*m, RASH);
-    }
-
-
-};
-
-template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::_update_quarantine_suscep(
-    Agent<TSeq> * p, Model<TSeq> * m
-) {
-
-    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
-
-    // Figuring out if the agent can be released from quarantine
-    // if the quarantine period is over.
-    int days_since = m->today() - model->day_flagged[p->get_id()];
-
-    bool unquarantine =
-        (EPI_PAR(m, "Quarantine period") <= days_since) ?
-        true: false;
-
-    if (unquarantine)
-    {
-        p->change_state(*m, SUSCEPTIBLE);
-    }
-
-};
-
-template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::_update_quarantine_latent(
-    Agent<TSeq> * p, Model<TSeq> * m
-) {
-
-    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
-
-    // Figuring out if the agent can be released from quarantine
-    // if the quarantine period is over.
-    int days_since = m->today() - model->day_flagged[p->get_id()];
-
-    bool unquarantine =
-        (EPI_PAR(m, "Quarantine period") <= days_since) ?
-        true: false;
-
-    if (model->stage_over(p, m))
-    {
-        p->change_state(*m, unquarantine ? PRODROMAL : QUARANTINED_PRODROMAL);
-    }
-    else if (unquarantine)
-    {
-        p->change_state(*m, LATENT);
-    }
-
-};
-
-template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::_update_quarantine_prodromal(
-    Agent<TSeq> * p, Model<TSeq> * m
-) {
-
-    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
-
-    // Otherwise, these are moved to the prodromal period, if
-    // the quarantine period is over.
-    int days_since = m->today() - model->day_flagged[p->get_id()];
-
-    bool unquarantine =
-        (EPI_PAR(m, "Quarantine period") <= days_since) ?
-        true: false;
-
-    // Develops rash?
-    if (model->stage_over(p, m))
-    {
-        model->day_rash_onset[p->get_id()] = m->today();
-        p->change_state(*m, ISOLATED);
-    }
-    else
-    {
-
-        if (unquarantine)
-            p->change_state(*m, PRODROMAL);
-
-    }
-
-};
-
-template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::_update_quarantine_recovered(
-    Agent<TSeq> * p, Model<TSeq> * m
-) {
-
-    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
-    int days_since = m->today() - model->day_flagged[p->get_id()];
-
-    if (days_since >= EPI_PAR(m, "Quarantine period"))
-        p->change_state(*m, RECOVERED);
-
-};
-
-template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::_update_isolated_recovered(
-    Agent<TSeq> * p, Model<TSeq> * m
-) {
-
-    auto* model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
-
-    // Figuring out if the agent can be released from isolation
-    // if the isolation period is over.
-    int days_since = m->today() - model->day_rash_onset[p->get_id()];
-
-    bool unisolate =
-        (EPI_PAR(m, "Isolation period") <= days_since) ?
-        true: false;
-
-    if (unisolate)
-    {
-        p->change_state(*m, RECOVERED);
-    }
-
-};
+}
 
 template<typename TSeq>
 inline void ModelMeaslesMixing<TSeq>::_update_hospitalized(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    // The agent is removed from the system
+    // Discharged free; agents still with rash recover then
     if (m->runif() < 1.0/EPI_PAR(m, "Hospitalization period"))
-        p->rm_virus(*m, RECOVERED);
+    {
+        p->change_state(*m, FREE);
+        if (p->get_stage(*m) == RASH)
+            p->rm_virus(*m);
+    }
 
-};
+}
+
+template<typename TSeq>
+inline void ModelMeaslesMixing<TSeq>::_update_rash(
+    Agent<TSeq> * p, Model<TSeq> * m
+) {
+
+    // The rash stage does not end in hospital (see _update_hospitalized())
+    if (p->get_state() == HOSPITALIZED)
+        return;
+
+    if (m->get_natural_history().due(*p, *m))
+        p->rm_virus(*m);
+
+}
+
+template<typename TSeq>
+inline void ModelMeaslesMixing<TSeq>::_on_stage_change(
+    Agent<TSeq> * p, size_t, int, int to, Model<TSeq> * m
+) {
+
+    // A quarantined agent who develops rash is isolated
+    if ((to == RASH) && (p->get_state() == QUARANTINED))
+        p->change_state(*m, ISOLATED);
+
+}
 
 template<typename TSeq>
 inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
 
     auto * model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
+    const auto & nh = m->get_natural_history();
 
     // The contacts in the log of the mixing layer
     auto & ct = measles_mixing_layer(*m).get_tracing();
@@ -603,14 +473,14 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
             n_contacts = ct.get_max_contacts();
 
         // When the rash onset started (this is for contact tracing)
-        int day_rash_onset_agent_i = model->day_rash_onset[agent_i];
+        int day_rash_onset_agent_i = nh.entered(m->get_agent(agent_i), RASH);
 
         for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
         {
 
             // Checking if the contact is within the contact tracing days prior
             auto [contact_id, contact_date] = ct.get_contact(agent_i, contact_i);
-            
+
             bool within_days =
                 std::abs(day_rash_onset_agent_i - contact_date) <=
                 EPI_PAR(m, "Contact tracing days window");
@@ -624,47 +494,28 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
 
             auto & agent = m->get_agent(contact_id);
 
-            if (agent.get_state() > RASH)
+            // Only free agents who have not recovered
+            const int stage = agent.get_stage(*m);
+            if ((agent.get_state() != FREE) || (stage == RECOVERED))
                 continue;
 
             // Agents with some tool won't be quarantined
             if (agent.get_n_tools() != 0u)
                 continue;
 
-            if (
-                model->quarantine_willingness[contact_id] &&
-                (EPI_PAR(m, "Quarantine period") >= 0)
-            )
-            {
+            if (!model->quarantine_willingness[contact_id])
+                continue;
 
-                switch (agent.get_state())
-                {
-                    case SUSCEPTIBLE:
-                        agent.change_state(*m, QUARANTINED_SUSCEPTIBLE);
-                        model->day_flagged[contact_id] = m->today();
-                        break;
-                    case LATENT:
-                        agent.change_state(*m, QUARANTINED_LATENT);
-                        model->day_flagged[contact_id] = m->today();
-                        break;
-                    case PRODROMAL:
-                        agent.change_state(*m, QUARANTINED_PRODROMAL);
-                        model->day_flagged[contact_id] = m->today();
-                        break;
-                    case RASH:
-                        if (model->isolation_willingness[contact_id])
-                        {
-                            agent.change_state(*m, ISOLATED);
-                            model->day_flagged[contact_id] = m->today();
-                        }
-                        break;
-                    default:
-                        throw std::logic_error(
-                            "The agent is not in a state that can be quarantined."
-                        );
-                }
+            // Contacts with rash are isolated instead, if willing
+            if (stage != RASH)
+                agent.change_state(*m, QUARANTINED);
+            else if (model->isolation_willingness[contact_id])
+                agent.change_state(*m, ISOLATED);
+            else
+                continue;
 
-            }
+            model->day_flagged[contact_id] = m->today();
+
         }
 
         // Setting the quarantine process off
@@ -723,7 +574,10 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     EpiAssert::check_bounds(isolation_period, -1, max_int, "isolation_period", "ModelMeaslesMixing");
     EpiAssert::check_probability(contact_tracing_success_rate, "contact_tracing_success_rate", "ModelMeaslesMixing");
     EpiAssert::check_bounds(rash_reduction_contact_rate, 0.0, 1.0, "rash_reduction_contact_rate", "ModelMeaslesMixing");
-    this->check_stage_sds(incubation_period_sd, prodromal_period_sd, rash_period_sd, "ModelMeaslesMixing");
+    measles_check_stage_sds(
+        incubation_period_sd, prodromal_period_sd, rash_period_sd,
+        "ModelMeaslesMixing"
+    );
 
     // Setting up parameters
     this->add_param(transmission_rate, "Transmission rate");
@@ -747,37 +601,55 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     this->add_param(prodromal_period_sd, "Prodromal period sd");
     this->add_param(rash_period_sd, "Rash period sd");
 
+    // Only free agents are in contact; prodromal ones are infectious, and
+    // those with rash at the reduced contact rate
+    using Sampler = SamplerMixing<TSeq>;
     sampler.configure(
-        PRODROMAL,
-        RASH,
-        "Rash reduction contact rate",
-        {SUSCEPTIBLE, LATENT, PRODROMAL, RECOVERED}
+        [](const Agent<TSeq> & a, const Model<TSeq> & m) {
+            if (a.get_state() != FREE)
+                return Sampler::NONE;
+            const int stage = a.get_stage(m);
+            return (stage == PRODROMAL) ? Sampler::PRIMARY :
+                (stage == RASH) ? Sampler::REDUCED : Sampler::CONTACT;
+        },
+        "Rash reduction contact rate"
     );
 
-    // state
-    this->add_state("Susceptible", _update_susceptible);
-    this->add_state("Latent", _update_latent);
-    this->add_state("Prodromal", _update_prodromal);
-    this->add_state("Rash", _update_rash);
+    // Statuses
+    this->add_state("Free", _update_free);
+    this->add_state("Quarantined", _update_quarantined);
     this->add_state("Isolated", _update_isolated);
-    this->add_state("Isolated Recovered", _update_isolated_recovered);
-    this->add_state("Quarantined Latent", _update_quarantine_latent);
-    this->add_state("Quarantined Susceptible", _update_quarantine_suscep);
-    this->add_state("Quarantined Prodromal", _update_quarantine_prodromal);
-    this->add_state("Quarantined Recovered", _update_quarantine_recovered);
     this->add_state("Hospitalized", _update_hospitalized);
-    this->add_state("Recovered");
+
+    // The natural history
+    NaturalHistory<TSeq> nh("Measles");
+    nh.add_stage("Susceptible");
+    nh.add_stage("Latent");
+    nh.add_stage("Prodromal");
+    nh.add_stage("Rash", _update_rash);
+    nh.add_stage("Recovered");
+    nh.set_duration(
+        LATENT, measles_stage_days<TSeq>("Incubation period", "Incubation period sd"),
+        PRODROMAL
+    );
+    nh.set_duration(
+        PRODROMAL, measles_stage_days<TSeq>("Prodromal period", "Prodromal period sd"),
+        RASH
+    );
+    nh.set_duration(
+        RASH, measles_stage_days<TSeq>("Rash period", "Rash period sd")
+    );
+    nh.set_infection(LATENT, RECOVERED);
+    this->add_natural_history(nh);
+    this->set_stage_hook(_on_stage_change);
 
     // Adding global event
     this->add_globalevent(_quarantine_process, "Quarantine process");
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus("Measles", prevalence, true);
-    virus.set_state(LATENT, RECOVERED, RECOVERED);
-
+    virus.set_natural_history(0);
     virus.set_prob_infecting("Transmission rate");
-    virus.set_prob_recovery("Rash period");
-    virus.set_incubation("Incubation period");
 
     this->add_virus(virus);
 
@@ -806,9 +678,29 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 )
 {
 
-    Model<TSeq>::initial_states_fun =
-        epimodels::create_init_function_seir<TSeq>(proportions_)
-        ;
+    if (proportions_.size() != 2u)
+        throw std::invalid_argument("-proportions_- must have two entries.");
+
+    for (auto & v : proportions_)
+        if ((v < 0.0) || (v > 1.0))
+            throw std::invalid_argument(
+                "-proportions_- must have values between 0 and 1."
+            );
+
+    // Some initial cases start prodromal, and some of the others recovered
+    Model<TSeq>::initial_states_fun = [proportions_](Model<TSeq> * m) -> void {
+        for (auto & a : m->get_agents())
+        {
+            const bool infected = a.get_virus() != nullptr;
+            if (m->runif() >= proportions_[infected ? 0u : 1u])
+                continue;
+            if (infected)
+                a.change_stage(*m, PRODROMAL);
+            else
+                a.change_stage(*m, RECOVERED);
+        }
+        m->events_run();
+    };
 
     return *this;
 
@@ -817,7 +709,7 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 template<typename TSeq>
 inline void ModelMeaslesMixing<TSeq>::next()
 {
-    this->_update_infectious_list();
+    sampler.update(*this);
     Model<TSeq>::next();
 }
 

@@ -338,6 +338,18 @@ inline void Agent<TSeq>::change_state(
 }
 
 template<typename TSeq>
+inline int Agent<TSeq>::get_stage(const Model<TSeq> & model, size_t k) const
+{
+    return model.get_natural_history(k).get_stage(*this);
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::change_stage(Model<TSeq> & model, int stage, size_t k)
+{
+    model._add_stage_event(this, k, stage);
+}
+
+template<typename TSeq>
 inline unsigned int Agent<TSeq>::get_state() const {
     return state;
 }

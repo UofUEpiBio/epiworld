@@ -49,7 +49,7 @@ Since the algorithm only draws infectious contacts, it avoids spending time draw
 
 ## Two-pool contact sampling: Rash agents in the MeaslesMixing model
 
-In the `ModelMeaslesMixing` model the infectious population is split into two pools:
+In the `ModelMeaslesMixing` model the infectious population is split into two pools. Only *free* agents (the model's status) are in contact; the pools are defined by their stage of the measles natural history:
 
 - **Primary infectious** (Prodromal): fully infectious agents, sampled at the full contact rate.
 - **Reduced infectious** (Rash): agents with visible symptoms whose contact behaviour is reduced by a factor controlled by the `rash_reduction_contact_rate` parameter.
@@ -58,7 +58,7 @@ Let $r = 1 - \text{rash\_reduction\_contact\_rate}$, $r \in [0, 1]$. When $r = 0
 
 ### Expanded available pool
 
-Rash agents are *available for mixing* — they remain in the community and can be contacted by others, if the parameter "Rash reduction contact rate" is less than 1.0. They therefore count toward $n_{\text{avail}}(j)$, together with Susceptible, Latent, Prodromal, and any other states that are not isolated or removed. As a result, the `adjusted_contact_rate` used for group $j$ is:
+Rash agents are *available for mixing* — they remain in the community and can be contacted by others, if the parameter "Rash reduction contact rate" is less than 1.0. They therefore count toward $n_{\text{avail}}(j)$, together with the free agents in the Susceptible, Latent, Prodromal and Recovered stages (quarantined, isolated and hospitalized agents are not in contact). As a result, the `adjusted_contact_rate` used for group $j$ is:
 
 $$
 \text{adjusted\_contact\_rate}(j) = \frac{1}{n_{\text{avail}}(j)},

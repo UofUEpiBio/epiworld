@@ -37,10 +37,11 @@ inline layer::Mixing<TSeq> & measles_mixing_layer(Model<TSeq> & model)
  * The sampler keeps the per-group infectious-agent accounting and contact
  * sampling buffer used by ModelMeaslesMixing; the groups and the contact
  * matrix (times its contact rate) are those of the model's mixing layer (see
- * `measles_mixing_layer()`), and the contacts go to its log. The primary
- * infectious state is sampled at full weight; the reduced infectious state is
- * sampled with a relative contact rate computed as 1 minus a model parameter
- * such as "Rash reduction contact rate".
+ * `measles_mixing_layer()`), and the contacts go to its log. A function gives
+ * each agent's role (`Role`): not in contact, in contact, infectious, or
+ * infectious at a reduced contact rate. Infectious agents are sampled at full
+ * weight; reduced ones with a relative contact rate computed as 1 minus a
+ * model parameter such as "Rash reduction contact rate".
  *
  * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
  * @ingroup disease_specific
@@ -48,12 +49,22 @@ inline layer::Mixing<TSeq> & measles_mixing_layer(Model<TSeq> & model)
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class SamplerMixing
 {
+public:
+
+    /// The role of an agent in the contacts.
+    enum Role : uint8_t {
+        NONE,    ///< Not in contact with anyone (e.g., quarantined)
+        CONTACT, ///< In contact, not infectious
+        PRIMARY, ///< Infectious, at the full contact rate
+        REDUCED  ///< Infectious, at a reduced contact rate
+    };
+
+    using RoleFun = std::function<Role(const Agent<TSeq> &, const Model<TSeq> &)>;
+
 private:
 
-    int primary_infectious_state = -1;
-    int reduced_infectious_state = -1;
+    RoleFun role = nullptr;
     ParamRef reduced_contact_reduction_param{""};
-    std::vector< int > contact_states;
 
     layer::Mixing<TSeq> * mixing = nullptr; ///< The model's layer (update())
     double contact_rate = 1.0;              ///< Its contact rate (update())
@@ -69,7 +80,6 @@ private:
     std::vector< size_t > sampled_agents;
 
     double get_reduced_contact_rate(Model<TSeq> & model) const;
-    bool is_available_for_contact(int state, bool include_reduced) const;
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
@@ -83,19 +93,15 @@ public:
     SamplerMixing() = default;
 
     /**
-     * @brief Configures state indices and contact-selection settings.
+     * @brief Configures the roles and the reduced contact rate.
      *
-     * @param primary_infectious_state_ State index for fully infectious agents.
-     * @param reduced_infectious_state_ State index for reduced-infectious agents.
+     * @param role_ Gives each agent's role (read at each `update()`).
      * @param reduced_contact_reduction_param_ Model parameter name controlling
      * reduced infectious contact reduction.
-     * @param contact_states_ Explicit states eligible for contact.
      */
     void configure(
-        int primary_infectious_state_,
-        int reduced_infectious_state_,
-        std::string reduced_contact_reduction_param_,
-        std::vector< int > contact_states_
+        RoleFun role_,
+        std::string reduced_contact_reduction_param_
     );
 
     /**
@@ -156,18 +162,14 @@ public:
 
 template<typename TSeq>
 inline void SamplerMixing<TSeq>::configure(
-    int primary_infectious_state_,
-    int reduced_infectious_state_,
-    std::string reduced_contact_reduction_param_,
-    std::vector< int > contact_states_
+    RoleFun role_,
+    std::string reduced_contact_reduction_param_
 )
 {
-    primary_infectious_state = primary_infectious_state_;
-    reduced_infectious_state = reduced_infectious_state_;
+    role = std::move(role_);
     reduced_contact_reduction_param = ParamRef(
         std::move(reduced_contact_reduction_param_)
     );
-    contact_states = contact_states_;
 }
 
 template<typename TSeq>
@@ -179,24 +181,6 @@ inline double SamplerMixing<TSeq>::get_reduced_contact_rate(
         return 0.0;
 
     return 1.0 - reduced_contact_reduction_param(model);
-}
-
-template<typename TSeq>
-inline bool SamplerMixing<TSeq>::is_available_for_contact(
-    int state,
-    bool include_reduced
-) const
-{
-    if (include_reduced && (state == reduced_infectious_state))
-    {
-        return true;
-    }
-
-    for (auto contact_state: contact_states)
-        if (state == contact_state)
-            return true;
-
-    return false;
 }
 
 template<typename TSeq>
@@ -238,22 +222,17 @@ inline void SamplerMixing<TSeq>::update(Model<TSeq> & model)
         if (g == none)
             continue;
 
-        int state = static_cast<int>(a.get_state());
-
-        if (state == primary_infectious_state)
-        {
+        const Role r = role(a, model);
+        if (r == PRIMARY)
             primary_infectious[
                 group_start[g] + n_primary_infectious_per_group[g]++
             ] = a.get_id();
-        }
-        else if (include_reduced && (state == reduced_infectious_state))
-        {
+        else if (include_reduced && (r == REDUCED))
             reduced_infectious[
                 group_start[g] + n_reduced_infectious_per_group[g]++
             ] = a.get_id();
-        }
 
-        if (is_available_for_contact(state, include_reduced))
+        if ((r == CONTACT) || (r == PRIMARY) || (include_reduced && (r == REDUCED)))
             adjusted_contact_rate[g] += 1.0;
     }
 
@@ -320,7 +299,7 @@ inline size_t SamplerMixing<TSeq>::sample(
                 auto & a = model.get_agents().at(
                     primary_infectious.at(group_start[g] + which)
                 );
-                if (static_cast<int>(a.get_state()) != primary_infectious_state)
+                if (role(a, model) != PRIMARY)
                     throw std::logic_error(
                         "The sampled agent is not in the primary infectious state."
                     );
@@ -358,7 +337,7 @@ inline size_t SamplerMixing<TSeq>::sample(
                 auto & a = model.get_agents().at(
                     reduced_infectious.at(group_start[g] + which)
                 );
-                if (static_cast<int>(a.get_state()) != reduced_infectious_state)
+                if (role(a, model) != REDUCED)
                     throw std::logic_error(
                         "The sampled agent is not in the reduced infectious state."
                     );

@@ -85,6 +85,16 @@ private:
 
     std::vector< int > transition_matrix;
 
+    /// What a natural history's stages looked like at each record
+    struct StageHistory {
+        std::vector< int > date;
+        std::vector< int > counts;      ///< nstages per record
+        std::vector< int > transitions; ///< nstages^2 per record (from + to * nstages)
+        std::vector< int > joint;       ///< nstates * nstages per record (state + stage * nstates)
+    };
+    std::vector< StageHistory > stage_hist; ///< One per natural history
+    void record_stages();
+
     UserData<TSeq> user_data;
 
     void update_state(
@@ -335,6 +345,58 @@ public:
         bool print = true,
         bool normalize = true
     ) const;
+
+    /**
+     * @name Stages of the natural histories
+     *
+     * @details Recorded at the same times as the states, by a scan of the
+     * agents (see `NaturalHistory`). For natural history `k`:
+     * - `get_hist_stage()`: the number of agents in each stage, in long
+     *   format (date, stage, count).
+     * - `get_hist_joint()`: the number of agents in each pair of state
+     *   (status) and stage.
+     * - `get_stage_transition_probability()`: like
+     *   `get_transition_probability()`, from the stage at one record to the
+     *   stage at the next one (the diagonal counts the agents who stayed),
+     *   added over the run. Element `i + j * nstages` is the transition from
+     *   stage `i` to stage `j`.
+     * - `get_hist_stage_transition_matrix()`: the transitions at each
+     *   record (from the previous record), in long format.
+     * - `get_today_stage()`: the counts at the last record.
+     */
+    ///@{
+    void get_hist_stage(
+        size_t k,
+        std::vector< int > & date,
+        std::vector< std::string > & stage,
+        std::vector< int > & counts
+    ) const;
+
+    void get_hist_joint(
+        size_t k,
+        std::vector< int > & date,
+        std::vector< std::string > & state,
+        std::vector< std::string > & stage,
+        std::vector< int > & counts
+    ) const;
+
+    /// Stage transitions at each record, in long format (zeros skipped).
+    void get_hist_stage_transition_matrix(
+        size_t k,
+        std::vector< std::string > & stage_from,
+        std::vector< std::string > & stage_to,
+        std::vector< int > & date,
+        std::vector< int > & counts
+    ) const;
+
+    std::vector< epiworld_double > get_stage_transition_probability(
+        size_t k,
+        bool normalize = true
+    ) const;
+
+    std::vector< int > get_today_stage(size_t k = 0u) const;
+    int get_today_stage(size_t k, std::string_view stage) const;
+    ///@}
 
     bool operator==(const DataBase<TSeq> & other) const;
     bool operator!=(const DataBase<TSeq> & other) const {return !operator==(other);};

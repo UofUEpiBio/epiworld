@@ -57,26 +57,27 @@ EPIWORLD_TEST_CASE(
     size_t nsims = 200; // Reduced for faster testing
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
-    std::vector<std::vector<int>> final_distribution(nsims);
+    std::vector<std::vector<int>> final_stages(nsims);
     std::vector< double > outbreak_sizes(nsims, 0.0);
     std::vector< double > hospitalizations(nsims, 0.0);
+    StatusStageRates rates(nsims);
 
-    auto saver = tests_create_saver(
-        transitions, R0s, n_seeds, &final_distribution, &outbreak_sizes, &hospitalizations
+    auto saver_base = tests_create_saver(
+        transitions, R0s, n_seeds, nullptr, &outbreak_sizes, &hospitalizations
     );
+    auto saver_rates = rates.saver();
+    auto saver_final = final_stage_saver(final_stages);
+    auto saver = [&](size_t n, Model<> * m) {
+        saver_base(n, m);
+        saver_rates(n, m);
+        saver_final(n, m);
+    };
 
     model_0.
         run_multiple(200, nsims, 1231, saver, true, true, 4).
         print();
-    
-    // Calculate average transitions
-    auto avg_transitions = tests_calculate_avg_transitions(
-        transitions, model_0
-    );
 
-    size_t n_states = model_0.get_n_states();
-
-    tests_print_avg_transitions(avg_transitions, model_0);
+    rates.pool(model_0);
 
     // Average R0
     double R0_observed = 0.0;
@@ -104,8 +105,8 @@ EPIWORLD_TEST_CASE(
     }
     obs_hosp_probability /= static_cast<epiworld_double>(nsims);
 
-    // Checking specific values in the transitions
-    #define mat(i, j) avg_transitions[j*n_states + i]
+    using M = measles::ModelMeaslesMixing<>;
+
     // Exits from Rash with the drawn rash period (see measles-stages.hpp)
     auto rash = measles_rash_exits(
         model_0("Rash period"),
@@ -119,69 +120,25 @@ EPIWORLD_TEST_CASE(
     double R0_theo = effective_contact_rate * model_0("Transmission rate") *
         model_0("Prodromal period");
 
-    // R0 - should be approximately equal to theoretical value
-    REQUIRE_FALSE(moreless(R0_observed, R0_theo, 0.3));
+    // The stages last their drawn durations, quarantined or not
+    double latent_to_prodromal = rates.stage_rate(M::LATENT, M::PRODROMAL);
+    double prodromal_to_rash   = rates.stage_rate(M::PRODROMAL, M::RASH);
 
-    // Transition from exposed to prodromal (including quarantined)
-    REQUIRE_FALSE(moreless(
-        mat(1, 2) + mat(1, 8), 1.0/model_0("Incubation period"), 0.1)
-    );
+    // Free agents with rash are detected (and isolated) or hospitalized;
+    // contact tracing isolates some more
+    double detected = rates.status_rate_in(M::FREE, M::ISOLATED, M::RASH) +
+        rates.status_rate_in(M::FREE, M::HOSPITALIZED, M::RASH);
+    double detected_theo = 1.0/model_0("Days undetected") +
+        (1.0 - 1.0/model_0("Days undetected")) * model_0("Hospitalization rate");
 
-    // Transition from prodromal to rash
-    REQUIRE_FALSE(
-        moreless(mat(2, 3) + mat(2, 4), 1.0/model_0("Prodromal period"), 0.1)
-    );
+    // Quarantined agents are isolated at rash onset
+    double quarantined_isolated =
+        rates.status_rate_in(M::QUARANTINED, M::ISOLATED, M::PRODROMAL);
 
-    // Transition from rash to detected (detection)
-    // Includes Isolated + IsolatedRecovered + Hospitalized (detected hosp folded in)
-    REQUIRE_FALSE(
-        moreless(
-            mat(3, 4) + mat(3, 5) + mat(3, 10),
-            1.0/model_0("Days undetected") +
-            (1.0 - 1.0/model_0("Days undetected")) * model_0("Hospitalization rate"),
-            0.1
-        )
-    );
+    double hosp_free     = rates.status_rate_in(M::FREE, M::HOSPITALIZED, M::RASH);
+    double hosp_isolated = rates.status_rate_in(M::ISOLATED, M::HOSPITALIZED, M::RASH);
+    double discharged    = rates.status_rate(M::HOSPITALIZED, M::FREE);
 
-    // Transition from Quarantined Latent to Quarantined Prodromal
-    REQUIRE_FALSE(
-        moreless(mat(6, 8), 1.0/model_0("Incubation period"), 0.1)
-    );
-
-    // Transition from Quarantined Prodromal to Isolated (rash cases are detected immediately)
-    REQUIRE_FALSE(
-        moreless(mat(8, 4), 1.0/model_0("Prodromal period"), 0.1)
-    );
-
-    // Transition to hospitalized from rash
-    REQUIRE_FALSE(
-        moreless(mat(3, 10), model_0("Hospitalization rate"),
-        0.1)
-    );
-    REQUIRE_FALSE(
-        moreless(mat(4, 10), model_0("Hospitalization rate"), 0.1)
-    );
-
-    // Transition to recovered from rash
-    // Agents move between Rash and Isolated (and back when isolation
-    // ends), so the recovery rate of either state depends on the isolation
-    // policy. 14k and 14l test the rash period; the share hospitalized is
-    // checked below.
-
-    // Transition from hospitalized to recovered
-    REQUIRE_FALSE(moreless(mat(10, 11), 1.0/model_0("Hospitalization period"), 0.1));
-
-    // (Detected Hospitalized state was folded into Hospitalized, already checked above)
-
-    // Hospitalization probability
-    REQUIRE_FALSE(
-        moreless(
-            rash.p_hospitalized,
-            obs_hosp_probability,
-            0.1
-        )
-    );
-    
     // Reproductive number
     std::cout <<
         "====================\n" <<
@@ -193,66 +150,38 @@ EPIWORLD_TEST_CASE(
 
     std::cout << "Reproductive number: "
               << R0_observed << " (expected ~" << R0_theo << ")" << std::endl;
-
-    // Transition from exposed to prodromal (including quarantined)
-    std::cout << "Transition to prodromal: "
-              << mat(1, 2) + mat(1, 8) << " (expected ~" << 1.0/model_0("Incubation period") << ")" << std::endl;
-
-    // Transition from prodromal to rash
-    std::cout << "Transition to rash: "
-              << mat(2, 3) + mat(2, 4) << " (expected ~" << 1.0/model_0("Prodromal period") << ")" << std::endl;
-
-    // Transition from rash to detected (detection)
-    std::cout << "Transition to detected: "
-              << mat(3, 4) + mat(3, 5) + mat(3, 10) << " (expected ~" <<
-              1.0/model_0("Days undetected") +
-              (1.0 - 1.0/model_0("Days undetected")) * model_0("Hospitalization rate")
-              << ")" << std::endl;
-
-    // Transition from Quarantined Latent to Quarantined Prodromal
-    std::cout << "Transition from Q. Latent to Q. Prodromal: "
-              << mat(6, 8) << " (expected ~" << 1.0/model_0("Incubation period") << ")" << std::endl;
-
-    // Transition from Quarantined Prodromal to Isolated (rash cases are detected immediately)
-    std::cout << "Transition from Q. Prodromal to isolated: "
-              << mat(8, 4) << " (expected ~" << 1.0/model_0("Prodromal period") << ")" << std::endl;
-
-    // Transition to hospitalized from rash
-    std::cout << "Transition to hospitalized (rash): "
-              << mat(3, 10) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
-    std::cout << "Transition to hospitalized (isolated): "
-              << mat(4, 10) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
-
-    // Transition to recovered from rash    
-    std::cout << "Transition to recovered (rash): "
-              << mat(3, 5) + mat(3, 11) << std::endl;
-    std::cout << "Transition to recovered (isolated): "
-              << mat(4, 5) + mat(4, 11) << std::endl;
-
-    // Transition from hospitalized to recovered
-    std::cout << "Transition from hospitalized to recovered: "
-              << mat(10, 11) << " (expected ~" << 1.0/model_0("Hospitalization period") << ")" << std::endl;
-
-    // (Detected Hospitalized state was folded into Hospitalized, already checked above)
-
-    // Transition from isolated recovered to recovered (deterministic based on rash onset)
-    std::cout << "Transition from isolated recovered to recovered: "
-              << mat(5, 11) << " (expected to be faster than " << 1.0/model_0("Isolation period") << ")" << std::endl;
-
-    // Hospitalization probability
+    std::cout << "Latent -> Prodromal: " << latent_to_prodromal
+              << " (expected ~" << 1.0/model_0("Incubation period") << ")" << std::endl;
+    std::cout << "Prodromal -> Rash: " << prodromal_to_rash
+              << " (expected ~" << 1.0/model_0("Prodromal period") << ")" << std::endl;
+    std::cout << "Detected or hospitalized (free, rash): " << detected
+              << " (expected ~" << detected_theo << ")" << std::endl;
+    std::cout << "Quarantined -> Isolated (prodromal): " << quarantined_isolated
+              << " (expected ~" << 1.0/model_0("Prodromal period") << ")" << std::endl;
+    std::cout << "Hospitalized (free, rash): " << hosp_free
+              << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
+    std::cout << "Hospitalized (isolated, rash): " << hosp_isolated
+              << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
+    std::cout << "Discharged: " << discharged
+              << " (expected ~" << 1.0/model_0("Hospitalization period") << ")" << std::endl;
     std::cout << "Hospitalization probability: "
               << rash.p_hospitalized << " (observed ~" << obs_hosp_probability << ")" << std::endl;
 
+    REQUIRE_FALSE(moreless(R0_observed, R0_theo, 0.3));
+    REQUIRE_FALSE(moreless(latent_to_prodromal, 1.0/model_0("Incubation period"), 0.1));
+    REQUIRE_FALSE(moreless(prodromal_to_rash, 1.0/model_0("Prodromal period"), 0.1));
+    REQUIRE_FALSE(moreless(detected, detected_theo, 0.1));
+    REQUIRE_FALSE(moreless(quarantined_isolated, 1.0/model_0("Prodromal period"), 0.1));
+    REQUIRE_FALSE(moreless(hosp_free, model_0("Hospitalization rate"), 0.1));
+    REQUIRE_FALSE(moreless(hosp_isolated, model_0("Hospitalization rate"), 0.1));
+    REQUIRE_FALSE(moreless(discharged, 1.0/model_0("Hospitalization period"), 0.1));
+    REQUIRE_FALSE(moreless(rash.p_hospitalized, obs_hosp_probability, 0.1));
+
     // Looking at the final outbreak size
-    std::vector< size_t > not_infected_states = {0u, 7u};
     (void) test_compute_final_sizes(
-        final_distribution,
-        not_infected_states,
+        final_stages,
+        {static_cast< size_t >(M::SUSCEPTIBLE)},
         nsims, true
     );
 
-    #undef mat
-
-    
 }
-

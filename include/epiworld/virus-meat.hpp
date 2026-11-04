@@ -184,6 +184,7 @@ inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
       id(other.id),
       lineage_id(other.lineage_id),
       lineage_bit(other.lineage_bit),
+      natural_history(other.natural_history),
       state_init(other.state_init),
       state_post(other.state_post),
       state_removed(other.state_removed),
@@ -204,6 +205,7 @@ inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
       id(other.id),
       lineage_id(other.lineage_id),
       lineage_bit(other.lineage_bit),
+      natural_history(other.natural_history),
       state_init(other.state_init),
       state_post(other.state_post),
       state_removed(other.state_removed),
@@ -227,6 +229,7 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
         id = other.id;
         lineage_id = other.lineage_id;
         lineage_bit = other.lineage_bit;
+        natural_history = other.natural_history;
         state_init = other.state_init;
         state_post = other.state_post;
         state_removed = other.state_removed;
@@ -250,6 +253,7 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
         id = other.id;
         lineage_id = other.lineage_id;
         lineage_bit = other.lineage_bit;
+        natural_history = other.natural_history;
         state_init = other.state_init;
         state_post = other.state_post;
         state_removed = other.state_removed;
@@ -339,6 +343,18 @@ inline int Virus<TSeq>::get_id() const
     
     return id;
 
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_natural_history(int k)
+{
+    natural_history = (k < 0) ? -1 : k;
+}
+
+template<typename TSeq>
+inline int Virus<TSeq>::get_natural_history() const
+{
+    return natural_history;
 }
 
 template<typename TSeq>

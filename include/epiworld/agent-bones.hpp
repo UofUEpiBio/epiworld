@@ -236,6 +236,19 @@ public:
     unsigned int get_state_prev() const;
     int get_state_last_changed() const;
 
+    /**
+     * @name Stage in a natural history
+     *
+     * @param model The model.
+     * @param stage The stage to move to (applied at the end of the step;
+     * dropped if the agent leaves its current stage or episode first).
+     * @param k Index of the natural history.
+     */
+    ///@{
+    int get_stage(const Model<TSeq> & model, size_t k = 0u) const;
+    void change_stage(Model<TSeq> & model, int stage, size_t k = 0u);
+    ///@}
+
 
     bool has_tool(epiworld_fast_uint t) const;
     bool has_tool(std::string_view name) const;

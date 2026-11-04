@@ -132,7 +132,9 @@ $(NAME)_SOURCES := \
 	49a-mixing-models.cpp \
 	49b-contact-rate-param.cpp \
 	49c-seir-quarantine-layers.cpp \
-	50a-rng-seed-reset.cpp
+	50a-rng-seed-reset.cpp \
+	51a-natural-history.cpp \
+	51b-measles-mixing-stages.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
 # covered and would inflate the figure.

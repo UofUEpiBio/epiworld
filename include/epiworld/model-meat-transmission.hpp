@@ -233,6 +233,10 @@ inline bool Model<TSeq>::transmission_prepare()
 
     bool any = false;
 
+    // Models with natural histories update every agent (see update_state())
+    if (!natural_histories.empty())
+        return false;
+
     // Recognizing the samplers needs std::function::target(), i.e., RTTI.
     // Without it, every state keeps pulling.
     #if defined(__cpp_rtti) || defined(__GXX_RTTI) || defined(_CPPRTTI)

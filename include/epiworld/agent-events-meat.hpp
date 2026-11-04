@@ -20,6 +20,12 @@ inline void Model<TSeq>::_event_add_virus(Event<TSeq> & a)
     p->virus->set_date(today());
     p->virus->set_agent(p);
 
+    // A virus that follows a natural history starts an episode
+    if (p->virus->get_natural_history() >= 0)
+        natural_histories[p->virus->get_natural_history()].start_episode(
+            *p, *this
+        );
+
     // Change of state needs to be recorded and updated on the
     // tools.
     if ((a.new_state != -99) && (static_cast<int>(p->state) != a.new_state))
@@ -95,6 +101,13 @@ inline void Model<TSeq>::_event_rm_virus(Event<TSeq> & a)
 
     // Calling the virus action over the removed virus
     v->post_recovery(this);
+
+    // ... and the agent moves to the natural history's recovery stage
+    if (v->get_natural_history() >= 0)
+    {
+        auto & nh = natural_histories[v->get_natural_history()];
+        nh.enter(*p, nh.recovery_stage, *this);
+    }
 
     p->virus = nullptr;
 

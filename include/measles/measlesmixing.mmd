@@ -1,59 +1,27 @@
-flowchart TB
+flowchart LR
 
-    %% Disease progression states
-    subgraph Main[Disease Progression]
-        direction TB
-        S[Susceptible]
-        E[Latent]
-        P[Prodromal]
-        Ra[Rash]
-        Re[Recovered]
-        H[Hospitalized]
+    %% The natural history: what the disease does (every agent has a stage)
+    subgraph Stages[Stages: natural history]
+        direction LR
+        S[Susceptible] -->|infection, if free| L[Latent]
+        L -->|drawn duration| P[Prodromal]
+        P -->|drawn duration| Ra[Rash]
+        Ra -->|drawn duration,<br>or discharge| Re[Recovered]
     end
 
-    S --> E
-    E --> P
-    P --> Ra
-    Ra --> Re
-    
-    Ra --> H
-    H --> Re
-
-    %% Quarantine states
-    Qe[Quarantined<br>Latent]
-    Qs[Quarantined<br>Susceptible]
-    Qp[Quarantined<br>Prodromal]
-    I[Isolated]
-    Ir[Isolated<br>Recovered]
-
-    %% Prodromal updates
-    P <==> Qp
-
-    %% Rash updates
-    Ra <==> I
-    Ra --> Ir
-    Ra --> H
-
-    %% Isolation process
-    I --> Re
-    I --> Ir
-    I --> H
-
-    %% Isolation recoveries
-    Ir --> Re
-
-    %% Quarantine process
-    S <==> Qs
-
-    %% Quarantine Latent
-    Qe --> Qp
-    Qe --> P
-    E <==> Qe
-
-    Qp --> I
-    Qp --> Ra
-
-
-
-    
-
+    %% The statuses: where the agent is (who it meets)
+    subgraph Statuses[Statuses: the model's states]
+        direction LR
+        F[Free]
+        Q[Quarantined]
+        I[Isolated]
+        H[Hospitalized]
+        F -->|traced contact| Q
+        Q -->|period over| F
+        F -->|detected with rash,<br>or traced with rash| I
+        Q -->|rash onset| I
+        I -->|period over| F
+        F -->|rash: daily risk| H
+        I -->|rash: daily risk| H
+        H -->|discharge| F
+    end

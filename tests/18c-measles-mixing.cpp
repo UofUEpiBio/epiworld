@@ -1,4 +1,5 @@
 #include "tests.hpp"
+#include "measles-stages.hpp"
 #include "../include/measles/measles.hpp"
 
 using namespace epiworld;
@@ -52,13 +53,9 @@ EPIWORLD_TEST_CASE(
     });
 
     size_t nsims = 100; // Reduced for faster testing
-    std::vector<std::vector<epiworld_double>> transitions(nsims);
-    std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);
-    std::vector<std::vector<int>> final_distribution(nsims);
+    std::vector<std::vector<int>> final_distribution(nsims); // Final stages
 
-    auto saver = tests_create_saver(
-        transitions, R0s, n_seeds, &final_distribution
-    );
+    auto saver = final_stage_saver(final_distribution);
 
     model_0.
         run_multiple(60, nsims, 1231, saver, true, true, 4).
@@ -66,8 +63,7 @@ EPIWORLD_TEST_CASE(
 
     // Looking at the final outbreak size
     std::vector< size_t > not_infected_states = {
-        measles::ModelMeaslesMixing<>::SUSCEPTIBLE,
-        measles::ModelMeaslesMixing<>::QUARANTINED_SUSCEPTIBLE
+        measles::ModelMeaslesMixing<>::SUSCEPTIBLE
     };
 
     auto stats_with_quarantine = test_compute_prob_outbreak_gt_k(
@@ -79,9 +75,7 @@ EPIWORLD_TEST_CASE(
 
     // Re-running the model without quarantine --------------------------------
     model_0.set_param("Quarantine period", -1.0);
-    auto saver_no_quarantine = tests_create_saver(
-        transitions, R0s, n_seeds, &final_distribution
-    );
+    auto saver_no_quarantine = final_stage_saver(final_distribution);
     model_0.run_multiple(60, nsims, 1231, saver_no_quarantine, true, true, 4);
 
     // Looking at the final outbreak size without quarantine
@@ -95,9 +89,7 @@ EPIWORLD_TEST_CASE(
     // Re-running setting a longer window for contact tracing -----------------
     model_0.set_param("Contact tracing days window", 7u);
     model_0.set_param("Quarantine period", 21.0);
-    auto saver_long_contact_tracing = tests_create_saver(
-        transitions, R0s, n_seeds, &final_distribution
-    );
+    auto saver_long_contact_tracing = final_stage_saver(final_distribution);
     model_0.
         run_multiple(
             60, nsims, 1231, saver_long_contact_tracing, true, true, 4

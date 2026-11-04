@@ -42,6 +42,7 @@ private:
     int id   = -99;    
     int lineage_id = -99; ///< Id of the founding virus (kept across mutations).
     uint64_t lineage_bit = uint64_t(1) << 63; ///< Bit matched against Tool::target_mask.
+    int natural_history = -1; ///< The model's natural history the virus follows (-1: none).
     epiworld_fast_int state_init    = -99; ///< Change of state when added to agent.
     epiworld_fast_int state_post    = -99; ///< Change of state when removed from agent.
     epiworld_fast_int state_removed = -99; ///< Change of state when agent is removed
@@ -164,6 +165,22 @@ public:
 
     void set_name(std::string name);
     std::string get_name() const;
+
+    /**
+     * @brief The natural history the virus follows
+     *
+     * An agent who gets the virus starts an episode in the natural history's
+     * infection stage, and one who loses it moves to its recovery stage (see
+     * `NaturalHistory`). Neither changes the agent's state (status) unless
+     * the change of state is given.
+     *
+     * @param k Index of the natural history in the model
+     * (`Model::add_natural_history()`); -1 for none.
+     */
+    ///@{
+    void set_natural_history(int k);
+    int get_natural_history() const;
+    ///@}
 
     /**
      * @name Get and set the state and queue

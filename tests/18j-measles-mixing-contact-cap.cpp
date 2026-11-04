@@ -47,7 +47,7 @@ EPIWORLD_TEST_CASE(
     model.run(5, 123);
 
     // The case is prodromal from day 1, so everyone else is infected on day 2
-    auto infected = transitions_by_day(model, "Susceptible", "Latent");
+    auto infected = stage_transitions_by_day(model, "Susceptible", "Latent");
     REQUIRE(infected[2] == static_cast<int>(n) - 1);
 
 }

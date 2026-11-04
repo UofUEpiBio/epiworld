@@ -110,4 +110,114 @@ inline std::vector< int > transitions_by_day(
 
 }
 
+/**
+ * Number of agents that moved from stage `from` to stage `to` of natural
+ * history `k` on each day of the last run (entry `d` is day `d`).
+ */
+template<typename TSeq>
+inline std::vector< int > stage_transitions_by_day(
+    const epiworld::Model<TSeq> & model,
+    const std::string & from,
+    const std::string & to,
+    size_t k = 0u
+) {
+
+    std::vector< std::string > stage_from, stage_to;
+    std::vector< int > date, counts;
+    model.get_db().get_hist_stage_transition_matrix(
+        k, stage_from, stage_to, date, counts
+    );
+
+    std::vector< int > out(model.get_ndays() + 1, 0);
+    for (size_t i = 0u; i < date.size(); ++i)
+        if ((stage_from[i] == from) && (stage_to[i] == to))
+            out[date[i]] += counts[i];
+
+    return out;
+
+}
+
+/**
+ * Pooled daily rates of a model with statuses and stages, over many runs.
+ *
+ * Each run adds its stage and status transitions, and the agent-days spent
+ * in each pair of status and stage (at every record but the last, so each
+ * day's transitions have the occupancy at its start). Rates pool the counts
+ * of all runs: transitions over agent-days.
+ */
+struct StatusStageRates {
+
+    size_t nstatus = 0u;
+    size_t nstages = 0u;
+    std::vector< std::vector< double > > stage, status, occupancy; ///< By run
+
+    StatusStageRates(size_t nruns) :
+        stage(nruns), status(nruns), occupancy(nruns) {};
+
+    /// The saver for `run_multiple()` (each run writes its own slot).
+    std::function<void(size_t, epiworld::Model<>*)> saver() {
+        return [this](size_t n, epiworld::Model<> * m) -> void {
+            const auto & db = m->get_db();
+            stage[n]  = db.get_stage_transition_probability(0u, false);
+            status[n] = db.get_transition_probability(false, false);
+
+            std::vector< int > date, counts;
+            std::vector< std::string > st, sg;
+            db.get_hist_joint(0u, date, st, sg, counts);
+            const size_t cells = m->get_n_states() *
+                m->get_natural_history(0u).size();
+            occupancy[n].assign(cells, 0.0);
+            for (size_t i = 0u; i + cells < counts.size(); ++i)
+                occupancy[n][i % cells] += counts[i];
+        };
+    }
+
+    /// Adds up the runs. Call once, after `run_multiple()`.
+    void pool(const epiworld::Model<> & m) {
+        nstatus = m.get_n_states();
+        nstages = m.get_natural_history(0u).size();
+        for (auto * v : {&stage, &status, &occupancy})
+        {
+            std::vector< double > total((*v)[0].size(), 0.0);
+            for (const auto & run : *v)
+                for (size_t i = 0u; i < run.size(); ++i)
+                    total[i] += run[i];
+            v->assign(1u, total);
+        }
+    }
+
+    /// Daily rate of stage `from` -> `to` (all statuses).
+    double stage_rate(int from, int to) const {
+        double total = 0.0;
+        for (size_t j = 0u; j < nstages; ++j)
+            total += stage[0][from + j * nstages];
+        return stage[0][from + to * nstages] / total;
+    }
+
+    /// Daily rate of status `from` -> `to` (all stages).
+    double status_rate(int from, int to) const {
+        double total = 0.0;
+        for (size_t j = 0u; j < nstatus; ++j)
+            total += status[0][from + j * nstatus];
+        return status[0][from + to * nstatus] / total;
+    }
+
+    /// Daily rate of status `from` -> `to` per agent-day in (`from`,
+    /// `stage`), when only agents in that stage make the move.
+    double status_rate_in(int from, int to, int stage_) const {
+        return status[0][from + to * nstatus] /
+            occupancy[0][from + stage_ * nstatus];
+    }
+
+};
+
+/// Saves each run's final stage counts (natural history 0).
+inline std::function<void(size_t, epiworld::Model<>*)> final_stage_saver(
+    std::vector< std::vector< int > > & final_stages
+) {
+    return [&final_stages](size_t n, epiworld::Model<> * m) -> void {
+        final_stages[n] = m->get_db().get_today_stage(0u);
+    };
+}
+
 #endif

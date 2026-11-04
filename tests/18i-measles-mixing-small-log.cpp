@@ -39,7 +39,7 @@ EPIWORLD_TEST_CASE(
         distribute_virus_to_groups<>("mixing", {1e20}, false)
     );
     mixing.run(0, 1);
-    REQUIRE(mixing.get_db().get_today_total("Susceptible") == 0);
+    REQUIRE(mixing.get_db().get_today_stage(0u, "Susceptible") == 0);
 
     // Not a whole number of agents
     for (double bad : {std::numeric_limits< double >::infinity(), 1.5})
