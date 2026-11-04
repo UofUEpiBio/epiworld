@@ -143,7 +143,30 @@ Tests (end to end):
   events, the hook's timing, copying, and that the stage counts, the joint
   table and the statuses add up every day.
 
-## 6. Speed
+## 6. The other models (measured now, projected after a port)
+
+This PR does not touch the other models. The only shared files it changes are
+`stages.hpp`, where the lognormal draw becomes a free function that both
+designs use (+76/−30 lines), and `samplermixing.hpp`, which only the mixing
+model uses (+31/−52). Below are the three models with combined states,
+measured the same way as Section 1 (update functions, the quarantine
+process, and the `MeaslesStages` functions they use). The "projected"
+column applies what the mixing port measured to each part. The update
+functions and stage helpers lost 61% of their NLOC and 48% of their CCN;
+the quarantine process lost what was state mapping. **Only a port gives
+real numbers**: these are estimates, to choose the order of NH-2.
+
+| Model | States | Logic NLOC / CCN now | Projected | Why it differs |
+|---|---:|---:|---:|---|
+| `ModelMeaslesMixing` (ported) | 12 → 4 + 5 | 281 / 71 | **129 / 42 measured** | |
+| `ModelMeaslesSchool` | 12 | 277 / 73 | ≈ 130 / 43 (≈ −53%) | Same 12 states and rules as the mixing model. The PEP intervention moves agents between its states, so it is ported with it. |
+| `ModelMeaslesMixingRiskQuarantine` | 12 | 361 / 99 | ≈ 215 / 70 (≈ −40%) | Its quarantine process (149 NLOC, CCN 47) is mostly risk levels and the contact log; only its twin mapping (≈ 12 lines) goes. |
+| `ModelSEIRQuarantine` | 10 | 252 / 52 | ≈ 175 / 40 (≈ −30%) | No stage timers to remove (geometric durations). Recovery and hospitalization are one competing draw that spans both layers, so the infectious stage keeps deciding admission, or the draw changes (a policy question, Section 6 of the plan). |
+
+Across the four, the logic would go from about 1,170 NLOC to about 650
+(−45%), against the 570 lines of engine code paid once.
+
+## 7. Speed
 
 The same scenario on both versions: 200,000 agents in 4 groups, 150 days,
 half vaccinated, about 79,000 infections. Six seeds, run interleaved, CPU
@@ -171,7 +194,39 @@ Each has a cheap fix if it matters: skip stages with nothing to do, inline
 the role in the measles sampler, and record the joint table only when asked.
 Profiling them is the first task of the follow-up, before NH-2.
 
-## 7. Commands
+### Models without natural histories: epiworld-benchmark
+
+The benchmark's scenarios (SIR/SEIR on networks, 10,000 to 1,000,000
+agents) do not use natural histories, so they measure what NH-1 costs
+everyone else. It was run as stage `nh-1` (`STAGE=nh-1 make
+container-v1-stage`, pin `5e0a6399`, the same image as stage 3d-3b, both C++
+engines interleaved). The ratio is the 1.0 median over the 0.x median:
+
+| Scenario | n | Simulate ratio, 3d-3b | Simulate ratio, nh-1 | Build ratio, 3d-3b → nh-1 | Peak memory ratio, 3d-3b → nh-1 |
+|---|---:|---:|---:|---:|---:|
+| 00 | 10,000 | 1.007 | 1.018 | 0.82 → 0.81 | 0.95 → 0.97 |
+| 00 | 100,000 | 1.032 | 1.034 | 0.77 → 0.79 | 0.79 → 0.80 |
+| 01 | 10,000 | 1.001 | 1.009 | 0.82 → 0.82 | 0.94 → 0.96 |
+| 01 | 100,000 | 0.974 | 1.002 | 0.78 → 0.80 | 0.88 → 0.89 |
+| 02 | 10,000 | 1.004 | 1.037 | 0.82 → 0.81 | 0.95 → 0.97 |
+| 02 | 100,000 | 0.961 | 0.976 | 0.79 → 0.79 | 0.88 → 0.89 |
+| 03 | 1,000,000 | 0.910 | 1.009 | 0.77 → 0.74 | 0.72 → 0.72 |
+| 04 | 165,865 | 0.843 | 0.852 | 0.71 → 0.76 | 0.93 → 0.95 |
+
+- **Attack rates are identical** to the last digit in every scenario, as
+  they should be: models without natural histories draw the same random
+  numbers as before.
+- The simulate ratios moved by +0.2% to +3%, within the noise seen between
+  stages that did not change this code. The exception is scenario 03 at 1M
+  (+11%), but its simulation lasts 0.03 s. Its ratio ranged from 0.81 to 1.58
+  over earlier stages, and its 1.0 time at this stage (0.026 s) is the
+  lowest of any stage.
+- Build time and peak memory did not change.
+
+So the cost of NH-1 falls on the models that use it (the +12% above), not
+on the others.
+
+## 8. Commands
 
 ```sh
 git show natural-history:include/measles/measlesmixing.hpp > old.hpp
