@@ -84,9 +84,9 @@ inline void NaturalHistory<TSeq>::reset(size_t n)
             "recovery stages with set_infection()."
         );
 
-    episode.assign(n, 0);
-    until.assign(n, -1);
-    entry.assign(n * labels.size(), -1);
+    record.assign(n * stride(), -1);
+    for (size_t id = 0u; id < n; ++id)
+        agent_record(id)[0] = 0;
 
 }
 
@@ -99,8 +99,9 @@ inline void NaturalHistory<TSeq>::enter(
 {
 
     const size_t id = static_cast< size_t >(p.get_id());
-    entry[id * labels.size() + static_cast< size_t >(s)] = m.today();
-    until[id] = durations[s] ?
+    int * r = agent_record(id);
+    r[2u + static_cast< size_t >(s)] = m.today();
+    r[1] = durations[s] ?
         m.today() + std::max(1, durations[s](&p, &m)) : -1;
 
 }
@@ -114,8 +115,9 @@ inline void NaturalHistory<TSeq>::start_episode(
 {
 
     const size_t id = static_cast< size_t >(p.get_id());
-    episode[id]++;
-    std::fill_n(entry.begin() + id * labels.size(), labels.size(), -1);
+    int * r = agent_record(id);
+    r[0]++;
+    std::fill_n(r + 2, labels.size(), -1);
     enter(p, s, m);
 
 }
@@ -160,22 +162,21 @@ inline void NaturalHistory<TSeq>::update(
 template<typename TSeq>
 inline int NaturalHistory<TSeq>::get_episode(const Agent<TSeq> & p) const
 {
-    return episode[static_cast< size_t >(p.get_id())];
+    return agent_record(static_cast< size_t >(p.get_id()))[0];
 }
 
 template<typename TSeq>
 inline int NaturalHistory<TSeq>::entered(const Agent<TSeq> & p, int s) const
 {
-    return entry[
-        static_cast< size_t >(p.get_id()) * labels.size() +
-        static_cast< size_t >(check_stage(s))
+    return agent_record(static_cast< size_t >(p.get_id()))[
+        2u + static_cast< size_t >(check_stage(s))
     ];
 }
 
 template<typename TSeq>
 inline int NaturalHistory<TSeq>::get_until(const Agent<TSeq> & p) const
 {
-    return until[static_cast< size_t >(p.get_id())];
+    return agent_record(static_cast< size_t >(p.get_id()))[1];
 }
 
 template<typename TSeq>
@@ -184,7 +185,7 @@ inline bool NaturalHistory<TSeq>::due(
     const Model<TSeq> & m
 ) const
 {
-    const int u = until[static_cast< size_t >(p.get_id())];
+    const int u = agent_record(static_cast< size_t >(p.get_id()))[1];
     return (u >= 0) && (m.today() >= u);
 }
 

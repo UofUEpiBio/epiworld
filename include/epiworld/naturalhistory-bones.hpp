@@ -63,9 +63,13 @@ private:
     int death_stage     = -1;
 
     // Per agent
-    std::vector< int > episode;
-    std::vector< int > until;    ///< Day the stage's duration ends (-1: none)
-    std::vector< int > entry;    ///< Agent-major, nstages per agent
+    /// One record per agent, contiguous (one cache line for most natural
+    /// histories): the episode, the day the current stage's duration ends
+    /// (-1: none), and the entry day of each stage.
+    std::vector< int > record;
+    size_t stride() const noexcept { return labels.size() + 2u; };
+    int * agent_record(size_t id) { return record.data() + id * stride(); };
+    const int * agent_record(size_t id) const { return record.data() + id * stride(); };
 
     void reset(size_t n);
     void enter(Agent<TSeq> & p, int s, Model<TSeq> & m);

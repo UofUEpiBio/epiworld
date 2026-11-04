@@ -53,6 +53,29 @@ and transitions, joint status × stage tables, episode data with a defined
 lifecycle (entry days, sampled durations), and statuses that any model,
 including the SIR family, can now gain without writing combined states.
 
+**Speed (NH-2).**
+
+- **epiworld-benchmark**, stage `nh-2`: its runners build their own models
+  with `add_state()` and no natural histories, so it measures what the
+  engine change costs everyone else. Attack rates are identical in all 8
+  scenario sizes. The simulate ratios moved within the noise between earlier
+  stages, from 0.85 to 1.06 (3d-3b: 0.84 to 1.03). Build time and peak
+  memory did not change.
+- **The ported models**, old (`natural-history`) against new, 6 seeds
+  interleaved, CPU time of `run()`, in the dev container on a loaded Mac:
+  - `ModelSEIR`, 200,000 agents on a small-world network, 100 days:
+    identical transmissions in every run; the median CPU time is about
+    **5% higher** (0.472 s vs 0.450 s). It was 14% higher before the
+    per-agent lifecycle data (episode, end of the current duration, entry
+    days) was packed into one record per agent.
+  - `ModelMeaslesMixing`, 200,000 agents, 150 days: same final sizes
+    (about 78,800 cases); the median CPU time is **2% to 10% higher**
+    depending on the round (3.55 s vs 3.47 s, then 3.11 s vs 2.82 s); NH-1
+    measured 12%.
+  - What remains is the bookkeeping per event: working out the state of a
+    status or stage change, and recording the entry day of the stage
+    entered.
+
 **Bugs found and fixed by the port:**
 
 - `ModelSEIRQuarantine`: an agent detected on the day it recovered moved to
