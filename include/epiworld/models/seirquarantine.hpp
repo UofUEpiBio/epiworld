@@ -189,6 +189,12 @@ public:
         return isolation_willingness;
     };
 
+    /// States of any virus in this model (`Virus::set_state()`): the
+    /// model's own, and those a user adds (`InfectionStates::apply()`)
+    static constexpr InfectionStates infection_states{EXPOSED, RECOVERED, RECOVERED};
+
+    /// This model's entry in a `ModelRegistry`: arguments, states, builder
+    static ModelInfo<TSeq> model_info();
 };
 
 // -----------------------------------------------------------------------
@@ -664,7 +670,7 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(EXPOSED, RECOVERED, RECOVERED);
+    infection_states.apply(virus);
 
     virus.set_prob_infecting("Transmission probability");
     virus.set_prob_recovery("Recovery rate");
@@ -691,6 +697,69 @@ inline ModelSEIRQuarantine<TSeq> & ModelSEIRQuarantine<TSeq>::initial_states(
 
     return *this;
 
+}
+
+template<typename TSeq>
+inline ModelInfo<TSeq> ModelSEIRQuarantine<TSeq>::model_info()
+{
+
+    using uint_t = epiworld_fast_uint;
+    using int_t  = epiworld_fast_int;
+    const double inf = std::numeric_limits< double >::infinity();
+
+    return {"SEIRQuarantine",
+        "SEIR with hospitalization, isolation and quarantine",
+        "SEIR where detected cases are isolated and their contacts, traced "
+        "through the layers that trace, quarantined.",
+        "Disease",
+        {
+            ParamInfo::agents(10000),
+            ParamInfo::prevalence(0.01),
+            ParamInfo::probability("transmission_prob", "Transmission probability",
+                0.05, "Probability that a contact with an infected agent infects."),
+            ParamInfo::duration("latent_period", "Latent period", 7.0,
+                "Mean days in the exposed state (infected, not yet infectious)."),
+            ParamInfo::probability("recovery_rate", "Recovery rate", 0.14,
+                "Daily probability that an infected agent recovers."),
+            ParamInfo::probability("hospitalization_rate", "Hospitalization rate",
+                0.05, "Daily probability that an infected agent is hospitalized."),
+            ParamInfo::duration("hospitalization_period", "Hospitalization period",
+                7.0, "Average number of days in the hospital."),
+            {"detection_delay", "Detection delay", 3.0, -1.0, inf, false,
+                "Mean days before an infected agent is detected (0: at once; "
+                "negative: never)."},
+            ParamInfo::period("quarantine_period", "Quarantine period", 14.0,
+                "Days in quarantine for the contacts of a detected case "
+                "(negative: no quarantine)."),
+            ParamInfo::probability("quarantine_willingness",
+                "Quarantine willingness", 0.8,
+                "Probability that a contact complies with quarantine."),
+            ParamInfo::probability("isolation_willingness",
+                "Isolation willingness", 0.5,
+                "Probability that a detected case complies with isolation."),
+            ParamInfo::period("isolation_period", "Isolation period", 7.0,
+                "Days in isolation for a detected case (negative: no "
+                "isolation)."),
+            ParamInfo::probability("contact_tracing_prob",
+                "Contact tracing probability", 1.0,
+                "Probability that a contact is traced."),
+            ParamInfo::count("contact_tracing_window", "Contact tracing window",
+                4.0, "Days before detection whose contacts are traced.")
+        },
+        infection_states,
+        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
+            return std::make_unique< ModelSEIRQuarantine<TSeq> >(
+                a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
+                a("transmission_prob"), a("latent_period"), a("recovery_rate"),
+                a("hospitalization_rate"), a("hospitalization_period"),
+                a("detection_delay"),
+                static_cast< int_t >(a("quarantine_period")),
+                a("quarantine_willingness"), a("isolation_willingness"),
+                static_cast< int_t >(a("isolation_period")),
+                a("contact_tracing_prob"),
+                static_cast< uint_t >(a("contact_tracing_window"))
+            );
+        }};
 }
 
 #endif

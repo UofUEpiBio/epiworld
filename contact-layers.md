@@ -1273,12 +1273,16 @@ transition rates), as for the consolidated SEIR models.
 - Then epiworldRShiny is ported, once (see Section 6): its apps build every
   model with layers and the registry's constructor.
 - **As built** (settled 2026-11-03):
-  - `epimodels::ModelRegistry` is a value, not global state:
-    `epimodels::model_registry()` returns one with the core models, and
-    `measles::register_models(registry)` adds the measles models (the core
-    does not include `include/measles`). Other libraries add theirs with
-    `add()`. Every model has the same API: `list_models()`,
-    `get_model_info(id)` and `make_model(id, values, virus_name)`.
+  - The registry is a core component (`registry-bones.hpp`,
+    `registry-meat.hpp`): `ParamInfo`, `InfectionStates`, `ModelArgs`,
+    `ModelInfo` and `ModelRegistry`, a value rather than global state. Each
+    registered model defines its entry next to its constructor, as a static
+    `model_info()`, and each library registers its models in its umbrella
+    header, next to their includes: `epimodels::register_models(registry)`
+    in `models.hpp`, `measles::register_models(registry)` in `measles.hpp`
+    (the core does not include `include/measles`). A registry starts empty;
+    every model then has the same API: `list_models()`, `get_model_info(id)`
+    and `make_model(id, values, virus_name)`.
   - `make_model()` builds the model only. It has no layers, which the user adds
     as for a model built directly; epiworldjs keeps its population presets
     (random mixing, a contact matrix, a network) on top of the registry.
@@ -1289,10 +1293,12 @@ transition rates), as for the consolidated SEIR models.
     building), whether the value is whole, and a description. Values are
     numbers only: with entities gone and contact matrices on the layers, no
     registered model takes anything else.
-  - Each entry holds its **infection states** (`InfectionStates`: init, post,
-    removed), the states any virus added to the model needs; `apply(virus)`
-    sets them. A model still carries any number of viruses: this replaces
-    epiworldR's per-model `add_virus.*` methods.
+  - Each model defines its **infection states** once (`static constexpr
+    InfectionStates infection_states`: init, post, removed), the states any
+    virus in the model needs: its constructor sets them on its own virus with
+    `apply()`, and the entry gives them to the viruses a user adds. A model
+    still carries any number of viruses: this replaces epiworldR's per-model
+    `add_virus.*` methods.
   - Registered: SIS, SIR, SEIR, SISD, SIRD, SEIRD, SEIRQuarantine, SURV, and
     the three measles models. `ModelSIRLogit` and `ModelDiffNet` take data
     arrays and keep their own bindings.

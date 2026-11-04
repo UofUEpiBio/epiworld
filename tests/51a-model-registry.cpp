@@ -10,7 +10,8 @@ using namespace epiworld;
 // model's states like the model's own.
 EPIWORLD_TEST_CASE("Model registry - every model", "[registry]") {
 
-    auto registry = epimodels::model_registry<>();
+    ModelRegistry<> registry;
+    epimodels::register_models(registry);
     measles::register_models(registry);
 
     std::vector< std::string > ids;
