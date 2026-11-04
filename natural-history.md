@@ -1,10 +1,10 @@
 # Natural history and agent status: separating what the disease does from where the agent is
 
-**Status: draft for review (2026-11-03).** This is an experimental plan on the
-`natural-history` branch, cut from `v1-layers`. Nothing here is settled. The
-goal is to collect reviews (human and agent) and then try the core on this
-branch to see how it goes before deciding whether, and when, it joins
-`v1-layers` / 1.0.0. Reviewers: add comments to the "Open questions" section
+**Status: draft, revised after the first review (2026-11-03).** This is an
+experimental plan on the `natural-history` branch, cut from `v1-layers`.
+Nothing here is settled. The core is being tried on this branch (NH-1,
+Section 11) to see how it goes before deciding whether, and when, it joins
+`v1-layers` / 1.0.0. Reviewers: add comments to the open questions
 (Section 12) or open review threads on the PR.
 
 ## 1. Motivation
@@ -82,42 +82,88 @@ The split is not new. The closest precedents:
 
 References are in Section 14.
 
-## 3. Proposal: three layers of agent state
+## 3. Proposal: status and per-disease stages
 
-1. **Status, owned by the model.** For example free, quarantined, isolated,
-   hospitalized or dead. It governs contacts (layer participation),
-   movement and interventions. Each status records the day it was entered and
-   what triggered it (traced contact, symptoms, test). Every agent has a
-   status, infected or not.
-2. **Infection episode, owned by the pathogen.** This is the natural-history
-   state of one infection: latent, prodromal, infectious and so on. It exists
-   only while the agent is infected. Each state carries attributes (infectious,
-   symptomatic, severe), because the latent period (infection to infectious)
-   and the incubation period (infection to symptoms) differ. In measles,
-   prodromal agents are infectious before the rash.
-3. **Immunity, per agent and pathogen.** Susceptibility, how protected the
-   agent is, where the protection came from (vaccine, infection, maternal),
-   and waning. It exists before infection and outlives it. Recovery, waning,
-   vaccination, post-exposure prophylaxis (PEP) and, later, measles immune
-   amnesia act on it.
+Revised on 2026-11-03 after the first review (PR #358). Section 12 lists
+what changed and why.
 
-**Immunity is staged.** For now it stays where it is: **tools** are
-per-agent immune objects, and `post_recovery` hands one out. A removed virus
-must **not** be kept around in a terminal "recovered" state as an immunity
-record. That would separate "has a virus" from "is a carrier" in the queue,
-`sample_virus` and both samplers. A dedicated immunity record is a later step
-(Section 11, NH-5). This means single-pathogen models still use a "Recovered"
-status, which keeps a little of the confounding.
+1. **Status, owned by the model.** For example free, quarantined, isolated or
+   hospitalized. It governs contacts (layer participation), movement and
+   interventions. This is today's `Agent::state`, so the model's states *are*
+   the statuses, and every agent has one, infected or not.
+2. **Stage, owned by a natural history.** A natural history (`NaturalHistory`)
+   describes one disease: its stages (susceptible, latent, prodromal, rash,
+   recovered), how agents move through them, and which stage an infection
+   starts in and ends in. **Every agent has a stage in each natural history of
+   the model, infected or not** (as in FRED's conditions and Starsim's disease
+   modules). Being susceptible and being recovered are stages, so "no virus"
+   is never ambiguous. In a single-disease model, immunity after recovery is
+   the recovered stage, and waning is a transition out of it. A virus names
+   the natural history it follows. Getting the virus moves the agent to the
+   infection stage, and losing it moves the agent to the recovery stage.
+3. **A separate immunity record comes later.** Immunity across pathogens
+   (cross-protection, measles immune amnesia) and protection levels per source
+   (vaccine, infection, maternal) need a record per agent and pathogen
+   (EMOD's `Susceptibility`). Until then, vaccines stay as tools.
 
-**Death is a status.** A pathogen requests it, and the model carries it out
-once for the agent, closing every open episode and recording the cause
-(Starsim's `request_death`).
+**Status is one value at a time.** Hospitalized, isolated, quarantined and
+free are exclusive, with a documented priority (hospitalized > isolated >
+quarantined > free) and each model's restoration rule (for example, measles
+discharges to free). Overlapping obligations (isolated *and* admitted; a
+quarantine order that outlasts a hospital stay) need independent obligations
+with their own clocks and a derived contact status, as OpenABM keeps
+`quarantined` and `hospital_state` apart. That is a known limitation of the
+pilot, listed in Section 12. The tests cover what the pilot does: admission
+during isolation, discharge, repeated quarantine, and recovery while
+quarantined.
+
+**Death is a status** (in models that have it). A disease requests it, and
+the model carries it out once for the agent (Starsim's `request_death`). None
+of the pilots has death.
+
+### 3.1 What a natural history stores per agent
+
+The review's main point was that a stage and a date are not enough. Sampled
+durations, the day of each landmark, and later severity or individual
+infectiousness must live somewhere with a defined lifecycle, or each model
+reinvents it in side vectors (the measles models' `day_rash_onset`,
+`MeaslesStages`). A natural history keeps, per agent:
+
+| Field | Meaning | Lifecycle |
+|---|---|---|
+| `stage` | Current stage | Set to the first stage at reset |
+| `episode` | Infections so far (the episode id) | +1 when an infection starts |
+| `entered[s]` | Day the agent last entered stage `s` in this episode | Cleared when an infection starts; written on each entry |
+| `until` | Day the current stage's sampled duration ends (-1: none) | Drawn on entry when the stage has a duration |
+
+Everything is in plain per-agent arrays owned by the natural history, which
+the model owns. So the arrays are reset with the model, copied with it
+(`run_multiple`), and cleared when an infection starts, by the engine, the
+same way for every model. Infections in the transmission log already record
+the source, the target and the date. With `episode`, a line list can link each
+infection to the infector's episode (Section 9).
+
+**Stage durations are part of the natural history.** A stage can declare a
+duration (a function drawing the number of days) and a next stage. The
+duration is drawn when the agent enters the stage, and the agent moves on, at
+its first update on or after `entered + duration`, to the next stage. A stage
+with an update function decides for itself (it can read `due()`). Sampled
+once per entry, a duration survives status changes: quarantine and isolation
+no longer need to keep the day a stage ends (the reason `MeaslesStages`
+exists).
+
+Per-episode fields beyond these (severity, individual infectiousness) are the
+next step. They would follow the same lifecycle (a named field cleared when an
+infection starts).
 
 ## 4. A registry of virus definitions (the "controller virus")
 
-The natural-history specification (labels, update functions, infectious
-mask) has to live somewhere shared. That leads to a second change, which is
-also worth doing on its own.
+The second idea: the model keeps the shared definition of each virus, and
+agents keep a small record pointing to it, instead of a full copy per
+infection. It is independent of the stage split, so it is gated separately
+(NH-0 in Section 11) after the stage split is tried. The stage split does not
+need it: natural histories live in the model, and a virus refers to one by
+index.
 
 ### 4.1 Today: a full copy of the virus per infection
 
@@ -136,300 +182,310 @@ lineage.
 
 ### 4.2 Proposal: definitions in the model, a small record in the agent
 
-- **The model holds virus definitions in a registry** (a `std::vector` indexed
-  by id). A definition holds everything that is shared: the name, the
-  parameter references, the probability functions, the natural-history
-  specification (states, update functions, attributes), the default
-  status transitions (today's `state_init`/`post`/`removed`), and the
-  distribution function.
-- **Variants** are entries in the registry, each with a sequence and a parent
-  definition. `DataBase::record_virus` already keys variants by sequence
-  hash and tracks lineages, so the registry can replace that bookkeeping
-  instead of duplicating it.
-- **An agent holds a small record inline**, with no heap allocation:
-
-  ```cpp
-  struct Infection {
-      int variant  = -1;   // registry index; -1 = not infected
-      int nh_state = -1;   // natural-history state (index into the definition)
-      int date     = -99;  // day of infection
-      int nh_since = -99;  // day the current NH state was entered
-  };                       // 16 bytes, the same as today's VirusPtr
-  ```
-
-  An agent's size stays the same (the `VirusPtr` it replaces is 16 bytes),
-  but each infection no longer costs a 320-byte allocation plus copies.
-- **Callbacks receive the definition and the record**:
-  `(Agent*, const VirusDef&, Infection&, Model*)`. User code no longer gets a
-  mutable full `Virus&` per infection.
+- **The model holds virus definitions in a registry** indexed by id. A
+  definition holds everything that is shared: the name, the parameter
+  references, the probability functions, the natural history it follows, the
+  default status changes, and the distribution function.
+- **Variants** are entries in the registry, each with a sequence and a parent.
+  `DataBase::record_virus` already keys variants by sequence hash and tracks
+  lineages, so the registry replaces that bookkeeping instead of duplicating
+  it. Entries live in stable storage (a `std::deque` or chunks), so a
+  mutation that adds a variant does not invalidate a callback's reference to
+  a definition (a `std::vector` append would).
+- **An agent holds a small record inline** (variant id, infection date), with
+  no heap allocation. The stage and the per-episode data are not in it: they
+  are in the natural history's arrays (Section 3.1).
+- **Callbacks receive the definition and the agent.** User code no longer
+  gets a mutable `Virus&` per infection, so per-infection behaviour that
+  relied on editing one agent's copy needs the per-episode fields instead.
 - **Mutation** returns a new sequence. The model looks it up in the registry
-  or adds it, then repoints the record's `variant`. Per-instance sequences go
-  away.
+  or adds it, then repoints the record's variant.
 
-### 4.3 Benefits
+### 4.3 Gate
 
-- **Cheaper copies, less to clear.** An infection or recovery is a write to
-  16 bytes, with no allocation. Copying a model for `run_multiple` copies
-  plain records.
-- **One source of truth.** Changing a function on a definition changes it
-  for every infected agent. Today, changing a virus after it has spread
-  does not reach the copies agents hold; only parameters read through the
-  model (`ParamRef`) do.
-- **Natural fit for the NH split.** The natural-history specification lives
-  on the definition, and the per-infection NH state lives in the record.
-- **Simpler for users.** A virus is "defined once, referred to by id".
-  `agent.get_virus()` returns a view built from the definition and the record.
-
-### 4.4 Risks
-
-- **User code that stores per-infection data on the `Virus` object.** Today
-  someone can change one agent's copy (its sequence, a captured counter) and
-  get per-infection behaviour. Per-infection data then needs an explicit
-  home. Proposal: none in the first version. If a model needs it, it uses
-  the agent's user data or a side vector, as the measles models already do.
-- **The wrappers.** epiworldR, epiworldpy and epiworldjs return virus objects
-  from agents. They would return a lightweight handle (definition id plus a
-  copy of the record) with the same accessors.
-- **Is the memory gain real?** This is a hypothesis until it is measured.
-  NH-0 (Section 11) measures it on the `epiworld-benchmark` scenarios (peak
-  memory, time per step, `run_multiple` copy time) before anything else
-  builds on it.
-- **Tools** follow the same clone-per-agent pattern. They are out of scope
-  here, but the same registry design would apply later.
-
-NH-0 changes no draws, so its acceptance test is **identical results** under
-a fixed seed for every existing test and model.
+The registry changes many signatures: `Agent::get_virus()` returns
+`VirusPtr&`, callbacks take `Virus&`/`VirusPtr&` (`config.hpp`), and
+`clone_ptr()` is virtual. Breaking them is acceptable for 1.0.0, but only
+for a measured gain. NH-0 compares the registry against the cheaper
+alternative: keep the clones, with the definition's shared parts behind one
+`shared_ptr`. Scenarios: low and high prevalence, many variants (mutation),
+histories on and off. Measures: peak memory, time per step, and
+`run_multiple` copy time. **Go/no-go:** the registry goes ahead only if it
+beats the alternative by a clear margin (say 20% in peak memory or step
+time) on at least one realistic scenario. Otherwise, the alternative is
+kept.
 
 ## 5. How the layers interact
 
-Neither layer writes the other's state. They talk through a small set of
-mechanisms:
+Neither layer writes the other's state behind its back. They talk through a
+small set of mechanisms:
 
 | Direction | Example | Mechanism |
 |---|---|---|
-| natural history → status | rash leads to isolation; severe disease leads to hospital; death | `model.on_nh_change(fun)`: the model reacts to NH transitions. The virus never knows the model's status codes. |
-| status → natural history | treatment in hospital shortens the course or lowers mortality; PEP | A tool added on entering the status and removed on exit (`recovery_enhancer`, `death_reduction` already exist). |
-| status → contacts | quarantine removes the agent from layers; leaky isolation | Phase 4 participation keyed by status: `layer.exclude_status({Q, I, H})`, with per-agent flags only for exceptions. This replaces `set_excluded_states`. |
-| natural history → infectiousness | prodromal and rash are infectious | The `infectious` attribute of the NH state on the virus definition. This replaces `Model::set_infectious_states`. |
-| immunity → susceptibility | vaccine, prior infection | Tools, as today (later the immunity record). |
+| stage → status | rash onset leads to isolation for a quarantined agent | `model.set_stage_hook(fun)`: called when a stage change is applied (below). The natural history never knows the model's status codes. |
+| status → stage | hospital care; PEP | The status update reads the stage and acts (removes the virus at discharge, for example). Tools (`recovery_enhancer`, `death_reduction`) for continuous effects. |
+| status → contacts | quarantine removes the agent from contacts | Today: the model's sampler classifies agents by status and stage. Later: Phase 4 participation keyed by status. |
+| stage → infectiousness | prodromal and rash are infectious | The model's sampler (measles). Later: an `infectious` attribute on the stage, read by the generic samplers. |
 
-Status rules may still read the NH state (release from isolation counts
-from rash onset; tracing treats infected and uninfected contacts
-differently). The state space is moved, not removed. The measure of success is
-fewer and cleaner functions: for measles, from 11 update functions to about
-4 status functions plus 3 natural-history functions on the virus.
+**Hook timing.** The stage hook runs inside `events_run()`, right after a
+stage change is applied, and it sees the committed stage. It may schedule
+more events, which `events_run()` applies in the same pass. This is what
+the current `events_run()` already supports for handlers that append
+events.
 
-## 6. Update order and competing risks
+Status rules still read the stage (release from isolation counts from rash
+onset). The state space is moved, not removed. The measure of success is in
+Section 11's report: fewer states, fewer and shorter functions, less
+branching, no duplicated rules and no hand-written timer bookkeeping.
 
-- **One snapshot per step.** Both layers read the state as of the start of
-  the step. Both queue events, and the events apply at the end of the step,
-  as today.
-- **Order within the end of step:** natural-history events first, then the
-  status rules that react to them (through `on_nh_change`) in the same step.
-  This order is documented and tested.
-- **Conflicts:** removal wins. Death or the removal of the virus ends the
-  episode, and an NH event queued for a virus that was already removed is
-  dropped.
-- **Competing risks within a layer** are settled with one draw over the
-  combined hazards: the probability of leaving is `1 - exp(-Σh)`, split in
-  proportion to each hazard. Today they are settled by the order of `if/else`
-  branches. This keeps a per-case probability (e.g. "hospitalization
-  probability") separate from a daily rate, which today's measles parameter
-  "Hospitalization rate" conflates. It is a per-model choice (the hazard vs.
-  roulette results of 2026-10-20 apply).
+## 6. Update order, conflicts and competing risks
+
+- **One update per agent per step.** The engine calls the agent's status
+  update function, then the stage update of each natural history. All of
+  them only schedule events. The events apply at the end of the step, as
+  today.
+- **Stage events carry an identity.** A stage change records the stage it
+  leaves and the episode. When it is applied, an event whose agent is no
+  longer in that stage, or in that episode, is **stale and dropped**. So the
+  first applied change wins, and a change queued before a recovery and a
+  reinfection on the same day can never apply to the new episode.
+- **Conflict table:**
+
+| Same step | Result |
+|---|---|
+| Two stage changes from the same stage | The first applied wins; the other is stale |
+| Stage change, then virus removal (recovery) | Both apply, in order (the removal moves the agent to the recovery stage) |
+| Virus removal, then a stage change queued from the infected stage | The stage change is stale |
+| Two status changes | The last wins (unchanged from today), and the transition counts are undone and redone |
+| Status change and stage change | Independent; both apply |
+| Hook-scheduled events | Applied in the same `events_run()` pass, after the event that triggered them |
+
+- **Competing risks stay as they are in the port.** The measles port keeps
+  the current order of checks, so its results can be compared with the
+  current model. A helper that settles competing hazards in one draw is
+  opt-in and separate. It needs stated units and a time step, and it does not
+  turn a per-case probability into a daily rate. Policy changes (such as
+  whether hospitalization pauses the rash clock) are separate commits with
+  their own acceptance tests (Section 11).
 
 ## 7. Engine changes
 
-- **Events** carry a target: status or natural history (plus the variant for
-  NH). The same-day undo in `events_run` (which uses `state_prev`) works per
-  target.
-- **Agent:** `state` becomes the status (the same field, so the existing API
-  keeps working), and `virus` becomes the inline `Infection` record.
-- **The update loop** runs the status function for every agent whose status
-  has one, and the NH function of the agent's infection, if any.
-- **A set of agents whose status needs updates.** The queue only visits
-  agents near infectious contacts, so a quarantined, uninfected agent far from
-  any case would never be updated. The status layer needs its own active set
-  (agents whose status has an update function). Today this is hidden because
-  two of the three measles models call `queuing_off()` and the third runs on
-  a mixing layer the queue does not see.
-- **Push transmission's state index** counts infectious carriers (from the
-  NH attribute) rather than carriers per state.
-- **The Database:**
-  - `today_total` / `hist_total` stay as status counts, so the saver, the
-    model diagram and `get_hist_total` keep their meaning;
-  - per virus definition: NH state counts per day and an NH transition
-    matrix;
-  - a joint table, status × NH state per virus per day (generalizing today's
-    `today_virus[virus][state]`);
-  - `EPI_DEBUG` checks that the three tables sum consistently (like the ones
-    in `database-meat.hpp`).
+- **`NaturalHistory`** (new): stages (label, update function, duration and
+  next stage), the infection and recovery stages, and the per-agent arrays of
+  Section 3.1. It is owned by the model (`Model::add_natural_history`).
+- **`Virus::set_natural_history(k)`**: the virus follows the model's natural
+  history `k`. Adding the virus to an agent starts an episode in the infection
+  stage; removing it moves the agent to the recovery stage. Neither changes
+  the status unless asked.
+- **`Agent::get_stage()` / `Agent::change_stage()`**, and a `ChangeStage`
+  event action with the stage it leaves and the episode.
+- **The update loop** calls the status function, then each natural history's
+  stage update. A model with natural histories updates every agent each step.
+  This is the simplest correct answer to the queue pitfall (a quarantined,
+  uninfected agent far from any case still has its status updated). Smarter
+  active sets come after measurement. Push transmission is off in such models
+  until the generic samplers read stage attributes.
+- **The Database** gets, per natural history and per recorded day:
+  - the count of agents in each stage;
+  - a stage transition matrix (from the stage at the previous record to the
+    current one; the diagonal holds the agents who stayed), the same
+    convention as the status matrix;
+  - the joint table, status × stage.
+
+  All three are computed **by one scan of the agents at each record**,
+  rather than updated event by event. They are correct by construction, so
+  there is no undo bookkeeping to get wrong. The cost is one pass over the
+  agents per recorded day, which is measured.
 
 ## 8. API sketch
 
 ```cpp
-// Natural history: owned by the virus definition, shared by all infections
-NaturalHistory<> nh;
-int L  = nh.add_state("Latent",    latent_update);
-int P  = nh.add_state("Prodromal", prodromal_update, /*infectious=*/true);
-int Rs = nh.add_state("Rash",      rash_update,      /*infectious=*/true,
-                      /*symptomatic=*/true);
+// The natural history: stages, durations, and the infection/recovery stages
+NaturalHistory<> nh("Measles");
+int S  = nh.add_stage("Susceptible");
+int L  = nh.add_stage("Latent");
+int P  = nh.add_stage("Prodromal");
+int Rs = nh.add_stage("Rash", rash_update);   // a stage can have an update
+int R  = nh.add_stage("Recovered");
+nh.set_duration(L, lognormal_days("Incubation period"), P); // then P
+nh.set_duration(P, lognormal_days("Prodromal period"), Rs);
+nh.set_duration(Rs, lognormal_days("Rash period"));         // rash_update decides
+nh.set_infection(L, R);                                     // starts in L, ends in R
 
-Virus<> measles("Measles");
-measles.set_natural_history(nh, /*initial=*/L);   // no NH: behaves as today
+int k = model.add_natural_history(nh);
+virus.set_natural_history(k);
 
-// Status: owned by the model (today's add_state, renamed in docs only)
-int FREE = model.add_state("Free",        free_update);
-int QUAR = model.add_state("Quarantined", quarantined_update);
-int ISOL = model.add_state("Isolated",    isolated_update);
+// Statuses: the model's states
+model.add_state("Free",         update_free);
+model.add_state("Quarantined",  update_quarantined);
+model.add_state("Isolated",     update_isolated);
+model.add_state("Hospitalized", update_hospitalized);
 
-// Coupling: the model reacts to the disease
-model.on_nh_change([&](Agent<>* p, const VirusDef<>& v, int from, int to,
-                       Model<>* m) {
-    if (to == Rs && detected(p, m))
-        p->change_status(m, ISOL);
+// Coupling: the model reacts to stage changes
+model.set_stage_hook([](Agent<>* p, size_t k, int from, int to, Model<>* m) {
+    if ((to == Rs) && (p->get_state() == QUARANTINED))
+        p->change_state(*m, ISOLATED);
 });
 
-// Inside an NH update function
-p->change_nh(m, Rs);          // event with target = natural history
-p->get_infection().nh_state;  // read
+// In update functions
+p->get_stage(*m);                          // current stage (history 0)
+m->get_natural_history(0).entered(*p, Rs); // day of rash onset
+m->get_natural_history(0).due(*p, *m);     // the stage's duration is over
+p->change_stage(*m, R);                    // event, target = stage
 ```
-
-Names are placeholders for review (status vs. state, `change_nh` vs.
-`advance`).
 
 ## 9. Outputs
 
-- Per virus: true incidence (new episodes), detected incidence, symptom-onset
-  incidence, prevalence by NH state, and NH transitions.
-- Status: daily occupancy and person-days (quarantine-days, isolation-days,
-  bed-days), entries by trigger, and quarantined agents who were never
-  infected.
-- The joint status × NH table per day. "Infectious but free" is the key
-  leak for an intervention.
-- Later, an episode line list written to disk: infection, infectious onset,
-  symptom onset, detection, isolation and outcome dates. Generation and serial
-  intervals and the share of transmission before isolation follow from it.
+- **Per natural history:** stage counts per day, the stage transition matrix,
+  and the joint status × stage table. Transmission counts per virus as today.
+- **Status:** the model's state history and transition matrix keep their
+  meaning (status occupancy; quarantine-days are the sum of the daily
+  quarantined count).
+- **"Infectious but free"** (the key leak for an intervention) is a cell of
+  the joint table.
+- **Later, an episode line list** written to disk: the episode id, the
+  infection date, each stage's entry day (`entered`), detection, status
+  changes and outcome, plus the infector and the infector's episode (from the
+  transmission log). Episodes with no symptomatic stage (asymptomatic or
+  aborted) have no symptom-onset date. Generation and serial intervals and
+  the share of transmission before isolation follow from it.
 
 ## 10. Compatibility and scope
 
-**Additive by default.** A virus without a natural history behaves exactly as
-today: status equals state, and `state_init`/`post`/`removed` act on status.
-The SIR/SEIR models and the wrappers keep working.
-
-**Only models that adopt it break.** Measles goes from 12 states to about 4
-statuses plus 5 NH states, so its output labels change. A generated
-"flattened" label for each pair seen (e.g. "Quarantined Latent") could keep
-old plots readable, but it adds code: only if the wrappers need it.
+**This is a 1.0.0 change, and compatibility is not a goal.** Models that
+adopt natural histories change their states (measles goes from 12 states to
+4 statuses plus 5 stages), their outputs, and the tests that read them. The
+wrappers follow in NH-4. What still holds: a model with no natural history
+behaves exactly as today, so the SIR/SEIR family and its tests are untouched
+by NH-1.
 
 **Out of scope for this plan:**
 
-- **Co-infection.** An agent holds one infection today (`sample_virus`
-  throws on a second). Several simultaneous infections need a small vector of
-  records per agent, exposure draws per virus, and a rule for competing
-  exposures (D1 in `contact-layers.md`). The registry makes that cheaper
-  later (a vector of 16-byte records), but it is a separate project. Without
-  it, this plan gives strains with different natural histories, not several
-  diseases at once.
+- **Co-infection.** An agent holds one virus (`sample_virus` throws on a
+  second). The stage arrays already allow one stage per disease per agent,
+  but simultaneous infections need a small vector of viruses per agent,
+  exposure draws per virus, and a rule for competing exposures (D1 in
+  `contact-layers.md`). It is a separate project.
 - **Cross-pathogen effects** (interference, cross-immunity, immune amnesia):
-  a later model-level hook, in the style of Starsim connectors, once
-  co-infection and the immunity record exist.
+  a later model-level hook, in the style of Starsim connectors, once the
+  immunity record exists.
 - **Tools on the registry.**
 
 ## 11. Phases on the `natural-history` branch
 
-Each phase is a PR into `natural-history`, measured and reviewed before the
-next. If the branch proves itself, it is merged into `v1-layers` in the
-order agreed with the contact-layers plan.
+Each phase is a PR into `natural-history`. Measles goes first because it is
+where the combined states hurt most.
 
-- **NH-0: virus registry.** Definitions in the model, `Infection` records in
-  agents, variants in the registry, the same public API through a view.
-  Acceptance: identical results for every test under a fixed seed; memory and
-  time measured on the `epiworld-benchmark` scenarios against `v1-layers`
-  (CPU time, interleaved runs; see the benchmarking notes in Section 8 of
-  `contact-layers.md`).
-- **NH-1: natural history on the definition.** NH states with attributes,
-  update functions, the event target, the status active set, the database
-  tables, `on_nh_change`. The infectious mask moves from the model to the
-  definition. Acceptance: every existing model unchanged (they have no NH),
-  plus one new end-to-end test.
-- **NH-2: pilot port of `ModelSEIRQuarantine`** (10 states, the smaller
-  case). Acceptance: statistically equivalent results (attack rate,
-  quarantine-days, R0) within Monte Carlo error. Count the update functions
-  before and after.
-- **NH-3: the measles models.** This depends on Phase 4 participation keyed
-  by status. Ideally it is done as part of the measles consolidation, so the
-  measles results change once rather than twice. Acceptance: the
-  consolidation's R0 and transition-rate checks, and answers to the measles
-  questions in Section 12.
-- **NH-4: wrappers.** Accessors for NH histories, transitions and the joint
-  table in epiworldR, epiworldpy and epiworldjs.
-- **NH-5 (later): the immunity record**, then co-infection, then
+- **NH-1: natural histories in the engine, and the measles mixing pilot.**
+  - `NaturalHistory`, stage events, the stage hook, the update loop, and the
+    database tables (Sections 3, 6, 7).
+  - `ModelMeaslesMixing` ported to 4 statuses × 5 stages. The port keeps the
+    current behaviour (order of checks, hospitalization pausing the rash
+    clock), so results are statistically equivalent rather than identical
+    (the order of random draws changes).
+  - **A complexity report**: states, update functions, lines, cyclomatic
+    complexity, duplicated rules and timer bookkeeping, before and after
+    (`complexity-report.md`).
+  - **Acceptance:**
+    - every test of the models without natural histories passes unchanged;
+    - the measles mixing tests, rewritten on stages and statuses, pass with
+      the same theoretical targets (R0, stage durations, hospitalization
+      probability, detection);
+    - paired deterministic scenarios (fixed durations, probabilities of 0 or
+      1) give the same days of rash onset, isolation, release and recovery
+      as the current model;
+    - durations survive status changes, stale events are dropped, the hook
+      fires in the same step, and the three database tables add up.
+- **NH-1b: policy corrections, if wanted**, as separate commits with their
+  own tests: hospitalization does not pause the rash clock; the quarantine
+  exemption depends on immunity rather than on holding any tool; Prodromal
+  counts as symptomatic for symptom-onset outputs.
+- **NH-2: the other measles models** (`ModelMeaslesSchool`,
+  `ModelMeaslesMixingRiskQuarantine`, the PEP intervention), then
+  `ModelSEIRQuarantine`.
+- **NH-0: the virus registry**, gated by the benchmark in Section 4.3.
+- **NH-3: wrappers.** Accessors for stage histories, transitions and the
+  joint table in epiworldR, epiworldpy and epiworldjs.
+- **NH-4 (later):** the immunity record, then co-infection, then
   cross-pathogen hooks.
 
 **Fit with `contact-layers.md`.** Phase 4 participation should be designed as
-"status leads to exclusion" whichever way this goes. NH-0 and NH-1 are
-additive and could land before or after 1.0.0. The measles relabelling
+"status leads to exclusion" whichever way this goes. The measles relabelling
 should land in 1.0.0 if it lands at all.
-
-**Rough effort:** NH-0 and NH-1 together are about 1.5-2.5 thousand lines
-with tests, in 2-3 PRs; the pilot and measles ports are moderate; the wrappers
-need new accessors.
 
 ### Testing
 
 Following `AGENTS.md`: few end-to-end test files, one `EPIWORLD_TEST_CASE`
 each, using fixed (drawn-once) networks.
 
-- **Equivalence:** with one virus and no natural history, every model's
-  results stay identical (NH-0, NH-1).
-- **Mean field:** an SEIR on full mixing written with NH states agrees with
-  the ODE solution (final-size relation).
-- **Separation:** quarantine and isolation do not change NH durations unless
-  a tool says so. For example, with deterministic durations, the latent and
-  prodromal periods of quarantined agents match those of free agents exactly.
-- **Coupling:** with probability 1 of detection, every agent entering Rash
-  is isolated the same day, and the joint table never shows "Rash × Free".
-- **Bookkeeping:** status, NH and joint counts sum to the same totals every
-  day; build the tests standalone with `-DEPI_DEBUG` as well (`make test`
-  skips those checks).
+- **Equivalence:** the models without natural histories give identical
+  results.
+- **Timing, not only totals:** compare the distributions of the latent,
+  prodromal and rash periods, the days of detection, isolation and release,
+  and hospital occupancy, not only R0 and attack rates. Stochastic checks
+  use `run_multiple()` with tolerances stated before the run.
+- **Separation:** with fixed durations, quarantined and free agents have the
+  same latent and prodromal periods.
+- **Lifecycle:** a duration drawn on entry survives a status change, is
+  redrawn on reinfection, and is copied with the model.
+- **Conflicts:** stale stage events are dropped; the hook's events apply in
+  the same step.
+- **Bookkeeping:** stage counts, the joint table and status counts add up to
+  the population every day. Build the tests standalone with `-DEPI_DEBUG` as
+  well (`make test` skips those checks).
 
-## 12. Open questions for reviewers
+## 12. Review log and open questions
 
-1. **Names.** "Status" and "natural history", or keep "state" for status and
-   call the NH layer "stage"? The measles code already says "stage".
-2. **Is the registry worth it on its own?** NH-0's numbers decide. If the
-   gain is small, NH-1 can keep a `shared_ptr` to a shared NH specification
-   from today's clones instead.
-3. **Per-infection user data.** None (use agent user data or side vectors),
-   or a small typed slot in `Infection`?
-4. **Where competing risks are settled.** A one-draw helper in the engine, or
-   left to each model's update functions?
-5. **Should a status function run every day for every agent who has one**
-   (simple, slower), or only for agents whose status changed or who have a
-   pending timer (faster, more bookkeeping)?
-6. **Measles semantics the port forces into the open:**
-   - Should hospitalization stop the rash clock?
-   - Should quarantine plus rash always mean isolation?
-   - Should the quarantine exemption depend on tools or on immune status?
-   - Does PEP act on the infection (abort or modify the episode) or on
-     immunity?
-7. **The flattened joint label for backward compatibility:** needed by the
-   wrappers or not?
-8. **Timing.** Should this aim for 1.0.0 at all, or stay on its branch until
-   after it?
+### Changes after the first review (PR #358, 2026-11-03)
+
+| Review point | Change |
+|---|---|
+| NH-0 compatibility boundary (P1) | Compatibility is not a goal for 1.0.0 (Section 10). The registry is gated by a benchmark against the cheaper alternative (Section 4.3). |
+| Episode identity for stale events (P1) | Stage events carry the stage they leave and the episode; stale ones are dropped. Conflict table and hook timing (Section 6). |
+| Per-episode attributes need a lifecycle (P1) | Per-agent arrays owned by the natural history, with stage durations sampled on entry and landmark days (Section 3.1). |
+| Overlapping obligations (P1) | One status with a documented priority in the pilot; independent obligations listed as a limitation (Section 3). |
+| Hazard helper vs. policy (P2) | The port keeps the current order of checks; policy changes are separate commits (Sections 6, 11). |
+| Prodrome is symptomatic (P2) | Marked as an NH-1b correction; the rash-onset day stays its own landmark (`entered`). |
+| Pilot gate on timing (P2) | Timing distributions and paired deterministic scenarios in the acceptance tests (Section 11). |
+| Benchmark against the cheaper alternative (P2) | Section 4.3, with a go/no-go rule and stable storage for definitions. |
+| Generation and serial intervals need linkage (P2) | Episode ids plus the transmission log (Section 9). |
+
+A design change also came out of the review: every agent now has a stage
+in each natural history, so susceptible and recovered are stages rather than
+the absence of a virus (Section 3).
+
+### Still open
+
+1. **Names.** "Status" for the model's states and "stage" for the natural
+   history (the review's suggestion, adopted in this draft). The code keeps
+   `state` for the status.
+2. **Measles policy:** should hospitalization pause the rash clock (the
+   review says no)? Should the quarantine exemption depend on immunity rather
+   than on any tool (the review says yes)? Should quarantine plus rash always
+   mean isolation, whatever the isolation willingness? Does PEP act on the
+   episode (MMR within 72 hours, IG within 6 days, which may prevent or
+   modify illness) or on future protection? The CDC surveillance manual
+   describes both.
+3. **Independent obligations** for status: when, and is the exclusive status
+   enough for the measles models?
+4. **Should a natural history's stage update run every day for every agent**
+   (simple, the pilot), or only for agents with a pending timer or an update
+   function (faster, more bookkeeping)?
+5. **Timing.** Should this aim for 1.0.0, or stay on its branch until after
+   it?
 
 ## 13. Risks
 
 | Risk | Mitigation |
 |---|---|
-| Bookkeeping errors in the same-day undo across two targets | `EPI_DEBUG` consistency checks; the bookkeeping test above |
-| Quarantined agents silently never updated (queue) | The status active set; a test with queuing on and a quarantined agent far from any case |
-| Performance regression in the push state index | Benchmarks per phase in `epiworld-benchmark` |
-| User code relying on mutable per-infection `Virus` copies | Document in NH-0; search the wrappers and the measles package before merging |
-| The complexity moves into status functions that branch on NH | Count functions before and after in NH-2; reject the design if the pilot is not simpler |
-| Two breaking changes to measles (consolidation, then NH) | Do NH-3 inside the measles consolidation, or not at all before 1.0.0 |
-| Scope creep into co-infection | Stated out of scope (Section 10) |
+| Quarantined agents silently never updated (queue) | Models with natural histories update every agent each step |
+| Stale or double-applied stage events | Event identity (stage left, episode); a test |
+| The database tables drift from the agents | Computed by a scan at each record, not event by event |
+| The extra scan costs too much at 1M agents | Measured; incremental counts only if needed |
+| The complexity moves into status functions that branch on the stage | The complexity report; reject the design if the pilot is not simpler |
+| Two breaking changes to measles (consolidation, then stages) | Coordinate NH-2 with the measles consolidation |
+| Scope creep into co-infection | Out of scope (Section 10) |
+| The registry costs more API churn than it saves | The go/no-go benchmark (Section 4.3) |
 
 ## 14. References
 
@@ -457,6 +513,11 @@ each, using fixed (drawn-once) networks.
 - Shaw, Morgan, Perkins 2025. Co-circulating pathogens of humans: a
   systematic review of mechanistic transmission models. *Proc R Soc B*.
   doi:10.1098/rspb.2025.1453
+- CDC. Manual for the Surveillance of Vaccine-Preventable Diseases,
+  Chapter 7: Measles (PEP: MMR within 72 hours, IG within 6 days).
+  https://www.cdc.gov/surv-manual/php/table-of-contents/chapter-7-measles.html
+- CDC. Measles clinical overview (prodrome: fever, malaise, cough, coryza,
+  conjunctivitis). https://www.cdc.gov/measles/hcp/clinical-overview/
 - Mina et al. 2015. Measles immune amnesia. *Science* 348:694.
   doi:10.1126/science.aaa3662
 
@@ -464,9 +525,9 @@ each, using fixed (drawn-once) networks.
 
 | Phase | PR | State |
 |---|---|---|
-| Plan | this branch | draft, collecting reviews |
-| NH-0 registry | | not started |
-| NH-1 natural history | | not started |
-| NH-2 SEIRQuarantine pilot | | not started |
-| NH-3 measles | | waits on Phase 4 / the measles consolidation |
-| NH-4 wrappers | | not started |
+| Plan | #358 | revised after the first review |
+| NH-1 engine + measles mixing pilot | | in progress |
+| NH-1b policy corrections | | not started |
+| NH-2 other measles models, SEIRQuarantine | | not started |
+| NH-0 registry | | waits on the benchmark |
+| NH-3 wrappers | | not started |
