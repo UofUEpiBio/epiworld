@@ -51,9 +51,11 @@ inline ModelSIS<TSeq>::ModelSIS(
 
     this->set_name("Susceptible-Infected-Susceptible (SIS)");
 
-    // Adding statuses
-    this->add_state("Susceptible", default_update_susceptible<TSeq>);
-    this->add_state("Infected", default_update_exposed<TSeq>);
+    NaturalHistory<TSeq> nh("SIS");
+    nh.add_stage("Susceptible", default_update_susceptible<TSeq>);
+    nh.add_stage("Infected", default_update_exposed<TSeq>);
+    nh.set_infection(INFECTED, SUSCEPTIBLE);
+    this->add_natural_history(nh);
 
     // Setting up parameters
     this->add_param(transmission_prob, "Transmission probability");
@@ -61,7 +63,7 @@ inline ModelSIS<TSeq>::ModelSIS(
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(INFECTED, SUSCEPTIBLE, SUSCEPTIBLE);
+    virus.set_natural_history(0);
     
     virus.set_prob_infecting("Transmission probability");
     virus.set_prob_recovery("Recovery rate");

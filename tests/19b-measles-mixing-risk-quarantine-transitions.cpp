@@ -64,6 +64,9 @@ EPIWORLD_TEST_CASE(
     auto avg_transitions = tests_calculate_avg_transitions(transitions, model);
 
     tests_print_avg_transitions(avg_transitions, model);
+    using MRQ_ = measles::ModelMeaslesMixingRiskQuarantine<>;
+    // The state of a status and a stage
+    #define S(status, stage) MRQ_::state(MRQ_::status, MRQ_::stage)
     #define mat(i, j) avg_transitions[j * model.get_n_states() + i]
 
     // Average hospitalizations
@@ -83,70 +86,70 @@ EPIWORLD_TEST_CASE(
     
     // From exposed
     std::cout << "Transition from Exposed to Prodromal: " <<
-        mat(1, 2) + mat(1, 8) << " (expected: " << 
+        mat(S(FREE, LATENT), S(FREE, PRODROMAL)) + mat(S(FREE, LATENT), S(QUARANTINED, PRODROMAL)) << " (expected: " << 
         1.0/model("Incubation period") << ")" << std::endl;
 
     // From prodromal
     std::cout << "Transition from Prodromal to Rash: " <<
-        mat(2, 3) + mat(2, 4) << " (expected: " << 
+        mat(S(FREE, PRODROMAL), S(FREE, RASH)) + mat(S(FREE, PRODROMAL), S(ISOLATED, RASH)) << " (expected: " << 
         1.0/model("Prodromal period") << ")" << std::endl;
 
     // From Rash
     std::cout << "Transition from Rash to Recovered: " <<
-        mat(3, 11) + mat(3, 5) << " (expected: " << 
+        mat(S(FREE, RASH), S(FREE, RECOVERED)) + mat(S(FREE, RASH), S(ISOLATED, RECOVERED)) << " (expected: " << 
         (1.0 - model("Hospitalization rate") - 1.0/model("Rash period")) << ")" << std::endl;
 
     std::cout << "Transition from Rash to Hospitalized: " <<
-        mat(3, 10) << " (expected: " <<
+        mat(S(FREE, RASH), S(HOSPITALIZED, RASH)) << " (expected: " <<
         model("Hospitalization rate") << ")" << std::endl;
 
     // Isolated
     std::cout << "Transition from Isolated to hospitalized: " <<
-        mat(4, 10) << " (expected: " <<
+        mat(S(ISOLATED, RASH), S(HOSPITALIZED, RASH)) << " (expected: " <<
         model("Hospitalization rate") << ")" << std::endl;
     
     // Quarantined Exposed
     std::cout << "Transition from Quarantined Exposed to Prodromal: " <<
-        mat(6, 2) + mat(6, 8) << " (expected: " <<
+        mat(S(QUARANTINED, LATENT), S(FREE, PRODROMAL)) + mat(S(QUARANTINED, LATENT), S(QUARANTINED, PRODROMAL)) << " (expected: " <<
         1.0/model("Incubation period") << ")" << std::endl;
 
     // Quarantined Prodromal
     std::cout << "Transition from Quarantined Prodromal to Rash: " <<
-        mat(8, 3) + mat(8, 4) << " (expected: " <<
+        mat(S(QUARANTINED, PRODROMAL), S(FREE, RASH)) + mat(S(QUARANTINED, PRODROMAL), S(ISOLATED, RASH)) << " (expected: " <<
         1.0/model("Prodromal period") << ")" << std::endl;
 
     // From Hospitalized
     std::cout << "Transition from Hospitalized to Recovered: " <<
-        mat(10, 11) << " (expected: " <<
+        mat(S(HOSPITALIZED, RASH), S(FREE, RECOVERED)) << " (expected: " <<
         1.0/model("Hospitalization period") << ")" << std::endl;
         
     // Some transitions should be zero. Building a vector of the transitions
     // we expect not to be zero, so the rest should be zero.
     std::set< std::pair<size_t, size_t> > non_zero_transitions = {
         // From Susceptible
-        {0, 0}, {0, 1}, {0, 6}, {0, 7},
+        {S(FREE, SUSCEPTIBLE), S(FREE, SUSCEPTIBLE)}, {S(FREE, SUSCEPTIBLE), S(FREE, LATENT)}, {S(FREE, SUSCEPTIBLE), S(QUARANTINED, LATENT)}, {S(FREE, SUSCEPTIBLE), S(QUARANTINED, SUSCEPTIBLE)},
         // From Latent
-        {1, 1}, {1, 2}, {1, 6}, {1, 8},
+        {S(FREE, LATENT), S(FREE, LATENT)}, {S(FREE, LATENT), S(FREE, PRODROMAL)}, {S(FREE, LATENT), S(QUARANTINED, LATENT)}, {S(FREE, LATENT), S(QUARANTINED, PRODROMAL)},
         // From Prodromal
-        {2, 2}, {2, 3}, {2, 4}, {2, 8},
+        {S(FREE, PRODROMAL), S(FREE, PRODROMAL)}, {S(FREE, PRODROMAL), S(FREE, RASH)}, {S(FREE, PRODROMAL), S(ISOLATED, RASH)}, {S(FREE, PRODROMAL), S(QUARANTINED, PRODROMAL)},
         // From Rash
-        {3, 3}, {3, 4}, {3, 5}, {3, 10}, {3, 11},
+        {S(FREE, RASH), S(FREE, RASH)}, {S(FREE, RASH), S(ISOLATED, RASH)}, {S(FREE, RASH), S(ISOLATED, RECOVERED)}, {S(FREE, RASH), S(HOSPITALIZED, RASH)}, {S(FREE, RASH), S(FREE, RECOVERED)},
         // From Isolated
-        {4, 4}, {4, 5}, {4, 10}, {4, 11}, {4, 3},
+        {S(ISOLATED, RASH), S(ISOLATED, RASH)}, {S(ISOLATED, RASH), S(ISOLATED, RECOVERED)}, {S(ISOLATED, RASH), S(HOSPITALIZED, RASH)}, {S(ISOLATED, RASH), S(FREE, RECOVERED)}, {S(ISOLATED, RASH), S(FREE, RASH)},
         // From Isolated Recovered
-        {5, 5}, {5, 11},
+        {S(ISOLATED, RECOVERED), S(ISOLATED, RECOVERED)}, {S(ISOLATED, RECOVERED), S(FREE, RECOVERED)},
         // From Quarantined Latent
-        {6, 6}, {6, 1}, {6, 2}, {6, 8},
+        {S(QUARANTINED, LATENT), S(QUARANTINED, LATENT)}, {S(QUARANTINED, LATENT), S(FREE, LATENT)}, {S(QUARANTINED, LATENT), S(FREE, PRODROMAL)}, {S(QUARANTINED, LATENT), S(QUARANTINED, PRODROMAL)},
         // From Quarantined Susceptible
-        {7, 7}, {7, 0},
+        {S(QUARANTINED, SUSCEPTIBLE), S(QUARANTINED, SUSCEPTIBLE)}, {S(QUARANTINED, SUSCEPTIBLE), S(FREE, SUSCEPTIBLE)},
         // From Quarantined Prodromal
-        {8, 8}, {8, 2}, {8, 3}, {8, 4},
+        {S(QUARANTINED, PRODROMAL), S(QUARANTINED, PRODROMAL)}, {S(QUARANTINED, PRODROMAL), S(FREE, PRODROMAL)}, {S(QUARANTINED, PRODROMAL), S(FREE, RASH)}, {S(QUARANTINED, PRODROMAL), S(ISOLATED, RASH)},
         // From Quarantined Recovered
-        {9, 9}, {9, 11},
+        {S(QUARANTINED, RECOVERED), S(QUARANTINED, RECOVERED)}, {S(QUARANTINED, RECOVERED), S(FREE, RECOVERED)},
         // From Hospitalized
-        {10, 10}, {10, 11},
+        {S(HOSPITALIZED, RASH), S(HOSPITALIZED, RASH)}, {S(HOSPITALIZED, RASH), S(FREE, RECOVERED)},
         // From Recovered
-        {11, 11}
+        {S(FREE, RECOVERED), S(FREE, RECOVERED)}
     };
 
     auto nstates = model.get_n_states();
@@ -168,16 +171,20 @@ EPIWORLD_TEST_CASE(
         }
     }
 
-    // Validating zero transitions  
+    // Validating zero transitions
+    for (const auto & t : found_nonzero_that_should_be_zero)
+        std::cout << "Unexpected transition: " << model.get_states()[t.first] <<
+            " -> " << model.get_states()[t.second] << ": " <<
+            mat(t.first, t.second) << std::endl;
     REQUIRE(n_nonzero_that_should_be_zero == 0u);
 
     // Validate core disease progression  
     REQUIRE_FALSE(
-        moreless(mat(1, 2) + mat(1, 8), 1.0/model("Incubation period"), 0.1)
+        moreless(mat(S(FREE, LATENT), S(FREE, PRODROMAL)) + mat(S(FREE, LATENT), S(QUARANTINED, PRODROMAL)), 1.0/model("Incubation period"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(2, 3) + mat(2, 4), 1.0/model("Prodromal period"), 0.1)
+        moreless(mat(S(FREE, PRODROMAL), S(FREE, RASH)) + mat(S(FREE, PRODROMAL), S(ISOLATED, RASH)), 1.0/model("Prodromal period"), 0.1)
     );
 
     // Exits from Rash with the drawn rash period (see measles-stages.hpp)
@@ -194,23 +201,23 @@ EPIWORLD_TEST_CASE(
     // checked below.
 
     REQUIRE_FALSE(
-        moreless(mat(3, 10), model("Hospitalization rate"), 0.1)
+        moreless(mat(S(FREE, RASH), S(HOSPITALIZED, RASH)), model("Hospitalization rate"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(4, 10), model("Hospitalization rate"), 0.1)
+        moreless(mat(S(ISOLATED, RASH), S(HOSPITALIZED, RASH)), model("Hospitalization rate"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(6, 2) + mat(6, 8), 1.0/model("Incubation period"), 0.1)
+        moreless(mat(S(QUARANTINED, LATENT), S(FREE, PRODROMAL)) + mat(S(QUARANTINED, LATENT), S(QUARANTINED, PRODROMAL)), 1.0/model("Incubation period"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(8, 3) + mat(8, 4), 1.0/model("Prodromal period"), 0.1)
+        moreless(mat(S(QUARANTINED, PRODROMAL), S(FREE, RASH)) + mat(S(QUARANTINED, PRODROMAL), S(ISOLATED, RASH)), 1.0/model("Prodromal period"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(10, 11), 1.0/model("Hospitalization period"), 0.1)
+        moreless(mat(S(HOSPITALIZED, RASH), S(FREE, RECOVERED)), 1.0/model("Hospitalization period"), 0.1)
     );
 
     // Hospitalization probability
@@ -223,6 +230,7 @@ EPIWORLD_TEST_CASE(
     );
 
     #undef mat
+    #undef S
 
     // Hospitalization probability
     std::cout << "Hospitalization probability: " <<

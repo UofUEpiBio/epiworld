@@ -48,7 +48,7 @@ EPIWORLD_TEST_CASE(
     model_risk.run(20, 123);
 
     auto risk_on = [&](const std::string & from, const std::string & to, int day) {
-        auto counts = transitions_by_day(model_risk, from, to);
+        auto counts = stage_transitions_by_day(model_risk, from, to);
         return counts[day] == static_cast<int>(n);
     };
 

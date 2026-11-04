@@ -56,7 +56,7 @@ public:
 
     // Does the agent become infected?
     if (m->runif() < 1.0/(v->get_incubation(m)))
-      p->change_state(*m, ModelSEIRD<TSeq>::INFECTED);
+      p->change_stage(*m, ModelSEIRD<TSeq>::INFECTED);
 
     return;
   };
@@ -105,7 +105,7 @@ public:
     if ((which % 2) == 0) // If odd
     {
       
-      p->rm_virus(*m, ModelSEIRD<TSeq>::DECEASED);
+      p->rm_virus(*m, m->state_with(p->get_state(), -1, 0u, ModelSEIRD<TSeq>::DECEASED));
       
     } else {
       
@@ -144,16 +144,18 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
 
     this->set_population_size(n);
   
-  // Adding statuses
-  this->add_state("Susceptible", default_update_susceptible<TSeq>);
-  this->add_state("Exposed",  this->update_exposed_seir);
-  this->add_state("Infected", this->update_infected);
-  this->add_state("Removed");
-  this->add_state("Deceased");
-
-  // Exposed agents carry the virus but are not infectious yet
+  // The natural history (its stages are the model's states); only the
+  // infected transmit
+  NaturalHistory<TSeq> nh("SEIRD");
+  nh.add_stage("Susceptible", default_update_susceptible<TSeq>);
+  nh.add_stage("Exposed",  this->update_exposed_seir);
+  nh.add_stage("Infected", this->update_infected);
+  nh.add_stage("Removed");
+  nh.add_stage("Deceased");
+  nh.set_infection(EXPOSED, REMOVED, DECEASED);
+  this->add_natural_history(nh);
   this->set_infectious_states({INFECTED});
-  
+
   // Setting up parameters
   this->add_param(transmission_prob, "Transmission probability");
   this->add_param(latent_period, "Latent period");
@@ -162,7 +164,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   
   // Preparing the virus -------------------------------------------
   Virus<TSeq> virus(vname, prevalence, true);
-  virus.set_state(ModelSEIRD<TSeq>::EXPOSED, ModelSEIRD<TSeq>::REMOVED, ModelSEIRD<TSeq>::DECEASED);
+  virus.set_natural_history(0);
   
   virus.set_prob_infecting("Transmission probability");
   virus.set_incubation("Latent period");

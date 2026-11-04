@@ -91,6 +91,9 @@ EPIWORLD_TEST_CASE(
     }
     obs_hosp_probability /= static_cast<epiworld_double>(nsims);
 
+    using MRQ_ = measles::ModelMeaslesMixingRiskQuarantine<>;
+    // The state of a status and a stage
+    #define S(status, stage) MRQ_::state(MRQ_::status, MRQ_::stage)
     #define mat(i, j) tmat[(j)*model.get_n_states() + (i)]
     std::cout << "Average R0 from index cases: " <<
         avg_R0 <<  " vs expected " << R0 << std::endl;
@@ -99,27 +102,27 @@ EPIWORLD_TEST_CASE(
 
     // From Exposed
     std::cout << "Transition from Exposed to Prodromal: " <<
-        mat(MSQ::LATENT, MSQ::PRODROMAL) << " (expected: " <<
+        mat(S(FREE, LATENT), S(FREE, PRODROMAL)) << " (expected: " <<
         1.0/model("Incubation period") << ")" << std::endl;
 
     // From Prodromal
     std::cout << "Transition from Prodromal to Rash: " <<
-        mat(MSQ::PRODROMAL, MSQ::RASH) << " (expected: " <<
+        mat(S(FREE, PRODROMAL), S(FREE, RASH)) << " (expected: " <<
         1.0/model("Prodromal period") << ")" << std::endl;
 
     // From Rash
     std::cout << "Transition from Rash to Recovery: " <<
-        mat(MSQ::RASH, MSQ::RECOVERED) << " (expected: " <<
+        mat(S(FREE, RASH), S(FREE, RECOVERED)) << " (expected: " <<
         1.0/model("Rash period") << ")" <<
         std::endl;
 
     std::cout << "Transition from Rash to Hospitalized: " <<
-        mat(MSQ::RASH, MSQ::HOSPITALIZED) << " (expected: " <<
+        mat(S(FREE, RASH), S(HOSPITALIZED, RASH)) << " (expected: " <<
         model("Hospitalization rate") << ")" << std::endl;
 
     // From hospitalized
     std::cout << "Transition from Hospitalized to Recovery: " <<
-        mat(MSQ::HOSPITALIZED, MSQ::RECOVERED) << " (expected: " <<
+        mat(S(HOSPITALIZED, RASH), S(FREE, RECOVERED)) << " (expected: " <<
         1.0/model("Hospitalization period") << ")" << std::endl;
 
     // Hospitalization probability
@@ -136,27 +139,27 @@ EPIWORLD_TEST_CASE(
 
     // Validating some transitions -------------------------------
     REQUIRE_FALSE(
-        moreless(mat(MSQ::LATENT, MSQ::PRODROMAL), 1.0/model("Incubation period"), 0.1)
+        moreless(mat(S(FREE, LATENT), S(FREE, PRODROMAL)), 1.0/model("Incubation period"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(MSQ::PRODROMAL, MSQ::RASH), 1.0/model("Prodromal period"), 0.1)
+        moreless(mat(S(FREE, PRODROMAL), S(FREE, RASH)), 1.0/model("Prodromal period"), 0.1)
     );
 
     REQUIRE_FALSE(
         moreless(
-            mat(MSQ::RASH, MSQ::RECOVERED),
+            mat(S(FREE, RASH), S(FREE, RECOVERED)),
             p_recovered,
             0.1
         )
     );
 
     REQUIRE_FALSE(
-        moreless(mat(MSQ::RASH, MSQ::HOSPITALIZED), model("Hospitalization rate"), 0.1)
+        moreless(mat(S(FREE, RASH), S(HOSPITALIZED, RASH)), model("Hospitalization rate"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(MSQ::HOSPITALIZED, MSQ::RECOVERED), 1.0/model("Hospitalization period"), 0.1)
+        moreless(mat(S(HOSPITALIZED, RASH), S(FREE, RECOVERED)), 1.0/model("Hospitalization period"), 0.1)
     );
 
     // Hospitalization probability
@@ -172,4 +175,5 @@ EPIWORLD_TEST_CASE(
 }
 
 #undef mat
+    #undef S
 #undef N_THREADS

@@ -60,10 +60,13 @@ inline ModelSIR<TSeq>::ModelSIR(
 
     this->set_population_size(n);
 
-    // Adding statuses
-    this->add_state("Susceptible", default_update_susceptible<TSeq>);
-    this->add_state("Infected", default_update_exposed<TSeq>);
-    this->add_state("Recovered");
+    // The natural history (its stages are the model's states)
+    NaturalHistory<TSeq> nh("SIR");
+    nh.add_stage("Susceptible", default_update_susceptible<TSeq>);
+    nh.add_stage("Infected", default_update_exposed<TSeq>);
+    nh.add_stage("Recovered");
+    nh.set_infection(INFECTED, RECOVERED);
+    this->add_natural_history(nh);
 
     // Setting up parameters
     this->add_param(recovery_rate, "Recovery rate");
@@ -71,7 +74,7 @@ inline ModelSIR<TSeq>::ModelSIR(
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(1,2,2);
+    virus.set_natural_history(0);
     
     virus.set_prob_recovery("Recovery rate");
     virus.set_prob_infecting("Transmission probability");

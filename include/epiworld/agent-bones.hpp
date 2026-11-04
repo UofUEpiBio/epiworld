@@ -237,15 +237,26 @@ public:
     int get_state_last_changed() const;
 
     /**
-     * @name Stage in a natural history
+     * @name Status and stage
+     *
+     * @details An agent's state is a status and a stage in each natural
+     * history of the model (see `Model::add_natural_history()`). These read
+     * and change one of them, keeping the others. Changes apply at the end of
+     * the step; a change of stage is dropped if the agent leaves its current
+     * stage or episode first. Without natural histories, the status is the
+     * state.
      *
      * @param model The model.
-     * @param stage The stage to move to (applied at the end of the step;
-     * dropped if the agent leaves its current stage or episode first).
+     * @param status,stage The status or the stage to move to.
      * @param k Index of the natural history.
      */
     ///@{
+    int get_status(const Model<TSeq> & model) const;
     int get_stage(const Model<TSeq> & model, size_t k = 0u) const;
+    void change_status(
+        Model<TSeq> & model, epiworld_fast_uint status,
+        epiworld_fast_int queue = 0
+    );
     void change_stage(Model<TSeq> & model, int stage, size_t k = 0u);
     ///@}
 

@@ -29,7 +29,7 @@ EPIWORLD_TEST_CASE("Natural history - stages episodes and hooks", "[NaturalHisto
         [](Agent<> * p, Model<> * m) -> void {
             // Released when the virus is gone
             if (p->get_virus() == nullptr)
-                p->change_state(*m, 0);
+                p->change_status(*m, 0);
         }
     );
 
@@ -54,6 +54,11 @@ EPIWORLD_TEST_CASE("Natural history - stages episodes and hooks", "[NaturalHisto
     REQUIRE_THROWS(model.add_virus(virus)); // the model has no natural history
     REQUIRE(model.add_natural_history(nh) == 0u);
     REQUIRE_THROWS(model.add_natural_history(nh)); // same name
+
+    // The states are the pairs of a status and a stage
+    REQUIRE(model.get_n_states() == 8u);
+    REQUIRE(model.get_states()[0] == "Free Susceptible");
+    REQUIRE(model.get_states()[7] == "Isolated Immune");
 
     // Agent 0 is infected on day 0, and again on day 10 (once susceptible)
     virus.set_distribution([](Virus<> & v, Model<> * m) -> void {
@@ -89,7 +94,7 @@ EPIWORLD_TEST_CASE("Natural history - stages episodes and hooks", "[NaturalHisto
             if (to == I)
             {
                 hook_days.push_back(m->today());
-                p->change_state(*m, ISOLATED);
+                p->change_status(*m, ISOLATED);
             }
         }
     );
@@ -117,8 +122,8 @@ EPIWORLD_TEST_CASE("Natural history - stages episodes and hooks", "[NaturalHisto
     // The hook isolated agent 0 the day it became infectious, and it was
     // released once the virus was gone
     REQUIRE(hook_days == std::vector< int >{2, 12});
-    REQUIRE(transitions_by_day(model, "Free", "Isolated")[2] == 1);
-    REQUIRE(transitions_by_day(model, "Isolated", "Free")[6] == 1);
+    REQUIRE(status_transitions_by_day(model, "Free", "Isolated")[2] == 1);
+    REQUIRE(status_transitions_by_day(model, "Isolated", "Free")[6] == 1);
 
     // Agent 0's second episode, with its own entry days
     const auto & h = model.get_natural_history();
@@ -130,7 +135,7 @@ EPIWORLD_TEST_CASE("Natural history - stages episodes and hooks", "[NaturalHisto
     REQUIRE(h.entered(a0, S) == 19);
     REQUIRE(h.get_episode(model.get_agent(1)) == 0);
     REQUIRE(a0.get_virus() == nullptr);
-    REQUIRE(a0.get_state() == static_cast< unsigned int >(FREE));
+    REQUIRE(a0.get_status(model) == FREE);
 
     // Bookkeeping: the joint table adds up to the stage counts, to the
     // statuses, and to the population, every day
@@ -141,34 +146,34 @@ EPIWORLD_TEST_CASE("Natural history - stages episodes and hooks", "[NaturalHisto
 
     std::vector< int > date_t, counts_t;
     std::vector< std::string > status_t;
-    model.get_db().get_hist_total(&date_t, &status_t, &counts_t);
+    model.get_db().get_hist_status(date_t, status_t, counts_t);
 
     const size_t ndays = model.get_ndays() + 1u;
     REQUIRE(date_s.size() == ndays * nh.size());
-    REQUIRE(date_j.size() == ndays * nh.size() * model.get_n_states());
+    REQUIRE(date_j.size() == ndays * nh.size() * model.get_n_statuses());
     for (size_t d = 0u; d < ndays; ++d)
     {
         int total = 0;
         for (size_t s = 0u; s < nh.size(); ++s)
         {
             int by_stage = 0;
-            for (size_t st = 0u; st < model.get_n_states(); ++st)
+            for (size_t st = 0u; st < model.get_n_statuses(); ++st)
                 by_stage += counts_j[
-                    (d * nh.size() + s) * model.get_n_states() + st
+                    (d * nh.size() + s) * model.get_n_statuses() + st
                 ];
             REQUIRE(by_stage == counts_s[d * nh.size() + s]);
             total += by_stage;
         }
         REQUIRE(total == static_cast< int >(n));
 
-        for (size_t st = 0u; st < model.get_n_states(); ++st)
+        for (size_t st = 0u; st < model.get_n_statuses(); ++st)
         {
             int by_status = 0;
             for (size_t s = 0u; s < nh.size(); ++s)
                 by_status += counts_j[
-                    (d * nh.size() + s) * model.get_n_states() + st
+                    (d * nh.size() + s) * model.get_n_statuses() + st
                 ];
-            REQUIRE(by_status == counts_t[d * model.get_n_states() + st]);
+            REQUIRE(by_status == counts_t[d * model.get_n_statuses() + st]);
         }
     }
 

@@ -90,39 +90,40 @@ EPIWORLD_TEST_CASE(
 
     // Transition to Infected
     using MQ = epimodels::ModelSEIRQuarantine<>;
+    // The state of a status and a stage
+    #define S(status, stage) model.state_with(0u, MQ::status, 0u, MQ::stage)
     #define mat(i, j) avg_transitions[j * model.get_n_states() + i]
 
     std::cout << "Transition to infected (exposed): " <<
-        mat(MQ::EXPOSED, MQ::INFECTED) + mat(MQ::EXPOSED, MQ::ISOLATED) << " (expected: " << 
+        mat(S(FREE, EXPOSED), S(FREE, INFECTED)) + mat(S(FREE, EXPOSED), S(ISOLATED, INFECTED)) << " (expected: " << 
         1.0/model("Latent period") << ")" << std::endl;
 
     // Transition to recovered
     std::cout << "Transition to recovered (infected): " <<
-        mat(MQ::INFECTED, MQ::ISOLATED_RECOVERED) + mat(MQ::INFECTED, MQ::RECOVERED) << " (expected: " << 
+        mat(S(FREE, INFECTED), S(ISOLATED, RECOVERED)) + mat(S(FREE, INFECTED), S(FREE, RECOVERED)) << " (expected: " << 
         model("Recovery rate") << ")" << std::endl;
 
     // Transition to isolated (detected agents go to Isolated, Isolated
     // Recovered, or Detected Hospitalized; undetected ones to Hospitalized)
     std::cout << "Transition to detected (infected): " <<
-        mat(MQ::INFECTED, MQ::ISOLATED) + mat(MQ::INFECTED, MQ::ISOLATED_RECOVERED) +
-        mat(MQ::INFECTED, MQ::HOSPITALIZED) +
-            mat(MQ::INFECTED, MQ::DETECTED_HOSPITALIZED) << " (expected: " << 
+        mat(S(FREE, INFECTED), S(ISOLATED, INFECTED)) + mat(S(FREE, INFECTED), S(ISOLATED, RECOVERED)) +
+        mat(S(FREE, INFECTED), S(HOSPITALIZED, INFECTED)) << " (expected: " << 
         1.0/model("Detection delay") + (1.0 - 1.0/model("Detection delay")) * model("Hospitalization rate") << ")" << std::endl;
 
     // Transition to infected (from quarantined exposed)
     std::cout << "Transition to q. infected (q. exposed): " <<
-        mat(MQ::QUARANTINED_EXPOSED, MQ::INFECTED) + mat(MQ::QUARANTINED_EXPOSED, MQ::ISOLATED) << " (expected: " << 
+        mat(S(QUARANTINED, EXPOSED), S(FREE, INFECTED)) + mat(S(QUARANTINED, EXPOSED), S(ISOLATED, INFECTED)) << " (expected: " << 
         1.0/model("Latent period") << ")" << std::endl;
 
     // Transition to infected
     REQUIRE_FALSE(
-        moreless(mat(MQ::EXPOSED, MQ::INFECTED) + mat(MQ::EXPOSED, MQ::ISOLATED), 1.0/model("Latent period"), 0.05)
+        moreless(mat(S(FREE, EXPOSED), S(FREE, INFECTED)) + mat(S(FREE, EXPOSED), S(ISOLATED, INFECTED)), 1.0/model("Latent period"), 0.05)
     );
 
     // Transition to recovered
     REQUIRE_FALSE(
         moreless(
-            mat(MQ::INFECTED, MQ::ISOLATED_RECOVERED) + mat(MQ::INFECTED, MQ::RECOVERED),
+            mat(S(FREE, INFECTED), S(ISOLATED, RECOVERED)) + mat(S(FREE, INFECTED), S(FREE, RECOVERED)),
             model("Recovery rate"), 0.05
         )
     );
@@ -130,9 +131,8 @@ EPIWORLD_TEST_CASE(
     // Transition to detected (from infected)
     REQUIRE_FALSE(
         moreless(
-            mat(MQ::INFECTED, MQ::ISOLATED) + mat(MQ::INFECTED, MQ::ISOLATED_RECOVERED) +
-            mat(MQ::INFECTED, MQ::HOSPITALIZED) +
-            mat(MQ::INFECTED, MQ::DETECTED_HOSPITALIZED),
+            mat(S(FREE, INFECTED), S(ISOLATED, INFECTED)) + mat(S(FREE, INFECTED), S(ISOLATED, RECOVERED)) +
+            mat(S(FREE, INFECTED), S(HOSPITALIZED, INFECTED)),
             1.0/model("Detection delay") +
             (1.0 - 1.0/model("Detection delay")) * model("Hospitalization rate") +
             // The quarantine process moves agents to isolation
@@ -145,12 +145,13 @@ EPIWORLD_TEST_CASE(
     // Transition to infected (from quarantined exposed)
     REQUIRE_FALSE(
         moreless(
-            mat(MQ::QUARANTINED_EXPOSED, MQ::INFECTED) + mat(MQ::QUARANTINED_EXPOSED, MQ::ISOLATED),
+            mat(S(QUARANTINED, EXPOSED), S(FREE, INFECTED)) + mat(S(QUARANTINED, EXPOSED), S(ISOLATED, INFECTED)),
             1.0/model("Latent period"), 0.05
         )
     );
     
     #undef mat
+    #undef S
 
 
 }

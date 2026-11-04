@@ -28,7 +28,9 @@ MS make_measles_model(int n_seeds, bool with_pep)
         7.0,     // Hospitalization duration
         0.1,     // Proportion vaccinated
         21u,     // Quarantine period
-        1.0,     // Quarantine willingness
+        0.5,     // Quarantine willingness (half: the others keep spreading;
+                 // with everyone quarantined at the first detection, PEP
+                 // has nothing left to prevent)
         4u       // Isolation period
     );
 
@@ -45,12 +47,12 @@ MS make_measles_model(int n_seeds, bool with_pep)
             300.0,     // PEP MMR window
             300.0,     // PEP IG window
             {
-                MS::QUARANTINED_LATENT,
-                MS::QUARANTINED_SUSCEPTIBLE,
-                MS::QUARANTINED_PRODROMAL
+                MS::state(MS::QUARANTINED, MS::LATENT),
+                MS::state(MS::QUARANTINED, MS::SUSCEPTIBLE),
+                MS::state(MS::QUARANTINED, MS::PRODROMAL)
             },
-            {MS::RECOVERED, MS::SUSCEPTIBLE, MS::RECOVERED},
-            {MS::LATENT, MS::SUSCEPTIBLE, MS::PRODROMAL}
+            {MS::state(MS::FREE, MS::RECOVERED), MS::state(MS::FREE, MS::SUSCEPTIBLE), MS::state(MS::FREE, MS::RECOVERED)},
+            {MS::state(MS::FREE, MS::LATENT), MS::state(MS::FREE, MS::SUSCEPTIBLE), MS::state(MS::FREE, MS::PRODROMAL)}
         );
 
         model.add_globalevent(pep);

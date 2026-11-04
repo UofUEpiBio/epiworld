@@ -38,7 +38,7 @@ EPIWORLD_TEST_CASE(
     {
         model.run(150, seed);
         // Everyone is free again, and the 50 cases recovered
-        REQUIRE(model.get_db().get_today_total("Free") == static_cast< int >(n));
+        REQUIRE(model.get_db().get_today_status("Free") == static_cast< int >(n));
         REQUIRE(model.get_db().get_today_stage(0u, "Recovered") == 50);
     }
 

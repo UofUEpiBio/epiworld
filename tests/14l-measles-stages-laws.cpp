@@ -43,8 +43,8 @@ EPIWORLD_TEST_CASE(
     model.verbose_off();
     model.run(60, 2231);
 
-    auto latent = transitions_by_day(model, "Latent", "Prodromal");
-    auto recovered = transitions_by_day(model, "Rash", "Recovered");
+    auto latent = stage_transitions_by_day(model, "Latent", "Prodromal");
+    auto recovered = stage_transitions_by_day(model, "Rash", "Recovered");
 
     auto pmf_latent = measles_stage_pmf(incubation, incubation_sd);
     auto pmf_rash   = measles_stage_pmf(rash, rash_sd);

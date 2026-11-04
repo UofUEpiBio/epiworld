@@ -84,8 +84,15 @@ inline TestResults test_model_builder_20d(
     std::vector< double > final_sizes = test_compute_final_sizes(
         final_distribution,
         {
-            measles::ModelMeaslesMixingRiskQuarantine<>::SUSCEPTIBLE,
-            measles::ModelMeaslesMixingRiskQuarantine<>::QUARANTINED_SUSCEPTIBLE
+            // Susceptible, free or quarantined
+            measles::ModelMeaslesMixingRiskQuarantine<>::state(
+                measles::ModelMeaslesMixingRiskQuarantine<>::FREE,
+                measles::ModelMeaslesMixingRiskQuarantine<>::SUSCEPTIBLE
+            ),
+            measles::ModelMeaslesMixingRiskQuarantine<>::state(
+                measles::ModelMeaslesMixingRiskQuarantine<>::QUARANTINED,
+                measles::ModelMeaslesMixingRiskQuarantine<>::SUSCEPTIBLE
+            )
         },
         nsims,
         true

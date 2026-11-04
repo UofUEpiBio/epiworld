@@ -88,27 +88,29 @@ EPIWORLD_TEST_CASE(
 
     // Transition to Infected
     using MQ = epimodels::ModelSEIRQuarantine<>;
+    // The state of a status and a stage
+    #define S(status, stage) model.state_with(0u, MQ::status, 0u, MQ::stage)
     #define mat(i, j) avg_transitions[j * model.get_n_states() + i]
     // Detected or not, a hospitalization
-    #define hosp(i) (mat(i, MQ::HOSPITALIZED) + mat(i, MQ::DETECTED_HOSPITALIZED))
+    #define hosp(i) mat(i, S(HOSPITALIZED, INFECTED))
 
     std::cout << "Transition to infected: " <<
-        mat(MQ::EXPOSED, MQ::INFECTED) << " (expected: " << 
+        mat(S(FREE, EXPOSED), S(FREE, INFECTED)) << " (expected: " << 
         1.0/model("Latent period") << ")" << std::endl;
 
     // Transition to recovered
     std::cout << "Transition to recovered: " <<
-        mat(MQ::INFECTED, MQ::RECOVERED) << " (expected: " << 
+        mat(S(FREE, INFECTED), S(FREE, RECOVERED)) << " (expected: " << 
         model("Recovery rate") << ")" << std::endl;
 
     // Transition to hospitalized
     std::cout << "Transition to hospitalized: " <<
-        hosp(MQ::INFECTED) << " (expected: " << 
+        hosp(S(FREE, INFECTED)) << " (expected: " << 
         model("Hospitalization rate") << ")" << std::endl;
 
     // Transition from hospitalized
     std::cout << "Transition from hospitalized: " <<
-        mat(MQ::HOSPITALIZED, MQ::RECOVERED) << " (expected: " << 
+        mat(S(HOSPITALIZED, INFECTED), S(FREE, RECOVERED)) << " (expected: " << 
         (1.0 / model("Hospitalization period")) << ")" << std::endl;
 
     // R0
@@ -116,25 +118,26 @@ EPIWORLD_TEST_CASE(
 
     // Transition to infected
     REQUIRE_FALSE(
-        moreless(mat(MQ::EXPOSED, MQ::INFECTED), 1.0/model("Latent period"), 0.05)
+        moreless(mat(S(FREE, EXPOSED), S(FREE, INFECTED)), 1.0/model("Latent period"), 0.05)
     );
 
     // Transition to recovered
     REQUIRE_FALSE(
-        moreless(mat(MQ::INFECTED, MQ::RECOVERED), model("Recovery rate"), 0.05)
+        moreless(mat(S(FREE, INFECTED), S(FREE, RECOVERED)), model("Recovery rate"), 0.05)
     );
 
     // Transition to hospitalized
     REQUIRE_FALSE(
-        moreless(hosp(MQ::INFECTED), model("Hospitalization rate"), 0.05)
+        moreless(hosp(S(FREE, INFECTED)), model("Hospitalization rate"), 0.05)
     );
 
     // Transition from hospitalized
     REQUIRE_FALSE(
-        moreless(mat(MQ::HOSPITALIZED, MQ::RECOVERED), 1.0 / model("Hospitalization period"), 0.05)
+        moreless(mat(S(HOSPITALIZED, INFECTED), S(FREE, RECOVERED)), 1.0 / model("Hospitalization period"), 0.05)
     );
     
     #undef mat
+    #undef S
     #undef hosp
 
 

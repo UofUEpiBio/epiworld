@@ -30,6 +30,7 @@ inline int NaturalHistory<TSeq>::add_stage(
     funs.push_back(std::move(fun));
     durations.push_back(nullptr);
     next_stage.push_back(-1);
+    infectious.push_back(false);
 
     return static_cast< int >(labels.size()) - 1;
 
@@ -47,10 +48,17 @@ inline void NaturalHistory<TSeq>::set_duration(
 }
 
 template<typename TSeq>
-inline void NaturalHistory<TSeq>::set_infection(int start, int end)
+inline void NaturalHistory<TSeq>::set_infection(int start, int end, int death)
 {
     infection_stage = check_stage(start);
     recovery_stage  = check_stage(end);
+    death_stage     = (death < 0) ? -1 : check_stage(death);
+}
+
+template<typename TSeq>
+inline void NaturalHistory<TSeq>::set_infectious(int s, bool is_infectious)
+{
+    infectious[check_stage(s)] = is_infectious;
 }
 
 template<typename TSeq>
@@ -76,11 +84,9 @@ inline void NaturalHistory<TSeq>::reset(size_t n)
             "recovery stages with set_infection()."
         );
 
-    stage.assign(n, 0);
     episode.assign(n, 0);
     until.assign(n, -1);
     entry.assign(n * labels.size(), -1);
-    recorded.assign(n, 0);
 
 }
 
@@ -93,7 +99,6 @@ inline void NaturalHistory<TSeq>::enter(
 {
 
     const size_t id = static_cast< size_t >(p.get_id());
-    stage[id] = s;
     entry[id * labels.size() + static_cast< size_t >(s)] = m.today();
     until[id] = durations[s] ?
         m.today() + std::max(1, durations[s](&p, &m)) : -1;
@@ -103,6 +108,7 @@ inline void NaturalHistory<TSeq>::enter(
 template<typename TSeq>
 inline void NaturalHistory<TSeq>::start_episode(
     Agent<TSeq> & p,
+    int s,
     Model<TSeq> & m
 )
 {
@@ -110,19 +116,25 @@ inline void NaturalHistory<TSeq>::start_episode(
     const size_t id = static_cast< size_t >(p.get_id());
     episode[id]++;
     std::fill_n(entry.begin() + id * labels.size(), labels.size(), -1);
-    enter(p, infection_stage, m);
+    enter(p, s, m);
 
+}
+
+template<typename TSeq>
+inline bool NaturalHistory<TSeq>::has_update(int s) const
+{
+    return funs[s] || (durations[s] && (next_stage[s] >= 0));
 }
 
 template<typename TSeq>
 inline void NaturalHistory<TSeq>::update(
     Agent<TSeq> & p,
     Model<TSeq> & m,
-    size_t k
-)
+    size_t k,
+    int s
+) const
 {
 
-    const int s = stage[static_cast< size_t >(p.get_id())];
     if (funs[s])
     {
         funs[s](&p, &m);
@@ -143,12 +155,6 @@ inline void NaturalHistory<TSeq>::update(
     else
         p.change_stage(m, next, k);
 
-}
-
-template<typename TSeq>
-inline int NaturalHistory<TSeq>::get_stage(const Agent<TSeq> & p) const
-{
-    return stage[static_cast< size_t >(p.get_id())];
 }
 
 template<typename TSeq>

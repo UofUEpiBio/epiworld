@@ -337,4 +337,68 @@ inline std::function<void(Model<TSeq>*)> create_init_function_seird(
 }
 
 
+/**
+ * @brief Initial stages for models with a natural history.
+ *
+ * @details Moves some of the initial cases (agents with a virus, in the
+ * infection stage) to `case_stage`, and some of the other agents (in the
+ * first stage) to `other_stage`, in natural history 0. Every agent starts
+ * in the model's first status.
+ *
+ * @param proportions_ Two values in [0, 1]: the share of the initial cases
+ * moved to `case_stage`, and the share of the other agents moved to
+ * `other_stage`.
+ * @param case_stage,other_stage The stages to move them to.
+ */
+template<typename TSeq>
+inline std::function<void(Model<TSeq>*)> create_init_function_stages(
+    std::vector< double > proportions_,
+    int case_stage,
+    int other_stage
+) {
+
+    if (proportions_.size() != 2u)
+        throw std::invalid_argument("-proportions_- must have two entries.");
+
+    for (auto & v : proportions_)
+        if ((v < 0.0) || (v > 1.0))
+            throw std::invalid_argument(
+                "-proportions_- must have values between 0 and 1."
+            );
+
+    return [proportions_, case_stage, other_stage](Model<TSeq> * model) -> void {
+
+        const auto & nh = model->get_natural_history(0u);
+        double n = static_cast< double >(model->size());
+        double tot = 0.0;
+        for (const auto & agent : model->get_agents())
+            if (agent.get_virus() != nullptr)
+                tot += 1.0;
+        tot /= n;
+
+        size_t ncases  = static_cast< size_t >(proportions_[0u] * tot * n);
+        size_t nothers = static_cast< size_t >(proportions_[1u] * (1.0 - tot) * n);
+
+        // The states of the agents to move: first status, the first stage or
+        // the infection stage
+        auto in_stage = [model](int s) {
+            return static_cast< size_t >(model->state_with(0u, 0, 0u, s));
+        };
+
+        AgentsSample< TSeq > others(*model, nothers, {in_stage(0)}, true);
+        for (auto & agent : others)
+            agent->change_stage(*model, other_stage);
+
+        AgentsSample< TSeq > cases(
+            *model, ncases, {in_stage(nh.get_infection_stage())}, true
+        );
+        for (auto & agent : cases)
+            agent->change_stage(*model, case_stage);
+
+        model->events_run();
+
+    };
+
+}
+
 #endif

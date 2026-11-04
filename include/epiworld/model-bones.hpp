@@ -171,6 +171,16 @@ protected:
     std::vector< NaturalHistory<TSeq> > natural_histories = {}; ///< See NaturalHistory
     StageHookFun<TSeq> stage_hook = nullptr;                    ///< See set_stage_hook()
 
+    /// @name Statuses (add_state()); the states are built from them
+    ///@{
+    std::vector< UpdateFun<TSeq> > status_fun = {};
+    std::vector< std::string >     status_labels = {};
+    size_t nstatus = 1u;                 ///< Statuses in the states (at least one)
+    std::vector< size_t > stage_place;   ///< state = status + sum(stage_k * stage_place[k])
+    bool update_everyone = false;        ///< See states_build()
+    void states_build();
+    ///@}
+
     /** Function to distribute states. Goes along with the function  */
     std::function<void(Model<TSeq>*)> initial_states_fun = [](Model<TSeq> * /**/)
     -> void {};
@@ -412,14 +422,10 @@ protected:
     void _event_rm_virus(Event<TSeq> & a);
     void _event_rm_tool(Event<TSeq> & a);
     void _event_change_state(Event<TSeq> & a);
-    void _event_change_stage(Event<TSeq> & a);
     ///@}
 
     /// Schedules a move of the agent to stage `to` of natural history `k`.
     void _add_stage_event(Agent<TSeq> * agent_, size_t k, int to);
-
-    /// Runs the agent's stage updates, then its state (status) update.
-    void update_agent(Agent<TSeq> & p);
 
     /**
      * @name Tool Mixers
@@ -742,14 +748,31 @@ public:
     ///@}
 
     /**
-     * @name Natural histories
+     * @name Natural histories, statuses and states
      *
-     * @details The model's states are the agents' *statuses* (where an agent
-     * is: free, quarantined, isolated...). A natural history describes what a
-     * disease does, with a stage for every agent (see `NaturalHistory`).
-     * Viruses follow one (`Virus::set_natural_history()`). A model with
-     * natural histories updates every agent each step: first the stage's
-     * update function, then the state's.
+     * @details `add_state()` adds a *status* (where an agent is: free,
+     * quarantined, isolated...). A natural history describes what a disease
+     * does, with a stage for every agent (see `NaturalHistory`). Viruses
+     * follow one (`Virus::set_natural_history()`).
+     *
+     * The model's **states** are built from both: each state is a status
+     * and a stage in each natural history. Without natural histories, the
+     * states are the statuses. With one status, they are the stages (so an
+     * SIR model's states are Susceptible, Infected and Recovered). With
+     * several statuses and stages, a state is labeled "Status Stage"
+     * (e.g., "Quarantined Latent"). The state's update runs the stage's update
+     * function, then the status's. Models never write these pairs: they
+     * change an agent's status (`Agent::change_status()`) or its stage
+     * (`Agent::change_stage()`), and read both back.
+     *
+     * The database records states, so their histories and transitions hold
+     * the joint counts. `DataBase::get_hist_status()`,
+     * `DataBase::get_hist_stage()` and the like add them up by status or by
+     * stage.
+     *
+     * A model with several statuses, or with stage durations, updates every
+     * agent each step (no queue): an agent's status and stage can change far
+     * from any carrier.
      *
      * `set_stage_hook()` sets a function called each time an agent's stage
      * changes, right after the change is applied (so it sees the new stage),
@@ -767,6 +790,26 @@ public:
     const NaturalHistory<TSeq> & get_natural_history(size_t k = 0u) const;
     size_t get_n_natural_histories() const noexcept;
     void set_stage_hook(StageHookFun<TSeq> fun);
+
+    const std::vector< std::string > & get_statuses() const; ///< As added with add_state()
+    size_t get_n_statuses() const noexcept;
+
+    /// Whether agents in this state are out of the contacts
+    /// (`set_excluded_states()`; ready once a run starts).
+    bool is_excluded_state(epiworld_fast_uint state) const
+    {
+        return !state_excluded.empty() && state_excluded[state];
+    }
+    int status_of(std::string_view name) const;              ///< Index of a status
+
+    /// The status of a state.
+    int get_status_of(epiworld_fast_uint state) const;
+    /// The stage of a state in natural history `k`.
+    int get_stage_of(epiworld_fast_uint state, size_t k = 0u) const;
+    /// The state with this status and these stages (-1: keep the one of `state`).
+    epiworld_fast_uint state_with(
+        epiworld_fast_uint state, int status, size_t k = 0u, int stage = -1
+    ) const;
     ///@}
 
     /**

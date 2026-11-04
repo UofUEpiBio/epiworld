@@ -69,7 +69,7 @@ EPIWORLD_TEST_CASE(
 
     auto statuses_on = [&](const Model<> & m, const std::string & from,
         const std::string & to, int day) {
-        return all_on(transitions_by_day(m, from, to), day);
+        return all_on(status_transitions_by_day(m, from, to), day);
     };
 
     // (a) The course of the disease ------------------------------------------
@@ -78,7 +78,7 @@ EPIWORLD_TEST_CASE(
     REQUIRE(stages_on(*model, "Latent", "Prodromal", 5));
     REQUIRE(stages_on(*model, "Prodromal", "Rash", 8));
     REQUIRE(stages_on(*model, "Rash", "Recovered", 10));
-    REQUIRE(model->get_db().get_today_total("Free") == static_cast< int >(n));
+    REQUIRE(model->get_db().get_today_status("Free") == static_cast< int >(n));
 
     // (b) Quarantine does not change it. Quarantining every agent on day 2
     // (latent): the stages change on the same days. The quarantined agents
@@ -87,7 +87,7 @@ EPIWORLD_TEST_CASE(
     model->add_globalevent(
         [](Model<> * m) -> void {
             for (auto & agent : m->get_agents())
-                agent.change_state(*m, M::QUARANTINED);
+                agent.change_status(*m, M::QUARANTINED);
         },
         "Quarantine everyone",
         2

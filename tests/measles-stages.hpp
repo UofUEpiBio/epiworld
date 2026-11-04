@@ -138,6 +138,32 @@ inline std::vector< int > stage_transitions_by_day(
 }
 
 /**
+ * Number of agents that moved from status `from` to status `to` on each day
+ * of the last run (entry `d` is day `d`).
+ */
+template<typename TSeq>
+inline std::vector< int > status_transitions_by_day(
+    const epiworld::Model<TSeq> & model,
+    const std::string & from,
+    const std::string & to
+) {
+
+    std::vector< std::string > status_from, status_to;
+    std::vector< int > date, counts;
+    model.get_db().get_hist_status_transition_matrix(
+        status_from, status_to, date, counts
+    );
+
+    std::vector< int > out(model.get_ndays() + 1, 0);
+    for (size_t i = 0u; i < date.size(); ++i)
+        if ((status_from[i] == from) && (status_to[i] == to))
+            out[date[i]] += counts[i];
+
+    return out;
+
+}
+
+/**
  * Pooled daily rates of a model with statuses and stages, over many runs.
  *
  * Each run adds its stage and status transitions, and the agent-days spent
@@ -159,12 +185,12 @@ struct StatusStageRates {
         return [this](size_t n, epiworld::Model<> * m) -> void {
             const auto & db = m->get_db();
             stage[n]  = db.get_stage_transition_probability(0u, false);
-            status[n] = db.get_transition_probability(false, false);
+            status[n] = db.get_status_transition_probability(false);
 
             std::vector< int > date, counts;
             std::vector< std::string > st, sg;
             db.get_hist_joint(0u, date, st, sg, counts);
-            const size_t cells = m->get_n_states() *
+            const size_t cells = m->get_n_statuses() *
                 m->get_natural_history(0u).size();
             occupancy[n].assign(cells, 0.0);
             for (size_t i = 0u; i + cells < counts.size(); ++i)
@@ -174,7 +200,7 @@ struct StatusStageRates {
 
     /// Adds up the runs. Call once, after `run_multiple()`.
     void pool(const epiworld::Model<> & m) {
-        nstatus = m.get_n_states();
+        nstatus = m.get_n_statuses();
         nstages = m.get_natural_history(0u).size();
         for (auto * v : {&stage, &status, &occupancy})
         {

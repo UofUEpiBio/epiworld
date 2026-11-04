@@ -85,15 +85,15 @@ private:
 
     std::vector< int > transition_matrix;
 
-    /// What a natural history's stages looked like at each record
-    struct StageHistory {
-        std::vector< int > date;
-        std::vector< int > counts;      ///< nstages per record
-        std::vector< int > transitions; ///< nstages^2 per record (from + to * nstages)
-        std::vector< int > joint;       ///< nstates * nstages per record (state + stage * nstates)
-    };
-    std::vector< StageHistory > stage_hist; ///< One per natural history
-    void record_stages();
+    /// The states' history added up into groups (statuses or stages): per
+    /// record, `ngroups` counts and `ngroups^2` transitions.
+    void hist_grouped(
+        const std::function< size_t(epiworld_fast_uint) > & group,
+        size_t ngroups,
+        std::vector< int > * date,
+        std::vector< int > * counts,
+        std::vector< int > * transitions
+    ) const;
 
     UserData<TSeq> user_data;
 
@@ -347,24 +347,32 @@ public:
     ) const;
 
     /**
-     * @name Stages of the natural histories
+     * @name Statuses and stages
      *
-     * @details Recorded at the same times as the states, by a scan of the
-     * agents (see `NaturalHistory`). For natural history `k`:
-     * - `get_hist_stage()`: the number of agents in each stage, in long
-     *   format (date, stage, count).
-     * - `get_hist_joint()`: the number of agents in each pair of state
-     *   (status) and stage.
-     * - `get_stage_transition_probability()`: like
-     *   `get_transition_probability()`, from the stage at one record to the
-     *   stage at the next one (the diagonal counts the agents who stayed),
-     *   added over the run. Element `i + j * nstages` is the transition from
-     *   stage `i` to stage `j`.
-     * - `get_hist_stage_transition_matrix()`: the transitions at each
-     *   record (from the previous record), in long format.
-     * - `get_today_stage()`: the counts at the last record.
+     * @details With natural histories, a state is a status and a stage in
+     * each natural history (see `Model::add_natural_history()`), so the
+     * histories of the states hold the joint counts. These add them up:
+     * - `get_hist_status()`, `get_hist_stage()`: the number of agents in each
+     *   status, or in each stage of natural history `k`, in long format
+     *   (date, label, count).
+     * - `get_hist_joint()`: the number of agents in each pair of status and
+     *   stage of natural history `k`.
+     * - `*_transition_matrix()`: the transitions at each record, in long
+     *   format (zeros skipped), like `get_hist_transition_matrix()`.
+     * - `*_transition_probability()`: like `get_transition_probability()`.
+     *   Element `i + j * n` is the transition from `i` to `j`; a change of
+     *   stage within a status counts on the status's diagonal.
+     * - `get_today_status()`, `get_today_stage()`: the counts now.
+     *
+     * Without natural histories, the statuses are the states.
      */
     ///@{
+    void get_hist_status(
+        std::vector< int > & date,
+        std::vector< std::string > & status,
+        std::vector< int > & counts
+    ) const;
+
     void get_hist_stage(
         size_t k,
         std::vector< int > & date,
@@ -375,12 +383,18 @@ public:
     void get_hist_joint(
         size_t k,
         std::vector< int > & date,
-        std::vector< std::string > & state,
+        std::vector< std::string > & status,
         std::vector< std::string > & stage,
         std::vector< int > & counts
     ) const;
 
-    /// Stage transitions at each record, in long format (zeros skipped).
+    void get_hist_status_transition_matrix(
+        std::vector< std::string > & status_from,
+        std::vector< std::string > & status_to,
+        std::vector< int > & date,
+        std::vector< int > & counts
+    ) const;
+
     void get_hist_stage_transition_matrix(
         size_t k,
         std::vector< std::string > & stage_from,
@@ -389,11 +403,16 @@ public:
         std::vector< int > & counts
     ) const;
 
+    std::vector< epiworld_double > get_status_transition_probability(
+        bool normalize = true
+    ) const;
+
     std::vector< epiworld_double > get_stage_transition_probability(
         size_t k,
         bool normalize = true
     ) const;
 
+    int get_today_status(std::string_view status) const;
     std::vector< int > get_today_stage(size_t k = 0u) const;
     int get_today_stage(size_t k, std::string_view stage) const;
     ///@}

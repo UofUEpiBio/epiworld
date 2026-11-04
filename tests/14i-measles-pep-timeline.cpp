@@ -67,9 +67,9 @@ measles::InterventionMeaslesPEP<> make_pep()
         1.0,       // PEP IG willingness (everyone willing)
         static_cast<double>(PEP_WINDOW),
         static_cast<double>(PEP_WINDOW),
-        {MS::SUSCEPTIBLE},
-        {MS::SUSCEPTIBLE},
-        {MS::SUSCEPTIBLE}
+        {MS::state(MS::FREE, MS::SUSCEPTIBLE)},
+        {MS::state(MS::FREE, MS::SUSCEPTIBLE)},
+        {MS::state(MS::FREE, MS::SUSCEPTIBLE)}
     );
 }
 

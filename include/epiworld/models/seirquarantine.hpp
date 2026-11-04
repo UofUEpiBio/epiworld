@@ -25,23 +25,31 @@
  * - Individual willingness to quarantine and to isolate (drawn once per agent
  *   and run).
  *
- * Only Infected agents transmit (`Model::set_infectious_states()`). Isolated,
- * quarantined and hospitalized agents are out of the mixing layers altogether
+ * Each agent has a **status** and a **stage** of the SEIR natural history
+ * (see `NaturalHistory`):
+ *
+ * | Statuses | Stages |
+ * |---|---|
+ * | Free         | Susceptible |
+ * | Quarantined  | Exposed (infected, not infectious) |
+ * | Isolated     | Infected (infectious) |
+ * | Hospitalized | Recovered |
+ *
+ * Only agents in the Infected stage transmit. Quarantined, isolated and
+ * hospitalized agents are out of the mixing layers altogether
  * (`Model::set_excluded_states()`): they are not met, and their group's
  * contacts go to the others.
  *
- * The model has 10 states:
- *
- * - Susceptible: Individuals who can become infected
- * - Exposed: Infected but not yet infectious (latent period)
- * - Infected: Infectious individuals in the community
- * - Isolated: Detected infected individuals in self-isolation
- * - Detected Hospitalized: Hospitalized individuals who were detected
- * - Quarantined Susceptible: Susceptible individuals in quarantine due to contact tracing
- * - Quarantined Exposed: Exposed individuals in quarantine due to contact tracing
- * - Isolated Recovered: Recovered individuals still in isolation
- * - Hospitalized: Individuals requiring hospital care
- * - Recovered: Individuals who have recovered and gained immunity
+ * - A free infected agent may be detected each day (which starts contact
+ *   tracing and, if willing, isolates it). Each day, free and isolated
+ *   infected agents recover or are hospitalized (one draw: the two compete).
+ * - Quarantine lasts "Quarantine period" days from the day the agent was
+ *   flagged; a quarantined agent who becomes infected (onset) is isolated,
+ *   unless its quarantine is over.
+ * - Isolation lasts "Isolation period" days from onset, also for agents who
+ *   recover in isolation.
+ * - Hospitalized agents are discharged, free and recovered, with daily
+ *   probability 1 / "Hospitalization period".
  *
  * **Implementation details:**
  * <a href="../impl/quarantine-isolation-and-contact-tracing.md">Quarantine, Isolation, and Contact Tracing</a>
@@ -54,36 +62,44 @@ class ModelSEIRQuarantine : public Model<TSeq>
 {
 private:
 
-    // Update functions
+    // Stages
     static void _update_exposed(Agent<TSeq> * p, Model<TSeq> * m);
     static void _update_infected(Agent<TSeq> * p, Model<TSeq> * m);
+
+    // Statuses
+    static void _update_quarantined(Agent<TSeq> * p, Model<TSeq> * m);
     static void _update_isolated(Agent<TSeq> * p, Model<TSeq> * m);
-    static void _update_quarantine_suscep(Agent<TSeq> * p, Model<TSeq> * m);
-    static void _update_quarantine_exposed(Agent<TSeq> * p, Model<TSeq> * m);
     static void _update_hospitalized(Agent<TSeq> * p, Model<TSeq> * m);
-    static void _update_isolated_recovered(Agent<TSeq> * p, Model<TSeq> * m);
+
+    static void _on_stage_change(
+        Agent<TSeq> * p, size_t k, int from, int to, Model<TSeq> * m
+    );
 
     // Data about the quarantine process
     std::vector< bool > quarantine_willingness; ///< Indicator
     std::vector< bool > isolation_willingness; ///< Indicator for isolation willingness
     std::vector< size_t > agent_quarantine_triggered; ///< Whether the quarantine process has started
-    std::vector< int > day_flagged; ///< Either detected or started quarantine
-    std::vector< int > day_onset; ///< Day of onset of the disease
+    std::vector< int > day_flagged; ///< Day the agent was quarantined or isolated
 
     static void _quarantine_process(Model<TSeq> * m);
 
 public:
 
-    static const int SUSCEPTIBLE             = 0;
-    static const int EXPOSED                 = 1;
-    static const int INFECTED                = 2;
-    static const int ISOLATED                = 3;
-    static const int DETECTED_HOSPITALIZED   = 4;
-    static const int QUARANTINED_SUSCEPTIBLE = 5;
-    static const int QUARANTINED_EXPOSED     = 6;
-    static const int ISOLATED_RECOVERED      = 7;
-    static const int HOSPITALIZED            = 8;
-    static const int RECOVERED               = 9;
+    /// @name Statuses (the model's states are statuses × stages)
+    ///@{
+    static constexpr int FREE         = 0;
+    static constexpr int QUARANTINED  = 1;
+    static constexpr int ISOLATED     = 2;
+    static constexpr int HOSPITALIZED = 3;
+    ///@}
+
+    /// @name Stages of the natural history (`get_natural_history(0)`)
+    ///@{
+    static constexpr int SUSCEPTIBLE = 0;
+    static constexpr int EXPOSED     = 1;
+    static constexpr int INFECTED    = 2;
+    static constexpr int RECOVERED   = 3;
+    ///@}
 
     static const size_t QUARANTINE_PROCESS_INACTIVE = 0u;
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
@@ -153,9 +169,10 @@ public:
     /**
      * @brief Set the initial states of the model
      * @param proportions_ Double vector with two elements:
-     * - [0]: The proportion of initially infected individuals who start in the exposed state.
-     * - [1]: The proportion of initially non-infected individuals who have recovered (immune).
-     * @param queue_ Optional vector for queuing specifications (default: empty).
+     * - [0]: The proportion of the initial cases who start infected (the
+     *   rest start exposed).
+     * - [1]: The proportion of the other agents who start recovered (immune).
+     * @param queue_ Ignored.
      */
     ModelSEIRQuarantine<TSeq> & initial_states(
         std::vector< double > proportions_,
@@ -218,9 +235,9 @@ inline void ModelSEIRQuarantine<TSeq>::reset()
 
     agent_quarantine_triggered.assign(this->size(), 0u);
     day_flagged.assign(this->size(), 0);
-    day_onset.assign(this->size(), 0);
 
     return;
+
 }
 
 template<typename TSeq>
@@ -230,268 +247,134 @@ inline std::unique_ptr<Model<TSeq>> ModelSEIRQuarantine<TSeq>::clone_ptr()
 }
 
 // -----------------------------------------------------------------------
-// Exposed: incubation -> infected transition
+// Stages
 // -----------------------------------------------------------------------
 template<typename TSeq>
 inline void ModelSEIRQuarantine<TSeq>::_update_exposed(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto & v = p->get_virus();
+    // Onset (the day is the natural history's entry into Infected)
+    if (m->runif() < 1.0/(p->get_virus()->get_incubation(m)))
+        p->change_stage(*m, INFECTED);
 
-    if (m->runif() < 1.0/(v->get_incubation(m)))
-    {
-        p->change_state(*m, ModelSEIRQuarantine<TSeq>::INFECTED);
-
-        auto * model = model_cast<ModelSEIRQuarantine<TSeq>, TSeq>(m);
-        model->day_onset[p->get_id()] = m->today();
-    }
-
-    return;
 };
 
-// -----------------------------------------------------------------------
-// Infected: detection, isolation, hospitalization, recovery
-// -----------------------------------------------------------------------
 template<typename TSeq>
 inline void ModelSEIRQuarantine<TSeq>::_update_infected(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
+    // In hospital, agents recover at discharge
+    const int status = p->get_status(*m);
+    if (status == HOSPITALIZED)
+        return;
+
     auto * model = model_cast<ModelSEIRQuarantine<TSeq>, TSeq>(m);
 
-    // Sampling whether the agent is detected or not.
-    // A negative detection delay disables detection (never detected); 0
-    // detects at once.
-    epiworld_double detection_delay = EPI_PAR(m, "Detection delay");
-    bool detected = (detection_delay < 0.0) ?
-        false : ((detection_delay == 0.0) ?
-            true : (m->runif() < 1.0 / detection_delay));
-
-    // If detected, trigger the quarantine process
-    if (detected)
+    // Free agents may be detected. A negative detection delay disables
+    // detection (never detected); 0 detects at once. Detection starts
+    // contact tracing, and isolates the agent if willing.
+    bool isolate = false;
+    if (status == FREE)
     {
-        model->agent_quarantine_triggered[p->get_id()] =
-            ModelSEIRQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE;
+
+        epiworld_double detection_delay = EPI_PAR(m, "Detection delay");
+        bool detected = (detection_delay < 0.0) ?
+            false : ((detection_delay == 0.0) ?
+                true : (m->runif() < 1.0 / detection_delay));
+
+        if (detected)
+            model->agent_quarantine_triggered[p->get_id()] =
+                QUARANTINE_PROCESS_ACTIVE;
+
+        isolate = detected && (EPI_PAR(m, "Isolation period") >= 0) &&
+            model->isolation_willingness[p->get_id()];
+
+        if (isolate)
+            model->day_flagged[p->get_id()] = m->today();
+
     }
 
-    // Checking if the agent is willing to isolate individually
-    bool isolation_detected = (EPI_PAR(m, "Isolation period") >= 0) &&
-        detected &&
-        (model->isolation_willingness[p->get_id()]);
-
-    // Recording the date of detection
-    if (isolation_detected)
-        model->day_flagged[p->get_id()] = m->today();
-
-    // Computing probabilities for state change
+    // Recovery and hospitalization compete
     auto & v = p->get_virus();
     m->array_double_tmp[0] = 1.0 - (1.0 - v->get_prob_recovery(m)) *
         (1.0 - p->get_recovery_enhancer(v, *m));
     m->array_double_tmp[1] = EPI_PAR(m, "Hospitalization rate");
 
     auto which = m->sample_from_probs(2);
-
-    if (which == 0) // Recovers
-    {
-        if (isolation_detected)
-        {
-            p->change_state(*m,
-                ModelSEIRQuarantine<TSeq>::ISOLATED_RECOVERED
-            );
-        }
-        else
-        {
-            p->rm_virus(*m,
-                ModelSEIRQuarantine<TSeq>::RECOVERED
-            );
-        }
-        return;
-    }
-    else if (which == 1) // Hospitalized
+    if (which == 0)
+        p->rm_virus(*m);
+    else if (which == 1)
     {
         m->record_hospitalization(*p);
-        if (detected)
-        {
-            p->change_state(*m, DETECTED_HOSPITALIZED);
-        }
-        else
-        {
-            p->change_state(*m, HOSPITALIZED);
-        }
-    }
-    else if ((which == 2) && isolation_detected) // Nothing, but detected
-    {
-        p->change_state(*m, ISOLATED);
+        p->change_status(*m, HOSPITALIZED);
+        return;
     }
 
-    return;
+    if (isolate)
+        p->change_status(*m, ISOLATED);
+
 };
 
 // -----------------------------------------------------------------------
-// Isolated: recovery, hospitalization, or release from isolation
+// Statuses
 // -----------------------------------------------------------------------
+template<typename TSeq>
+inline void ModelSEIRQuarantine<TSeq>::_update_quarantined(
+    Agent<TSeq> * p, Model<TSeq> * m
+) {
+
+    auto * model = model_cast<ModelSEIRQuarantine<TSeq>, TSeq>(m);
+    int days_since = m->today() - model->day_flagged[p->get_id()];
+    if (EPI_PAR(m, "Quarantine period") <= days_since)
+        p->change_status(*m, FREE);
+
+};
+
 template<typename TSeq>
 inline void ModelSEIRQuarantine<TSeq>::_update_isolated(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    auto * model = model_cast<ModelSEIRQuarantine<TSeq>, TSeq>(m);
-
-    int days_since = m->today() - model->day_onset[p->get_id()];
-
-    bool unisolate =
-        (EPI_PAR(m, "Isolation period") <= days_since) ?
-        true : false;
-
-    // Sampling from the probabilities of recovery
-    m->array_double_tmp[0] = 1.0 -
-        (1.0 - p->get_virus()->get_prob_recovery(m)) *
-        (1.0 - p->get_recovery_enhancer(p->get_virus(), *m));
-
-    // And hospitalization
-    m->array_double_tmp[1] = EPI_PAR(m, "Hospitalization rate");
-
-    auto which = m->sample_from_probs(2);
-
-    // Recovers
-    if (which == 0)
-    {
-        if (unisolate)
-        {
-            p->rm_virus(*m,
-                ModelSEIRQuarantine<TSeq>::RECOVERED
-            );
-        }
-        else
-            p->rm_virus(*m,
-                ModelSEIRQuarantine<TSeq>::ISOLATED_RECOVERED
-            );
-    }
-    else if (which == 1)
-    {
-        m->record_hospitalization(*p);
-        if (unisolate)
-        {
-            p->change_state(*m, HOSPITALIZED);
-        }
-        else
-        {
-            p->change_state(*m, DETECTED_HOSPITALIZED);
-        }
-    }
-    else if ((which == 2) && unisolate)
-    {
-        p->change_state(*m, INFECTED);
-    }
+    // Isolation lasts from onset, also for agents who recovered
+    int onset = m->get_natural_history().entered(*p, INFECTED);
+    if (EPI_PAR(m, "Isolation period") <= (m->today() - onset))
+        p->change_status(*m, FREE);
 
 };
 
-// -----------------------------------------------------------------------
-// Quarantined Susceptible: release when quarantine period is over
-// -----------------------------------------------------------------------
-template<typename TSeq>
-inline void ModelSEIRQuarantine<TSeq>::_update_quarantine_suscep(
-    Agent<TSeq> * p, Model<TSeq> * m
-) {
-
-    auto * model = model_cast<ModelSEIRQuarantine<TSeq>, TSeq>(m);
-
-    int days_since = m->today() - model->day_flagged[p->get_id()];
-
-    bool unquarantine =
-        (EPI_PAR(m, "Quarantine period") <= days_since) ?
-        true : false;
-
-    if (unquarantine)
-    {
-        p->change_state(*m,
-            ModelSEIRQuarantine<TSeq>::SUSCEPTIBLE
-        );
-    }
-
-};
-
-// -----------------------------------------------------------------------
-// Quarantined Exposed: incubation or release
-// -----------------------------------------------------------------------
-template<typename TSeq>
-inline void ModelSEIRQuarantine<TSeq>::_update_quarantine_exposed(
-    Agent<TSeq> * p, Model<TSeq> * m
-) {
-
-    auto * model = model_cast<ModelSEIRQuarantine<TSeq>, TSeq>(m);
-
-    int days_since = m->today() - model->day_flagged[p->get_id()];
-
-    bool unquarantine =
-        (EPI_PAR(m, "Quarantine period") <= days_since) ?
-        true : false;
-
-    if (m->runif() < 1.0/(p->get_virus()->get_incubation(m)))
-    {
-        // Recording the day of onset
-        model->day_onset[p->get_id()] = m->today();
-
-        if (unquarantine)
-        {
-            p->change_state(*m,
-                ModelSEIRQuarantine<TSeq>::INFECTED
-            );
-        }
-        else
-        {
-            p->change_state(*m,
-                ModelSEIRQuarantine<TSeq>::ISOLATED
-            );
-        }
-    }
-    else if (unquarantine)
-    {
-        p->change_state(*m,
-            ModelSEIRQuarantine<TSeq>::EXPOSED
-        );
-    }
-
-};
-
-// -----------------------------------------------------------------------
-// Isolated Recovered: release when isolation period ends
-// -----------------------------------------------------------------------
-template<typename TSeq>
-inline void ModelSEIRQuarantine<TSeq>::_update_isolated_recovered(
-    Agent<TSeq> * p, Model<TSeq> * m
-) {
-
-    auto * model = model_cast<ModelSEIRQuarantine<TSeq>, TSeq>(m);
-
-    int days_since = m->today() - model->day_onset[p->get_id()];
-
-    bool unisolate =
-        (EPI_PAR(m, "Isolation period") <= days_since) ?
-        true : false;
-
-    if (unisolate)
-    {
-        p->change_state(*m,
-            ModelSEIRQuarantine<TSeq>::RECOVERED
-        );
-    }
-
-};
-
-// -----------------------------------------------------------------------
-// Hospitalized: recovery after hospitalization period
-// -----------------------------------------------------------------------
 template<typename TSeq>
 inline void ModelSEIRQuarantine<TSeq>::_update_hospitalized(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
+    // Discharged free; agents still infected recover then
     if (m->runif() < 1.0/EPI_PAR(m, "Hospitalization period"))
-        p->rm_virus(*m, ModelSEIRQuarantine<TSeq>::RECOVERED);
+    {
+        p->change_status(*m, FREE);
+        if (p->get_virus() != nullptr)
+            p->rm_virus(*m);
+    }
 
 };
+
+template<typename TSeq>
+inline void ModelSEIRQuarantine<TSeq>::_on_stage_change(
+    Agent<TSeq> * p, size_t, int, int to, Model<TSeq> * m
+) {
+
+    // A quarantined agent with onset is isolated, unless its quarantine is
+    // over
+    if ((to != INFECTED) || (p->get_status(*m) != QUARANTINED))
+        return;
+
+    auto * model = model_cast<ModelSEIRQuarantine<TSeq>, TSeq>(m);
+    int days_since = m->today() - model->day_flagged[p->get_id()];
+    if (EPI_PAR(m, "Quarantine period") > days_since)
+        p->change_status(*m, ISOLATED);
+
+}
 
 // -----------------------------------------------------------------------
 // Quarantine process: trace contacts and quarantine them
@@ -508,7 +391,7 @@ inline void ModelSEIRQuarantine<TSeq>::_quarantine_process(
 
         if (
             model->agent_quarantine_triggered[agent_i] !=
-            ModelSEIRQuarantine<TSeq>::QUARANTINE_PROCESS_ACTIVE
+            QUARANTINE_PROCESS_ACTIVE
         )
             continue;
 
@@ -537,6 +420,7 @@ inline void ModelSEIRQuarantine<TSeq>::_quarantine_process(
 
             for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
             {
+
                 // Checking if we will detect the contact
                 if (m->runif() > success_rate)
                     continue;
@@ -550,49 +434,40 @@ inline void ModelSEIRQuarantine<TSeq>::_quarantine_process(
                     static_cast<double>(contact_date)) > days_prior)
                     continue;
 
+                // Only free agents who have not recovered
                 auto & agent = m->get_agent(contact_id);
-
-                if (agent.get_state() > INFECTED)
+                const int stage = agent.get_stage(*m);
+                if ((agent.get_status(*m) != FREE) || (stage == RECOVERED))
                     continue;
 
                 // Agents with some tool won't be quarantined
                 if (agent.get_n_tools() != 0u)
                     continue;
 
-                if (model->quarantine_willingness[contact_id])
-                {
-                    switch (agent.get_state())
-                    {
-                        case SUSCEPTIBLE:
-                            agent.change_state(*m, QUARANTINED_SUSCEPTIBLE);
-                            model->day_flagged[contact_id] = m->today();
-                            break;
-                        case EXPOSED:
-                            agent.change_state(*m, QUARANTINED_EXPOSED);
-                            model->day_flagged[contact_id] = m->today();
-                            break;
-                        case INFECTED:
-                            if (model->isolation_willingness[contact_id])
-                            {
-                                agent.change_state(*m, ISOLATED);
-                                model->day_flagged[contact_id] = m->today();
-                            }
-                            break;
-                        default:
-                            throw std::logic_error(
-                                "The agent is not in a state that can be quarantined."
-                            );
-                    }
-                }
+                if (!model->quarantine_willingness[contact_id])
+                    continue;
+
+                // Infected contacts are isolated instead, if willing
+                if (stage != INFECTED)
+                    agent.change_status(*m, QUARANTINED);
+                else if (model->isolation_willingness[contact_id])
+                    agent.change_status(*m, ISOLATED);
+                else
+                    continue;
+
+                model->day_flagged[contact_id] = m->today();
+
             }
 
         }
 
         // Setting the quarantine process off
         model->agent_quarantine_triggered[agent_i] = QUARANTINE_PROCESS_DONE;
+
     }
 
     return;
+
 }
 
 // -----------------------------------------------------------------------
@@ -639,33 +514,32 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
     this->add_param(contact_tracing_prob, "Contact tracing probability");
     this->add_param(contact_tracing_window, "Contact tracing window");
 
-    // States
-    this->add_state("Susceptible", default_update_susceptible<TSeq>);
-    this->add_state("Exposed", _update_exposed);
-    this->add_state("Infected", _update_infected);
+    // Statuses (free agents have no update: their stage's is enough)
+    this->add_state("Free");
+    this->add_state("Quarantined", _update_quarantined);
     this->add_state("Isolated", _update_isolated);
-    this->add_state("Detected Hospitalized", _update_hospitalized);
-    this->add_state("Quarantined Susceptible", _update_quarantine_suscep);
-    this->add_state("Quarantined Exposed", _update_quarantine_exposed);
-    this->add_state("Isolated Recovered", _update_isolated_recovered);
     this->add_state("Hospitalized", _update_hospitalized);
-    this->add_state("Recovered");
 
-    // Only infected agents transmit; isolated, quarantined and hospitalized
-    // ones are out of the mixing
-    this->set_infectious_states({INFECTED});
-    this->set_excluded_states({
-        ISOLATED, DETECTED_HOSPITALIZED, QUARANTINED_SUSCEPTIBLE,
-        QUARANTINED_EXPOSED, ISOLATED_RECOVERED, HOSPITALIZED
-    });
+    // The natural history; only infected agents transmit
+    NaturalHistory<TSeq> nh("SEIR");
+    nh.add_stage("Susceptible", default_update_susceptible<TSeq>);
+    nh.add_stage("Exposed", _update_exposed);
+    nh.add_stage("Infected", _update_infected);
+    nh.add_stage("Recovered");
+    nh.set_infection(EXPOSED, RECOVERED);
+    nh.set_infectious(INFECTED);
+    this->add_natural_history(nh);
+    this->set_stage_hook(_on_stage_change);
+
+    // Quarantined, isolated and hospitalized agents are out of the mixing
+    this->set_excluded_states({QUARANTINED, ISOLATED, HOSPITALIZED});
 
     // Global function (quarantine process runs before state updates)
     this->add_globalevent(_quarantine_process, "Quarantine process");
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(EXPOSED, RECOVERED, RECOVERED);
-
+    virus.set_natural_history(0);
     virus.set_prob_infecting("Transmission probability");
     virus.set_prob_recovery("Recovery rate");
     virus.set_incubation("Latent period");
@@ -686,8 +560,7 @@ inline ModelSEIRQuarantine<TSeq> & ModelSEIRQuarantine<TSeq>::initial_states(
 {
 
     Model<TSeq>::initial_states_fun =
-        create_init_function_seir<TSeq>(proportions_)
-        ;
+        create_init_function_stages<TSeq>(proportions_, INFECTED, RECOVERED);
 
     return *this;
 

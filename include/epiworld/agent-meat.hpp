@@ -338,9 +338,29 @@ inline void Agent<TSeq>::change_state(
 }
 
 template<typename TSeq>
+inline int Agent<TSeq>::get_status(const Model<TSeq> & model) const
+{
+    return model.get_status_of(state);
+}
+
+template<typename TSeq>
 inline int Agent<TSeq>::get_stage(const Model<TSeq> & model, size_t k) const
 {
-    return model.get_natural_history(k).get_stage(*this);
+    model.get_natural_history(k); // checks k
+    return model.get_stage_of(state, k);
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::change_status(
+    Model<TSeq> & model,
+    epiworld_fast_uint status,
+    epiworld_fast_int queue
+)
+{
+    model._add_event(
+        this, nullptr, nullptr, static_cast< epiworld_fast_int >(status),
+        queue, EventAction::ChangeStatus
+    );
 }
 
 template<typename TSeq>

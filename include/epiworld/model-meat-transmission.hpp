@@ -64,6 +64,59 @@ inline void Model<TSeq>::state_masks_build()
     };
 
     state_excluded.assign(ns, 0);
+    state_not_infectious.clear();
+
+    // With natural histories, excluded *statuses*, and the infectious stages
+    if (!natural_histories.empty())
+    {
+
+        std::vector< char > status_excluded(nstatus, 0);
+        for (int s : excluded_states)
+        {
+            if ((s < 0) || (static_cast< size_t >(s) >= nstatus))
+                throw std::range_error(
+                    "The excluded status " + std::to_string(s) +
+                    " is out of range (the model has " +
+                    std::to_string(nstatus) + " statuses)."
+                );
+            status_excluded[s] = 1;
+        }
+
+        bool any_infectious = false;
+        for (const auto & nh : natural_histories)
+            for (bool i : nh.infectious)
+                any_infectious = any_infectious || i;
+
+        if (!any_infectious && excluded_states.empty() && infectious_states.empty())
+            return;
+
+        // The infectious states, if given, are states (not stages)
+        std::vector< char > in_states(ns, infectious_states.empty());
+        for (int s : infectious_states)
+        {
+            check(s, "infectious");
+            in_states[s] = 1;
+        }
+
+        state_not_infectious.assign(ns, false);
+        for (size_t c = 0u; c < ns; ++c)
+        {
+            const auto cc = static_cast< epiworld_fast_uint >(c);
+            state_excluded[c] = status_excluded[get_status_of(cc)];
+
+            bool infectious = !any_infectious;
+            for (size_t k = 0u; k < natural_histories.size(); ++k)
+                infectious = infectious ||
+                    natural_histories[k].infectious[get_stage_of(cc, k)];
+
+            state_not_infectious[c] =
+                !infectious || !in_states[c] || state_excluded[c];
+        }
+
+        return;
+
+    }
+
     for (int s : excluded_states)
     {
         check(s, "excluded");
@@ -71,7 +124,6 @@ inline void Model<TSeq>::state_masks_build()
     }
 
     // An excluded agent does not transmit either
-    state_not_infectious.clear();
     if (infectious_states.empty() && excluded_states.empty())
         return;
 
@@ -232,10 +284,6 @@ inline bool Model<TSeq>::transmission_prepare()
     push_source_ok.assign(ns, 0);
 
     bool any = false;
-
-    // Models with natural histories update every agent (see update_state())
-    if (!natural_histories.empty())
-        return false;
 
     // Recognizing the samplers needs std::function::target(), i.e., RTTI.
     // Without it, every state keeps pulling.

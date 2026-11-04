@@ -95,8 +95,8 @@ private:
     static void _update_isolated(Agent<TSeq> * p, Model<TSeq> * m);
     static void _update_hospitalized(Agent<TSeq> * p, Model<TSeq> * m);
 
-    // Stages (Latent and Prodromal just last their drawn duration)
-    static void _update_rash(Agent<TSeq> * p, Model<TSeq> * m);
+    // (The stages have no update: they last their drawn duration, and the
+    // statuses decide what happens to agents with rash)
 
     static void _on_stage_change(
         Agent<TSeq> * p, size_t k, int from, int to, Model<TSeq> * m
@@ -117,20 +117,26 @@ public:
 
     /// @name Statuses (the model's states)
     ///@{
-    static const int FREE         = 0;
-    static const int QUARANTINED  = 1;
-    static const int ISOLATED     = 2;
-    static const int HOSPITALIZED = 3;
+    static constexpr int FREE         = 0;
+    static constexpr int QUARANTINED  = 1;
+    static constexpr int ISOLATED     = 2;
+    static constexpr int HOSPITALIZED = 3;
     ///@}
 
     /// @name Stages of the natural history (`get_natural_history(0)`)
     ///@{
-    static const int SUSCEPTIBLE = 0;
-    static const int LATENT      = 1;
-    static const int PRODROMAL   = 2;
-    static const int RASH        = 3;
-    static const int RECOVERED   = 4;
+    static constexpr int SUSCEPTIBLE = 0;
+    static constexpr int LATENT      = 1;
+    static constexpr int PRODROMAL   = 2;
+    static constexpr int RASH        = 3;
+    static constexpr int RECOVERED   = 4;
     ///@}
+
+    /// The model's state with this status and stage.
+    static constexpr epiworld_fast_uint state(int status, int stage)
+    {
+        return static_cast< epiworld_fast_uint >(status + 4 * stage);
+    }
 
     static const size_t QUARANTINE_PROCESS_INACTIVE = 0u;
     static const size_t QUARANTINE_PROCESS_ACTIVE   = 1u;
@@ -318,7 +324,7 @@ inline bool ModelMeaslesMixing<TSeq>::_hospitalize(
         return false;
 
     m->record_hospitalization(*p);
-    p->change_state(*m, HOSPITALIZED);
+    p->change_status(*m, HOSPITALIZED);
     return true;
 
 }
@@ -367,9 +373,17 @@ inline void ModelMeaslesMixing<TSeq>::_update_free(
             model->agent_quarantine_triggered[p->get_id()] =
                 QUARANTINE_PROCESS_ACTIVE;
 
-        if (!_hospitalize(p, m) && detected)
+        // Each day with rash, the agent may be hospitalized; otherwise, it
+        // recovers at the end of the rash period (in isolation, if detected)
+        if (_hospitalize(p, m))
+            return;
+
+        if (m->get_natural_history().due(*p, *m))
+            p->rm_virus(*m);
+
+        if (detected)
         {
-            p->change_state(*m, ISOLATED);
+            p->change_status(*m, ISOLATED);
             model->day_flagged[p->get_id()] = m->today();
         }
 
@@ -386,7 +400,7 @@ inline void ModelMeaslesMixing<TSeq>::_update_quarantined(
 
     int days_since = m->today() - model->day_flagged[p->get_id()];
     if (EPI_PAR(m, "Quarantine period") <= days_since)
-        p->change_state(*m, FREE);
+        p->change_status(*m, FREE);
 
 }
 
@@ -395,14 +409,22 @@ inline void ModelMeaslesMixing<TSeq>::_update_isolated(
     Agent<TSeq> * p, Model<TSeq> * m
 ) {
 
-    // Isolation lasts from rash onset, also for agents who recovered
+    // With rash, the agent may be hospitalized, or recover at the end of the
+    // rash period. Isolation lasts from rash onset, also for agents who
+    // recovered.
     const auto & nh = m->get_natural_history();
-    if ((p->get_stage(*m) == RASH) && _hospitalize(p, m))
-        return;
+    if (p->get_stage(*m) == RASH)
+    {
+        if (_hospitalize(p, m))
+            return;
+
+        if (nh.due(*p, *m))
+            p->rm_virus(*m);
+    }
 
     int days_since = m->today() - nh.entered(*p, RASH);
     if (EPI_PAR(m, "Isolation period") <= days_since)
-        p->change_state(*m, FREE);
+        p->change_status(*m, FREE);
 
 }
 
@@ -414,24 +436,10 @@ inline void ModelMeaslesMixing<TSeq>::_update_hospitalized(
     // Discharged free; agents still with rash recover then
     if (m->runif() < 1.0/EPI_PAR(m, "Hospitalization period"))
     {
-        p->change_state(*m, FREE);
+        p->change_status(*m, FREE);
         if (p->get_stage(*m) == RASH)
             p->rm_virus(*m);
     }
-
-}
-
-template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::_update_rash(
-    Agent<TSeq> * p, Model<TSeq> * m
-) {
-
-    // The rash stage does not end in hospital (see _update_hospitalized())
-    if (p->get_state() == HOSPITALIZED)
-        return;
-
-    if (m->get_natural_history().due(*p, *m))
-        p->rm_virus(*m);
 
 }
 
@@ -441,8 +449,8 @@ inline void ModelMeaslesMixing<TSeq>::_on_stage_change(
 ) {
 
     // A quarantined agent who develops rash is isolated
-    if ((to == RASH) && (p->get_state() == QUARANTINED))
-        p->change_state(*m, ISOLATED);
+    if ((to == RASH) && (p->get_status(*m) == QUARANTINED))
+        p->change_status(*m, ISOLATED);
 
 }
 
@@ -496,7 +504,7 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
 
             // Only free agents who have not recovered
             const int stage = agent.get_stage(*m);
-            if ((agent.get_state() != FREE) || (stage == RECOVERED))
+            if ((agent.get_status(*m) != FREE) || (stage == RECOVERED))
                 continue;
 
             // Agents with some tool won't be quarantined
@@ -508,9 +516,9 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
 
             // Contacts with rash are isolated instead, if willing
             if (stage != RASH)
-                agent.change_state(*m, QUARANTINED);
+                agent.change_status(*m, QUARANTINED);
             else if (model->isolation_willingness[contact_id])
-                agent.change_state(*m, ISOLATED);
+                agent.change_status(*m, ISOLATED);
             else
                 continue;
 
@@ -606,7 +614,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     using Sampler = SamplerMixing<TSeq>;
     sampler.configure(
         [](const Agent<TSeq> & a, const Model<TSeq> & m) {
-            if (a.get_state() != FREE)
+            if (a.get_status(m) != FREE)
                 return Sampler::NONE;
             const int stage = a.get_stage(m);
             return (stage == PRODROMAL) ? Sampler::PRIMARY :
@@ -626,7 +634,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     nh.add_stage("Susceptible");
     nh.add_stage("Latent");
     nh.add_stage("Prodromal");
-    nh.add_stage("Rash", _update_rash);
+    nh.add_stage("Rash");
     nh.add_stage("Recovered");
     nh.set_duration(
         LATENT, measles_stage_days<TSeq>("Incubation period", "Incubation period sd"),
@@ -640,6 +648,8 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
         RASH, measles_stage_days<TSeq>("Rash period", "Rash period sd")
     );
     nh.set_infection(LATENT, RECOVERED);
+    nh.set_infectious(PRODROMAL);
+    nh.set_infectious(RASH);
     this->add_natural_history(nh);
     this->set_stage_hook(_on_stage_change);
 
@@ -678,29 +688,8 @@ inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
 )
 {
 
-    if (proportions_.size() != 2u)
-        throw std::invalid_argument("-proportions_- must have two entries.");
-
-    for (auto & v : proportions_)
-        if ((v < 0.0) || (v > 1.0))
-            throw std::invalid_argument(
-                "-proportions_- must have values between 0 and 1."
-            );
-
-    // Some initial cases start prodromal, and some of the others recovered
-    Model<TSeq>::initial_states_fun = [proportions_](Model<TSeq> * m) -> void {
-        for (auto & a : m->get_agents())
-        {
-            const bool infected = a.get_virus() != nullptr;
-            if (m->runif() >= proportions_[infected ? 0u : 1u])
-                continue;
-            if (infected)
-                a.change_stage(*m, PRODROMAL);
-            else
-                a.change_stage(*m, RECOVERED);
-        }
-        m->events_run();
-    };
+    Model<TSeq>::initial_states_fun =
+        epimodels::create_init_function_stages<TSeq>(proportions_, PRODROMAL, RECOVERED);
 
     return *this;
 

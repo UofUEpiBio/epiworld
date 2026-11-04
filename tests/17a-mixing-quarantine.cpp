@@ -48,7 +48,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
 
     for (const Agent<> & a : model.get_agents())
     {
-        if (a.get_state() != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
+        if (a.get_stage(model) != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
         {
             if (mixing.get_group(a.get_id()) == 0)
             {
@@ -92,7 +92,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
         {
             continue;
         }
-        else if (a.get_state() != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
+        else if (a.get_stage(model) != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
         {
             if (mixing.get_group(a.get_id()) == 1)
             {
@@ -116,19 +116,17 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     model.run(50, 123); 
     model.print();
 
-    std::vector< int > totals;
-    model.get_db().get_today_total(nullptr, &totals);
+    // Everyone was infected: recovered, or still in hospital
+    using MQ = epimodels::ModelSEIRQuarantine<>;
+    int done = 0;
+    for (const auto & a : model.get_agents())
+        if (
+            (a.get_stage(model) == MQ::RECOVERED) ||
+            (a.get_status(model) == MQ::HOSPITALIZED)
+        )
+            done++;
 
-    std::vector< int > expected_totals(model.get_n_states(), 0);
-    expected_totals[expected_totals.size() - 1] = static_cast<int>(model.size());
-
-    // In the totals, hospitalized agents also count as recovered
-    // So we set the last element to be the sum of the last two
-    // and the second to last to be zero.
-    totals[totals.size() - 1] += totals[totals.size() - 2];
-    totals[totals.size() - 2] = 0;
-
-    REQUIRE_THAT(totals, Catch::Equals(expected_totals));
+    REQUIRE(done == static_cast< int >(model.size()));
 
     // Random groups of 2000, drawn at every reset: 6000 agents in a group,
     // 2000 in each, and the rest in none

@@ -353,31 +353,62 @@ inline void Model<TSeq>::events_run()
 
         Event<TSeq> & a = events[nevents_tmp++];
 
-        // Stage changes leave the state (status) and the queue alone
-        if (a.action == EventAction::ChangeStage)
-        {
-            _event_change_stage(a);
-            continue;
-        }
-
         // Everything read from the event after the handler runs is copied
         // first: a handler can schedule more events (e.g., a virus's
         // post-recovery hook adding a tool), which may grow `events` and leave
         // `a` dangling.
         Agent<TSeq> * p = a.agent;
 
-        // Gaining or losing a virus that follows a natural history moves the
-        // agent's stage; the hook is called once the event is fully applied
-        int stage_k = -1;
-        int stage_from = -1;
-        if (
+        // With natural histories, a change of status or of stage is a change
+        // of state: the state with the new status (or stage) and the agent's
+        // current stages (or status), worked out now. Gaining a virus that
+        // follows a natural history starts an episode in its infection stage;
+        // losing it moves the agent to the recovery stage.
+        int episode_k = -1;
+        if (a.action == EventAction::ChangeStatus)
+        {
+            a.new_state = (a.new_state == -99) ? -99 :
+                state_with(p->state, a.new_state);
+            a.action = EventAction::ChangeState;
+        }
+        else if (a.action == EventAction::ChangeStage)
+        {
+
+            // Stale: the agent left the stage or the episode it was scheduled
+            // from (an earlier event moved it, or it recovered and was
+            // reinfected)
+            const size_t k = static_cast< size_t >(a.nh);
+            if (
+                (get_stage_of(p->state, k) != a.stage_from) ||
+                (natural_histories[k].get_episode(*p) != a.episode)
+            )
+                continue;
+
+            a.new_state = state_with(p->state, -1, k, a.stage_to);
+            a.action = EventAction::ChangeState;
+
+        }
+        else if (
             ((a.action == EventAction::AddVirus) ||
             (a.action == EventAction::RemoveVirus)) &&
             (a.virus != nullptr) && (a.virus->get_natural_history() >= 0)
         )
         {
-            stage_k = a.virus->get_natural_history();
-            stage_from = natural_histories[stage_k].get_stage(*p);
+
+            const size_t k = static_cast< size_t >(a.virus->get_natural_history());
+            const bool gains = (a.action == EventAction::AddVirus);
+            if (gains)
+                episode_k = static_cast< int >(k);
+
+            if (a.new_state == -99)
+            {
+                const auto & nh = natural_histories[k];
+                a.new_state = state_with(
+                    p->state, -1, k,
+                    gains ? nh.infection_stage : nh.recovery_stage
+                );
+            }
+
         }
 
         const epiworld_fast_int new_state = a.new_state;
@@ -472,11 +503,24 @@ inline void Model<TSeq>::events_run()
 
         }
 
-        if ((stage_k >= 0) && stage_hook)
-            stage_hook(
-                p, static_cast< size_t >(stage_k), stage_from,
-                natural_histories[stage_k].get_stage(*p), this
-            );
+        // The stages the agent entered: their timers and entry days, then the
+        // hook (which sees the event fully applied)
+        for (size_t k = 0u; k < natural_histories.size(); ++k)
+        {
+
+            const int from = get_stage_of(state_old, k);
+            const int to   = get_stage_of(p->state, k);
+            if (static_cast< int >(k) == episode_k)
+                natural_histories[k].start_episode(*p, to, *this);
+            else if (from != to)
+                natural_histories[k].enter(*p, to, *this);
+            else
+                continue;
+
+            if (stage_hook)
+                stage_hook(p, k, from, to, this);
+
+        }
 
     }
 
@@ -617,6 +661,11 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     states_labels(model.states_labels),
     natural_histories(model.natural_histories),
     stage_hook(model.stage_hook),
+    status_fun(model.status_fun),
+    status_labels(model.status_labels),
+    nstatus(model.nstatus),
+    stage_place(model.stage_place),
+    update_everyone(model.update_everyone),
     initial_states_fun(model.initial_states_fun),
     nstates(model.nstates),
     verbose(model.verbose),
@@ -719,6 +768,11 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     states_labels(std::move(model.states_labels)),
     natural_histories(std::move(model.natural_histories)),
     stage_hook(std::move(model.stage_hook)),
+    status_fun(std::move(model.status_fun)),
+    status_labels(std::move(model.status_labels)),
+    nstatus(model.nstatus),
+    stage_place(std::move(model.stage_place)),
+    update_everyone(model.update_everyone),
     initial_states_fun(std::move(model.initial_states_fun)),
     nstates(model.nstates),
     verbose(model.verbose),
@@ -792,6 +846,11 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     states_labels = m.states_labels;
     natural_histories = m.natural_histories;
     stage_hook = m.stage_hook;
+    status_fun = m.status_fun;
+    status_labels = m.status_labels;
+    nstatus = m.nstatus;
+    stage_place = m.stage_place;
+    update_everyone = m.update_everyone;
     initial_states_fun = m.initial_states_fun;
     nstates       = m.nstates;
 
@@ -1514,12 +1573,13 @@ inline void Model<TSeq>::update_state() {
 
     }
     else if (
-        use_queuing && !has_queue_blind_layer() && natural_histories.empty()
+        use_queuing && !has_queue_blind_layer() && !update_everyone
     )
     {
 
-        // Only queued agents (models with natural histories update everyone:
-        // an agent's status and stage can change far from any carrier), in ascending id order (the order fixes the
+        // Only queued agents (some models with natural histories update
+        // everyone: an agent's status and stage can change far from any
+        // carrier; see states_build()), in ascending id order (the order fixes the
         // random number stream).
         //
         // Directed networks (and mixing across groups) visit everyone instead.
@@ -1532,7 +1592,9 @@ inline void Model<TSeq>::update_state() {
             if (queue[i] <= 0)
                 return;
 
-            update_agent(population[i]);
+            auto & p = population[i];
+            if (state_fun[p.state])
+                state_fun[p.state](&p, this);
 
         });
 
@@ -1541,7 +1603,8 @@ inline void Model<TSeq>::update_state() {
     {
 
         for (auto & p: population)
-            update_agent(p);
+            if (state_fun[p.state])
+                state_fun[p.state](&p, this);
 
     }
 
@@ -1705,6 +1768,8 @@ inline void Model<TSeq>::reset() {
     for (auto & p : population)
         p.reset();
 
+    // The natural histories may have been edited since they were added
+    states_build();
     for (auto & nh : natural_histories)
         nh.reset(population.size());
 
@@ -1784,6 +1849,156 @@ inline void Model<TSeq>::reset() {
 #include "model-meat-print.hpp"
 
 template<typename TSeq>
+inline void Model<TSeq>::states_build()
+{
+
+    // The index has one slot per state; it is rebuilt when the next run starts.
+    state_index_ready = false;
+
+    if (natural_histories.empty())
+    {
+        nstatus       = std::max< size_t >(1u, status_labels.size());
+        states_labels = status_labels;
+        state_fun     = status_fun;
+        nstates       = static_cast< epiworld_fast_uint >(status_labels.size());
+        stage_place.clear();
+        update_everyone = false;
+        return;
+    }
+
+    // With no status added, every agent has the same (unnamed) one
+    nstatus = std::max< size_t >(1u, status_labels.size());
+    size_t n = nstatus;
+    stage_place.assign(natural_histories.size(), 0u);
+    for (size_t k = 0u; k < natural_histories.size(); ++k)
+    {
+        stage_place[k] = n;
+        n *= natural_histories[k].size();
+    }
+
+    nstates = static_cast< epiworld_fast_uint >(n);
+    states_labels.assign(n, "");
+    state_fun.assign(n, nullptr);
+
+    bool any_status_fun = false;
+    for (const auto & f : status_fun)
+        any_status_fun = any_status_fun || static_cast< bool >(f);
+
+    bool any_duration = false;
+    for (const auto & nh : natural_histories)
+        for (const auto & d : nh.durations)
+            any_duration = any_duration || static_cast< bool >(d);
+
+    update_everyone = (status_labels.size() > 1u && any_status_fun) ||
+        any_duration;
+
+    for (size_t c = 0u; c < n; ++c)
+    {
+
+        const int status = get_status_of(static_cast< epiworld_fast_uint >(c));
+        std::string label = (status_labels.size() > 1u) ?
+            status_labels[status] : "";
+
+        // What updates an agent in this state: the stages first, then the
+        // status. A single update function is used as is (so the samplers
+        // can recognize it).
+        std::vector< size_t > ks;
+        std::vector< int > stages;
+        for (size_t k = 0u; k < natural_histories.size(); ++k)
+        {
+            const int st = get_stage_of(static_cast< epiworld_fast_uint >(c), k);
+            const auto & nh = natural_histories[k];
+            label += (label.empty() ? "" : " ") + nh.labels[st];
+            if (nh.has_update(st))
+            {
+                ks.push_back(k);
+                stages.push_back(st);
+            }
+        }
+        states_labels[c] = label;
+
+        UpdateFun<TSeq> sfun = status_labels.empty() ?
+            nullptr : status_fun[status];
+
+        if (ks.empty())
+            state_fun[c] = sfun;
+        else if (
+            !sfun && (ks.size() == 1u) &&
+            natural_histories[ks[0]].funs[stages[0]]
+        )
+            state_fun[c] = natural_histories[ks[0]].funs[stages[0]];
+        else
+            state_fun[c] = [ks, stages, sfun](Agent<TSeq> * p, Model<TSeq> * m) {
+                for (size_t i = 0u; i < ks.size(); ++i)
+                    m->natural_histories[ks[i]].update(*p, *m, ks[i], stages[i]);
+                if (sfun)
+                    sfun(p, m);
+            };
+
+    }
+
+}
+
+template<typename TSeq>
+inline const std::vector< std::string > & Model<TSeq>::get_statuses() const
+{
+    return status_labels;
+}
+
+template<typename TSeq>
+inline size_t Model<TSeq>::get_n_statuses() const noexcept
+{
+    return status_labels.size();
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::status_of(std::string_view name) const
+{
+    for (size_t i = 0u; i < status_labels.size(); ++i)
+        if (status_labels[i] == name)
+            return static_cast< int >(i);
+
+    throw std::logic_error("The status " + std::string(name) + " was not found.");
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::get_status_of(epiworld_fast_uint state) const
+{
+    return static_cast< int >(state % nstatus);
+}
+
+template<typename TSeq>
+inline int Model<TSeq>::get_stage_of(epiworld_fast_uint state, size_t k) const
+{
+    return static_cast< int >(
+        (state / stage_place[k]) % natural_histories[k].size()
+    );
+}
+
+template<typename TSeq>
+inline epiworld_fast_uint Model<TSeq>::state_with(
+    epiworld_fast_uint state,
+    int status,
+    size_t k,
+    int stage
+) const
+{
+
+    if (natural_histories.empty())
+        return (status >= 0) ? static_cast< epiworld_fast_uint >(status) : state;
+
+    long long s = static_cast< long long >(state);
+    if (status >= 0)
+        s += status - get_status_of(state);
+    if (stage >= 0)
+        s += static_cast< long long >(stage - get_stage_of(state, k)) *
+            static_cast< long long >(stage_place[k]);
+
+    return static_cast< epiworld_fast_uint >(s);
+
+}
+
+template<typename TSeq>
 inline size_t Model<TSeq>::add_natural_history(NaturalHistory<TSeq> nh)
 {
 
@@ -1800,6 +2015,7 @@ inline size_t Model<TSeq>::add_natural_history(NaturalHistory<TSeq> nh)
             );
 
     natural_histories.push_back(std::move(nh));
+    states_build();
     return natural_histories.size() - 1u;
 
 }
@@ -1852,52 +2068,9 @@ inline void Model<TSeq>::_add_stage_event(
 
     Event<TSeq> & e = events[nactions - 1u];
     e.nh         = static_cast< int >(k);
-    e.stage_from = nh.get_stage(*agent_);
+    e.stage_from = get_stage_of(agent_->state, k);
     e.stage_to   = to;
     e.episode    = nh.get_episode(*agent_);
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::_event_change_stage(Event<TSeq> & a)
-{
-
-    Agent<TSeq> & p = *a.agent;
-    const size_t k  = static_cast< size_t >(a.nh);
-    const int from  = a.stage_from;
-    const int to    = a.stage_to;
-    auto & nh = natural_histories[k];
-
-    // Stale: the agent left the stage or the episode the change was
-    // scheduled from (an earlier event moved it, or it recovered and was
-    // reinfected)
-    if (
-        (nh.get_stage(p) != from) || (nh.get_episode(p) != a.episode) ||
-        (from == to)
-    )
-        return;
-
-    nh.enter(p, to, *this);
-
-    // `a` may dangle from here on: the hook can schedule events
-    if (stage_hook)
-        stage_hook(&p, k, from, to, this);
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::update_agent(Agent<TSeq> & p)
-{
-
-    // The disease first, then the model: events apply in the order they are
-    // scheduled, so a stage change is applied before the status changes of
-    // the same step, and the stage hook sees the agent's status at the start
-    // of the step (its own events come last, so they win).
-    for (size_t k = 0u; k < natural_histories.size(); ++k)
-        natural_histories[k].update(p, *this, k);
-
-    if (state_fun[p.state])
-        state_fun[p.state](&p, this);
 
 }
 
@@ -1920,17 +2093,15 @@ inline epiworld_fast_int Model<TSeq>::add_state(
 {
 
     // Checking it doesn't match
-    for (auto & s : states_labels)
+    for (auto & s : status_labels)
         if (s == lab)
             throw std::logic_error("state \"" + s + "\" already registered.");
 
-    states_labels.push_back(lab);
-    state_fun.push_back(fun);
+    status_labels.push_back(lab);
+    status_fun.push_back(fun);
+    states_build();
 
-    // The index has one slot per state; it is rebuilt when the next run starts.
-    state_index_ready = false;
-
-    return nstates++;
+    return static_cast< epiworld_fast_int >(status_labels.size()) - 1;
 }
 
 template<typename TSeq>
@@ -1940,13 +2111,24 @@ inline Model<TSeq> & Model<TSeq>::set_state_function(
 )
 {
 
-    if (state >= nstates)
+    // When the states are the stages of one natural history (no statuses),
+    // the stage's function; otherwise the status's (which is the state
+    // without natural histories)
+    const bool stages = (natural_histories.size() == 1u) &&
+        (status_labels.size() <= 1u);
+    const size_t n = stages ? natural_histories[0].size() : status_labels.size();
+    if (state >= n)
         throw std::range_error(
             "The state " + std::to_string(state) + " is out of range. " +
-            "The model currently has " + std::to_string(nstates) + " states."
+            "The model currently has " + std::to_string(n) + " states."
         );
 
-    state_fun[state] = fun;
+    if (stages)
+        natural_histories[0].funs[state] = fun;
+    else
+        status_fun[state] = fun;
+
+    states_build();
 
     return *this;
 
@@ -1959,8 +2141,12 @@ inline Model<TSeq> & Model<TSeq>::set_state_function(
 )
 {
 
+    const bool stages = (natural_histories.size() == 1u) &&
+        (status_labels.size() <= 1u);
     return set_state_function(
-        static_cast<epiworld_fast_uint>(state_of(name)),
+        static_cast<epiworld_fast_uint>(
+            stages ? natural_histories[0].stage_of(name) : status_of(name)
+        ),
         fun
     );
 

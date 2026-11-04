@@ -22,6 +22,10 @@ inline void default_update_susceptible(
     )
 {
 
+    // Agents out of the contacts (e.g., quarantined) are not infected
+    if (m->is_excluded_state(p->get_state()))
+        return;
+
     Virus<TSeq> * virus = m->sample_virus(p);
 
     if (virus != nullptr)
@@ -172,8 +176,16 @@ inline void default_update_exposed(Agent<TSeq> * p, Model<TSeq> * m) {
     if (which == 0u) // If odd
     {
 
+        // The death stage of the virus's natural history, if it has one
+        const int k = p->get_virus()->get_natural_history();
         int rm_state = -1;
-        p->get_virus()->get_state(nullptr, nullptr, &rm_state);
+        if ((k >= 0) && (m->get_natural_history(k).get_death_stage() >= 0))
+            rm_state = static_cast< int >(m->state_with(
+                p->get_state(), -1, static_cast< size_t >(k),
+                m->get_natural_history(k).get_death_stage()
+            ));
+        else
+            p->get_virus()->get_state(nullptr, nullptr, &rm_state);
         p->rm_virus(*m, rm_state);
         
     } else {

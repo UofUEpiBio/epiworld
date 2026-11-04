@@ -85,17 +85,9 @@ EPIWORLD_TEST_CASE(
     // =====================================================================
     // Test 2: Outbreak size should match "ever infected" count
     // =====================================================================
-    std::vector<std::string> states;
-    std::vector<int> counts;
-    db.get_today_total(&states, &counts);
-    
-    int ever_infected = 0;
-    for (size_t i = 0; i < states.size(); i++) {
-        // Everyone except Susceptible and Quarantined Susceptible was infected
-        if (states[i] != "Susceptible" && 
-            states[i] != "Quarantined Susceptible")
-            ever_infected += counts[i];
-    }
+    // Everyone not in the Susceptible stage was infected
+    int ever_infected = static_cast< int >(model.size()) -
+        db.get_today_stage(0u, "Susceptible");
 
     REQUIRE(final_outbreak_size == ever_infected);
 

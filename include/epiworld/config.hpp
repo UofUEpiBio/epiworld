@@ -144,7 +144,8 @@ enum class EventAction : uint8_t {
     RemoveVirus,
     RemoveTool,
     ChangeState,
-    ChangeStage ///< Moves the agent to another stage of a natural history
+    ChangeStatus, ///< Changes the agent's status, keeping its stages
+    ChangeStage   ///< Moves the agent to another stage of a natural history
 };
 
 /**

@@ -51,7 +51,7 @@ public:
 
         // Does the agent become infected?
         if (m->runif() < 1.0/(v->get_incubation(m)))
-            p->change_state(*m, ModelSEIR<TSeq>::INFECTED);
+            p->change_stage(*m, ModelSEIR<TSeq>::INFECTED);
 
         return;
     };
@@ -83,13 +83,15 @@ inline ModelSEIR<TSeq>::ModelSEIR(
 
     this->set_population_size(n);
 
-    // Adding statuses
-    this->add_state("Susceptible", default_update_susceptible<TSeq>);
-    this->add_state("Exposed", this->update_exposed_seir);
-    this->add_state("Infected", default_update_exposed<TSeq>);
-    this->add_state("Removed");
-
-    // Exposed agents carry the virus but are not infectious yet
+    // The natural history (its stages are the model's states); only the
+    // infected transmit
+    NaturalHistory<TSeq> nh("SEIR");
+    nh.add_stage("Susceptible", default_update_susceptible<TSeq>);
+    nh.add_stage("Exposed", this->update_exposed_seir);
+    nh.add_stage("Infected", default_update_exposed<TSeq>);
+    nh.add_stage("Removed");
+    nh.set_infection(EXPOSED, REMOVED);
+    this->add_natural_history(nh);
     this->set_infectious_states({INFECTED});
 
     // Setting up parameters
@@ -99,7 +101,7 @@ inline ModelSEIR<TSeq>::ModelSEIR(
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(EXPOSED, REMOVED, REMOVED);
+    virus.set_natural_history(0);
 
     virus.set_prob_infecting("Transmission probability");
     virus.set_incubation("Latent period");
