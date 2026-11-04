@@ -323,42 +323,137 @@ for stages was the expensive part. So NH-2 keeps one state per agent and
   initial cases and of the others to given stages (the old initializers
   moved agents to SEIR state codes, wrong in the quarantine models).
 
-## 8. API sketch
+## 8. API (NH-3 proposal): one way to build a disease
+
+Proposed 2026-11-04, after NH-2. **Not implemented yet**; NH-2's API is what
+the code has today (Section 7). Under review, see Section 12.
+
+### 8.1 Why: NH-2 left two ways of doing most things
+
+NH-2 put every model on natural histories but kept the state-based API next
+to the new one, and in places added a second way:
+
+| Concern | Old way (still in the code) | NH-2 way |
+|---|---|---|
+| The disease's compartments | `add_state("Infected", fun)` | `NaturalHistory::add_stage()` |
+| Infection, recovery and death | `Virus::set_state(init, post, removed)` | `set_infection(start, end, death)` |
+| Transitions | `new_state_update_transition()`, `default_update_exposed`, per-model lambdas | stage functions, `set_duration()` |
+| Who transmits | `set_infectious_states()` | `set_infectious()` (SEIR uses one, measles the other) |
+| Who is out of contact | `set_excluded_states()` (states, or statuses with a natural history) | none dedicated |
+| Moving an agent | `change_state()` and the `state_new` arguments of `set_virus`, `rm_virus`, `add_tool`, `rm_tool` | `change_status()`, `change_stage()` |
+| `set_state_function()` | the stage's function in single-status models, the status's otherwise | none |
+| Initial conditions | `create_init_function_sir/sird/seir/seird` (state codes) | `create_init_function_stages()` |
+| Tools changing state | `Tool::set_state(init, post)` (unused) | none |
+
+The state-based API is used by about 15 test files, 9 examples, the
+epiworld-benchmark runners, and epiworldR (`add_state`, `update_fun_rate`,
+`virus_set_state`, `set_infectious_states`).
+
+### 8.2 Principles
+
+1. **One way to do each thing.** The state-based API is removed, not kept
+   alongside.
+2. **A disease is a natural history: stages and declared transitions.** No
+   fixed roles (start, end, death): what the engine needs follows from the
+   stages and the transitions.
+3. **Statuses belong to the model.** A model with no disease (a pure state
+   machine) has statuses only; that is the one other case.
+4. **Agents move only by changing their status or their stage.**
+5. Bit-identical results are not required. The statistical tests (R0,
+   rates, final sizes) are the acceptance check.
+
+### 8.3 The disease
 
 ```cpp
-// The natural history: stages, durations, and the infection/recovery stages
 NaturalHistory<> nh("Measles");
 int S  = nh.add_stage("Susceptible");
-int L  = nh.add_stage("Latent");
-int P  = nh.add_stage("Prodromal");
-int Rs = nh.add_stage("Rash", rash_update);   // a stage can have an update
+int L  = nh.add_stage("Latent",    stage::infected);
+int P  = nh.add_stage("Prodromal", stage::infected | stage::infectious);
+int Rs = nh.add_stage("Rash",      stage::infected | stage::infectious);
 int R  = nh.add_stage("Recovered");
-nh.set_duration(L, lognormal_days("Incubation period"), P); // then P
-nh.set_duration(P, lognormal_days("Prodromal period"), Rs);
-nh.set_duration(Rs, lognormal_days("Rash period"));         // rash_update decides
-nh.set_infection(L, R);                                     // starts in L, ends in R
 
-int k = model.add_natural_history(nh);
-virus.set_natural_history(k);
+nh.add_transition(S,  L,  on::infection());                            // by contact
+nh.add_transition(L,  P,  after::days(lognormal("Incubation period"))); // drawn on entry
+nh.add_transition(P,  Rs, after::days(lognormal("Prodromal period")));
+nh.add_transition(Rs, R,  after::days(lognormal("Rash period")));
 
-// Statuses: the model's states
-model.add_state("Free",         update_free);
-model.add_state("Quarantined",  update_quarantined);
-model.add_state("Isolated",     update_isolated);
-model.add_state("Hospitalized", update_hospitalized);
-
-// Coupling: the model reacts to stage changes
-model.set_stage_hook([](Agent<>* p, size_t k, int from, int to, Model<>* m) {
-    if ((to == Rs) && (p->get_state() == QUARANTINED))
-        p->change_state(*m, ISOLATED);
-});
-
-// In update functions
-p->get_stage(*m);                          // current stage (history 0)
-m->get_natural_history(0).entered(*p, Rs); // day of rash onset
-m->get_natural_history(0).due(*p, *m);     // the stage's duration is over
-p->change_stage(*m, R);                    // event, target = stage
+// An SIRD-style stage: competing daily rates, settled in one draw
+// nh.add_transition(I, R, rate::recovery());  // the virus's rate x tools' enhancer
+// nh.add_transition(I, D, rate::death());     // the virus's rate x tools' reduction
 ```
+
+- **Stages** carry flags: `infected` (agents in it carry the virus) and
+  `infectious` (they transmit). Latent is infected but not infectious.
+- **Transitions** have a trigger:
+  - `on::infection()`: by contact, through the default sampler (or the
+    model's own). Its target is where an infection starts, and it may differ
+    by origin (a waned-immune stage can be reinfected into a milder course).
+  - `rate::...`: a daily probability, from a parameter (`rate::param("...")`),
+    a number, or the virus (`rate::recovery()`, `rate::death()`,
+    `rate::incubation()`), so variants and tools keep working. Competing rates
+    out of a stage are settled in one draw.
+  - `after::days(...)`: a duration drawn on entry (fixed, lognormal, or any
+    function).
+- **The virus follows from the stages, not from fixed roles.** Taking an
+  `on::infection()` transition gives the agent the virus; leaving the infected
+  stages removes it. So recovery, death, a return to Susceptible (SIS) or any
+  other ending is just a transition into a non-infected stage. Death is a stage
+  like any other; what it means for contacts is the model's call (a status,
+  for example).
+- **Seeding** (`set_virus()`, the virus distribution functions) follows the
+  infection transition out of the agent's current stage; seeding an agent whose
+  stage has none is an error.
+- **Stage functions** remain for rules a declaration cannot express (e.g., the
+  measles models' detection), as do the stage hook and the per-agent lifecycle
+  (episode, entry days, end of the current duration).
+- **The model diagram** is drawn from the declared transitions.
+
+`set_infection()`, `set_duration()`, `set_infectious()` and the per-model
+update lambdas go away.
+
+### 8.4 Statuses and agents
+
+```cpp
+model.add_status("Free");
+model.add_status("Quarantined", update_quarantined, status::excluded);
+model.add_status("Isolated",    update_isolated,    status::excluded);
+model.add_natural_history(nh);
+
+p->change_status(*m, QUARANTINED);
+p->change_stage(*m, R);       // leaving the infected stages: virus removed
+p->get_status(*m);  p->get_stage(*m);
+```
+
+- `add_state` becomes `add_status`, `set_state_function` becomes
+  `set_status_function`; exclusion is declared on the status.
+- `change_state()` and the `state_new` arguments of `set_virus`, `rm_virus`,
+  `add_tool` and `rm_tool` are removed. `rm_virus()` may stay as "recover"
+  (the infection's non-infected exit) or go; see Section 12.
+- One initializer: shares of the initial cases and of the others by stage,
+  replacing `create_init_function_sir/sird/seir/seird`.
+- `AgentsSample` and `get_agents_in_state()` take stages or statuses.
+
+### 8.5 What stays
+
+- The engine's states are still the pairs status × stage, built by the
+  engine (Section 7); push/pull transmission, the queue and the database
+  work on them. With one status, the states are the stages.
+- Outputs: the state history is the joint table; `get_hist_status()`,
+  `get_hist_stage()` and the like add it up.
+- Virus quantities (`set_prob_infecting`, `set_prob_recovery`,
+  `set_prob_death`, `set_incubation`) and the tools that modify them.
+
+### 8.6 What it costs
+
+- About 15 test files and 9 examples rewritten on the builder; docs
+  (`docs/impl`, README).
+- The epiworld-benchmark runners (they define their models with
+  `add_state`).
+- The wrappers (NH-4): R, Python and JS get a natural-history builder in
+  place of `add_state`, `update_fun_rate`, `virus_set_state` and
+  `set_infectious_states`.
+- The SIR family's random streams change (one draw over competing
+  transitions instead of the current per-model draws).
 
 ## 9. Outputs
 
@@ -433,9 +528,15 @@ where the combined states hurt most.
   and Surveillance have several statuses. The PEP intervention keeps taking
   states (`ModelMeaslesSchool::state(status, stage)`).
 - **NH-0: the virus registry**, gated by the benchmark in Section 4.3.
-- **NH-3: wrappers.** Accessors for stage histories, transitions and the
-  joint table in epiworldR, epiworldpy and epiworldjs.
-- **NH-4 (later):** the immunity record, then co-infection, then
+- **NH-3: one way to build a disease** (Section 8), after review:
+  - NH-3a: stage flags and declared transitions (`on::infection()`,
+    `rate::...`, `after::days(...)`); every model rewritten on them;
+  - NH-3b: statuses (`add_status`, exclusion on the status) and the agent
+    API (`change_status`/`change_stage` only); the state-based API removed;
+  - NH-3c: tests, examples, docs and the epiworld-benchmark runners.
+- **NH-4: wrappers.** A natural-history builder and the status and stage
+  outputs in epiworldR, epiworldpy and epiworldjs.
+- **NH-5 (later):** the immunity record, then co-infection, then
   cross-pathogen hooks.
 
 **Fit with `contact-layers.md`.** Phase 4 participation should be designed as
@@ -503,6 +604,25 @@ the absence of a virus (Section 3).
 5. **Timing.** Should this aim for 1.0.0, or stay on its branch until after
    it?
 
+**NH-3 (Section 8), for review:**
+
+6. **Naming:** `add_status` and `set_status_function`, or keep `add_state`
+   for statuses?
+7. **Where rates live:** recovery, death and incubation on the virus (so
+   variants and tools work as now), referenced by the transitions
+   (`rate::recovery()`), or plain parameters on the natural history?
+8. **A duration and rates out of the same stage** (recover after the drawn
+   rash period unless the daily death risk fires first): allowed, with the
+   duration as a deadline and the rates competing each day before it?
+9. **Several infection transitions** (from Susceptible and from a waned
+   stage): allowed, each with its own target?
+10. **`rm_virus()`:** keep it as "take the infection's exit" (which one, if
+    there are several?), or remove it in favor of `change_stage()`?
+11. **Death:** a stage only, or also a status that takes the agent out of
+    contacts?
+12. **Status flags beyond `excluded`:** e.g., leaky participation (Phase 4 of
+    `contact-layers.md`)?
+
 ## 13. Risks
 
 | Risk | Mitigation |
@@ -556,7 +676,8 @@ the absence of a virus (Section 3).
 |---|---|---|
 | Plan | #358 | revised after the first review |
 | NH-1 engine + measles mixing pilot | #359 | done; see `complexity-report.md` |
-| NH-2 states built from statuses × stages; every model ported | (stacked on #359) | in review |
+| NH-2 states built from statuses × stages; every model ported | #360 (stacked on #359) | in review |
+| NH-3 one way to build a disease (Section 8) | | proposed; under review |
 | NH-1b policy corrections | | not started |
 | NH-0 registry | | waits on the benchmark |
-| NH-3 wrappers | | not started |
+| NH-4 wrappers | | not started |
