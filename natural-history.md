@@ -100,6 +100,14 @@ every compatible disease state.
     same objects (Section 5.7). `Seed`, the `distribute_*` functions,
     `set_distribution()`, the prevalence constructors of `Virus` and `Tool`,
     `initial_states()` and `grouping::` are removed.
+15. **Histories keep status and stage apart** (settled 2026-11-05).
+    `get_hist_total(date, status, stage, counts)` has one row per day,
+    status and stage; models without statuses report the status "Free". The
+    virus and tool histories gain the same two columns. There is no
+    `get_hist_stage()` or `get_hist_status()`: a total by stage or by status
+    is a group-by. The engine's index of the pair never leaves the engine:
+    the database splits it in the one place that writes the rows, and no
+    combined labels ("Quarantined Prodromal") are stored or built.
 
 ## 4. Concepts
 
@@ -303,8 +311,8 @@ set_initial(m, assign_shares(Recovered = 0.2))
   function is one R call per evaluation, and it needs `nthreads = 1` in
   `run_multiple()`. Document both, as for `globalevent_fun()`.
 - Nodes and transitions are named by their labels.
-- Outputs: `get_hist_stage()`, `get_hist_status()`, `get_hist_joint()` and
-  `get_hist_transition()`.
+- Outputs: `get_hist_total()` (date, status, stage, counts) and
+  `get_hist_transitions()` (decision 15).
 - Python follows the same shape in snake_case. JS (embind) takes the
   declarative forms and the factories.
 
@@ -472,7 +480,8 @@ the other would visit. That is the class of bug found in #360.
 
 ### 7.5 Database
 
-- **Daily counts per cell.** Stage and status counts are their sums.
+- **Daily counts per cell**, written as rows with a status and a stage
+  column (decision 15). Stage and status totals are group-bys.
 - **Daily counts per declared transition.** These replace the state × state
   matrix, and the stage and status transition matrices are derived from
   them. For example, "Admitted" counts hospitalizations.
