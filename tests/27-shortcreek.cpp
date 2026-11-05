@@ -229,13 +229,7 @@ EPIWORLD_TEST_CASE("ModelMeaslesMixing with Short Creek data", "[ModelMeaslesMix
     for (const auto & g : short_creek)
         vacc_rates.push_back(g.vax);
 
-    measles_model.get_tool(0).set_distribution(
-        epiworld::distribute_tool_to_groups<>(
-            "mixing",
-            vacc_rates,
-            true // as_proportion
-        )
-    );
+    measles_model.assign_tool(0, epiworld::assign::group_shares<>("mixing", vacc_rates));
 
     // -----------------------------------------------------------------
     // 7. Run 200 simulations for 200 days

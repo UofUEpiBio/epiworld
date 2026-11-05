@@ -23,7 +23,7 @@ static void build_model(
     model.add_state("Infected", update_infected);
     model.add_state("Recovered");
 
-    model.add_virus(virus);
+    model.add_virus(virus, assign::share(0.01));
 
     model.seed(8812);
     model.add_layer(layer::network(
@@ -43,7 +43,7 @@ static void build_model(
  */
 EPIWORLD_TEST_CASE("ParamRef across models", "[parameters][ParamRef]") {
 
-    Virus<> virus("a virus", 0.01, true);
+    Virus<> virus("a virus");
     virus.set_state(1, 3, 3);
     virus.set_prob_infecting("beta");
     virus.set_prob_recovery("gamma");

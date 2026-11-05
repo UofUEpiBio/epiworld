@@ -36,15 +36,6 @@ public:
         epiworld_double recovery_rate
     );
 
-    /**
-     * @brief Set the initial states of the model
-     * @param proportions_ Double vector with a single element:
-     * - The proportion of non-infected individuals who have recovered.
-    */
-    ModelSIR<TSeq> & initial_states(
-        std::vector< double > proportions_,
-        std::vector< int > queue_ = {}
-    ) override;
     
 };
 
@@ -71,27 +62,11 @@ inline ModelSIR<TSeq>::ModelSIR(
     nh.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered (SIR)");
    
 }
 
-template<typename TSeq>
-inline ModelSIR<TSeq> & ModelSIR<TSeq>::initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > /* queue_ */
-) {
-
-    if (proportions_.size() != 1u)
-        throw std::invalid_argument(
-            "The vector of proportions must have a single element."
-            );
-
-    this->set_initial(RECOVERED, proportions_[0u]);
-
-    return *this;
-
-}
 
 #endif

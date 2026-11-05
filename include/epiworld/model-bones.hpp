@@ -18,6 +18,7 @@
 #include "contacttracing-bones.hpp"
 #include "postsampling-bones.hpp"
 #include "naturalhistory-bones.hpp"
+#include "assign.hpp"
 
 template<typename TSeq>
 class AgentsSample;
@@ -131,6 +132,8 @@ protected:
 
     std::vector< VirusPtr<TSeq> > viruses = {};
     std::vector< ToolPtr<TSeq> > tools = {};
+    std::vector< Assign<TSeq> > virus_assign = {}; ///< [virus] Who gets it at each reset
+    std::vector< Assign<TSeq> > tool_assign = {};  ///< [tool] Who gets it at each reset
 
     std::shared_ptr< epi_xoshiro256ss > engine = std::make_shared< epi_xoshiro256ss >();
 
@@ -168,10 +171,6 @@ protected:
 
     std::vector< UpdateFun<TSeq> >    state_fun = {};                  ///< Functions to update states
     std::vector< std::string >        states_labels = {};              ///< Labels of the states
-
-    /** Function to distribute states. Goes along with the function  */
-    std::function<void(Model<TSeq>*)> initial_states_fun = [](Model<TSeq> * /**/)
-    -> void {};
 
     epiworld_fast_uint nstates = 0u;
 
@@ -384,8 +383,7 @@ protected:
     std::vector< int > nh_entered;  ///< [agent * stage] Day entered, this infection (-1: not)
     std::vector< int > nh_episode;  ///< [agent] Infections so far
     std::vector< char > nh_queue;   ///< [stage] Queue mode: 0 none, 1 self, 2 everyone
-    std::vector< Seed > nh_seeds;   ///< [virus] How it is seeded (see add_virus())
-    std::vector< std::pair< int, epiworld_double > > nh_initial; ///< See set_initial()
+    Assign<TSeq> nh_initial;        ///< See set_initial()
     int nh_pending = -1;            ///< Transition of the next event (see _add_event())
 
     static constexpr int NH_SEED = -2;    ///< Event: a seeded infection
@@ -609,15 +607,24 @@ public:
      * indicating number of individuals.
      */
     ///@{
-    void add_virus(Virus<TSeq> & v);
-
     /**
-     * @brief Adds a virus, seeded as `seed` says (see `Seed`).
-     * @details For a model with a natural history: the seeded agents are
-     * drawn among those whose stage has an infection transition.
+     * @brief Adds a virus, and who gets it at the start of each run.
+     * @details `a` gives each agent without a virus whose stage can be
+     * infected a label: the stage it starts in (a carrier stage), or, for the
+     * forms without labels (e.g., `assign::share()`), the infection's target.
+     * By default, no one gets it (see `assign.hpp`).
      */
-    void add_virus(Virus<TSeq> v, Seed seed);
-    void add_tool(Tool<TSeq> & t);
+    void add_virus(const Virus<TSeq> & v, Assign<TSeq> a = Assign<TSeq>());
+
+    /// Adds a tool, and who gets it at the start of each run (default: no one).
+    void add_tool(const Tool<TSeq> & t, Assign<TSeq> a = Assign<TSeq>());
+
+    /// Replaces who gets virus `id` (e.g., the virus of a built-in model).
+    void assign_virus(size_t id, Assign<TSeq> a);
+
+    /// Replaces who gets tool `id`.
+    void assign_tool(size_t id, Assign<TSeq> a);
+
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
     ///@}
@@ -798,13 +805,13 @@ public:
     bool fire(int transition, Agent<TSeq> & agent);
 
     /**
-     * @brief Places a share of the agents without the virus in a stage at
-     * the start of each run (e.g., 10% Recovered).
-     * @details Shares are of the agents left without the virus after seeding,
-     * and are placed in the order they are set (setting a stage again
-     * replaces its share).
+     * @brief Places agents left without a virus in stages at the start of
+     * each run (e.g., `assign::shares({{R, 0.1}})`: 10% Recovered).
+     * @details The labels are stages without the virus; the eligible agents
+     * are those left without a virus, in the first stage. Replaces what was
+     * set before.
      */
-    void set_initial(int stage, epiworld_double share);
+    void set_initial(Assign<TSeq> a);
 
     /// Day agent `id` entered `stage` in its current (or last) infection (-1: not).
     int get_stage_entered(size_t id, int stage) const;
@@ -979,18 +986,6 @@ public:
     TransmissionSums get_transmission_sums() const;
     ///@}
 
-    /**
-     * @name Initial states
-     *
-     * @details These functions are called before the simulation starts.
-     *
-     * @param proportions_ Vector of proportions for each state.
-     * @param queue_ Vector of queue for each state.
-     */
-    virtual Model<TSeq> & initial_states(
-        std::vector< double > /*proportions_*/,
-        std::vector< int > /*queue_*/
-    ) {return *this;};
 
     /**
      * @name Setting and accessing parameters from the model

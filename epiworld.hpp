@@ -260,18 +260,6 @@ enum class TransmissionMode : uint8_t {
 #endif
 
 /**
- * @brief Decides how to distribute viruses at initialization
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using VirusToAgentFun = std::function<void(Virus<TSeq>&,Model<TSeq>*)>;
-
-/**
- * @brief Decides how to distribute tools at initialization
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ToolToAgentFun = std::function<void(Tool<TSeq>&,Model<TSeq>*)>;
-
-/**
  * @brief Event data for update an agent
  *
  * @tparam TSeq
@@ -10088,9 +10076,6 @@ private:
     VirusFun<TSeq>        probability_of_death     = nullptr;
     VirusFun<TSeq>        incubation               = nullptr;
 
-    // Information about how distribution works
-    VirusToAgentFun<TSeq> dist = nullptr;
-
     /// Parameters this variant reads in place of others (see `use_param()`)
     std::vector< std::pair< ParamRef, ParamRef > > param_redirects;
         
@@ -10109,11 +10094,6 @@ public:
 
     Virus(std::string name = "unknown virus");
     
-    Virus(
-        std::string name,
-        epiworld_double prevalence,
-        bool as_proportion
-    );
     
     #ifdef EPI_DEBUG_VIRUS
     
@@ -10242,13 +10222,6 @@ public:
 
     void print() const;
 
-    /**
-     * @brief Get information about the prevalence of the virus
-     */
-    ///@{
-    void distribute(Model<TSeq> * model);
-    void set_distribution(VirusToAgentFun<TSeq> fun);
-    ///@}
 
     /**
      * @brief This variant reads the model parameter `replacement` wherever a
@@ -10562,7 +10535,6 @@ protected:
     ToolFun<TSeq> recovery_enhancer        = nullptr;
     ToolFun<TSeq> death_reduction          = nullptr;
 
-    ToolToAgentFun<TSeq> dist = nullptr;
 
     /// Bitmask of targeted virus lineages (all ones: every virus).
     uint64_t target_mask = ~uint64_t(0);
@@ -10582,11 +10554,6 @@ public:
 
     Tool();
     Tool(std::string name = "unknown tool");
-    Tool(
-        std::string name,
-        epiworld_double prevalence,
-        bool as_proportion
-    );
 
     virtual ~Tool() = default;
 
@@ -10674,8 +10641,6 @@ public:
 
     void print() const;
 
-    void distribute(Model<TSeq> * model);
-    void set_distribution(ToolToAgentFun<TSeq> fun);
 
     virtual std::unique_ptr<Tool<TSeq>> clone_ptr() const; 
 
@@ -11051,30 +11016,6 @@ struct StageInfo {
 };
 
 /**
- * @brief How a virus is seeded: how many agents, and in which carrier stages.
- * @details `Seed::proportion(0.01)` infects 1% of the agents, drawn among
- * those whose stage has an infection transition, into that transition's
- * target. `split` places them across carrier stages instead, by shares that
- * add up to 1 (e.g., `{{E, 0.7}, {I, 0.3}}`). Seeded agents enter on day 0
- * and draw their durations then. See `Model::add_virus()`.
- */
-struct Seed {
-    epiworld_double prevalence = 0.0;
-    bool as_proportion = true;
-    std::vector< std::pair< int, epiworld_double > > split;
-
-    static Seed proportion(
-        epiworld_double p,
-        std::vector< std::pair< int, epiworld_double > > split = {}
-    );
-
-    static Seed count(
-        size_t n,
-        std::vector< std::pair< int, epiworld_double > > split = {}
-    );
-};
-
-/**
  * @brief The natural history of a disease: stages and declared transitions.
  * @details Build it, then hand it to a model (`Model::set_natural_history()`).
  * The first stage is where agents start. Example (SIR):
@@ -11154,6 +11095,446 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
  End of -include/epiworld/naturalhistory-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/assign.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_ASSIGN_HPP
+#define EPIWORLD_ASSIGN_HPP
+
+/**
+ * @file assign.hpp
+ * @brief How agents get something at the start of each run: a virus (and the
+ * stage it puts them in), a tool, an initial stage, or a group of a mixing
+ * layer. One vocabulary for all of them.
+ *
+ * @details An `Assign` gives each eligible agent a **label**, or none (-1),
+ * drawn with the model's random numbers when a run starts:
+ *
+ * | Form | Labels |
+ * |---|---|
+ * | `assign::share(p)`, `assign::count(n)` | A random share (or number) of the eligible agents |
+ * | `assign::shares({{l, p}, ...})`, `assign::counts({{l, n}, ...})` | Several labels: each takes its share (or number) of the eligible agents, in order, from those left |
+ * | `assign::group_shares(layer, {p_g})`, `assign::group_counts(layer, {n_g})` | A share (or number) of each group of a mixing layer |
+ * | `assign::agents(ids)` | The given agents |
+ * | `assign::labels(v)` | `v[i]` for agent `i` (-1: none); the same every run |
+ * | `assign::by(fun)` | `fun(agent, model)` for each eligible agent |
+ *
+ * What a label means, and who is eligible, depends on the use:
+ *
+ * | Use | Label | Eligible |
+ * |---|---|---|
+ * | `Model::add_virus(v, a)` | The stage the agent starts in (a carrier stage); a form without labels uses the infection's target | Agents without a virus whose stage can be infected |
+ * | `Model::add_tool(t, a)` | -- (has the tool) | Everyone |
+ * | `Model::set_initial(a)` | A stage without the virus | Agents left without a virus, in the first stage |
+ * | `layer::Mixing::set_groups(a, n)` | A group, in `[0, n)` | Everyone |
+ *
+ * The placements are made in this order at every reset: the layers (so a
+ * placement can use their groups), the viruses, the tools, the initial
+ * stages, then the global events' set-up. The random forms are drawn again in
+ * each run; `agents()` and `labels()` are fixed.
+ */
+
+template<typename TSeq>
+class Assign;
+
+namespace assign {
+    /// The label of the forms that give none: the use's default (see above)
+    constexpr int ANY = -2;
+}
+
+/// A function that gives an agent's label (-1: none).
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+using AssignFun = std::function< int(Agent<TSeq> &, Model<TSeq> &) >;
+
+/**
+ * @brief Gives each eligible agent a label, or none (see `assign.hpp`).
+ * @details Default-constructed, it gives no one anything.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class Assign {
+public:
+    /// The labels of the agents (-1: none), given who is eligible.
+    using DrawFun = std::function<
+        std::vector< int >(Model<TSeq> &, const std::vector< char > &)
+    >;
+
+private:
+    DrawFun fun = nullptr;
+    std::shared_ptr< const std::vector< int > > fixed_labels = nullptr;
+
+public:
+    Assign() = default;
+    explicit Assign(
+        DrawFun f,
+        std::shared_ptr< const std::vector< int > > fixed_ = nullptr
+    ) : fun(std::move(f)), fixed_labels(std::move(fixed_)) {}
+
+    /// The labels, if they are the same every run (`assign::labels()`).
+    const std::vector< int > * get_fixed() const { return fixed_labels.get(); }
+
+    /// Whether it gives anyone anything.
+    bool is_set() const { return static_cast< bool >(fun); }
+
+    /**
+     * @brief The labels of the agents of `model` (-1: none).
+     * @param eligible One entry per agent: whether it can be given a label.
+     * @throws std::logic_error if the form names an agent that is not
+     * eligible.
+     */
+    std::vector< int > draw(Model<TSeq> & model, const std::vector< char > & eligible) const
+    {
+        if (!fun)
+            return std::vector< int >(model.size(), -1);
+        return fun(model, eligible);
+    }
+};
+
+namespace assign {
+
+namespace detail {
+
+    inline void check_share(epiworld_double p, const char * form)
+    {
+        if (!std::isfinite(p) || (p < 0.0) || (p > 1.0))
+            throw std::range_error(
+                std::string("assign::") + form + "(): a share must be within "
+                "[0, 1]; got " + std::to_string(p) + "."
+            );
+    }
+
+    inline void check_count(epiworld_double n, const char * form)
+    {
+        if (!std::isfinite(n) || (n < 0.0) || (n != std::floor(n)))
+            throw std::range_error(
+                std::string("assign::") + form + "(): a count must be a "
+                "non-negative whole number; got " + std::to_string(n) + "."
+            );
+    }
+
+    /**
+     * Label by label, in order, draws `count` agents at random from the
+     * eligible ones not yet labelled (taken in ascending id order). A count
+     * above what is left is an error.
+     */
+    template<typename TSeq>
+    inline std::vector< int > draw_counts(
+        Model<TSeq> & model,
+        const std::vector< char > & eligible,
+        const std::vector< std::pair< int, size_t > > & counts
+    )
+    {
+
+        std::vector< int > labels(model.size(), -1);
+        std::vector< size_t > idx;
+
+        for (const auto & c : counts)
+        {
+
+            idx.clear();
+            for (size_t i = 0u; i < labels.size(); ++i)
+                if (eligible[i] && (labels[i] == -1))
+                    idx.push_back(i);
+
+            size_t n_left = idx.size();
+            if (c.second > n_left)
+                throw std::range_error(
+                    "Cannot assign " + std::to_string(c.second) + " agents: "
+                    "only " + std::to_string(n_left) + " are eligible."
+                );
+
+            for (size_t k = 0u; k < c.second; ++k)
+            {
+                const size_t loc = model.runif_index(
+                    static_cast< uint32_t >(n_left--)
+                );
+                labels[idx[loc]] = c.first;
+                std::swap(idx[loc], idx[n_left]);
+            }
+
+        }
+
+        return labels;
+
+    }
+
+    template<typename TSeq>
+    inline size_t n_eligible(const std::vector< char > & eligible)
+    {
+        return static_cast< size_t >(
+            std::count(eligible.begin(), eligible.end(), char(1))
+        );
+    }
+
+    /// The members of each group of the mixing layer `layer`, in id order.
+    template<typename TSeq>
+    inline std::vector< std::vector< size_t > > groups_of(
+        Model<TSeq> & model,
+        const std::string & layer,
+        size_t n_values
+    )
+    {
+
+        auto * mix = dynamic_cast< layer::Mixing<TSeq> * >(&model.get_layer(layer));
+        if (mix == nullptr)
+            throw std::logic_error(
+                "The layer '" + layer + "' is not a mixing layer: it has no "
+                "groups."
+            );
+
+        if (n_values != mix->get_n_groups())
+            throw std::range_error(
+                "There are " + std::to_string(n_values) + " values, but the "
+                "layer '" + layer + "' has " +
+                std::to_string(mix->get_n_groups()) + " groups."
+            );
+
+        std::vector< std::vector< size_t > > out(n_values);
+        for (size_t g = 0u; g < n_values; ++g)
+        {
+            out[g] = mix->members_of(g);
+            std::sort(out[g].begin(), out[g].end());
+        }
+
+        return out;
+
+    }
+
+    /// In each group, draws `want[g]` of its eligible members (capped).
+    template<typename TSeq>
+    inline std::vector< int > draw_groups(
+        Model<TSeq> & model,
+        const std::vector< char > & eligible,
+        const std::string & layer,
+        const std::vector< epiworld_double > & values,
+        bool as_share
+    )
+    {
+
+        std::vector< int > labels(model.size(), -1);
+        const auto members = groups_of(model, layer, values.size());
+
+        std::vector< size_t > idx;
+        for (size_t g = 0u; g < values.size(); ++g)
+        {
+
+            idx.clear();
+            for (size_t i : members[g])
+                if (eligible[i])
+                    idx.push_back(i);
+
+            size_t n = idx.size();
+            const epiworld_double want = as_share ?
+                std::floor(values[g] * static_cast< epiworld_double >(n)) :
+                values[g];
+            const size_t n_draw = (want >= static_cast< epiworld_double >(n)) ?
+                n : static_cast< size_t >(want);
+
+            for (size_t k = 0u; k < n_draw; ++k)
+            {
+                const size_t loc = model.runif_index(static_cast< uint32_t >(n--));
+                labels[idx[loc]] = ANY;
+                std::swap(idx[loc], idx[n]);
+            }
+
+        }
+
+        return labels;
+
+    }
+
+} // namespace detail
+
+/// A random share of the eligible agents (`floor(p x eligible)` of them).
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline Assign<TSeq> share(epiworld_double p)
+{
+    detail::check_share(p, "share");
+    return Assign<TSeq>([p](Model<TSeq> & m, const std::vector< char > & e) {
+        const size_t n = static_cast< size_t >(std::floor(
+            p * static_cast< epiworld_double >(detail::n_eligible<TSeq>(e))
+        ));
+        return detail::draw_counts(m, e, {{ANY, n}});
+    });
+}
+
+/// `n` eligible agents, at random.
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline Assign<TSeq> count(size_t n)
+{
+    return Assign<TSeq>([n](Model<TSeq> & m, const std::vector< char > & e) {
+        return detail::draw_counts(m, e, {{ANY, n}});
+    });
+}
+
+/**
+ * @brief Several labels: label `l` goes to `floor(p x eligible)` agents,
+ * drawn in order from those not yet labelled.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline Assign<TSeq> shares(std::vector< std::pair< int, epiworld_double > > s)
+{
+    epiworld_double total = 0.0;
+    for (auto & x : s)
+    {
+        detail::check_share(x.second, "shares");
+        total += x.second;
+    }
+    if (total > 1.0 + 1e-9)
+        throw std::range_error("assign::shares(): the shares add up to more than 1.");
+
+    return Assign<TSeq>([s](Model<TSeq> & m, const std::vector< char > & e) {
+        const epiworld_double n = static_cast< epiworld_double >(
+            detail::n_eligible<TSeq>(e)
+        );
+        std::vector< std::pair< int, size_t > > c;
+        for (auto & x : s)
+            c.emplace_back(x.first, static_cast< size_t >(std::floor(x.second * n)));
+        return detail::draw_counts(m, e, c);
+    });
+}
+
+/// Several labels: label `l` goes to `n` agents, drawn in order.
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline Assign<TSeq> counts(std::vector< std::pair< int, size_t > > c)
+{
+    return Assign<TSeq>([c](Model<TSeq> & m, const std::vector< char > & e) {
+        return detail::draw_counts(m, e, c);
+    });
+}
+
+/**
+ * @brief In each group `g` of the mixing layer `layer`, a random share `p[g]`
+ * of its eligible members (`floor(p[g] x members)`).
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline Assign<TSeq> group_shares(std::string layer, std::vector< epiworld_double > p)
+{
+    if (p.empty())
+        throw std::range_error("assign::group_shares(): no shares.");
+    for (auto x : p)
+        detail::check_share(x, "group_shares");
+
+    return Assign<TSeq>([layer, p](Model<TSeq> & m, const std::vector< char > & e) {
+        return detail::draw_groups(m, e, layer, p, true);
+    });
+}
+
+/// In each group `g` of the mixing layer `layer`, `n[g]` of its eligible
+/// members at random (all of them, if fewer).
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline Assign<TSeq> group_counts(std::string layer, std::vector< epiworld_double > n)
+{
+    if (n.empty())
+        throw std::range_error("assign::group_counts(): no counts.");
+    for (auto x : n)
+        detail::check_count(x, "group_counts");
+
+    return Assign<TSeq>([layer, n](Model<TSeq> & m, const std::vector< char > & e) {
+        return detail::draw_groups(m, e, layer, n, false);
+    });
+}
+
+/// The given agents (each must be eligible).
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline Assign<TSeq> agents(std::vector< size_t > ids)
+{
+    auto ids_ptr = std::make_shared< const std::vector< size_t > >(std::move(ids));
+    return Assign<TSeq>([ids_ptr](Model<TSeq> & m, const std::vector< char > & e) {
+        std::vector< int > labels(m.size(), -1);
+        for (size_t i : *ids_ptr)
+        {
+            if (i >= m.size())
+                throw std::range_error(
+                    "assign::agents(): agent " + std::to_string(i) +
+                    " is out of range."
+                );
+            if (!e[i])
+                throw std::logic_error(
+                    "assign::agents(): agent " + std::to_string(i) +
+                    " cannot be given this (it is not eligible)."
+                );
+            labels[i] = ANY;
+        }
+        return labels;
+    });
+}
+
+/// `v[i]` for agent `i` (-1: none); the same every run.
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline Assign<TSeq> labels(std::vector< int > v)
+{
+    auto v_ptr = std::make_shared< const std::vector< int > >(std::move(v));
+    return Assign<TSeq>([v_ptr](Model<TSeq> & m, const std::vector< char > & e) {
+        if (v_ptr->size() != m.size())
+            throw std::range_error(
+                "assign::labels(): " + std::to_string(v_ptr->size()) +
+                " labels for " + std::to_string(m.size()) + " agents."
+            );
+        for (size_t i = 0u; i < v_ptr->size(); ++i)
+            if (((*v_ptr)[i] != -1) && !e[i])
+                throw std::logic_error(
+                    "assign::labels(): agent " + std::to_string(i) +
+                    " cannot be given this (it is not eligible)."
+                );
+        return *v_ptr;
+    }, v_ptr);
+}
+
+/**
+ * @brief The same, from whole numbers of another type (e.g., the groups of a
+ * mixing layer as `size_t`); values that do not fit in an `int` (such as
+ * `layer::Mixing::NO_GROUP`) are none.
+ */
+template<
+    typename TSeq = EPI_DEFAULT_TSEQ,
+    typename T,
+    typename = std::enable_if_t< std::is_integral_v< T > && !std::is_same_v< T, int > >
+>
+inline Assign<TSeq> labels(const std::vector< T > & v)
+{
+    std::vector< int > l(v.size(), -1);
+    for (size_t i = 0u; i < v.size(); ++i)
+        if (
+            (v[i] >= 0) &&
+            (static_cast< unsigned long long >(v[i]) <=
+                static_cast< unsigned long long >(std::numeric_limits< int >::max()))
+        )
+            l[i] = static_cast< int >(v[i]);
+    return labels<TSeq>(std::move(l));
+}
+
+/// `fun(agent, model)` for each eligible agent (-1: none).
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline Assign<TSeq> by(AssignFun<TSeq> fun)
+{
+    return Assign<TSeq>([fun](Model<TSeq> & m, const std::vector< char > & e) {
+        std::vector< int > labels(m.size(), -1);
+        auto & pop = m.get_agents();
+        for (size_t i = 0u; i < pop.size(); ++i)
+            if (e[i])
+                labels[i] = fun(pop[i], m);
+        return labels;
+    });
+}
+
+} // namespace assign
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/assign.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -11272,6 +11653,8 @@ protected:
 
     std::vector< VirusPtr<TSeq> > viruses = {};
     std::vector< ToolPtr<TSeq> > tools = {};
+    std::vector< Assign<TSeq> > virus_assign = {}; ///< [virus] Who gets it at each reset
+    std::vector< Assign<TSeq> > tool_assign = {};  ///< [tool] Who gets it at each reset
 
     std::shared_ptr< epi_xoshiro256ss > engine = std::make_shared< epi_xoshiro256ss >();
 
@@ -11309,10 +11692,6 @@ protected:
 
     std::vector< UpdateFun<TSeq> >    state_fun = {};                  ///< Functions to update states
     std::vector< std::string >        states_labels = {};              ///< Labels of the states
-
-    /** Function to distribute states. Goes along with the function  */
-    std::function<void(Model<TSeq>*)> initial_states_fun = [](Model<TSeq> * /**/)
-    -> void {};
 
     epiworld_fast_uint nstates = 0u;
 
@@ -11525,8 +11904,7 @@ protected:
     std::vector< int > nh_entered;  ///< [agent * stage] Day entered, this infection (-1: not)
     std::vector< int > nh_episode;  ///< [agent] Infections so far
     std::vector< char > nh_queue;   ///< [stage] Queue mode: 0 none, 1 self, 2 everyone
-    std::vector< Seed > nh_seeds;   ///< [virus] How it is seeded (see add_virus())
-    std::vector< std::pair< int, epiworld_double > > nh_initial; ///< See set_initial()
+    Assign<TSeq> nh_initial;        ///< See set_initial()
     int nh_pending = -1;            ///< Transition of the next event (see _add_event())
 
     static constexpr int NH_SEED = -2;    ///< Event: a seeded infection
@@ -11750,15 +12128,24 @@ public:
      * indicating number of individuals.
      */
     ///@{
-    void add_virus(Virus<TSeq> & v);
-
     /**
-     * @brief Adds a virus, seeded as `seed` says (see `Seed`).
-     * @details For a model with a natural history: the seeded agents are
-     * drawn among those whose stage has an infection transition.
+     * @brief Adds a virus, and who gets it at the start of each run.
+     * @details `a` gives each agent without a virus whose stage can be
+     * infected a label: the stage it starts in (a carrier stage), or, for the
+     * forms without labels (e.g., `assign::share()`), the infection's target.
+     * By default, no one gets it (see `assign.hpp`).
      */
-    void add_virus(Virus<TSeq> v, Seed seed);
-    void add_tool(Tool<TSeq> & t);
+    void add_virus(const Virus<TSeq> & v, Assign<TSeq> a = Assign<TSeq>());
+
+    /// Adds a tool, and who gets it at the start of each run (default: no one).
+    void add_tool(const Tool<TSeq> & t, Assign<TSeq> a = Assign<TSeq>());
+
+    /// Replaces who gets virus `id` (e.g., the virus of a built-in model).
+    void assign_virus(size_t id, Assign<TSeq> a);
+
+    /// Replaces who gets tool `id`.
+    void assign_tool(size_t id, Assign<TSeq> a);
+
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
     ///@}
@@ -11939,13 +12326,13 @@ public:
     bool fire(int transition, Agent<TSeq> & agent);
 
     /**
-     * @brief Places a share of the agents without the virus in a stage at
-     * the start of each run (e.g., 10% Recovered).
-     * @details Shares are of the agents left without the virus after seeding,
-     * and are placed in the order they are set (setting a stage again
-     * replaces its share).
+     * @brief Places agents left without a virus in stages at the start of
+     * each run (e.g., `assign::shares({{R, 0.1}})`: 10% Recovered).
+     * @details The labels are stages without the virus; the eligible agents
+     * are those left without a virus, in the first stage. Replaces what was
+     * set before.
      */
-    void set_initial(int stage, epiworld_double share);
+    void set_initial(Assign<TSeq> a);
 
     /// Day agent `id` entered `stage` in its current (or last) infection (-1: not).
     int get_stage_entered(size_t id, int stage) const;
@@ -12120,18 +12507,6 @@ public:
     TransmissionSums get_transmission_sums() const;
     ///@}
 
-    /**
-     * @name Initial states
-     *
-     * @details These functions are called before the simulation starts.
-     *
-     * @param proportions_ Vector of proportions for each state.
-     * @param queue_ Vector of queue for each state.
-     */
-    virtual Model<TSeq> & initial_states(
-        std::vector< double > /*proportions_*/,
-        std::vector< int > /*queue_*/
-    ) {return *this;};
 
     /**
      * @name Setting and accessing parameters from the model
@@ -13415,6 +13790,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     population(model.population),
     viruses(),
     tools(),
+    virus_assign(model.virus_assign),
+    tool_assign(model.tool_assign),
     param_values(model.param_values),
     param_index(model.param_index),
     param_layout_id(model.param_layout_id),
@@ -13422,7 +13799,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     pb(model.pb),
     state_fun(model.state_fun),
     states_labels(model.states_labels),
-    initial_states_fun(model.initial_states_fun),
     nstates(model.nstates),
     verbose(model.verbose),
     current_date(model.current_date),
@@ -13453,7 +13829,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     nh_entered(model.nh_entered),
     nh_episode(model.nh_episode),
     nh_queue(model.nh_queue),
-    nh_seeds(model.nh_seeds),
     nh_initial(model.nh_initial)
 {
 
@@ -13509,6 +13884,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     viruses(std::move(model.viruses)),
     // Tools
     tools(std::move(model.tools)),
+    virus_assign(std::move(model.virus_assign)),
+    tool_assign(std::move(model.tool_assign)),
     // Pseudo-RNG
     engine(std::move(model.engine)),
     runifd_a(model.runifd_a),
@@ -13529,7 +13906,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     pb(std::move(model.pb)),
     state_fun(std::move(model.state_fun)),
     states_labels(std::move(model.states_labels)),
-    initial_states_fun(std::move(model.initial_states_fun)),
     nstates(model.nstates),
     verbose(model.verbose),
     current_date(std::move(model.current_date)),
@@ -13561,7 +13937,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     nh_entered(std::move(model.nh_entered)),
     nh_episode(std::move(model.nh_episode)),
     nh_queue(std::move(model.nh_queue)),
-    nh_seeds(std::move(model.nh_seeds)),
     nh_initial(std::move(model.nh_initial))
 {
 
@@ -13599,6 +13974,9 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     for (const auto & t : m.tools)
         tools.emplace_back(std::shared_ptr<Tool<TSeq>>(t->clone_ptr()));
 
+    virus_assign = m.virus_assign;
+    tool_assign = m.tool_assign;
+
     param_values    = m.param_values;
     param_index     = m.param_index;
     param_layout_id = m.param_layout_id;
@@ -13607,7 +13985,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     state_fun    = m.state_fun;
     states_labels = m.states_labels;
-    initial_states_fun = m.initial_states_fun;
     nstates       = m.nstates;
 
     verbose     = m.verbose;
@@ -13661,7 +14038,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     nh_entered = m.nh_entered;
     nh_episode = m.nh_episode;
     nh_queue = m.nh_queue;
-    nh_seeds = m.nh_seeds;
     nh_initial = m.nh_initial;
 
     agents_data = m.agents_data;
@@ -13780,10 +14156,48 @@ template<typename TSeq>
 inline void Model<TSeq>::dist_virus()
 {
 
-    for (auto & v: viruses)
+    // Who can get a virus: no virus, and (with a natural history) a stage
+    // that can be infected
+    std::vector< char > eligible(population.size());
+
+    for (size_t k = 0u; k < viruses.size(); ++k)
     {
 
-        v->distribute(this);
+        for (auto & p : population)
+            eligible[static_cast< size_t >(p.id)] =
+                (p.virus == nullptr) &&
+                (!nh || (nh->stages[p.state].infection >= 0));
+
+        const std::vector< int > labels = virus_assign[k].draw(*this, eligible);
+        const Virus<TSeq> & v = *viruses[k];
+
+        for (size_t i = 0u; i < labels.size(); ++i)
+        {
+
+            const int label = labels[i];
+            if (label == -1)
+                continue;
+
+            if (label == assign::ANY)
+            {
+                if (nh)
+                    nh_pending = NH_SEED;
+                population[i].set_virus(*this, v);
+            }
+            else
+            {
+                if (!nh || (label < 0) || (static_cast< size_t >(label) >= nh->get_n_stages()) || !nh->is_carrier(label))
+                    throw std::logic_error(
+                        "The virus \"" + v.get_name() + "\" is assigned to "
+                        "the label " + std::to_string(label) + ", which is not "
+                        "a carrier stage of the natural history."
+                    );
+                nh_pending = NH_SEED;
+                population[i].set_virus(*this, v, label, Queue<TSeq>::NoOne);
+            }
+            nh_pending = -1;
+
+        }
 
         // Apply the events
         events_run();
@@ -13795,10 +14209,16 @@ template<typename TSeq>
 inline void Model<TSeq>::dist_tools()
 {
 
-    for (auto & tool: tools)
+    // Everyone can get a tool
+    const std::vector< char > eligible(population.size(), 1);
+
+    for (size_t k = 0u; k < tools.size(); ++k)
     {
 
-        tool->distribute(this);
+        const std::vector< int > labels = tool_assign[k].draw(*this, eligible);
+        for (size_t i = 0u; i < labels.size(); ++i)
+            if (labels[i] != -1)
+                population[i].add_tool(*this, *tools[k]);
 
         // Apply the events
         events_run();
@@ -13822,7 +14242,8 @@ inline void Model<TSeq>::chrono_end() {
 
 template<typename TSeq>
 inline void Model<TSeq>::add_virus(
-    Virus<TSeq> & v
+    const Virus<TSeq> & v,
+    Assign<TSeq> a
     )
 {
 
@@ -13855,26 +14276,47 @@ inline void Model<TSeq>::add_virus(
             "The virus \"" + v.get_name() + "\" has no -post- state."
             );
 
-    // Recording the variant
-    db.record_virus(v, true);
-
-    // Adding new virus
+    // The model keeps its own copy (of the derived class, if any); its id and
+    // lineage are recorded on the copy
     auto cloned = v.clone_ptr();
+    db.record_virus(*cloned, true);
     viruses.push_back(std::shared_ptr<Virus<TSeq>>(std::move(cloned)));
+    virus_assign.push_back(std::move(a));
 
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_tool(Tool<TSeq> & t)
+inline void Model<TSeq>::add_tool(const Tool<TSeq> & t, Assign<TSeq> a)
 {
 
-
-    db.record_tool(t);
-
-    // Adding the tool to the model (and database.)
+    // The model keeps its own copy (of the derived class, if any)
     auto cloned = t.clone_ptr();
+    db.record_tool(*cloned);
     tools.push_back(std::shared_ptr<Tool<TSeq>>(std::move(cloned)));
+    tool_assign.push_back(std::move(a));
 
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::assign_virus(size_t id, Assign<TSeq> a)
+{
+    if (id >= viruses.size())
+        throw std::range_error(
+            "There is no virus " + std::to_string(id) + " (the model has " +
+            std::to_string(viruses.size()) + ")."
+        );
+    virus_assign[id] = std::move(a);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::assign_tool(size_t id, Assign<TSeq> a)
+{
+    if (id >= tools.size())
+        throw std::range_error(
+            "There is no tool " + std::to_string(id) + " (the model has " +
+            std::to_string(tools.size()) + ")."
+        );
+    tool_assign[id] = std::move(a);
 }
 
 template<typename TSeq>
@@ -13894,6 +14336,8 @@ inline void Model<TSeq>::rm_virus(size_t virus_pos)
     // Flipping with the last one
     std::swap(viruses[virus_pos], viruses[viruses.size() - 1]);
     viruses.pop_back();
+    std::swap(virus_assign[virus_pos], virus_assign[virus_assign.size() - 1]);
+    virus_assign.pop_back();
 
     return;
 
@@ -13924,6 +14368,8 @@ inline void Model<TSeq>::rm_tool(size_t tool_pos)
     */
 
     tools.pop_back();
+    std::swap(tool_assign[tool_pos], tool_assign[tool_assign.size() - 1]);
+    tool_assign.pop_back();
 
     return;
 
@@ -14589,11 +15035,9 @@ inline void Model<TSeq>::reset() {
     dist_virus();
     dist_tools();
 
-    // Distributing initial state, if specified
+    // The initial stages, if any
     if (nh)
         nh_initial_place();
-
-    initial_states_fun(this);
 
     // Global events set themselves up for the run. This happens last, with the
     // RNG seeded and the population in its initial state, so that an event that
@@ -16142,165 +16586,6 @@ inline void Model<TSeq>::post_sampling_dispatch()
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -./include/epiworld/virus-distribute-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_VIRUS_DISTRIBUTE_MEAT_HPP
-#define EPIWORLD_VIRUS_DISTRIBUTE_MEAT_HPP
-
-/**
- * Distributes a virus to a set of agents.
- *
- * This function takes a vector of agent IDs and returns a lambda function that
- * can be used to distribute a virus to the specified agents.
- *
- * @param agents_ids A vector of agent IDs representing the set of agents to
- * distribute the virus to.
- * 
- * @return A lambda function that takes a Virus object and a Model object and
- * distributes the virus to the specified agents.
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline VirusToAgentFun<TSeq> distribute_virus_to_set(
-    std::vector< size_t > agents_ids
-) {
-
-    // Captured through a shared_ptr: the lambda is stored in Virus::dist and
-    // every agent receiving the virus (including through transmission) gets
-    // a clone of it (Virus::clone_ptr), so capturing the vector by value
-    // would make distribution O(k^2).
-    auto agents_ids_ptr = std::make_shared< std::vector< size_t > >(
-        std::move(agents_ids)
-    );
-
-    return [agents_ids_ptr](
-        Virus<TSeq> & virus, Model<TSeq> * model
-    ) -> void 
-    { 
-        // Adding action
-        for (auto i: *agents_ids_ptr)
-        {
-            model->get_agent(i).set_virus(
-                *model, virus
-                );
-        }
-    };
-
-}
-
-/**
- * @brief Distributes a virus randomly to agents.
- * 
- * This function takes a sequence of agents and randomly assigns a virus to
- * each agent.
- * 
- * @tparam TSeq The type of the sequence of agents.
- * @param agents The sequence of agents to distribute the virus to.
- * @return A function object that assigns a virus to each agent randomly.
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline VirusToAgentFun<TSeq> distribute_virus_randomly(
-    epiworld_double prevalence,
-    bool prevalence_as_proportion = true,
-    std::vector< size_t > agents_ids = {}
-) {
-
-    auto agents_ids_ptr = std::make_shared< std::vector< size_t > >(
-        std::move(agents_ids)
-    );
-
-    return [prevalence,prevalence_as_proportion,agents_ids_ptr](
-        Virus<TSeq> & virus, Model<TSeq> * model
-    ) -> void 
-    { 
-        
-        // Figuring out how what agents are available
-        bool use_set = agents_ids_ptr->size() > 0;
-        std::vector< size_t > idx;
-        if (use_set)
-        {
-            for (const auto & agent: *agents_ids_ptr)
-                if (model->get_agent(agent).get_virus() == nullptr)
-                    idx.push_back(agent);
-        }
-        else 
-        {
-            for (const auto & agent: model->get_agents())
-                if (agent.get_virus() == nullptr)
-                    idx.push_back(agent.get_id());
-        }
-
-        // Picking how many
-        int n = use_set ?
-            static_cast<int>(idx.size()) :
-            static_cast<int>(model->size())
-            ;
-            
-        int n_available = static_cast<int>(idx.size());
-        int n_to_sample;
-        if (prevalence_as_proportion)
-        {
-            n_to_sample = static_cast<int>(std::floor(
-                prevalence * static_cast< epiworld_double >(n)
-            ));
-
-            // Correcting for possible overflow
-            if (n_to_sample > n)
-                n_to_sample = n;
-        }
-        else
-        {
-            n_to_sample = static_cast<int>(prevalence);
-        }
-
-        if (n_to_sample > n_available)
-            throw std::range_error(
-                "There are only " + std::to_string(n_available) + 
-                " individuals with no virus in the population. " +
-                "Cannot add the virus to " +
-                std::to_string(n_to_sample)
-            );
-        
-        auto & population = model->get_agents();
-        for (int i = 0; i < n_to_sample; ++i)
-        {
-
-            // runif_index(n) is in [0, n); the decrement leaves n_available
-            // at the last slot, which is swapped out below
-            int loc = model->runif_index(n_available--);
-
-            Agent<TSeq> & agent = population[idx[loc]];
-            
-            // Adding action
-            agent.set_virus(
-                *model, virus
-                );
-
-            // Adjusting sample
-            std::swap(idx[loc], idx[n_available]);
-
-        }
-
-    };
-
-}
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/virus-distribute-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
  Start of -./include/epiworld/virus-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -16427,35 +16712,6 @@ inline Virus<TSeq>::Virus(
     }
     
     set_name(name);
-}
-
-template<typename TSeq>
-inline Virus<TSeq>::Virus(
-    std::string name,
-    epiworld_double prevalence,
-    bool prevalence_as_proportion
-    ) {
-
-    #ifdef EPI_DEBUG_VIRUS
-    counter_construct++;
-    #endif
-
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        baseline_sequence = -1;
-    }
-    else
-    {
-        baseline_sequence = nullptr;
-    }
-
-    set_name(name);
-    set_distribution(
-        distribute_virus_randomly<TSeq>(
-            prevalence,
-            prevalence_as_proportion
-        )
-    );
 }
 
 #ifdef EPI_DEBUG_VIRUS
@@ -17197,25 +17453,6 @@ inline void Virus<TSeq>::print() const
 }
 
 template<typename TSeq>
-inline void Virus<TSeq>::distribute(Model<TSeq> * model)
-{
-
-    if (dist)
-    {
-
-        dist(*this, model);
-
-    }
-
-}
-
-template<typename TSeq>
-inline void Virus<TSeq>::set_distribution(VirusToAgentFun<TSeq> fun)
-{
-    dist = fun;
-}
-
-template<typename TSeq>
 inline std::unique_ptr<Virus<TSeq>> Virus<TSeq>::clone_ptr() const
 {
     auto cloned = std::make_unique<Virus<TSeq>>(*this);
@@ -17264,150 +17501,6 @@ inline ParamId Virus<TSeq>::param_redirect(
     // #include "tools-bones.hpp"
 
 // (already included ./include/epiworld/tool-bones.hpp)
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/tool-distribute-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef TOOL_DISTRIBUTE_MEAT_HPP
-#define TOOL_DISTRIBUTE_MEAT_HPP
-
-/**
- * @brief Distributes a tool to a set of agents.
- * 
- * This function takes a vector of agent IDs and returns a lambda function that
- * distributes a tool to each agent in the set.
- * 
- * The lambda function takes a reference to a Tool object and a pointer to a
- * Model object as parameters. It iterates over the agent IDs and adds the tool
- * to each agent using the add_tool() method of the Model object.
- * 
- * @tparam TSeq The sequence type used in the Tool and Model objects.
- * @param agents_ids A vector of agent IDs representing the set of agents to
- * distribute the tool to.
- * @return A lambda function that distributes the tool to the set of agents.
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline ToolToAgentFun<TSeq> distribute_tool_to_set(
-    std::vector< size_t > agents_ids
-) {
-
-    // Captured through a shared_ptr: the lambda is stored in Tool::dist and
-    // every agent receiving the tool gets a clone of it (Tool::clone_ptr),
-    // so capturing the vector by value would make distribution O(k^2).
-    auto agents_ids_ptr = std::make_shared< std::vector< size_t > >(
-        std::move(agents_ids)
-    );
-
-    return [agents_ids_ptr](
-        Tool<TSeq> & tool, Model<TSeq> * model
-    ) -> void 
-    { 
-        // Adding action
-        for (auto i: *agents_ids_ptr)
-        {
-            model->get_agent(i).add_tool(
-                *model, tool
-                );
-        }
-    };
-
-}
-
-/**
- * Function template to distribute a tool randomly to agents in a model.
- * 
- * @tparam TSeq The sequence type used in the model.
- * @param prevalence The prevalence of the tool in the population.
- * @param as_proportion Flag indicating whether the prevalence is given as a
- * proportion or an absolute value.
- * @return A lambda function that distributes the tool randomly to agents in
- * the model.
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline ToolToAgentFun<TSeq> distribute_tool_randomly(
-    epiworld_double prevalence,
-    bool as_proportion = true,
-    std::vector< size_t > agents_ids = {}
-) {
-
-    auto agents_ids_ptr = std::make_shared< std::vector< size_t > >(
-        std::move(agents_ids)
-    );
-
-    return [prevalence,as_proportion,agents_ids_ptr](
-        Tool<TSeq> & tool, Model<TSeq> * model
-        ) -> void {
-
-            // Figuring out how what agents are available
-            bool use_set = agents_ids_ptr->size() > 0;
-
-            // Picking how many
-            int n_to_distribute;
-            int n = use_set ? 
-                static_cast<int>(agents_ids_ptr->size()) :
-                static_cast<int>(model->size());
-                
-            if (as_proportion)
-            {
-                n_to_distribute = static_cast<int>(std::floor(prevalence * n));
-
-                // Correcting for possible rounding errors
-                if (n_to_distribute > n)
-                    n_to_distribute = n;
-
-            }
-            else
-            {
-                n_to_distribute = static_cast<int>(prevalence);
-            }
-
-            if (n_to_distribute > n)
-                throw std::range_error("There are only " + std::to_string(n) + 
-                " individuals in the population. Cannot add the tool to " + std::to_string(n_to_distribute));
-            
-            // Sampling space: either the agents in the set or everyone
-            std::vector< size_t > idx;
-            if (use_set)
-                idx = *agents_ids_ptr;
-            else
-            {
-                idx.resize(n);
-                std::iota(idx.begin(), idx.end(), 0u);
-            }
-
-            auto & population = model->get_agents();
-            for (int i = 0u; i < n_to_distribute; ++i)
-            {
-                // runif_index(n) is in [0, n); n-- leaves n at the last slot
-                int loc = model->runif_index(n--);
-
-                population[idx[loc]].add_tool(
-                    *model, tool
-                    );
-                
-                std::swap(idx[loc], idx[n]);
-
-            }
-
-        };
-
-}
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/tool-distribute-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -17527,30 +17620,6 @@ inline Tool<TSeq>::Tool(std::string name)
     }
 
     set_name(name);
-}
-
-template<typename TSeq>
-inline Tool<TSeq>::Tool(
-    std::string name,
-    epiworld_double prevalence,
-    bool as_proportion
-    )
-{
-
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        sequence = -1;
-    }
-    else
-    {
-        sequence = nullptr;
-    }
-
-    set_name(name);
-
-    set_distribution(
-        distribute_tool_randomly<TSeq>(prevalence, as_proportion)
-    );
 }
 
 template<typename TSeq>
@@ -18078,25 +18147,6 @@ inline void Tool<TSeq>::print() const
         printf_epiworld("targets    : %s\n", tgts.c_str());
     }
 
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::distribute(Model<TSeq> * model)
-{
-
-    if (dist)
-    {
-
-        dist(*this, model);
-
-    }
-
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::set_distribution(ToolToAgentFun<TSeq> fun)
-{
-    dist = fun;
 }
 
 template<typename TSeq>
@@ -20447,35 +20497,6 @@ inline void NaturalHistory<TSeq>::finalize(Model<TSeq> & model)
 
 }
 
-// Seed ------------------------------------------------------------------------
-
-inline Seed Seed::proportion(
-    epiworld_double p,
-    std::vector< std::pair< int, epiworld_double > > split
-)
-{
-    if ((p < 0.0) || (p > 1.0))
-        throw std::range_error("A seeding proportion must be within [0, 1].");
-
-    Seed s;
-    s.prevalence = p;
-    s.as_proportion = true;
-    s.split = std::move(split);
-    return s;
-}
-
-inline Seed Seed::count(
-    size_t n,
-    std::vector< std::pair< int, epiworld_double > > split
-)
-{
-    Seed s;
-    s.prevalence = static_cast< epiworld_double >(n);
-    s.as_proportion = false;
-    s.split = std::move(split);
-    return s;
-}
-
 // Model: the natural history ------------------------------------------------
 
 template<typename TSeq>
@@ -20554,116 +20575,6 @@ inline void Model<TSeq>::set_natural_history(NaturalHistory<TSeq> natural_histor
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_virus(Virus<TSeq> v, Seed seed)
-{
-
-    if (!seed.split.empty())
-    {
-
-        if (!nh)
-            throw std::logic_error(
-                "A seed split across stages needs a natural history."
-            );
-
-        epiworld_double total = 0.0;
-        for (auto & s : seed.split)
-        {
-            nh->check_stage(s.first, "seed");
-            if (!nh->is_carrier(s.first))
-                throw std::logic_error(
-                    "Seeds go to carrier stages; \"" + nh->get_stages()[s.first] +
-                    "\" is not one."
-                );
-            total += s.second;
-        }
-
-        if (std::abs(total - 1.0) > 1e-9)
-            throw std::range_error(
-                "The shares of a seed split must add up to 1."
-            );
-
-    }
-
-    // Where in nh_seeds this virus's seed lives (it can change later, e.g., by
-    // a model's initial_states())
-    const size_t slot = nh_seeds.size();
-    nh_seeds.push_back(std::move(seed));
-
-    v.set_distribution(
-        [slot](Virus<TSeq> & virus, Model<TSeq> * model) -> void {
-
-        const Seed & s = model->nh_seeds[slot];
-        const auto * h = model->nh.get();
-
-        std::vector< size_t > idx;
-        for (auto & a : model->population)
-            if (
-                (a.virus == nullptr) &&
-                ((h == nullptr) || (h->get_stage_info(a.state).infection >= 0))
-            )
-                idx.push_back(static_cast< size_t >(a.id));
-
-        const size_t n = s.as_proportion ?
-            static_cast< size_t >(std::floor(
-                s.prevalence * static_cast< epiworld_double >(model->size())
-            )) :
-            static_cast< size_t >(s.prevalence);
-
-        if (n > idx.size())
-            throw std::range_error(
-                "Only " + std::to_string(idx.size()) + " agents can be "
-                "infected; cannot seed " + std::to_string(n) + "."
-            );
-
-        // How many go to each stage of the split (the first takes the rest)
-        std::vector< size_t > counts(s.split.size(), 0u);
-        size_t assigned = 0u;
-        for (size_t k = 1u; k < s.split.size(); ++k)
-        {
-            counts[k] = static_cast< size_t >(std::floor(
-                s.split[k].second * static_cast< epiworld_double >(n)
-            ));
-            assigned += counts[k];
-        }
-        if (!counts.empty())
-            counts[0u] = n - std::min(n, assigned);
-
-        size_t avail = idx.size();
-        size_t k = 0u;
-        for (size_t i = 0u; i < n; ++i)
-        {
-
-            while ((k < counts.size()) && (counts[k] == 0u))
-                ++k;
-
-            const size_t loc = model->runif_index(
-                static_cast< uint32_t >(avail--)
-            );
-            Agent<TSeq> & agent = model->population[idx[loc]];
-
-            model->nh_pending = NH_SEED;
-            if (counts.empty())
-                agent.set_virus(*model, virus);
-            else
-            {
-                agent.set_virus(
-                    *model, virus, s.split[k].first, Queue<TSeq>::NoOne
-                );
-                --counts[k];
-            }
-            model->nh_pending = -1;
-
-            std::swap(idx[loc], idx[avail]);
-
-        }
-
-    });
-
-    add_virus(v);
-
-}
-
-template<typename TSeq>
 inline bool Model<TSeq>::fire(int transition, Agent<TSeq> & agent)
 {
 
@@ -20689,31 +20600,13 @@ inline bool Model<TSeq>::fire(int transition, Agent<TSeq> & agent)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_initial(int stage, epiworld_double share)
+inline void Model<TSeq>::set_initial(Assign<TSeq> a)
 {
 
     if (!nh)
         throw std::logic_error("set_initial() needs a natural history.");
 
-    nh->check_stage(stage, "initial");
-
-    if (nh->is_carrier(stage))
-        throw std::logic_error(
-            "set_initial() places agents without the virus; \"" +
-            nh->get_stages()[stage] + "\" is a carrier stage (seed instead)."
-        );
-
-    if ((share < 0.0) || (share > 1.0))
-        throw std::range_error("An initial share must be within [0, 1].");
-
-    for (auto & init : nh_initial)
-        if (init.first == stage)
-        {
-            init.second = share;
-            return;
-        }
-
-    nh_initial.emplace_back(stage, share);
+    nh_initial = std::move(a);
 
 }
 
@@ -20942,40 +20835,40 @@ template<typename TSeq>
 inline void Model<TSeq>::nh_initial_place()
 {
 
-    if (nh_initial.empty())
+    if (!nh_initial.is_set())
         return;
 
     // The agents left without the virus, in the first stage
-    std::vector< size_t > idx;
+    std::vector< char > eligible(population.size());
     for (auto & p : population)
-        if ((p.virus == nullptr) && (p.state == 0u))
-            idx.push_back(static_cast< size_t >(p.id));
+        eligible[static_cast< size_t >(p.id)] =
+            (p.virus == nullptr) && (p.state == 0u);
 
-    const epiworld_double n_free = static_cast< epiworld_double >(idx.size());
-    size_t avail = idx.size();
+    const std::vector< int > labels = nh_initial.draw(*this, eligible);
 
-    for (auto & init : nh_initial)
+    for (size_t i = 0u; i < labels.size(); ++i)
     {
 
-        const size_t k = static_cast< size_t >(init.second * n_free);
-        if (k > avail)
-            throw std::range_error(
-                "The initial shares add up to more than the agents without "
-                "the virus."
+        const int s = labels[i];
+        if (s == -1)
+            continue;
+
+        if (
+            (s < 0) || (static_cast< size_t >(s) >= nh->get_n_stages()) ||
+            nh->is_carrier(s)
+        )
+            throw std::logic_error(
+                "set_initial(): the label " + std::to_string(s) + " is not a "
+                "stage without the virus (an initial stage is a stage, e.g., "
+                "assign::shares({{R, 0.1}}); carriers are seeded with the "
+                "virus)."
             );
 
-        for (size_t i = 0u; i < k; ++i)
-        {
-            const size_t loc = runif_index(static_cast< uint32_t >(avail--));
-            nh_pending = NH_INITIAL;
-            population[idx[loc]].change_state(
-                *this,
-                static_cast< epiworld_fast_uint >(init.first),
-                Queue<TSeq>::NoOne
-            );
-            nh_pending = -1;
-            std::swap(idx[loc], idx[avail]);
-        }
+        nh_pending = NH_INITIAL;
+        population[i].change_state(
+            *this, static_cast< epiworld_fast_uint >(s), Queue<TSeq>::NoOne
+        );
+        nh_pending = -1;
 
     }
 
@@ -21043,12 +20936,12 @@ std::shared_ptr< Mixing<TSeq> > mixing(std::string name);
  * ### Groups
  *
  * The layer owns the grouping, set with `set_groups()` before the first run:
- * - from a vector, one group per agent (or `NO_GROUP`, which leaves the agent
+ * - `assign::labels(v)`, one group per agent (or -1, which leaves the agent
  *   out of the layer): the grouping is *fixed*;
- * - from a *generator* (a `Grouping`, e.g., `grouping::random()`), which the
- *   layer calls at every reset: each run (and each replicate of
- *   `run_multiple()`) then gets its own draw, from its own seed, as a network
- *   layer from a `graph::` generator does.
+ * - any other `Assign` (e.g., `assign::counts({{0, 300}, {1, 700}})`), drawn
+ *   at every reset: each run (and each replicate of `run_multiple()`) then
+ *   gets its own draw, from its own seed, as a network layer from a `graph::`
+ *   generator does. See `assign.hpp`.
  *
  * ### Contacts: a matrix or a probability per pair
  *
@@ -21124,17 +21017,13 @@ public:
     /// Group of the agents that are not in the layer.
     static constexpr size_t NO_GROUP = std::numeric_limits< size_t >::max();
 
-    /**
-     * @brief A grouping drawn at every reset (see `set_groups()`): the number
-     * of groups, and a function that returns the group of each agent of a
-     * model (or `NO_GROUP`), using the model's random numbers.
-     */
+private:
+
+    /// A grouping drawn at every reset (see `set_groups()`)
     struct Grouping {
         size_t n_groups;
         std::function< std::vector< size_t >(Model<TSeq> &) > draw;
     };
-
-private:
 
     std::optional< ParamRef > rate_ref; ///< Empty: rate 1
 
@@ -21247,19 +21136,15 @@ public:
 
     /**
      * @brief Sets the grouping of the layer (between runs only).
-     * @param group_of_agent One entry per agent: a group in `[0, n_groups)`, or
-     * `NO_GROUP` to leave the agent out of the layer.
+     * @param a Who is in which group: each agent's label is its group, in
+     * `[0, n_groups_)`, or none (out of the layer). With `assign::labels()`
+     * the grouping is fixed (and `set_group()` between runs edits it);
+     * otherwise it is drawn again at every reset, e.g.,
+     * `assign::counts({{0, 300}, {1, 700}})`. See `assign.hpp`.
      * @param n_groups_ Number of groups (the contact matrix is
      * `n_groups x n_groups`).
      */
-    void set_groups(std::vector< size_t > group_of_agent, size_t n_groups_);
-
-    /**
-     * @brief Sets a grouping drawn at every reset (between runs only), e.g.,
-     * `grouping::random()`.
-     * @details Moves with `set_group()` are then for the current run only.
-     */
-    void set_groups(Grouping generator);
+    void set_groups(Assign<TSeq> a, size_t n_groups_);
 
     /// Group of an agent (`NO_GROUP` if it is not in the layer).
     size_t get_group(size_t agent_id) const
@@ -21414,19 +21299,8 @@ inline std::shared_ptr< Mixing<TSeq> > mixing(std::string name)
 }
 
 template<typename TSeq>
-inline void Mixing<TSeq>::set_groups(
-    std::vector< size_t > group_of_agent,
-    size_t n_groups_
-)
+inline void Mixing<TSeq>::set_groups(Assign<TSeq> a, size_t n_groups_)
 {
-
-    for (size_t g : group_of_agent)
-        if ((g != NO_GROUP) && (g >= n_groups_))
-            throw std::range_error(
-                "Mixing layer '" + this->get_name() + "': group " +
-                std::to_string(g) + " is out of range (" +
-                std::to_string(n_groups_) + " groups)."
-            );
 
     if (!this->edits_baseline())
         throw std::logic_error(
@@ -21434,39 +21308,56 @@ inline void Mixing<TSeq>::set_groups(
             "baseline and cannot be called during a run; use set_group()."
         );
 
-    groups_baseline = std::move(group_of_agent);
-    groups          = groups_baseline;
-    n_groups        = n_groups_;
-    grouping        = {0u, nullptr};
-    explicit_groups = true;
-    layout_stale    = true;
-    rebuild_members();
-    clear_history();
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::set_groups(Grouping generator)
-{
-
-    if (!generator.draw)
+    if (!a.is_set())
         throw std::invalid_argument(
             "Mixing layer '" + this->get_name() + "': empty grouping."
         );
 
-    if (!this->edits_baseline())
-        throw std::logic_error(
-            "Mixing layer '" + this->get_name() + "': set_groups() sets the "
-            "baseline and cannot be called during a run; use set_group()."
-        );
+    // A label is a group, or none
+    const std::string lname = this->get_name();
+    auto to_groups = [lname, n_groups_](const std::vector< int > & labels) {
+        std::vector< size_t > g(labels.size(), NO_GROUP);
+        for (size_t i = 0u; i < labels.size(); ++i)
+        {
+            if (labels[i] == -1)
+                continue;
+            if ((labels[i] < 0) || (static_cast< size_t >(labels[i]) >= n_groups_))
+                throw std::range_error(
+                    "Mixing layer '" + lname + "': the label " +
+                    std::to_string(labels[i]) + " is not a group (" +
+                    std::to_string(n_groups_) + " groups; a grouping gives "
+                    "each agent a group, e.g., assign::counts({{0, n}, ...}))."
+                );
+            g[i] = static_cast< size_t >(labels[i]);
+        }
+        return g;
+    };
 
-    // Drawn at the next reset
-    grouping        = std::move(generator);
-    n_groups        = grouping.n_groups;
+    n_groups        = n_groups_;
     explicit_groups = true;
-    groups_baseline.clear();
-    groups.clear();
     layout_stale    = true;
+
+    if (const auto * fixed = a.get_fixed())
+    {
+        groups_baseline = to_groups(*fixed);
+        groups          = groups_baseline;
+        grouping        = {0u, nullptr};
+        rebuild_members();
+    }
+    else
+    {
+        // Drawn at every reset; everyone can be in a group
+        grouping = {
+            n_groups_,
+            [a, to_groups](Model<TSeq> & model) -> std::vector< size_t > {
+                const std::vector< char > everyone(model.size(), 1);
+                return to_groups(a.draw(model, everyone));
+            }
+        };
+        groups_baseline.clear();
+        groups.clear();
+    }
+
     clear_history();
 
 }
@@ -22233,239 +22124,6 @@ inline size_t Mixing<TSeq>::sample(
     return n_sampled;
 
 }
-
-}
-
-namespace grouping {
-
-/**
- * @brief Random groups of given sizes, drawn at every reset (see
- * `layer::Mixing::set_groups()`).
- *
- * @details Group by group, in order, the agents are drawn at random from those
- * not yet in a group; agents left over are in no group. A group of size `s`
- * takes `s` agents (a whole number), or, with `as_proportion`, `floor(s x n)`
- * of the `n` agents still without a group. These are the draws that the
- * random entity distribution of epiworld 0.x made, so a model ported from
- * entities keeps its groups for a seed.
- *
- * @param sizes One size per group.
- * @param as_proportion Whether the sizes are proportions of the agents left.
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline typename layer::Mixing<TSeq>::Grouping random(
-    std::vector< epiworld_double > sizes,
-    bool as_proportion = false
-)
-{
-
-    for (epiworld_double s : sizes)
-        if (
-            !std::isfinite(s) || (s < 0.0) ||
-            (as_proportion ? (s > 1.0) : (s != std::floor(s)))
-        )
-            throw std::range_error(
-                "grouping::random(): sizes must be non-negative whole numbers "
-                "of agents, or proportions in [0, 1] with as_proportion; got " +
-                std::to_string(s) + "."
-            );
-
-    return {
-        sizes.size(),
-        [sizes, as_proportion](Model<TSeq> & model) -> std::vector< size_t > {
-
-            constexpr size_t none = layer::Mixing<TSeq>::NO_GROUP;
-            std::vector< size_t > groups(model.size(), none);
-            std::vector< size_t > idx;
-
-            for (size_t g = 0u; g < sizes.size(); ++g)
-            {
-
-                // The agents without a group, in ascending id order
-                idx.clear();
-                for (size_t i = 0u; i < groups.size(); ++i)
-                    if (groups[i] == none)
-                        idx.push_back(i);
-
-                const size_t n = idx.size();
-                size_t n_draw;
-                if (as_proportion)
-                    n_draw = std::min(
-                        n,
-                        static_cast< size_t >(std::floor(sizes[g] * n))
-                    );
-                else
-                {
-                    // Compared before the cast, which a huge size overflows
-                    if (sizes[g] > static_cast< epiworld_double >(n))
-                        throw std::range_error(
-                            "grouping::random(): group " + std::to_string(g) +
-                            " takes " + std::to_string(sizes[g]) + " agents, "
-                            "but only " + std::to_string(n) + " are left."
-                        );
-                    n_draw = static_cast< size_t >(sizes[g]);
-                }
-
-                size_t n_left = n;
-                for (size_t k = 0u; k < n_draw; ++k)
-                {
-                    const size_t loc = model.runif_index(
-                        static_cast< uint32_t >(n_left--)
-                    );
-                    groups[idx[loc]] = g;
-                    std::swap(idx[loc], idx[n_left]);
-                }
-
-            }
-
-            return groups;
-
-        }
-    };
-
-}
-
-}
-
-/**
- * @brief Draws, in each group of the mixing layer `layer`, a share of its
- * members at random and calls `f(agent_id)` on each (the draws of the
- * distributions to groups below).
- *
- * @details Group by group, `prevalence[g]` of the members of group `g`: a
- * proportion (`floor(p x size)` agents) or a count (at most the group's
- * size). Within a group, the members are drawn in ascending id order, as
- * the entity distribution of epiworld 0.x did for consecutive agents.
- */
-template<typename TSeq, typename F>
-inline void draw_in_groups(
-    Model<TSeq> & model,
-    const std::string & layer,
-    const std::vector< double > & prevalence,
-    bool as_proportion,
-    F && f
-)
-{
-
-    auto * mix = dynamic_cast< layer::Mixing<TSeq> * >(&model.get_layer(layer));
-    if (mix == nullptr)
-        throw std::logic_error(
-            "The layer '" + layer + "' is not a mixing layer: it has no groups."
-        );
-
-    if (prevalence.size() != mix->get_n_groups())
-        throw std::range_error(
-            "There are " + std::to_string(prevalence.size()) + " prevalences, "
-            "but the layer '" + layer + "' has " +
-            std::to_string(mix->get_n_groups()) + " groups."
-        );
-
-    std::vector< size_t > idx;
-    for (size_t g = 0u; g < prevalence.size(); ++g)
-    {
-
-        idx = mix->members_of(g);
-        std::sort(idx.begin(), idx.end());
-
-        // A count above the group size takes the whole group (capped before
-        // the cast, which is undefined for doubles beyond size_t)
-        size_t n = idx.size();
-        const double want = as_proportion ?
-            std::floor(prevalence[g] * n) : prevalence[g];
-        size_t n_draw = (want >= static_cast< double >(n)) ?
-            n : static_cast< size_t >(want);
-
-        for (size_t i = 0u; i < n_draw; ++i)
-        {
-            // runif_index(n) is in [0, n); n-- leaves n at the last slot
-            size_t loc = model.runif_index(static_cast< uint32_t >(n--));
-            f(idx[loc]);
-            std::swap(idx[loc], idx[n]);
-        }
-
-    }
-
-}
-
-/// Checks the prevalences of a distribution to groups.
-inline void check_group_prevalence(
-    const std::vector< double > & prevalence,
-    bool as_proportion
-)
-{
-    if (prevalence.empty())
-        throw std::range_error("Prevalence vector cannot be empty");
-
-    for (auto p: prevalence)
-        if (
-            !std::isfinite(p) || (p < 0.0) ||
-            (as_proportion ? (p > 1.0) : (p != std::floor(p)))
-        )
-            throw std::range_error(
-                "Prevalences must be non-negative whole numbers (or, as "
-                "proportions, in [0, 1]); got " + std::to_string(p) + "."
-            );
-}
-
-/**
- * @brief Distributes a tool to a share of each group of a mixing layer.
- *
- * @param layer Name of the mixing layer whose groups are used.
- * @param prevalence One per group: a proportion of the group's members, or,
- * with `as_proportion = false`, a count.
- * @param as_proportion Whether the prevalences are proportions.
- * @return A distribution function (see `Tool::set_distribution()`).
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline ToolToAgentFun<TSeq> distribute_tool_to_groups(
-    std::string layer,
-    std::vector< double > prevalence,
-    bool as_proportion = true
-)
-{
-
-    check_group_prevalence(prevalence, as_proportion);
-
-    return [layer, prevalence, as_proportion](
-        Tool<TSeq> & tool, Model<TSeq> * model
-    ) -> void {
-        auto & population = model->get_agents();
-        draw_in_groups(
-            *model, layer, prevalence, as_proportion,
-            [&](size_t id) { population[id].add_tool(*model, tool); }
-        );
-    };
-
-}
-
-/**
- * @brief Distributes a virus to a share of each group of a mixing layer.
- *
- * @param layer Name of the mixing layer whose groups are used.
- * @param prevalence One per group: a proportion of the group's members, or,
- * with `as_proportion = false`, a count.
- * @param as_proportion Whether the prevalences are proportions.
- * @return A distribution function (see `Virus::set_distribution()`).
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline VirusToAgentFun<TSeq> distribute_virus_to_groups(
-    std::string layer,
-    std::vector< double > prevalence,
-    bool as_proportion = true
-)
-{
-
-    check_group_prevalence(prevalence, as_proportion);
-
-    return [layer, prevalence, as_proportion](
-        Virus<TSeq> & virus, Model<TSeq> * model
-    ) -> void {
-        auto & population = model->get_agents();
-        draw_in_groups(
-            *model, layer, prevalence, as_proportion,
-            [&](size_t id) { population[id].set_virus(*model, virus); }
-        );
-    };
 
 }
 
@@ -25014,7 +24672,7 @@ inline std::shared_ptr< layer::Mixing<TSeq> > Bubbles<TSeq>::make_layer(
     // Everyone with their household: the bubbles are larger groups of the
     // same layer (households are never split)
     auto res = layer::mixing<TSeq>(layer);
-    res->set_groups(household, n_households);
+    res->set_groups(assign::labels<TSeq>(household), n_households);
     res->set_contact_prob(household_contact_prob);
 
     return res;
@@ -25502,364 +25160,6 @@ inline std::unique_ptr< GlobalEvent<TSeq> > Bubbles<TSeq>::clone_ptr() const
  */
 namespace epimodels {
 
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/models/init-functions.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_MODELS_INIT_FUNCTIONS_HPP
-#define EPIWORLD_MODELS_INIT_FUNCTIONS_HPP
-
-// (already included include/epiworld/models/../model-bones.hpp)
-
-/**
- * @brief Creates an initial function for the SIR-like models
- * @ingroup model_utilities
- * 
- * The function is used for the initial states of the model.
-*/
-template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> create_init_function_sir(
-    std::vector< double > proportions_
-) {
-
-    // Checking widths
-    if (proportions_.size() != 1u)
-        throw std::invalid_argument(
-            "The vector of proportions must have a single element."
-            );
-
-    // Proportion should be within [0, 1]
-    if ((proportions_[0] < 0.0) || (proportions_[0] > 1.0))
-        throw std::invalid_argument(
-            "The proportion must be within (0, 1)."
-            );
-
-    double prop = proportions_[0u];
-
-    std::function<void(Model<TSeq>*)> fun =
-    [prop] (Model<TSeq> * model) -> void {
-
-        // Figuring out information about the viruses
-        double tot = 0.0;
-        double n   = static_cast<double>(model->size());
-        for (const auto & agent: model->get_agents())
-        {
-            if (agent.get_virus() != nullptr)
-                tot += 1.0;
-        }
-        tot /= n;
-
-        // Putting the total into context
-        double tot_left = 1.0 - tot;
-
-        // Since susceptible and infected are "fixed,"
-        // we only need to change recovered
-        size_t nrecovered = prop * tot_left * n;
-        
-        AgentsSample<TSeq> sample(
-            *model,
-            nrecovered,
-            {0u},
-            true
-            );
-
-        // Setting up the initial states
-        for (auto & agent : sample)
-            agent->change_state(*model, 2, Queue<TSeq>::NoOne);
-
-        // Running the events
-        model->events_run();
-
-        return;
-
-    };
-
-    return fun;
-
-}
-
-/**
- * @brief Creates an initial function for the SIR-like models
- * @ingroup model_utilities
- *
- * The function is used for the initial states of the model.
-*/
-template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> create_init_function_sird(
-    std::vector< double > prop
-) {
-
-    // Check length of prop equals two
-    if (prop.size() != 2u)
-        throw std::invalid_argument(
-            "The vector of proportions must have two elements."
-            );
-
-    // Check elements in prop are within [0, 1] and sum up to 1
-    double tot = 0.0;
-    for (auto & v : prop)
-    {
-        if ((v < 0.0) || (v > 1.0))
-            throw std::invalid_argument(
-                "The proportion must be within (0, 1)."
-                );
-        tot += v;
-    }
-
-    if (tot >= 1.0)
-        throw std::invalid_argument(
-            "The proportions must sum up to 1."
-            );
-
-    std::function<void(Model<TSeq>*)> fun =
-    [prop] (Model<TSeq> * model) -> void {
-
-        // Figuring out information about the viruses
-        double tot = 0.0;
-        double n   = static_cast<double>(model->size());
-        for (const auto & agent: model->get_agents())
-        {
-            if (agent.get_virus() != nullptr)
-                tot += 1.0;
-        }
-        tot /= n;
-
-        // Putting the total into context
-        double tot_left = 1.0 - tot;
-
-        // Since susceptible and infected are "fixed,"
-        // we only need to change recovered
-        size_t nrecovered = prop[0u] * tot_left * n;
-        size_t ndeceased  = prop[01] * tot_left * n;
-
-        AgentsSample<TSeq> sample_recover(
-            *model,
-            nrecovered,
-            {0u},
-            true
-            );
-
-        // Setting up the initial states
-        for (auto & agent : sample_recover)
-            agent->change_state(*model, 2, Queue<TSeq>::NoOne);
-
-        AgentsSample<TSeq> sample_deceased(
-            *model,
-            ndeceased,
-            {0u},
-            true
-            );
-
-        // Setting up the initial states
-        for (auto & agent : sample_deceased)
-            agent->change_state(*model, 3, Queue<TSeq>::NoOne);
-        
-        // Running the events
-        model->events_run();
-
-        return;
-
-    };
-
-    return fun;
-
-}
-
-
-/**
- * @brief Creates an initial function for the SEIR-like models
- * @ingroup model_utilities
- * 
- * The function is used for the initial states of the model.
-*/
-template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> create_init_function_seir(
-    std::vector< double > proportions_
-) {
-
-    // Checking widths
-    if (proportions_.size() != 2u) {
-        throw std::invalid_argument("-proportions_- must have two entries.");
-    }
-
-    // proportions_ are values between 0 and 1, otherwise error
-    for (auto & v : proportions_)
-        if ((v < 0.0) || (v > 1.0))
-            throw std::invalid_argument(
-                "-proportions_- must have values between 0 and 1."
-                );
-
-
-    std::function<void(Model<TSeq>*)> fun = 
-        [proportions_] (Model<TSeq> * model) -> void {
-
-        // Figuring out information about the viruses
-        double tot = 0.0;
-        double n   = static_cast<double>(model->size());
-        for (const auto & agent: model->get_agents())
-        {
-            if (agent.get_virus() != nullptr)
-                tot += 1.0;
-        }
-        tot /= n;
-
-        // Putting the total into context
-        double tot_left = 1.0 - tot;
-
-        // Since susceptible and infected are "fixed,"
-        // we only need to change recovered
-        size_t nexposed   = proportions_[0u] * tot * n;
-        size_t nrecovered = proportions_[1u] * tot_left * n;
-        
-        AgentsSample<TSeq> sample_suscept(
-            *model,
-            nrecovered,
-            {0u},
-            true
-            );
-
-        // Setting up the initial states
-        for (auto & agent : sample_suscept)
-            agent->change_state(*model, 3, Queue<TSeq>::NoOne);
-
-        AgentsSample<TSeq> sample_exposed(
-            *model,
-            nexposed,
-            {1u},
-            true
-            );
-
-        // Setting up the initial states
-        for (auto & agent : sample_exposed)
-            agent->change_state(*model, 2, Queue<TSeq>::NoOne);
-
-        // Running the events
-        model->events_run();
-
-        return;
-
-    };
-
-    return fun;
-
-}
-
-/**
- * @brief Creates an initial function for the SEIR-like models
- * @ingroup model_utilities
- *
- * The function is used for the initial states of the model.
-*/
-template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> create_init_function_seird(
-    std::vector< double > proportions_
-) {
-
-    // Checking widths
-    if (proportions_.size() != 3u) {
-        throw std::invalid_argument("-proportions_- must have three entries.");
-    }
-
-    // proportions_ are values between 0 and 1, otherwise error
-    for (auto & v : proportions_)
-        if ((v < 0.0) || (v > 1.0))
-            throw std::invalid_argument(
-                "-proportions_- must have values between 0 and 1."
-                );
-
-    // Last first two terms shouldn't add up to more than 1
-    if ((proportions_[1u] + proportions_[2u]) > 1.0)
-        throw std::invalid_argument(
-            "The last two terms of -proportions_- must add up to less than 1."
-            );
-
-    std::function<void(Model<TSeq>*)> fun = 
-        [proportions_] (Model<TSeq> * model) -> void {
-
-        // Figuring out information about the viruses
-        double tot = 0.0;
-        double n   = static_cast<double>(model->size());
-
-        for (const auto & agent: model->get_agents())
-        {
-            if (agent.get_virus() != nullptr)
-                tot += 1.0;
-        }
-        tot /= n;
-
-        // Putting the total into context
-        double tot_left = 1.0 - tot;
-
-        // Since susceptible and infected are "fixed,"
-        // we only need to change recovered
-        size_t nexposed   = proportions_[0u] * tot * n;
-        size_t nrecovered = proportions_[1u] * tot_left * n;
-        size_t ndeceased  = proportions_[2u] * tot_left * n;
-        
-        AgentsSample<TSeq> sample_suscept(
-            *model,
-            nrecovered,
-            {0u},
-            true
-            );
-
-        // Setting up the initial states
-        for (auto & agent : sample_suscept)
-            agent->change_state(*model, 3, Queue<TSeq>::NoOne);
-
-        AgentsSample<TSeq> sample_exposed(
-            *model,
-            nexposed,
-            {1u},
-            true
-            );
-
-        // Setting up the initial states
-        for (auto & agent : sample_exposed)
-            agent->change_state(*model, 2, Queue<TSeq>::NoOne);
-
-        // Running the events
-        model->events_run();
-
-        // Setting the initial states for the deceased
-        AgentsSample<TSeq> sample_deceased(
-            *model,
-            ndeceased,
-            {0u},
-            true
-            );
-
-        // Setting up the initial states
-        for (auto & agent : sample_deceased)
-            agent->change_state(*model, 4, Queue<TSeq>::NoOne);
-        
-        // Running the events
-        model->events_run();
-
-        return;
-
-    };
-
-    return fun;
-
-}
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/models/init-functions.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
 
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -26098,7 +25398,7 @@ inline ModelSIS<TSeq>::ModelSIS(
     nh.rate(INFECTED, SUSCEPTIBLE, "Recovery rate").effect(Effect::recovery);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
 }
 
@@ -26159,15 +25459,6 @@ public:
         epiworld_double recovery_rate
     );
 
-    /**
-     * @brief Set the initial states of the model
-     * @param proportions_ Double vector with a single element:
-     * - The proportion of non-infected individuals who have recovered.
-    */
-    ModelSIR<TSeq> & initial_states(
-        std::vector< double > proportions_,
-        std::vector< int > queue_ = {}
-    ) override;
     
 };
 
@@ -26194,28 +25485,12 @@ inline ModelSIR<TSeq>::ModelSIR(
     nh.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered (SIR)");
    
 }
 
-template<typename TSeq>
-inline ModelSIR<TSeq> & ModelSIR<TSeq>::initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > /* queue_ */
-) {
-
-    if (proportions_.size() != 1u)
-        throw std::invalid_argument(
-            "The vector of proportions must have a single element."
-            );
-
-    this->set_initial(RECOVERED, proportions_[0u]);
-
-    return *this;
-
-}
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -26279,10 +25554,6 @@ public:
         epiworld_double recovery_rate
     );
 
-    ModelSEIR<TSeq> & initial_states(
-        std::vector< double > proportions_,
-        std::vector< int > queue_ = {}
-    ) override;
 
 };
 
@@ -26314,38 +25585,12 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     nh.rate(INFECTED, REMOVED, "Recovery rate").effect(Effect::recovery);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
 
 }
 
-template<typename TSeq>
-inline ModelSEIR<TSeq> & ModelSEIR<TSeq>::initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > /**/
-) {
-
-    if (proportions_.size() != 2u)
-        throw std::invalid_argument("-proportions_- must have two entries.");
-
-    for (auto & v : proportions_)
-        if ((v < 0.0) || (v > 1.0))
-            throw std::invalid_argument(
-                "-proportions_- must have values between 0 and 1."
-                );
-
-    // Of the initial cases, a share starts Infected; of the others, a share
-    // starts Removed
-    this->nh_seeds[0u].split = {
-        {EXPOSED, 1.0 - proportions_[0u]},
-        {INFECTED, proportions_[0u]}
-    };
-    this->set_initial(REMOVED, proportions_[1u]);
-
-    return *this;
-
-}
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -26618,17 +25863,17 @@ inline ModelSURV<TSeq>::ModelSURV(
     // Virus ------------------------------------------------------------------
     Virus<TSeq> covid(vname);
     covid.set_post_immunity("Prob. no reinfect");
-    this->add_virus(covid, Seed::count(prevalence));
+    this->add_virus(covid, assign::count<TSeq>(prevalence));
 
     this->set_user_data({"nsampled", "ndetected", "ndetected_asympt", "nasymptomatic"});
     this->add_globalevent(surveillance_program, "Surveilance program", -1);
    
     // Vaccine tool -----------------------------------------------------------
-    Tool<TSeq> vax("Vaccine", prop_vaccinated, true);
+    Tool<TSeq> vax("Vaccine");
     vax.set_susceptibility_reduction("Vax efficacy");
     vax.set_transmission_reduction("Vax redux transmission");
-    
-    this->add_tool(vax);
+
+    this->add_tool(vax, assign::share<TSeq>(prop_vaccinated));
 
     this->set_name("Surveillance");
 
@@ -26699,16 +25944,6 @@ public:
     );
     ///@}
 
-    /**
-     * @brief Set the initial states of the model
-     * @param proportions_ Double vector with two elements:
-     * - The proportion of non-infected individuals who have recovered.
-     * - The proportion of non-infected individuals who have died.
-    */
-    ModelSIRD<TSeq> & initial_states(
-        std::vector< double > proportions_,
-        std::vector< int > queue_ = {}
-    ) override;
     
 };
 
@@ -26740,35 +25975,13 @@ inline ModelSIRD<TSeq>::ModelSIRD(
     nh.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered-Deceased (SIRD)");
 
    
 }
 
-template<typename TSeq>
-inline ModelSIRD<TSeq> & ModelSIRD<TSeq>::initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > /**/ 
-) {
-
-    if (proportions_.size() != 2u)
-        throw std::invalid_argument(
-            "The vector of proportions must have two elements."
-            );
-
-    if ((proportions_[0u] + proportions_[1u]) >= 1.0)
-        throw std::invalid_argument(
-            "The proportions must sum up to less than 1."
-            );
-
-    this->set_initial(RECOVERED, proportions_[0u]);
-    this->set_initial(DECEASED, proportions_[1u]);
-
-    return *this;
-
-}
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
@@ -26860,7 +26073,7 @@ inline ModelSISD<TSeq>::ModelSISD(
     nh.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
 }
 
@@ -26931,10 +26144,6 @@ public:
     epiworld_double death_rate
   );
   
-  ModelSEIRD<TSeq> & initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > queue_ = {}
-  ) override;
 
 };
 
@@ -26972,44 +26181,12 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   nh.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
   this->set_natural_history(std::move(nh));
 
-  this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+  this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
   this->set_name("Susceptible-Exposed-Infected-Removed-Deceased (SEIRD)");
   
 }
 
-template<typename TSeq>
-inline ModelSEIRD<TSeq> & ModelSEIRD<TSeq>::initial_states(
-  std::vector< double > proportions_,
-  std::vector< int > /**/
-) {
-
-  if (proportions_.size() != 3u)
-    throw std::invalid_argument("-proportions_- must have three entries.");
-
-  for (auto & v : proportions_)
-    if ((v < 0.0) || (v > 1.0))
-      throw std::invalid_argument(
-        "-proportions_- must have values between 0 and 1."
-      );
-
-  if ((proportions_[1u] + proportions_[2u]) > 1.0)
-    throw std::invalid_argument(
-      "The last two terms of -proportions_- must add up to less than 1."
-    );
-
-  // Of the initial cases, a share starts Infected; of the others, shares
-  // start Removed and Deceased
-  this->nh_seeds[0u].split = {
-    {EXPOSED, 1.0 - proportions_[0u]},
-    {INFECTED, proportions_[0u]}
-  };
-  this->set_initial(REMOVED, proportions_[1u]);
-  this->set_initial(DECEASED, proportions_[2u]);
-
-  return *this;
-
-}
 
 
 #endif
@@ -27273,7 +26450,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     nh.rate(INFECTED, RECOVERED, p_recover);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Removed (SIR) (logit)");
 
@@ -27444,7 +26621,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     nh.infection(NONADOPTER, ADOPTER, parname).sampler(sampler);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(innovation_name), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(innovation_name), assign::share<TSeq>(prevalence));
 
     this->set_name(
         std::string("Diffusion of Innovations - ") + innovation_name);
@@ -27624,17 +26801,6 @@ public:
      */
     std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
-    /**
-     * @brief Set the initial states of the model
-     * @param proportions_ Double vector with two elements:
-     * - [0]: The proportion of initially infected individuals who start in the exposed state.
-     * - [1]: The proportion of initially non-infected individuals who have recovered (immune).
-     * @param queue_ Optional vector for queuing specifications (default: empty).
-     */
-    ModelSEIRQuarantine<TSeq> & initial_states(
-        std::vector< double > proportions_,
-        std::vector< int > queue_ = {}
-    ) override;
 
     /**
      * @brief Get the quarantine trigger status for all agents
@@ -28137,14 +27303,14 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
     this->add_globalevent(_quarantine_process, "Quarantine process");
 
     // Preparing the virus -------------------------------------------
-    Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname);
     virus.set_state(EXPOSED, RECOVERED, RECOVERED);
 
     virus.set_prob_infecting("Transmission probability");
     virus.set_prob_recovery("Recovery rate");
     virus.set_incubation("Latent period");
 
-    this->add_virus(virus);
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name("SEIR with Quarantine");
 
@@ -28152,20 +27318,6 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
 
 }
 
-template<typename TSeq>
-inline ModelSEIRQuarantine<TSeq> & ModelSEIRQuarantine<TSeq>::initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > /* queue_ */
-)
-{
-
-    Model<TSeq>::initial_states_fun =
-        create_init_function_seir<TSeq>(proportions_)
-        ;
-
-    return *this;
-
-}
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////

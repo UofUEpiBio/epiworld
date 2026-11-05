@@ -19,8 +19,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     Virus<> v = model.get_virus(0);
     model.rm_virus(0);
-    v.set_distribution(dist_virus<>(0));
-    model.add_virus(v);
+    model.add_virus(v, dist_virus<>(0));
 
     model.verbose_off();
 

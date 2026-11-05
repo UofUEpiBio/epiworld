@@ -113,13 +113,11 @@ namespace epiworld {
     #include "viruses-bones.hpp"
 
     #include "virus-bones.hpp"
-    #include "virus-distribute-meat.hpp"
     #include "virus-meat.hpp"
     
     // #include "tools-bones.hpp"
 
     #include "tool-bones.hpp"
-    #include "tool-distribute-meat.hpp"
     #include "tool-meat.hpp"
 
     #include "agent-meat-state.hpp"

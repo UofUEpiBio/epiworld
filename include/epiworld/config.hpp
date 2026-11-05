@@ -186,18 +186,6 @@ enum class TransmissionMode : uint8_t {
 #endif
 
 /**
- * @brief Decides how to distribute viruses at initialization
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using VirusToAgentFun = std::function<void(Virus<TSeq>&,Model<TSeq>*)>;
-
-/**
- * @brief Decides how to distribute tools at initialization
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ToolToAgentFun = std::function<void(Tool<TSeq>&,Model<TSeq>*)>;
-
-/**
  * @brief Event data for update an agent
  *
  * @tparam TSeq

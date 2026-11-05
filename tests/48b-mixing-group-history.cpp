@@ -38,7 +38,7 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
     sir.verbose_off();
 
     auto hh = layer::mixing<>("households");
-    hh->set_groups({0, 0, 0, 1, 1, 1}, 2u);
+    hh->set_groups(assign::labels({0, 0, 0, 1, 1, 1}), 2u);
     hh->set_contact_prob(1.0);
     hh->enable_tracing();
     sir.add_layer(hh);
@@ -93,7 +93,7 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
     epimodels::ModelSIR<> trio("flu", 3u, 0.0, 0.5, 0.1);
     trio.verbose_off();
     auto th = layer::mixing<>("households");
-    th->set_groups({0, 0, 1}, 2u);
+    th->set_groups(assign::labels({0, 0, 1}), 2u);
     th->set_contact_prob(1.0);
     th->enable_tracing();
     trio.add_layer(th);
@@ -119,7 +119,7 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
     hh->enable_tracing();
 
     auto everyone = layer::mixing<>("everyone");
-    everyone->set_groups(std::vector< size_t >(6u, 0u), 1u);
+    everyone->set_groups(assign::labels(std::vector< size_t >(6u, 0u)), 1u);
     everyone->set_contact_matrix({1.0});
     everyone->enable_tracing();
     sir.add_layer(everyone);
@@ -153,7 +153,7 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
         groups[i] = i / 4u;
 
     auto homes = layer::mixing<>("households");
-    homes->set_groups(groups, n / 4u);
+    homes->set_groups(assign::labels(groups), n / 4u);
     homes->set_contact_prob(1.0);
     model.add_layer(homes);
 

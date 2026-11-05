@@ -91,8 +91,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - push and pull agree", "[post-sampli
 
             Virus<> v = model.get_virus(0);
             model.rm_virus(0);
-            v.set_distribution(dist_virus<>(0));
-            model.add_virus(v);
+            model.add_virus(v, dist_virus<>(0));
 
             std::vector< int > source, target;
             for (int i = 0; i < 12; ++i)

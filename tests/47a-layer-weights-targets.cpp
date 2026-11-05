@@ -22,7 +22,7 @@ Model<> make_model(size_t n)
 
 Virus<> make_virus(std::string name, double p_inf, double p_rec = 0.0)
 {
-    Virus<> v(name, 0.0, true);
+    Virus<> v(name);
     v.set_state(1, 2, 2);
     v.set_prob_infecting(p_inf);
     v.set_prob_recovery(p_rec);
@@ -69,8 +69,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
             Model<> m = make_model(n);
             Virus<> v = make_virus("flu", p);
-            v.set_distribution(distribute_virus_to_set<>(evens));
-            m.add_virus(v);
+            m.add_virus(v, assign::agents<>(evens));
             m.add_param(w, "Weight");
             auto net = layer::network("pairs", graph);
             if (param != nullptr)
@@ -114,11 +113,9 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
         Model<> m = make_model(n);
 
         Virus<> a = make_virus("flu A", 0.2, 0.1);
-        a.set_distribution(distribute_virus_randomly<>(0.01));
         Virus<> b = make_virus("flu B", 0.2, 0.1);
-        b.set_distribution(distribute_virus_randomly<>(0.01));
-        m.add_virus(a);
-        m.add_virus(b);
+        m.add_virus(a, assign::share<>(0.01));
+        m.add_virus(b, assign::share<>(0.01));
         m.seed(77);
 
         auto net_a = layer::network("a", rgraph_smallworld(n, 6, 0.1, false, m));
@@ -167,15 +164,14 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
             Model<> m = make_model(n);
             Virus<> v = make_virus("flu", 0.05, 0.1);
-            v.set_distribution(distribute_virus_randomly<>(0.01));
-            m.add_virus(v);
+            m.add_virus(v, assign::share<>(0.01));
             m.seed(5);
 
             m.add_layer(layer::network(
                 "ties", rgraph_smallworld(n, 4, 0.1, false, m)
             ));
             auto mixing = layer::mixing("crowd");
-            mixing->set_groups(std::vector< size_t >(n, 0u), 1u);
+            mixing->set_groups(assign::labels(std::vector< size_t >(n, 0u)), 1u);
             mixing->set_contact_matrix({2.0});
             m.add_layer(mixing);
 
@@ -222,8 +218,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
             Model<> m = make_model(n);
             Virus<> v = make_virus("flu", 1.0);
-            v.set_distribution(distribute_virus_to_set<>({0u}));
-            m.add_virus(v);
+            m.add_virus(v, assign::agents<>({0u}));
             m.add_param(0.0, "Weight");
             Virus<> other = make_virus("other", 1.0);
             m.add_virus(other);
@@ -265,8 +260,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
             Model<> m = make_model(n);
             Virus<> v = make_virus("flu", 1.0);
-            v.set_distribution(distribute_virus_to_set<>({0u}));
-            m.add_virus(v);
+            m.add_virus(v, assign::agents<>({0u}));
             if (!queuing)
                 m.queuing_off();
 

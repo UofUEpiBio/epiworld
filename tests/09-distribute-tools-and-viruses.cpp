@@ -11,11 +11,8 @@ EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
     
     Tool<> tool("vax");
     tool.set_susceptibility_reduction(0.5);
-    tool.set_distribution(
-        distribute_tool_randomly(0.1, true)
-    );
 
-    model_0.add_tool(tool);
+    model_0.add_tool(tool, assign::share(0.1));
 
     model_0.run(0, 131);
 
@@ -40,22 +37,18 @@ EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
     );
     add_random_mixing(model_1, 4.0);
 
-    model_1.get_virus(0).set_distribution(
-        distribute_virus_to_set<>(got_it)
-    );
+    model_1.assign_virus(0, assign::agents<>(got_it));
 
     // A tool removed from the model is not distributed (it would reach
     // everyone, so got_tool1 would not match below)
-    Tool<> everyone("everyone", 1.0, true);
-    model_1.add_tool(everyone);
+    Tool<> everyone("everyone");
+    model_1.add_tool(everyone, assign::share(1.0));
     REQUIRE_THROWS_AS(model_1.rm_tool(1u), std::range_error);
     model_1.rm_tool(0u);
     REQUIRE(model_1.get_n_tools() == 0u);
 
     model_1.add_tool(tool);
-    model_1.get_tool(0).set_distribution(
-        distribute_tool_to_set<>(got_tool)
-    );
+    model_1.assign_tool(0, assign::agents<>(got_tool));
     
     model_1.run(0, 131);
 

@@ -120,35 +120,6 @@ inline Virus<TSeq>::Virus(
     set_name(name);
 }
 
-template<typename TSeq>
-inline Virus<TSeq>::Virus(
-    std::string name,
-    epiworld_double prevalence,
-    bool prevalence_as_proportion
-    ) {
-
-    #ifdef EPI_DEBUG_VIRUS
-    counter_construct++;
-    #endif
-
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        baseline_sequence = -1;
-    }
-    else
-    {
-        baseline_sequence = nullptr;
-    }
-
-    set_name(name);
-    set_distribution(
-        distribute_virus_randomly<TSeq>(
-            prevalence,
-            prevalence_as_proportion
-        )
-    );
-}
-
 #ifdef EPI_DEBUG_VIRUS
 template<typename TSeq>
 std::atomic<int> Virus<TSeq>::counter_construct = 0;
@@ -885,25 +856,6 @@ inline void Virus<TSeq>::print() const
     printf_epiworld("queue_post    : %i\n", static_cast<int>(queue_post));
     printf_epiworld("queue_removed : %i\n", static_cast<int>(queue_removed));
 
-}
-
-template<typename TSeq>
-inline void Virus<TSeq>::distribute(Model<TSeq> * model)
-{
-
-    if (dist)
-    {
-
-        dist(*this, model);
-
-    }
-
-}
-
-template<typename TSeq>
-inline void Virus<TSeq>::set_distribution(VirusToAgentFun<TSeq> fun)
-{
-    dist = fun;
 }
 
 template<typename TSeq>

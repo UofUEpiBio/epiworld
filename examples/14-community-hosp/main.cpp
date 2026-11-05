@@ -117,9 +117,8 @@ int main() {
     mrsa.set_state(model.infected_state, model.susceptible_state, model.susceptible_state);
     mrsa.set_prob_infecting(.1);
     mrsa.set_prob_recovery(.33);
-    mrsa.set_distribution(distribute_virus_randomly<>(0.01));
 
-    model.add_virus(mrsa);
+    model.add_virus(mrsa, assign::share<>(0.01));
 
     // Add a population
     model.add_layer(layer::network(

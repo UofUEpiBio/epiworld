@@ -356,7 +356,7 @@ inline std::shared_ptr< layer::Mixing<TSeq> > Bubbles<TSeq>::make_layer(
     // Everyone with their household: the bubbles are larger groups of the
     // same layer (households are never split)
     auto res = layer::mixing<TSeq>(layer);
-    res->set_groups(household, n_households);
+    res->set_groups(assign::labels<TSeq>(household), n_households);
     res->set_contact_prob(household_contact_prob);
 
     return res;

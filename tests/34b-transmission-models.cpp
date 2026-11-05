@@ -97,10 +97,10 @@ void build_seirh(Model<> & model)
     model.add_state("Recovered");
     model.set_infectious_states({2});
 
-    Virus<> v("pathogen", 0.02, true);
+    Virus<> v("pathogen");
     v.set_state(1, 4, 4);
     v.set_prob_infecting("Transmission rate");
-    model.add_virus(v);
+    model.add_virus(v, assign::share(0.02));
 }
 
 // Adds and removes a fixed set of ties on a schedule (no random numbers)
@@ -216,11 +216,11 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
                 m.add_state("Susceptible", default_update_susceptible<>);
             m.add_state("Infected", default_update_exposed<>);
             m.add_state("Recovered");
-            Virus<> v("flu", 0.02, true);
+            Virus<> v("flu");
             v.set_state(1, 2, 2);
             v.set_prob_infecting(0.3);
             v.set_prob_recovery(0.2);
-            m.add_virus(v);
+            m.add_virus(v, assign::share(0.02));
             m.seed(99);
             m.add_layer(layer::network(
                 "network", rgraph_smallworld(1000, 6, 0.05, false, m)

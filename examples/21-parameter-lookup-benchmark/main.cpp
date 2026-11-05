@@ -139,10 +139,10 @@ static void build_seirh(Model<> & model, size_t n)
     model.add_state("Recovered");
     model.set_infectious_states({2});
 
-    Virus<> pathogen("Benchmark pathogen", 100.0, false);
+    Virus<> pathogen("Benchmark pathogen");
     pathogen.set_state(1, 4, 4);
     pathogen.set_prob_infecting("Transmission rate");
-    model.add_virus(pathogen);
+    model.add_virus(pathogen, assign::count(100.0));
 
     model.add_layer(layer::network(
         "network", rgraph_smallworld(n, 10, 0.05, false, model)
@@ -178,7 +178,7 @@ static ModelMeasles build_measles(size_t n)
 
     // Everyone in one group, meeting 15 others a day
     auto mixing = layer::mixing<>("mixing");
-    mixing->set_groups(std::vector< size_t >(n, 0u), 1u);
+    mixing->set_groups(assign::labels(std::vector< size_t >(n, 0u)), 1u);
     mixing->set_contact_matrix({15.0});
     model.add_layer(mixing);
 

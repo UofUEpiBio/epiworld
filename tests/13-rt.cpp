@@ -17,14 +17,8 @@ EPIWORLD_TEST_CASE("Rt", "[Rt]") {
     );
     add_random_mixing(model_0, crate);
 
-    // Function to distribute the virus to the first 10 agents
-    auto dist_virus = [&n_seeds](Virus<> & v, Model<> * m) -> void {
-        for (int i = 0; i < n_seeds; ++i)
-            m->get_agents()[i].set_virus(*m, v);
-        return;
-    };
-
-    model_0.get_virus(0).set_distribution(dist_virus);
+    // The first n_seeds agents are the initial cases
+    model_0.assign_virus(0, assign::agents(first_agents(static_cast< size_t >(n_seeds))));
 
     model_0.run(60, 222);
 

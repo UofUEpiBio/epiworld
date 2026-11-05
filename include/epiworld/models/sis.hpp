@@ -61,7 +61,7 @@ inline ModelSIS<TSeq>::ModelSIS(
     nh.rate(INFECTED, SUSCEPTIBLE, "Recovery rate").effect(Effect::recovery);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
 }
 

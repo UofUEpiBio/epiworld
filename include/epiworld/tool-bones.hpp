@@ -39,7 +39,6 @@ protected:
     ToolFun<TSeq> recovery_enhancer        = nullptr;
     ToolFun<TSeq> death_reduction          = nullptr;
 
-    ToolToAgentFun<TSeq> dist = nullptr;
 
     /// Bitmask of targeted virus lineages (all ones: every virus).
     uint64_t target_mask = ~uint64_t(0);
@@ -59,11 +58,6 @@ public:
 
     Tool();
     Tool(std::string name = "unknown tool");
-    Tool(
-        std::string name,
-        epiworld_double prevalence,
-        bool as_proportion
-    );
 
     virtual ~Tool() = default;
 
@@ -151,8 +145,6 @@ public:
 
     void print() const;
 
-    void distribute(Model<TSeq> * model);
-    void set_distribution(ToolToAgentFun<TSeq> fun);
 
     virtual std::unique_ptr<Tool<TSeq>> clone_ptr() const; 
 

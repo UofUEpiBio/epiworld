@@ -5,8 +5,8 @@ using namespace epiworld;
 // A virus added to a second model starts a lineage of that model
 EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target]") {
 
-    Virus<> virus_a("A", 0.01, true);
-    Virus<> virus_b("B", 0.01, true);
+    Virus<> virus_a("A");
+    Virus<> virus_b("B");
     virus_a.set_sequence(100);
     virus_b.set_sequence(200);
 
@@ -19,26 +19,26 @@ EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target
     second.verbose_off();
 
     // Registered in a different order in each model
-    first.add_virus(virus_a);
-    REQUIRE(virus_a.get_lineage_id() == 1);
+    // (ids and lineages are recorded on each model's own copy)
+    first.add_virus(virus_a, assign::share(0.01));
+    REQUIRE(first.get_virus(1).get_lineage_id() == 1);
 
-    second.add_virus(virus_b);
-    second.add_virus(virus_a);
-    REQUIRE(virus_b.get_lineage_id() == 1);
-    REQUIRE(virus_a.get_lineage_id() == 2);
+    second.add_virus(virus_b, assign::share(0.01));
+    second.add_virus(virus_a, assign::share(0.01));
+    REQUIRE(second.get_virus(1).get_lineage_id() == 1);
     REQUIRE(second.get_virus(2).get_lineage_id() == 2);
 
     // Adding a virus twice keeps its record and lineage
     first.add_virus(virus_a);
-    REQUIRE(virus_a.get_id() == 1);
-    REQUIRE(virus_a.get_lineage_id() == 1);
+    REQUIRE(first.get_virus(2).get_id() == 1);
+    REQUIRE(first.get_virus(2).get_lineage_id() == 1);
     REQUIRE(first.get_db().get_n_viruses() == 2u);
 
-    Tool<> tool("Vaccine against A", 1.0, true);
+    Tool<> tool("Vaccine against A");
     tool.set_susceptibility_reduction(1.0);
     tool.add_target(second.get_virus(2));
     REQUIRE_FALSE(tool.targets(second.get_virus(1)));
-    second.add_tool(tool);
+    second.add_tool(tool, assign::share(1.0));
 
     second.run(30, 1231);
 

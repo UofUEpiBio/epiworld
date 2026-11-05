@@ -85,7 +85,7 @@ Run simulate(
     nh.after(1, 2, Duration<>::geometric("Latent period"));
     nh.rate(2, 3, "Recovery rate").effect(Effect::recovery);
     model.set_natural_history(std::move(nh));
-    model.add_virus(Virus<>("virus"), Seed::proportion(20.0 / 3000.0));
+    model.add_virus(Virus<>("virus"), assign::count(20));
 
     model.seed(31);
     tests_heterogeneous_network(model, 3000u);

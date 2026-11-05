@@ -23,11 +23,7 @@ epimodels::ModelSIR<> make_ring()
 
     Virus<> v = model.get_virus(0);
     model.rm_virus(0);
-    v.set_distribution([](Virus<> & virus, Model<> * m) -> void {
-        m->get_agents()[2].set_virus(*m, virus);
-        m->get_agents()[6].set_virus(*m, virus);
-    });
-    model.add_virus(v);
+    model.add_virus(v, assign::agents({2u, 6u}));
 
     std::vector< int > source, target;
     for (int i = 0; i < 8; ++i)

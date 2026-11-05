@@ -44,9 +44,7 @@ EPIWORLD_TEST_CASE(
     );
 
     // Moving the virus to the first agent
-    model.get_virus(0).set_distribution(
-        distribute_virus_randomly<>(10.0, false)
-    );
+    model.assign_virus(0, assign::count<>(10.0));
 
     // Run multiple simulations to get transition matrix
     std::vector<std::vector<epiworld_double>> transitions(nsims);

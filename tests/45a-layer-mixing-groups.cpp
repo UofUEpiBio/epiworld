@@ -23,8 +23,7 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
 
     Virus<> v = model.get_virus(0);
     model.rm_virus(0);
-    v.set_distribution(dist_virus<>(0));
-    model.add_virus(v);
+    model.add_virus(v, dist_virus<>(0));
 
     // Agents 270-299 take no part in the layer (one of them is in group 0's
     // residue class, 273)
@@ -76,7 +75,7 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     epimodels::ModelSIR<> solo("Flu", 100u, 0.0, 1.0, 0.0);
     add_group_mixing(solo, {0.0}, std::vector< size_t >(100u, 0u));
     solo.rm_virus(0);
-    solo.add_virus(v);
+    solo.add_virus(v, dist_virus<>(0));
     solo.add_globalevent(
         [no_group](Model<> * m) -> void {
             auto & layer = m->get_layer_as< layer::Mixing<> >("mixing");
@@ -98,7 +97,7 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     // none; each seed its own draw, the same seed the same draw
     epimodels::ModelSIR<> drawn("Flu", n, 0.0, 1.0, 0.01);
     drawn.verbose_off();
-    add_group_mixing(drawn, cm, grouping::random<>({100.0, 100.0, 50.0}));
+    add_group_mixing(drawn, cm, assign::counts({{0, 100u}, {1, 100u}, {2, 50u}}));
     auto & dl = drawn.get_layer_as< layer::Mixing<> >("mixing");
     auto drawn_groups = [&]() -> std::vector< size_t > {
         std::vector< size_t > g(n);
@@ -121,9 +120,15 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     // A move between runs would be lost at the next draw: an error
     REQUIRE_THROWS(dl.set_group(0u, 1u));
 
-    // Counts are whole numbers of agents (a fraction would be truncated)
-    REQUIRE_THROWS(grouping::random<>({1.9}));
-    REQUIRE_NOTHROW(grouping::random<>({0.5}, true));
+    // Shares are within [0, 1], and a grouping gives groups, not "any"
+    REQUIRE_THROWS(assign::shares({{0, 1.9}}));
+    REQUIRE_NOTHROW(assign::shares({{0, 0.5}}));
+    {
+        epimodels::ModelSIR<> bad("Flu", n, 0.0, 1.0, 0.01);
+        bad.verbose_off();
+        add_group_mixing(bad, cm, assign::share(0.5));
+        REQUIRE_THROWS(bad.run(1, 1));
+    }
 
     // A mixing layer needs its groups
     epimodels::ModelSIR<> ungrouped("Flu", n, 0.0, 1.0, 0.01);

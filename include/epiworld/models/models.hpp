@@ -104,7 +104,6 @@
  */
 namespace epimodels {
 
-    #include "init-functions.hpp"
 
     #include "globalevents.hpp"
 

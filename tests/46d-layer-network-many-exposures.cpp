@@ -30,7 +30,7 @@ EPIWORLD_TEST_CASE("Network layers - many exposures", "[layer-network]") {
             "flu", n, 0.0, p, 0.0
         );
         model->verbose_off();
-        model->get_virus(0).set_distribution(distribute_virus_to_set<>(leaves));
+        model->assign_virus(0, assign::agents<>(leaves));
         for (std::string name : {"a", "b", "c"})
             model->add_layer(layer::network(
                 name, AdjList(source, target, static_cast< int >(n), false)

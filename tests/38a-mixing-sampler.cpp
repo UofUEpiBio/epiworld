@@ -16,7 +16,7 @@ public:
 
         // Three groups of n / 3
         auto layer = layer::mixing("mixing");
-        layer->set_groups(blocks({0u, n / 3u, 2u * n / 3u, n}), 3u);
+        layer->set_groups(assign::labels(blocks({0u, n / 3u, 2u * n / 3u, n})), 3u);
         layer->set_contact_matrix(cm);
         add_layer(std::move(layer));
 
@@ -36,10 +36,10 @@ public:
         add_state("Susceptible", susceptible);
         add_state("Infected");
 
-        Virus<> v("Virus", 0.0, true);
+        Virus<> v("Virus");
         v.set_state(1, 1, 1);
         v.set_prob_infecting(1.0);
-        add_virus(v);
+        add_virus(v, assign::share(0.0));
 
         queuing_off();
         set_population_size(n);
@@ -69,9 +69,8 @@ EPIWORLD_TEST_CASE("Mixing sampler: group-specific transmission", "[mixing-sampl
 
     Virus<> v = model.get_virus(0);
     model.rm_virus(0);
-    v.set_distribution(dist_virus<>(0));
     v.set_state(1, 1, 1);
-    model.add_virus(v);
+    model.add_virus(v, dist_virus<>(0));
 
     model.run(30, 331);
 

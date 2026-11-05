@@ -53,10 +53,10 @@ int main()
     model.add_param(0.01, "I->D transition rate");
 
     // Virus
-    Virus<int> virus("A flu", 0.01, true);
+    Virus<int> virus("A flu");
     virus.set_state(E, R, D);
     virus.set_prob_infecting("Transmission rate");
-    model.add_virus(virus);
+    model.add_virus(virus, assign::share(0.01));
 
     // Population
     model.add_layer(layer::network(

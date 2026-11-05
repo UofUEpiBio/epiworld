@@ -143,7 +143,7 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     nh.infection(NONADOPTER, ADOPTER, parname).sampler(sampler);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(innovation_name), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(innovation_name), assign::share<TSeq>(prevalence));
 
     this->set_name(
         std::string("Diffusion of Innovations - ") + innovation_name);

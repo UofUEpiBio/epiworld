@@ -16,7 +16,7 @@ EPIWORLD_TEST_CASE("Tool targeting a mutating virus", "[tool][target][mutation]"
         seeds.push_back(i);
 
     Virus<> & virus = model.get_virus(0);
-    virus.set_distribution(distribute_virus_to_set<>(seeds));
+    model.assign_virus(0, assign::agents(seeds));
     virus.set_mutation(
         [](Agent<> *, Virus<> & v, Model<> *) -> bool {
             v.set_sequence(v.get_sequence() + 1);
@@ -30,9 +30,8 @@ EPIWORLD_TEST_CASE("Tool targeting a mutating virus", "[tool][target][mutation]"
 
     Tool<> tool("Vaccine against A");
     tool.set_susceptibility_reduction(1.0);
-    tool.set_distribution(distribute_tool_to_set<>(protected_ids));
     tool.add_target(virus);
-    model.add_tool(tool);
+    model.add_tool(tool, assign::agents<>(protected_ids));
 
     model.run(30, 2231);
 

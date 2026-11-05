@@ -60,9 +60,7 @@ inline TestResults test_model_builder_20d(
     add_group_mixing(model, contact_matrix, blocks({0u, n/3, 2*n/3, n}));
 
     // Moving the virus to the first agent
-    model.get_virus(0).set_distribution(
-        distribute_virus_to_set<>({0u})
-    );
+    model.assign_virus(0, assign::agents<>({0u}));
 
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims, -1.0);

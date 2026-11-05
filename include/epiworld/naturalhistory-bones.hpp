@@ -231,30 +231,6 @@ struct StageInfo {
 };
 
 /**
- * @brief How a virus is seeded: how many agents, and in which carrier stages.
- * @details `Seed::proportion(0.01)` infects 1% of the agents, drawn among
- * those whose stage has an infection transition, into that transition's
- * target. `split` places them across carrier stages instead, by shares that
- * add up to 1 (e.g., `{{E, 0.7}, {I, 0.3}}`). Seeded agents enter on day 0
- * and draw their durations then. See `Model::add_virus()`.
- */
-struct Seed {
-    epiworld_double prevalence = 0.0;
-    bool as_proportion = true;
-    std::vector< std::pair< int, epiworld_double > > split;
-
-    static Seed proportion(
-        epiworld_double p,
-        std::vector< std::pair< int, epiworld_double > > split = {}
-    );
-
-    static Seed count(
-        size_t n,
-        std::vector< std::pair< int, epiworld_double > > split = {}
-    );
-};
-
-/**
  * @brief The natural history of a disease: stages and declared transitions.
  * @details Build it, then hand it to a model (`Model::set_natural_history()`).
  * The first stage is where agents start. Example (SIR):

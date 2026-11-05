@@ -130,10 +130,10 @@ static void build_seirh(Model<> & model, size_t n)
     model.add_state("Recovered");
     model.set_infectious_states({2});
 
-    Virus<> pathogen("Benchmark pathogen", 100.0, false);
+    Virus<> pathogen("Benchmark pathogen");
     pathogen.set_state(1, 4, 4);
     pathogen.set_prob_infecting("Transmission rate");
-    model.add_virus(pathogen);
+    model.add_virus(pathogen, assign::count(100.0));
 
     model.add_layer(layer::network(
         "network", rgraph_smallworld(n, 10, 0.05, false, model)

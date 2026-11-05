@@ -55,9 +55,7 @@ EPIWORLD_TEST_CASE(
 
     // Virus will be distributed to 5 random agents, in each
     // replicate of the model
-    model.get_virus(0).set_distribution(
-        distribute_virus_randomly<>(5, false)
-    );
+    model.assign_virus(0, assign::count<>(5));
     
     std::vector< std::vector< epiworld_double > > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * 5, -1.0);

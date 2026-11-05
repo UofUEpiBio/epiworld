@@ -43,16 +43,6 @@ public:
     );
     ///@}
 
-    /**
-     * @brief Set the initial states of the model
-     * @param proportions_ Double vector with two elements:
-     * - The proportion of non-infected individuals who have recovered.
-     * - The proportion of non-infected individuals who have died.
-    */
-    ModelSIRD<TSeq> & initial_states(
-        std::vector< double > proportions_,
-        std::vector< int > queue_ = {}
-    ) override;
     
 };
 
@@ -84,34 +74,12 @@ inline ModelSIRD<TSeq>::ModelSIRD(
     nh.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered-Deceased (SIRD)");
 
    
 }
 
-template<typename TSeq>
-inline ModelSIRD<TSeq> & ModelSIRD<TSeq>::initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > /**/ 
-) {
-
-    if (proportions_.size() != 2u)
-        throw std::invalid_argument(
-            "The vector of proportions must have two elements."
-            );
-
-    if ((proportions_[0u] + proportions_[1u]) >= 1.0)
-        throw std::invalid_argument(
-            "The proportions must sum up to less than 1."
-            );
-
-    this->set_initial(RECOVERED, proportions_[0u]);
-    this->set_initial(DECEASED, proportions_[1u]);
-
-    return *this;
-
-}
 
 #endif

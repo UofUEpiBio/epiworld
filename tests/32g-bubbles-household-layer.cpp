@@ -91,7 +91,7 @@ EPIWORLD_TEST_CASE("Bubbles - complete bubbles in the household layer", "[bubble
 
         epimodels::ModelSIR<> m("flu", 6, 0.0, 1.0, 0.0);
         m.verbose_off();
-        m.get_virus(0).set_distribution(distribute_virus_to_set<>({0u}));
+        m.assign_virus(0, assign::agents<>({0u}));
         m.add_param(0.0, "Network weight");
         two_households(m);
         m.get_layer("network").set_weight("Network weight");

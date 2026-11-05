@@ -17,7 +17,7 @@ EPIWORLD_TEST_CASE("A model plus a mixing layer is the old mixing model", "[mixi
 
     auto add_mixing = [&groups](Model<> & model) {
         auto mixing = layer::mixing<>("mixing");
-        mixing->set_groups(groups, 2u);
+        mixing->set_groups(assign::labels(groups), 2u);
         mixing->set_contact_matrix({6.0, 1.0, 1.0, 4.0});
         model.add_layer(mixing);
     };

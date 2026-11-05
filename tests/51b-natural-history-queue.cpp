@@ -38,8 +38,8 @@ std::shared_ptr< Model<> > make_model_a(const std::string & mode, const AdjList 
 
     auto model = std::make_shared< Model<> >(N);
     model->set_natural_history(std::move(nh));
-    model->add_virus(Virus<>("v"), Seed::count(10));
-    model->set_initial(P, 0.5);
+    model->add_virus(Virus<>("v"), assign::count(10));
+    model->set_initial(assign::shares({{P, 0.5}}));
     model->add_layer(layer::network("net", net));
     model->set_transmission_mode(mode);
     model->verbose_off();
@@ -130,7 +130,7 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
 
         Virus<> fast("fast");
         fast.use_param("Recovery rate", "Recovery rate (fast)");
-        model.add_virus(fast, Seed::count(20));
+        model.add_virus(fast, assign::count(20));
 
         model.add_layer(layer::network("net", net));
         model.verbose_off();

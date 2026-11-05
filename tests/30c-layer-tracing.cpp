@@ -34,7 +34,7 @@ EPIWORLD_TEST_CASE("Layer contact tracing", "[layer-tracing]") {
     std::vector< size_t > groups(600);
     for (size_t i = 0u; i < 600u; ++i)
         groups[i] = i / 4u;
-    hh->set_groups(groups, 150u);
+    hh->set_groups(assign::labels(groups), 150u);
     hh->set_contact_prob(1.0);
 
     home->enable_tracing(1000u);

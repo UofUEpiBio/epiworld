@@ -240,7 +240,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     nh.rate(INFECTED, RECOVERED, p_recover);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Removed (SIR) (logit)");
 

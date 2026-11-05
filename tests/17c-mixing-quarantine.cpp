@@ -38,20 +38,14 @@ EPIWORLD_TEST_CASE(
     // Copy the original virus
     Virus<> v1 = model.get_virus(0);
     model.rm_virus(0);
-    v1.set_distribution(dist_virus<>(0));
 
-    model.add_virus(v1);
+    model.add_virus(v1, dist_virus<>(0));
 
     // Creating three groups
 
 
     // Setting the distribution function of the initial cases
-    model.get_virus(0).set_distribution(
-        [&n_seeds](Virus<> & v, Model<> * m) -> void {
-        for (size_t i = 0; i < n_seeds; ++i)
-            m->get_agents()[i].set_virus(*m, v);
-        return;
-    });
+    model.assign_virus(0, assign::agents(first_agents(n_seeds)));
 
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * n_seeds, -1.0);

@@ -39,7 +39,7 @@ std::unique_ptr< epimodels::ModelSIR<> > make(
     model->verbose_off();
 
     auto hh = layer::mixing<>("households");
-    hh->set_groups(households(), n_groups);
+    hh->set_groups(assign::labels(households()), n_groups);
     contacts(*hh);
     model->add_layer(hh);
 
@@ -128,11 +128,10 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
         tiny.verbose_off();
 
         Virus<> flu("flu");
-        flu.set_distribution(distribute_virus_to_set<>({0}));
-        tiny.add_virus(flu);
+        tiny.add_virus(flu, assign::agents<>({0}));
 
         auto hh = layer::mixing<>("hh");
-        hh->set_groups({0, 0, 1}, 2);
+        hh->set_groups(assign::labels({0, 0, 1}), 2);
         hh->set_contact_prob(1.0);
         tiny.add_layer(hh);
 
@@ -171,7 +170,7 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     auto clique = make(
         [](layer::Mixing<> & l) { l.set_contact_prob(1.0); }, 0.0, 1.0, 0.0
     );
-    clique->get_virus(0).set_distribution(distribute_virus_to_set<>({0}));
+    clique->assign_virus(0, assign::agents<>({0}));
     clique->run(1, 3);
 
     std::vector< int > expected(n, 0);
@@ -183,7 +182,7 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     auto pairs = make(
         [](layer::Mixing<> & l) { l.set_contact_prob(0.3); }, 0.0, 1.0, 0.0
     );
-    pairs->get_virus(0).set_distribution(distribute_virus_to_set<>({0}));
+    pairs->assign_virus(0, assign::agents<>({0}));
 
     std::vector< double > infected;
     bool outside = false;

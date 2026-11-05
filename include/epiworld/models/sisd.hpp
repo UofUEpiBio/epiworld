@@ -69,7 +69,7 @@ inline ModelSISD<TSeq>::ModelSISD(
     nh.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
 }
 

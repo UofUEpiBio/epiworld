@@ -56,14 +56,12 @@ void add_states(Model<> & model)
 }
 
 Virus<> make_virus(
-    std::string name, epiworld_double p, epiworld_fast_int state,
-    std::vector< size_t > agents
+    std::string name, epiworld_double p, epiworld_fast_int state
 )
 {
-    Virus<> v(name, 0.0, true);
+    Virus<> v(name);
     v.set_state(state, I_, I_);
     v.set_prob_infecting(p);
-    v.set_distribution(distribute_virus_to_set<>(agents));
     return v;
 }
 
@@ -144,27 +142,23 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
         Model<> model(7);
         add_states(model);
         make_star(model, 6);
-        Virus<> v_a = make_virus("A", 0.2, I_, {1u, 2u});
-        Virus<> v_b = make_virus("B", 0.6, I_, {3u, 4u});
-        Virus<> v_c = make_virus("C", 0.9, E_, {5u});
-        model.add_virus(v_a);
-        model.add_virus(v_b);
-        model.add_virus(v_c);
+        model.add_virus(make_virus("A", 0.2, I_), assign::agents({1u, 2u}));
+        model.add_virus(make_virus("B", 0.6, I_), assign::agents({3u, 4u}));
+        model.add_virus(make_virus("C", 0.9, E_), assign::agents({5u}));
 
         // When pushing, the vaccine reads a parameter and the mask is a
         // function: same reductions, so the same probabilities
         const bool push = std::string(mode) == "push";
         model.add_param(vax, "Vaccine efficacy");
 
-        Tool<> t_vax("vaccine", 0.0, true);
+        Tool<> t_vax("vaccine");
         if (push)
             t_vax.set_susceptibility_reduction("Vaccine efficacy");
         else
             t_vax.set_susceptibility_reduction(vax);
-        t_vax.set_distribution(distribute_tool_to_set<>({0u}));
-        model.add_tool(t_vax);
+        model.add_tool(t_vax, assign::agents<>({0u}));
 
-        Tool<> t_mask("mask", 0.0, true);
+        Tool<> t_mask("mask");
         if (push)
             t_mask.set_transmission_reduction_fun(
                 [mask](Tool<> &, Agent<> *, VirusPtr<> &, Model<> *) {
@@ -173,8 +167,7 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
             );
         else
             t_mask.set_transmission_reduction(mask);
-        t_mask.set_distribution(distribute_tool_to_set<>({4u}));
-        model.add_tool(t_mask);
+        model.add_tool(t_mask, assign::agents<>({4u}));
 
         model.set_transmission_mode(mode);
         auto counts = count_infectors(model, nsims, 1231);
@@ -199,10 +192,8 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
         Model<> model(4);
         add_states(model);
         make_star(model, 3);
-        Virus<> v_sure = make_virus("sure", 1.0, I_, {1u, 3u});
-        Virus<> v_maybe = make_virus("maybe", 0.3, I_, {2u});
-        model.add_virus(v_sure);
-        model.add_virus(v_maybe);
+        model.add_virus(make_virus("sure", 1.0, I_), assign::agents({1u, 3u}));
+        model.add_virus(make_virus("maybe", 0.3, I_), assign::agents({2u}));
 
         model.set_transmission_mode(mode);
         auto counts = count_infectors(model, nsims / 4, 77);

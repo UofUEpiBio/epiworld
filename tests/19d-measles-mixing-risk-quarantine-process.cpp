@@ -85,9 +85,7 @@ EPIWORLD_TEST_CASE(
     model.add_globalevent(count_risk, "Count risk levels");
 
     // Moving the virus to the first agent
-    model.get_virus(0).set_distribution(
-        distribute_virus_to_set<>({0u})
-    );
+    model.assign_virus(0, assign::agents<>({0u}));
 
     model.verbose_off();
 

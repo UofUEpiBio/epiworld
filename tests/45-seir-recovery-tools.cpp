@@ -21,9 +21,9 @@ EPIWORLD_TEST_CASE("SEIR recovery follows the virus and tools", "[seir-recovery]
 
         if (with_tool)
         {
-            Tool<> cure("cure", 1.0, true);
+            Tool<> cure("cure");
             cure.set_recovery_enhancer(1.0);
-            model.add_tool(cure);
+            model.add_tool(cure, assign::share(1.0));
         }
 
         model.verbose_off();

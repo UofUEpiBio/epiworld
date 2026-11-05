@@ -19,7 +19,7 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
     model.add_param(1.0, "Immunity");
     model.add_param(1.0, "Death reduction");
 
-    Virus<> virus("covid 19", 10, false);
+    Virus<> virus("covid 19");
     virus.set_post_immunity("Immunity");
     virus.set_state(exposed_state, susceptible_state, removed_state);
     virus.set_prob_death(.01);
@@ -27,14 +27,14 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
         [](Agent<> *, Virus<> &, Model<> * m) { return m->par("Infectiousness"); }
     );
     virus.set_incubation(3.0);
-    model.add_virus(virus);
+    model.add_virus(virus, assign::count(10));
 
-    epiworld::Tool<> tool("vaccine", 1.0, true);
+    epiworld::Tool<> tool("vaccine");
     tool.set_death_reduction("Death reduction");
     tool.set_recovery_enhancer_fun(
         [](Tool<> &, Agent<> *, VirusPtr<> &, Model<> *) { return 1.0; }
     );
-    model.add_tool(tool);
+    model.add_tool(tool, assign::share(1.0));
 
     // Generating a random pop
     model.add_layer(layer::network(

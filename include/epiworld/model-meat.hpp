@@ -607,6 +607,8 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     population(model.population),
     viruses(),
     tools(),
+    virus_assign(model.virus_assign),
+    tool_assign(model.tool_assign),
     param_values(model.param_values),
     param_index(model.param_index),
     param_layout_id(model.param_layout_id),
@@ -614,7 +616,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     pb(model.pb),
     state_fun(model.state_fun),
     states_labels(model.states_labels),
-    initial_states_fun(model.initial_states_fun),
     nstates(model.nstates),
     verbose(model.verbose),
     current_date(model.current_date),
@@ -645,7 +646,6 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     nh_entered(model.nh_entered),
     nh_episode(model.nh_episode),
     nh_queue(model.nh_queue),
-    nh_seeds(model.nh_seeds),
     nh_initial(model.nh_initial)
 {
 
@@ -701,6 +701,8 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     viruses(std::move(model.viruses)),
     // Tools
     tools(std::move(model.tools)),
+    virus_assign(std::move(model.virus_assign)),
+    tool_assign(std::move(model.tool_assign)),
     // Pseudo-RNG
     engine(std::move(model.engine)),
     runifd_a(model.runifd_a),
@@ -721,7 +723,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     pb(std::move(model.pb)),
     state_fun(std::move(model.state_fun)),
     states_labels(std::move(model.states_labels)),
-    initial_states_fun(std::move(model.initial_states_fun)),
     nstates(model.nstates),
     verbose(model.verbose),
     current_date(std::move(model.current_date)),
@@ -753,7 +754,6 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     nh_entered(std::move(model.nh_entered)),
     nh_episode(std::move(model.nh_episode)),
     nh_queue(std::move(model.nh_queue)),
-    nh_seeds(std::move(model.nh_seeds)),
     nh_initial(std::move(model.nh_initial))
 {
 
@@ -791,6 +791,9 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     for (const auto & t : m.tools)
         tools.emplace_back(std::shared_ptr<Tool<TSeq>>(t->clone_ptr()));
 
+    virus_assign = m.virus_assign;
+    tool_assign = m.tool_assign;
+
     param_values    = m.param_values;
     param_index     = m.param_index;
     param_layout_id = m.param_layout_id;
@@ -799,7 +802,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
     state_fun    = m.state_fun;
     states_labels = m.states_labels;
-    initial_states_fun = m.initial_states_fun;
     nstates       = m.nstates;
 
     verbose     = m.verbose;
@@ -853,7 +855,6 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     nh_entered = m.nh_entered;
     nh_episode = m.nh_episode;
     nh_queue = m.nh_queue;
-    nh_seeds = m.nh_seeds;
     nh_initial = m.nh_initial;
 
     agents_data = m.agents_data;
@@ -972,10 +973,48 @@ template<typename TSeq>
 inline void Model<TSeq>::dist_virus()
 {
 
-    for (auto & v: viruses)
+    // Who can get a virus: no virus, and (with a natural history) a stage
+    // that can be infected
+    std::vector< char > eligible(population.size());
+
+    for (size_t k = 0u; k < viruses.size(); ++k)
     {
 
-        v->distribute(this);
+        for (auto & p : population)
+            eligible[static_cast< size_t >(p.id)] =
+                (p.virus == nullptr) &&
+                (!nh || (nh->stages[p.state].infection >= 0));
+
+        const std::vector< int > labels = virus_assign[k].draw(*this, eligible);
+        const Virus<TSeq> & v = *viruses[k];
+
+        for (size_t i = 0u; i < labels.size(); ++i)
+        {
+
+            const int label = labels[i];
+            if (label == -1)
+                continue;
+
+            if (label == assign::ANY)
+            {
+                if (nh)
+                    nh_pending = NH_SEED;
+                population[i].set_virus(*this, v);
+            }
+            else
+            {
+                if (!nh || (label < 0) || (static_cast< size_t >(label) >= nh->get_n_stages()) || !nh->is_carrier(label))
+                    throw std::logic_error(
+                        "The virus \"" + v.get_name() + "\" is assigned to "
+                        "the label " + std::to_string(label) + ", which is not "
+                        "a carrier stage of the natural history."
+                    );
+                nh_pending = NH_SEED;
+                population[i].set_virus(*this, v, label, Queue<TSeq>::NoOne);
+            }
+            nh_pending = -1;
+
+        }
 
         // Apply the events
         events_run();
@@ -987,10 +1026,16 @@ template<typename TSeq>
 inline void Model<TSeq>::dist_tools()
 {
 
-    for (auto & tool: tools)
+    // Everyone can get a tool
+    const std::vector< char > eligible(population.size(), 1);
+
+    for (size_t k = 0u; k < tools.size(); ++k)
     {
 
-        tool->distribute(this);
+        const std::vector< int > labels = tool_assign[k].draw(*this, eligible);
+        for (size_t i = 0u; i < labels.size(); ++i)
+            if (labels[i] != -1)
+                population[i].add_tool(*this, *tools[k]);
 
         // Apply the events
         events_run();
@@ -1014,7 +1059,8 @@ inline void Model<TSeq>::chrono_end() {
 
 template<typename TSeq>
 inline void Model<TSeq>::add_virus(
-    Virus<TSeq> & v
+    const Virus<TSeq> & v,
+    Assign<TSeq> a
     )
 {
 
@@ -1047,26 +1093,47 @@ inline void Model<TSeq>::add_virus(
             "The virus \"" + v.get_name() + "\" has no -post- state."
             );
 
-    // Recording the variant
-    db.record_virus(v, true);
-
-    // Adding new virus
+    // The model keeps its own copy (of the derived class, if any); its id and
+    // lineage are recorded on the copy
     auto cloned = v.clone_ptr();
+    db.record_virus(*cloned, true);
     viruses.push_back(std::shared_ptr<Virus<TSeq>>(std::move(cloned)));
+    virus_assign.push_back(std::move(a));
 
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_tool(Tool<TSeq> & t)
+inline void Model<TSeq>::add_tool(const Tool<TSeq> & t, Assign<TSeq> a)
 {
 
-
-    db.record_tool(t);
-
-    // Adding the tool to the model (and database.)
+    // The model keeps its own copy (of the derived class, if any)
     auto cloned = t.clone_ptr();
+    db.record_tool(*cloned);
     tools.push_back(std::shared_ptr<Tool<TSeq>>(std::move(cloned)));
+    tool_assign.push_back(std::move(a));
 
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::assign_virus(size_t id, Assign<TSeq> a)
+{
+    if (id >= viruses.size())
+        throw std::range_error(
+            "There is no virus " + std::to_string(id) + " (the model has " +
+            std::to_string(viruses.size()) + ")."
+        );
+    virus_assign[id] = std::move(a);
+}
+
+template<typename TSeq>
+inline void Model<TSeq>::assign_tool(size_t id, Assign<TSeq> a)
+{
+    if (id >= tools.size())
+        throw std::range_error(
+            "There is no tool " + std::to_string(id) + " (the model has " +
+            std::to_string(tools.size()) + ")."
+        );
+    tool_assign[id] = std::move(a);
 }
 
 template<typename TSeq>
@@ -1086,6 +1153,8 @@ inline void Model<TSeq>::rm_virus(size_t virus_pos)
     // Flipping with the last one
     std::swap(viruses[virus_pos], viruses[viruses.size() - 1]);
     viruses.pop_back();
+    std::swap(virus_assign[virus_pos], virus_assign[virus_assign.size() - 1]);
+    virus_assign.pop_back();
 
     return;
 
@@ -1116,6 +1185,8 @@ inline void Model<TSeq>::rm_tool(size_t tool_pos)
     */
 
     tools.pop_back();
+    std::swap(tool_assign[tool_pos], tool_assign[tool_assign.size() - 1]);
+    tool_assign.pop_back();
 
     return;
 
@@ -1781,11 +1852,9 @@ inline void Model<TSeq>::reset() {
     dist_virus();
     dist_tools();
 
-    // Distributing initial state, if specified
+    // The initial stages, if any
     if (nh)
         nh_initial_place();
-
-    initial_states_fun(this);
 
     // Global events set themselves up for the run. This happens last, with the
     // RNG seeded and the population in its initial state, so that an event that

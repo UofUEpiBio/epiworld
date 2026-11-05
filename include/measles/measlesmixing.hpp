@@ -50,7 +50,7 @@ using namespace epiworld;
  *
  * ```cpp
  * auto mix = layer::mixing<>("mixing");
- * mix->set_groups(grouping::random<>({300, 700}));
+ * mix->set_groups(assign::counts<>({{0, 300}, {1, 700}}), 2);
  * mix->set_contact_matrix({10.0, 2.0, 2.0, 5.0});
  * model.add_layer(mix);
  * ```
@@ -207,17 +207,6 @@ public:
      */
     std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
-    /**
-     * @brief Set the initial states of the model
-     * @param proportions_ Double vector with two elements:
-     * - [0]: The proportion of initially infected individuals who start in the latent state.
-     * - [1]: The proportion of initially non-infected individuals who have recovered (immune).
-     * @param queue_ Optional vector for queuing specifications (default: empty).
-     */
-    ModelMeaslesMixing<TSeq> & initial_states(
-        std::vector< double > proportions_,
-        std::vector< int > queue_ = {}
-    ) override;
 
     /**
      * @brief Get the quarantine trigger status for all agents
@@ -772,25 +761,21 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     this->add_globalevent(_quarantine_process, "Quarantine process");
 
     // Preparing the virus -------------------------------------------
-    Virus<TSeq> virus("Measles", prevalence, true);
+    Virus<TSeq> virus("Measles");
     virus.set_state(LATENT, RECOVERED, RECOVERED);
 
     virus.set_prob_infecting("Transmission rate");
     virus.set_prob_recovery("Rash period");
     virus.set_incubation("Incubation period");
 
-    this->add_virus(virus);
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     // Designing the vaccine
     ToolVaccine<TSeq> vaccine("MMR");
 
     vaccine.set_susceptibility_reduction(this->get_param("Vax efficacy"));
 
-    vaccine.set_distribution(
-        distribute_tool_randomly(prop_vaccinated, true)
-    );
-
-    this->add_tool(vaccine);
+    this->add_tool(vaccine, assign::share<TSeq>(prop_vaccinated));
 
     // Adding the empty population
     this->set_population_size(n);
@@ -799,20 +784,6 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
 
 }
 
-template<typename TSeq>
-inline ModelMeaslesMixing<TSeq> & ModelMeaslesMixing<TSeq>::initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > /* queue_ */
-)
-{
-
-    Model<TSeq>::initial_states_fun =
-        epimodels::create_init_function_seir<TSeq>(proportions_)
-        ;
-
-    return *this;
-
-}
 
 template<typename TSeq>
 inline void ModelMeaslesMixing<TSeq>::next()

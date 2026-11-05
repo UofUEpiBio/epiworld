@@ -696,17 +696,12 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
     measles.set_prob_infecting("Transmission rate");
     measles.set_prob_recovery("Rash period");
     measles.set_incubation("Incubation period");
-    measles.set_distribution(
-        distribute_virus_randomly(n_latent, false)
-    );
-
-    this->add_virus(measles);
+    this->add_virus(measles, assign::count<TSeq>(n_latent));
 
     // Designing the vaccine
     ToolVaccine<TSeq> vaccine("MMR");
     vaccine.set_susceptibility_reduction(EPI_PAR(this, "Vax efficacy"));
-    vaccine.set_distribution(distribute_tool_randomly(prop_vaccinated, true));
-    this->add_tool(vaccine);
+    this->add_tool(vaccine, assign::share<TSeq>(prop_vaccinated));
 
     this->queuing_off();
 
@@ -722,7 +717,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     // The layer the contacts are logged in: everyone in one group
     auto school = layer::mixing<TSeq>("school");
-    school->set_groups(std::vector< size_t >(n, 0u), 1u);
+    school->set_groups(assign::labels<TSeq>(std::vector< size_t >(n, 0u)), 1u);
     school->set_contact_matrix({1.0});
     school->set_contact_rate("Contact rate");
     school->enable_tracing();

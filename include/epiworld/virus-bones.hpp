@@ -57,9 +57,6 @@ private:
     VirusFun<TSeq>        probability_of_death     = nullptr;
     VirusFun<TSeq>        incubation               = nullptr;
 
-    // Information about how distribution works
-    VirusToAgentFun<TSeq> dist = nullptr;
-
     /// Parameters this variant reads in place of others (see `use_param()`)
     std::vector< std::pair< ParamRef, ParamRef > > param_redirects;
         
@@ -78,11 +75,6 @@ public:
 
     Virus(std::string name = "unknown virus");
     
-    Virus(
-        std::string name,
-        epiworld_double prevalence,
-        bool as_proportion
-    );
     
     #ifdef EPI_DEBUG_VIRUS
     
@@ -211,13 +203,6 @@ public:
 
     void print() const;
 
-    /**
-     * @brief Get information about the prevalence of the virus
-     */
-    ///@{
-    void distribute(Model<TSeq> * model);
-    void set_distribution(VirusToAgentFun<TSeq> fun);
-    ///@}
 
     /**
      * @brief This variant reads the model parameter `replacement` wherever a

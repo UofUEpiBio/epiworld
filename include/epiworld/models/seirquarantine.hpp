@@ -150,17 +150,6 @@ public:
      */
     std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
-    /**
-     * @brief Set the initial states of the model
-     * @param proportions_ Double vector with two elements:
-     * - [0]: The proportion of initially infected individuals who start in the exposed state.
-     * - [1]: The proportion of initially non-infected individuals who have recovered (immune).
-     * @param queue_ Optional vector for queuing specifications (default: empty).
-     */
-    ModelSEIRQuarantine<TSeq> & initial_states(
-        std::vector< double > proportions_,
-        std::vector< int > queue_ = {}
-    ) override;
 
     /**
      * @brief Get the quarantine trigger status for all agents
@@ -663,14 +652,14 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
     this->add_globalevent(_quarantine_process, "Quarantine process");
 
     // Preparing the virus -------------------------------------------
-    Virus<TSeq> virus(vname, prevalence, true);
+    Virus<TSeq> virus(vname);
     virus.set_state(EXPOSED, RECOVERED, RECOVERED);
 
     virus.set_prob_infecting("Transmission probability");
     virus.set_prob_recovery("Recovery rate");
     virus.set_incubation("Latent period");
 
-    this->add_virus(virus);
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name("SEIR with Quarantine");
 
@@ -678,19 +667,5 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
 
 }
 
-template<typename TSeq>
-inline ModelSEIRQuarantine<TSeq> & ModelSEIRQuarantine<TSeq>::initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > /* queue_ */
-)
-{
-
-    Model<TSeq>::initial_states_fun =
-        create_init_function_seir<TSeq>(proportions_)
-        ;
-
-    return *this;
-
-}
 
 #endif

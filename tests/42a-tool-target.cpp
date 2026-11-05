@@ -10,19 +10,19 @@ EPIWORLD_TEST_CASE("Tool targeting a virus", "[tool][target]") {
     add_random_mixing(model, 4.0);
     model.verbose_off();
 
-    Virus<> virus_b("B", 0.01, true);
+    Virus<> virus_b("B");
 
     // Targeting requires the virus to be in the model
-    Tool<> tool("Vaccine against A", 1.0, true);
+    Tool<> tool("Vaccine against A");
     tool.set_susceptibility_reduction(1.0);
     REQUIRE_THROWS_AS(tool.add_target(virus_b), std::logic_error);
     REQUIRE_THROWS_AS(tool.add_target(-1), std::range_error);
     REQUIRE_THROWS_AS(tool.add_target(63), std::range_error);
     REQUIRE(tool.get_targets().empty());
 
-    model.add_virus(virus_b);
+    model.add_virus(virus_b, assign::share(0.01));
     REQUIRE(model.get_virus(0).get_lineage_id() == 0);
-    REQUIRE(virus_b.get_lineage_id() == 1);
+    REQUIRE(model.get_virus(1).get_lineage_id() == 1);
 
     tool.add_target(model.get_virus(0));
     REQUIRE(tool.get_targets() == std::vector< int >{0});
@@ -34,7 +34,7 @@ EPIWORLD_TEST_CASE("Tool targeting a virus", "[tool][target]") {
     REQUIRE_THROWS_AS(tool.set_targets({1, -1}), std::range_error);
     REQUIRE(tool.get_targets() == std::vector< int >{0});
 
-    model.add_tool(tool);
+    model.add_tool(tool, assign::share(1.0));
 
     // A global event records, each day, the date and the agents infected
     model.set_user_data({"Infected", "Day"});

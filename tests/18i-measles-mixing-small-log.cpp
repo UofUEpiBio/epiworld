@@ -35,17 +35,13 @@ EPIWORLD_TEST_CASE(
     }
 
     // A count beyond the group (or beyond size_t) takes the whole group
-    mixing.get_virus(0).set_distribution(
-        distribute_virus_to_groups<>("mixing", {1e20}, false)
-    );
+    mixing.assign_virus(0, assign::group_counts<>("mixing", {1e20}));
     mixing.run(0, 1);
     REQUIRE(mixing.get_db().get_today_total("Susceptible") == 0);
 
     // Not a whole number of agents
     for (double bad : {std::numeric_limits< double >::infinity(), 1.5})
-        REQUIRE_THROWS(distribute_virus_to_groups<>("mixing", {bad}, false));
-    REQUIRE_THROWS(
-        distribute_tool_to_groups<>("mixing", {std::nan("")}, true)
-    );
+        REQUIRE_THROWS(assign::group_counts<>("mixing", {bad}));
+    REQUIRE_THROWS(assign::group_shares<>("mixing", {std::nan("")}));
 
 }

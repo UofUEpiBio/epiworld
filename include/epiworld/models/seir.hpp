@@ -41,10 +41,6 @@ public:
         epiworld_double recovery_rate
     );
 
-    ModelSEIR<TSeq> & initial_states(
-        std::vector< double > proportions_,
-        std::vector< int > queue_ = {}
-    ) override;
 
 };
 
@@ -76,37 +72,11 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     nh.rate(INFECTED, REMOVED, "Recovery rate").effect(Effect::recovery);
     this->set_natural_history(std::move(nh));
 
-    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
 
 }
 
-template<typename TSeq>
-inline ModelSEIR<TSeq> & ModelSEIR<TSeq>::initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > /**/
-) {
-
-    if (proportions_.size() != 2u)
-        throw std::invalid_argument("-proportions_- must have two entries.");
-
-    for (auto & v : proportions_)
-        if ((v < 0.0) || (v > 1.0))
-            throw std::invalid_argument(
-                "-proportions_- must have values between 0 and 1."
-                );
-
-    // Of the initial cases, a share starts Infected; of the others, a share
-    // starts Removed
-    this->nh_seeds[0u].split = {
-        {EXPOSED, 1.0 - proportions_[0u]},
-        {INFECTED, proportions_[0u]}
-    };
-    this->set_initial(REMOVED, proportions_[1u]);
-
-    return *this;
-
-}
 
 #endif

@@ -32,8 +32,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     // Replace virus to infect only agent 0 (in block 0)
     Virus<> v1 = model.get_virus(0);
     model.rm_virus(0);
-    v1.set_distribution(dist_virus<>(0));
-    model.add_virus(v1);
+    model.add_virus(v1, dist_virus<>(0));
 
     // Set up the SBM network (disconnected blocks)
     model.add_layer(layer::network(
@@ -100,8 +99,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     // Replace virus to infect only agent 0
     Virus<> v2 = model2.get_virus(0);
     model2.rm_virus(0);
-    v2.set_distribution(dist_virus<>(0));
-    model2.add_virus(v2);
+    model2.add_virus(v2, dist_virus<>(0));
 
     model2.add_layer(layer::network(
         "network", rgraph_sbm(block_sizes, full_mixing, true, model2)

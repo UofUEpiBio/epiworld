@@ -41,7 +41,7 @@ inline void add_random_mixing(epiworld::Model<TSeq> & model, double contact_rate
 {
     model.add_param(contact_rate, "Contact rate");
     auto mix = epiworld::layer::mixing<TSeq>("random mixing");
-    mix->set_groups(std::vector< size_t >(model.size(), 0u), 1u);
+    mix->set_groups(epiworld::assign::labels<TSeq>(std::vector< size_t >(model.size(), 0u)), 1u);
     mix->set_contact_matrix({1.0});
     mix->set_contact_rate("Contact rate");
     model.add_layer(mix);
@@ -78,7 +78,7 @@ inline std::vector< size_t > ranges(
 
 /**
  * Adds a mixing layer named "mixing" with the contact matrix (column-major) and
- * the groups, fixed or a grouping (what ModelSIRMixing and ModelSEIRMixing did
+ * the groups, fixed (a vector) or an `Assign` (what ModelSIRMixing and ModelSEIRMixing did
  * in epiworld 0.x).
  */
 template<typename TSeq, typename G>
@@ -89,15 +89,13 @@ inline void add_group_mixing(
 )
 {
     auto mix = epiworld::layer::mixing<TSeq>("mixing");
+    const size_t n_groups = static_cast< size_t >(std::lround(
+        std::sqrt(static_cast< double >(contact_matrix.size()))
+    ));
     if constexpr (std::is_same_v< G, std::vector< size_t > >)
-        mix->set_groups(
-            std::move(groups),
-            static_cast< size_t >(std::lround(
-                std::sqrt(static_cast< double >(contact_matrix.size()))
-            ))
-        );
+        mix->set_groups(epiworld::assign::labels<TSeq>(groups), n_groups);
     else
-        mix->set_groups(std::move(groups));
+        mix->set_groups(std::move(groups), n_groups);
     mix->set_contact_matrix(std::move(contact_matrix));
     model.add_layer(mix);
 }
@@ -199,16 +197,19 @@ inline EpiTempFile epi_temp_file(
     };
 }
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline epiworld::VirusToAgentFun<TSeq> dist_virus(int i)
+/// The ids 0, 1, ..., n - 1 (e.g., `assign::agents(first_agents(5))`).
+inline std::vector< size_t > first_agents(size_t n)
 {
-    return [i](epiworld::Virus<TSeq> & v, epiworld::Model<TSeq> * m) -> void {
+    std::vector< size_t > ids(n);
+    std::iota(ids.begin(), ids.end(), 0u);
+    return ids;
+}
 
-            m->get_agents()[i].set_virus(*m, v);
-            return;
-
-        };
-
+/// Agent `i` gets it (see `assign::agents()`).
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline epiworld::Assign<TSeq> dist_virus(int i)
+{
+    return epiworld::assign::agents<TSeq>({static_cast< size_t >(i)});
 }
 
 /**

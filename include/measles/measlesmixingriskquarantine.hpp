@@ -212,17 +212,6 @@ public:
      */
     std::unique_ptr< Model<TSeq> > clone_ptr() override;
 
-    /**
-     * @brief Set the initial states of the model
-     * @param proportions_ Double vector with two elements:
-     * - [0]: The proportion of initially infected individuals who start in the latent state.
-     * - [1]: The proportion of initially non-infected individuals who have recovered (immune).
-     * @param queue_ Optional vector for queuing specifications (default: empty).
-     */
-    ModelMeaslesMixingRiskQuarantine<TSeq> & initial_states(
-        std::vector< double > proportions_,
-        std::vector< int > queue_ = {}
-    ) override;
 
     /**
      * @brief Get the quarantine willingness for all agents
@@ -1056,25 +1045,21 @@ inline ModelMeaslesMixingRiskQuarantine<TSeq>::ModelMeaslesMixingRiskQuarantine(
     this->queuing_off();
 
     // Preparing the virus -------------------------------------------
-    Virus<TSeq> virus("Measles", prevalence, true);
+    Virus<TSeq> virus("Measles");
     virus.set_state(LATENT, RECOVERED, RECOVERED);
 
     virus.set_prob_infecting("Transmission rate");
     virus.set_prob_recovery("Rash period");
     virus.set_incubation("Incubation period");
 
-    this->add_virus(virus);
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     // Designing the vaccine
     ToolVaccine<TSeq> vaccine("MMR");
     
     vaccine.set_susceptibility_reduction(this->get_param("Vax efficacy"));
 
-    vaccine.set_distribution(
-        distribute_tool_randomly(prop_vaccinated, true)
-    );
-
-    this->add_tool(vaccine);
+    this->add_tool(vaccine, assign::share<TSeq>(prop_vaccinated));
 
     // Adding the empty population
     this->set_population_size(n);
@@ -1139,20 +1124,6 @@ inline std::unique_ptr<Model<TSeq>> ModelMeaslesMixingRiskQuarantine<TSeq>::clon
 
 }
 
-template<typename TSeq>
-inline ModelMeaslesMixingRiskQuarantine<TSeq> & ModelMeaslesMixingRiskQuarantine<TSeq>::initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > /* queue_ */
-)
-{
-
-    Model<TSeq>::initial_states_fun =
-        epimodels::create_init_function_seir<TSeq>(proportions_)
-        ;
-
-    return *this;
-
-}
 
 template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::next()

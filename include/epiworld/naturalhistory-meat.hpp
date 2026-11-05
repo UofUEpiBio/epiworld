@@ -551,35 +551,6 @@ inline void NaturalHistory<TSeq>::finalize(Model<TSeq> & model)
 
 }
 
-// Seed ------------------------------------------------------------------------
-
-inline Seed Seed::proportion(
-    epiworld_double p,
-    std::vector< std::pair< int, epiworld_double > > split
-)
-{
-    if ((p < 0.0) || (p > 1.0))
-        throw std::range_error("A seeding proportion must be within [0, 1].");
-
-    Seed s;
-    s.prevalence = p;
-    s.as_proportion = true;
-    s.split = std::move(split);
-    return s;
-}
-
-inline Seed Seed::count(
-    size_t n,
-    std::vector< std::pair< int, epiworld_double > > split
-)
-{
-    Seed s;
-    s.prevalence = static_cast< epiworld_double >(n);
-    s.as_proportion = false;
-    s.split = std::move(split);
-    return s;
-}
-
 // Model: the natural history ------------------------------------------------
 
 template<typename TSeq>
@@ -658,116 +629,6 @@ inline void Model<TSeq>::set_natural_history(NaturalHistory<TSeq> natural_histor
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::add_virus(Virus<TSeq> v, Seed seed)
-{
-
-    if (!seed.split.empty())
-    {
-
-        if (!nh)
-            throw std::logic_error(
-                "A seed split across stages needs a natural history."
-            );
-
-        epiworld_double total = 0.0;
-        for (auto & s : seed.split)
-        {
-            nh->check_stage(s.first, "seed");
-            if (!nh->is_carrier(s.first))
-                throw std::logic_error(
-                    "Seeds go to carrier stages; \"" + nh->get_stages()[s.first] +
-                    "\" is not one."
-                );
-            total += s.second;
-        }
-
-        if (std::abs(total - 1.0) > 1e-9)
-            throw std::range_error(
-                "The shares of a seed split must add up to 1."
-            );
-
-    }
-
-    // Where in nh_seeds this virus's seed lives (it can change later, e.g., by
-    // a model's initial_states())
-    const size_t slot = nh_seeds.size();
-    nh_seeds.push_back(std::move(seed));
-
-    v.set_distribution(
-        [slot](Virus<TSeq> & virus, Model<TSeq> * model) -> void {
-
-        const Seed & s = model->nh_seeds[slot];
-        const auto * h = model->nh.get();
-
-        std::vector< size_t > idx;
-        for (auto & a : model->population)
-            if (
-                (a.virus == nullptr) &&
-                ((h == nullptr) || (h->get_stage_info(a.state).infection >= 0))
-            )
-                idx.push_back(static_cast< size_t >(a.id));
-
-        const size_t n = s.as_proportion ?
-            static_cast< size_t >(std::floor(
-                s.prevalence * static_cast< epiworld_double >(model->size())
-            )) :
-            static_cast< size_t >(s.prevalence);
-
-        if (n > idx.size())
-            throw std::range_error(
-                "Only " + std::to_string(idx.size()) + " agents can be "
-                "infected; cannot seed " + std::to_string(n) + "."
-            );
-
-        // How many go to each stage of the split (the first takes the rest)
-        std::vector< size_t > counts(s.split.size(), 0u);
-        size_t assigned = 0u;
-        for (size_t k = 1u; k < s.split.size(); ++k)
-        {
-            counts[k] = static_cast< size_t >(std::floor(
-                s.split[k].second * static_cast< epiworld_double >(n)
-            ));
-            assigned += counts[k];
-        }
-        if (!counts.empty())
-            counts[0u] = n - std::min(n, assigned);
-
-        size_t avail = idx.size();
-        size_t k = 0u;
-        for (size_t i = 0u; i < n; ++i)
-        {
-
-            while ((k < counts.size()) && (counts[k] == 0u))
-                ++k;
-
-            const size_t loc = model->runif_index(
-                static_cast< uint32_t >(avail--)
-            );
-            Agent<TSeq> & agent = model->population[idx[loc]];
-
-            model->nh_pending = NH_SEED;
-            if (counts.empty())
-                agent.set_virus(*model, virus);
-            else
-            {
-                agent.set_virus(
-                    *model, virus, s.split[k].first, Queue<TSeq>::NoOne
-                );
-                --counts[k];
-            }
-            model->nh_pending = -1;
-
-            std::swap(idx[loc], idx[avail]);
-
-        }
-
-    });
-
-    add_virus(v);
-
-}
-
-template<typename TSeq>
 inline bool Model<TSeq>::fire(int transition, Agent<TSeq> & agent)
 {
 
@@ -793,31 +654,13 @@ inline bool Model<TSeq>::fire(int transition, Agent<TSeq> & agent)
 }
 
 template<typename TSeq>
-inline void Model<TSeq>::set_initial(int stage, epiworld_double share)
+inline void Model<TSeq>::set_initial(Assign<TSeq> a)
 {
 
     if (!nh)
         throw std::logic_error("set_initial() needs a natural history.");
 
-    nh->check_stage(stage, "initial");
-
-    if (nh->is_carrier(stage))
-        throw std::logic_error(
-            "set_initial() places agents without the virus; \"" +
-            nh->get_stages()[stage] + "\" is a carrier stage (seed instead)."
-        );
-
-    if ((share < 0.0) || (share > 1.0))
-        throw std::range_error("An initial share must be within [0, 1].");
-
-    for (auto & init : nh_initial)
-        if (init.first == stage)
-        {
-            init.second = share;
-            return;
-        }
-
-    nh_initial.emplace_back(stage, share);
+    nh_initial = std::move(a);
 
 }
 
@@ -1046,40 +889,40 @@ template<typename TSeq>
 inline void Model<TSeq>::nh_initial_place()
 {
 
-    if (nh_initial.empty())
+    if (!nh_initial.is_set())
         return;
 
     // The agents left without the virus, in the first stage
-    std::vector< size_t > idx;
+    std::vector< char > eligible(population.size());
     for (auto & p : population)
-        if ((p.virus == nullptr) && (p.state == 0u))
-            idx.push_back(static_cast< size_t >(p.id));
+        eligible[static_cast< size_t >(p.id)] =
+            (p.virus == nullptr) && (p.state == 0u);
 
-    const epiworld_double n_free = static_cast< epiworld_double >(idx.size());
-    size_t avail = idx.size();
+    const std::vector< int > labels = nh_initial.draw(*this, eligible);
 
-    for (auto & init : nh_initial)
+    for (size_t i = 0u; i < labels.size(); ++i)
     {
 
-        const size_t k = static_cast< size_t >(init.second * n_free);
-        if (k > avail)
-            throw std::range_error(
-                "The initial shares add up to more than the agents without "
-                "the virus."
+        const int s = labels[i];
+        if (s == -1)
+            continue;
+
+        if (
+            (s < 0) || (static_cast< size_t >(s) >= nh->get_n_stages()) ||
+            nh->is_carrier(s)
+        )
+            throw std::logic_error(
+                "set_initial(): the label " + std::to_string(s) + " is not a "
+                "stage without the virus (an initial stage is a stage, e.g., "
+                "assign::shares({{R, 0.1}}); carriers are seeded with the "
+                "virus)."
             );
 
-        for (size_t i = 0u; i < k; ++i)
-        {
-            const size_t loc = runif_index(static_cast< uint32_t >(avail--));
-            nh_pending = NH_INITIAL;
-            population[idx[loc]].change_state(
-                *this,
-                static_cast< epiworld_fast_uint >(init.first),
-                Queue<TSeq>::NoOne
-            );
-            nh_pending = -1;
-            std::swap(idx[loc], idx[avail]);
-        }
+        nh_pending = NH_INITIAL;
+        population[i].change_state(
+            *this, static_cast< epiworld_fast_uint >(s), Queue<TSeq>::NoOne
+        );
+        nh_pending = -1;
 
     }
 

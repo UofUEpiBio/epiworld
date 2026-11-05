@@ -56,8 +56,8 @@ std::shared_ptr< Model<> > make_model(const std::string & mode)
     model->add_param(0.05, "Death");
     model->set_natural_history(make_disease());
 
-    model->add_virus(Virus<>("v"), Seed::count(20, {{E, 0.5}, {I, 0.5}}));
-    model->set_initial(R, 0.25);
+    model->add_virus(Virus<>("v"), assign::counts({{E, 10u}, {I, 10u}}));
+    model->set_initial(assign::shares({{R, 0.25}}));
 
     // A ring: each agent meets the two on each side
     std::vector< int > source, target;

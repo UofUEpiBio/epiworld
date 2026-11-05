@@ -11,8 +11,7 @@ EPIWORLD_TEST_CASE("SaverMemory does not depend on the number of threads", "[sav
 
         Tool<> tool("a tool");
         tool.set_susceptibility_reduction(.5);
-        tool.set_distribution(distribute_tool_randomly<>(0.3, false));
-        model.add_tool(tool);
+        model.add_tool(tool, assign::count<>(0.3));
         model.verbose_off();
 
         // Passed by value: copies must share the results

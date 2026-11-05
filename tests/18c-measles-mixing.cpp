@@ -44,12 +44,7 @@ EPIWORLD_TEST_CASE(
     );
 
     // Setting the distribution function of the initial cases
-    model_0.get_virus(0).set_distribution(
-        [&n_seeds](Virus<> & v, Model<> * m) -> void {
-        for (int i = 0; i < n_seeds; ++i)
-            m->get_agents()[i].set_virus(*m, v);
-        return;
-    });
+    model_0.assign_virus(0, assign::agents(first_agents(n_seeds)));
 
     size_t nsims = 100; // Reduced for faster testing
     std::vector<std::vector<epiworld_double>> transitions(nsims);

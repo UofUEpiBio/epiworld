@@ -19,9 +19,9 @@ $(NAME)_SOURCES := \
 	06-mixing.cpp \
 	06b-mixing.cpp \
 	09-distribute-tools-and-viruses.cpp \
-	09b-distribute-randomly-to-set.cpp \
-	09c-distribute-to-set-scaling.cpp \
-	09d-distribute-uniform.cpp \
+	09b-assign-in-groups.cpp \
+	09c-assign-scaling.cpp \
+	09d-assign-uniform.cpp \
 	10-generation-interval.cpp \
 	11-random-numbers.cpp \
 	12-diagrams.cpp \

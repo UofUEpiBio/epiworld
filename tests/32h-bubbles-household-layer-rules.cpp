@@ -101,7 +101,7 @@ EPIWORLD_TEST_CASE("Bubbles - household layer rules", "[bubbles]") {
             other[i] = i % n_groups;
 
         auto wrong = layer::mixing<>("household");
-        wrong->set_groups(other, n_groups);
+        wrong->set_groups(assign::labels(other), n_groups);
         wrong->set_contact_prob(1.0);
         m.add_layer(wrong);
 

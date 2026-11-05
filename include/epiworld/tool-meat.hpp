@@ -111,30 +111,6 @@ inline Tool<TSeq>::Tool(std::string name)
 }
 
 template<typename TSeq>
-inline Tool<TSeq>::Tool(
-    std::string name,
-    epiworld_double prevalence,
-    bool as_proportion
-    )
-{
-
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        sequence = -1;
-    }
-    else
-    {
-        sequence = nullptr;
-    }
-
-    set_name(name);
-
-    set_distribution(
-        distribute_tool_randomly<TSeq>(prevalence, as_proportion)
-    );
-}
-
-template<typename TSeq>
 inline void Tool<TSeq>::set_sequence(TSeq d) {
     sequence = std::make_shared<TSeq>(d);
 }
@@ -659,25 +635,6 @@ inline void Tool<TSeq>::print() const
         printf_epiworld("targets    : %s\n", tgts.c_str());
     }
 
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::distribute(Model<TSeq> * model)
-{
-
-    if (dist)
-    {
-
-        dist(*this, model);
-
-    }
-
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::set_distribution(ToolToAgentFun<TSeq> fun)
-{
-    dist = fun;
 }
 
 template<typename TSeq>

@@ -250,17 +250,17 @@ inline ModelSURV<TSeq>::ModelSURV(
     // Virus ------------------------------------------------------------------
     Virus<TSeq> covid(vname);
     covid.set_post_immunity("Prob. no reinfect");
-    this->add_virus(covid, Seed::count(prevalence));
+    this->add_virus(covid, assign::count<TSeq>(prevalence));
 
     this->set_user_data({"nsampled", "ndetected", "ndetected_asympt", "nasymptomatic"});
     this->add_globalevent(surveillance_program, "Surveilance program", -1);
    
     // Vaccine tool -----------------------------------------------------------
-    Tool<TSeq> vax("Vaccine", prop_vaccinated, true);
+    Tool<TSeq> vax("Vaccine");
     vax.set_susceptibility_reduction("Vax efficacy");
     vax.set_transmission_reduction("Vax redux transmission");
-    
-    this->add_tool(vax);
+
+    this->add_tool(vax, assign::share<TSeq>(prop_vaccinated));
 
     this->set_name("Surveillance");
 

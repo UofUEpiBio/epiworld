@@ -21,7 +21,7 @@ int main()
     model.add_param(.3, "recovery");
 
     // Setting up virus --------------------------------------------------------
-    epiworld::Virus<> v("covid", 5, false);
+    epiworld::Virus<> v("covid");
     v.set_state(exposed_state, removed_state, removed_state);
 
     EPI_NEW_POSTRECOVERYFUN_LAMBDA(immunity, int)
@@ -40,17 +40,17 @@ int main()
     v.set_prob_infecting("infectiousness");
 
     // Setting up tool ---------------------------------------------------------
-    epiworld::Tool<> is("immune system", 1.0, true);
+    epiworld::Tool<> is("immune system");
     is.set_susceptibility_reduction(.3);
     is.set_death_reduction(.9);
     is.set_recovery_enhancer("recovery");
 
-    epiworld::Tool<> postImm("post immunity", 0, false);
+    epiworld::Tool<> postImm("post immunity");
     postImm.set_susceptibility_reduction(1.0);
 
-    model.add_tool(is);
-    model.add_tool(postImm);
-    model.add_virus(v);
+    model.add_tool(is, epiworld::assign::share(1.0));
+    model.add_tool(postImm, epiworld::assign::count(0));
+    model.add_virus(v, epiworld::assign::count(5));
     model.run(112, 30);
     model.print();
 

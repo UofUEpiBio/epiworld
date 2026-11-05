@@ -20,16 +20,14 @@ int main()
 
     // Adding the tool and virus
     epiworld::Virus<int> virus("covid 19");
-    virus.set_distribution(
-        distribute_virus_randomly<int>(initial_cases, false));
 
     virus.set_post_immunity(1.0);
     virus.set_state(exposed_state, recovered_state, removed_state);
     virus.set_prob_death(.01);
-    model.add_virus(virus);
+    model.add_virus(virus, assign::count<int>(initial_cases));
 
-    epiworld::Tool<int> tool("vaccine", .5, true);
-    model.add_tool(tool);
+    epiworld::Tool<int> tool("vaccine");
+    model.add_tool(tool, assign::share(.5));
 
     // Generating a random pop
     model.add_layer(layer::network(

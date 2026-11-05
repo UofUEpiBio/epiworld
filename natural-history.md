@@ -87,19 +87,33 @@ every compatible disease state.
 12. **Results**: bit-identical histories are not required. The statistical
     tests (R0 validation, rates, final sizes, stage durations) are the
     acceptance check.
+13. **The virus carries its natural history** (settled 2026-11-05). A disease
+    is built on the `Virus` itself (`flu.add_stage()`, `flu.rate()`, ...);
+    `add_virus()` gives the model its stages. A strain copied from a virus, or
+    made by mutation, keeps its natural history; its parameters can differ
+    (`use_param()`). The viruses of a model share their stages (labels and
+    flags) in 1.0.0, and an agent's transitions come from the virus it
+    carries.
+14. **One way to place things at the start of a run: `assign`** (settled
+    2026-11-05). Viruses (and the stage each seeded agent starts in), tools,
+    initial stages and the groups of mixing layers are all placed with the
+    same objects (Section 5.7). `Seed`, the `distribute_*` functions,
+    `set_distribution()`, the prevalence constructors of `Virus` and `Tool`,
+    `initial_states()` and `grouping::` are removed.
 
 ## 4. Concepts
 
 | Concept | Owner | Responsibility |
 |---|---|---|
-| `NaturalHistory` | model | Stages and the transitions between them. |
+| Natural history | virus | Stages and the transitions between them, built on the `Virus` (Section 5.1). |
 | Stage | natural history | A node: `carrier`, `infectious`, a contact weight. |
 | `Statuses` | model | Status nodes, their contact weight per layer, and the transitions between them. The default is one status, "Free". |
 | Transition | either axis | A named, counted edge from a set of source nodes to a target (or a branch of targets), of one kind (Section 5.1). |
 | Reaction | model | "When transition T fires, or stage X is entered, fire transition U" (or call a function). It links the two axes. |
-| Virus | model | A variant: name, sequence, mutation, lineage, and parameter redirections. No states, no rates, no queue. |
+| Virus | model | A disease: its natural history, name, sequence, mutation, lineage, and parameter redirections (`use_param()`). |
+| `Assign` | model | Who gets a virus, a tool, an initial stage or a group at the start of each run (Section 5.7). |
 | Tool | model | Effects on susceptibility, transmission, recovery and death, read from model parameters. No states, no queue. |
-| Model | -- | The population, layers, parameters, natural history, statuses, reactions and global events. Runs the step. |
+| Model | -- | The population, layers, parameters, viruses (and their stages), statuses, reactions and global events. Runs the step. |
 
 ## 5. The API
 
@@ -147,14 +161,19 @@ public:
     void set_contact(int status, Value<TSeq> weight, std::string layer = ""); // "" = all
 };
 
+// Virus<TSeq> carries the NaturalHistory builder: add_stage(), set_contact(),
+// infection(), rate(), after(), external() (the methods above)
+
 // On Model
-void set_natural_history(NaturalHistory<TSeq> nh);
+void add_virus(Virus<TSeq> v, Assign<TSeq> a);  // its stages become the model's
+void add_tool(Tool<TSeq> t, Assign<TSeq> a);
+void assign_virus(size_t id, Assign<TSeq> a);   // re-place a built-in model's virus
+void assign_tool(size_t id, Assign<TSeq> a);
+void set_initial(Assign<TSeq> a);               // labels: stages without the virus
 void set_statuses(Statuses<TSeq> s);
 void react(Trigger on, int transition);        // Trigger::fired(t), Trigger::entered(stage)
 void react(Trigger on, ReactFun<TSeq> f);      //   .was(statuses): start-of-day status
 bool fire(int transition, Agent<TSeq>& a);     // no-op unless a is in a source
-void add_virus(Virus<TSeq> v, Seed s);         // Seed::proportion(p, {{E, .7}, {I, .3}})
-void set_initial(int stage_or_status, Value<TSeq> share);   // non-carriers
 void seed(Agent<TSeq>& a, const Virus<TSeq>& v, int stage); // imports during a run
 
 // On Virus
@@ -169,17 +188,17 @@ int status_since() const;  int status_until() const;
 ### 5.2 SIR (and its family)
 
 ```cpp
-NaturalHistory<> nh("Flu");
-int S = nh.add_stage("Susceptible");
-int I = nh.add_stage("Infected", stage::infectious);
-int R = nh.add_stage("Recovered");
-nh.infection(S, I, "Transmission rate");
-nh.rate(I, R, "Recovery rate").effect(Effect::recovery);
+Virus<> flu("Flu");
+int S = flu.add_stage("Susceptible");
+int I = flu.add_stage("Infected", stage::infectious);
+int R = flu.add_stage("Recovered");
+flu.infection(S, I, "Transmission rate");
+flu.rate(I, R, "Recovery rate").effect(Effect::recovery);
 
 model.add_param(0.3, "Transmission rate");
 model.add_param(0.1, "Recovery rate");
-model.set_natural_history(std::move(nh));
-model.add_virus(Virus<>("Flu"), Seed::proportion(0.01, {{I, 1.0}}));
+model.add_virus(flu, assign::share(0.01));        // into the infection's target, I
+model.set_initial(assign::shares({{R, 0.2}}));    // 20% of the others immune
 ```
 
 - **SIS**: `rate(I, S, ...)` instead of a Recovered stage.
@@ -203,21 +222,21 @@ nh.rate(SYM, D, "Death rate").effect(Effect::death);   // competes with the dead
 ### 5.4 Measles mixing
 
 ```cpp
-NaturalHistory<> nh("Measles");
-S  = nh.add_stage("Susceptible");
-L  = nh.add_stage("Latent",    stage::carrier);
-P  = nh.add_stage("Prodromal", stage::infectious);
-RS = nh.add_stage("Rash",      stage::infectious);
-SV = nh.add_stage("Severe",    stage::carrier);
-R  = nh.add_stage("Recovered");
-nh.set_contact(RS, Value::complement("Rash reduction contact rate"));
-nh.infection(S, L, "Transmission rate");
-nh.after(L, P,  Duration::lognormal("Incubation period", "Incubation period sd"));
-nh.after(P, RS, Duration::lognormal("Prodromal period", "Prodromal period sd"));
-nh.rate (RS, SV, "Hospitalization rate");       // competes with the rash deadline
-nh.after(RS, R, Duration::lognormal("Rash period", "Rash period sd"));
-auto out_severe = nh.rate(SV, R, Value::inverse("Hospitalization period"));
-auto pep_clear  = nh.external(L, R, "PEP clearance");
+Virus<> measles("Measles");                      // the virus and its natural history
+S  = measles.add_stage("Susceptible");
+L  = measles.add_stage("Latent",    stage::carrier);
+P  = measles.add_stage("Prodromal", stage::infectious);
+RS = measles.add_stage("Rash",      stage::infectious);
+SV = measles.add_stage("Severe",    stage::carrier);
+R  = measles.add_stage("Recovered");
+measles.set_contact(RS, Value::complement("Rash reduction contact rate"));
+measles.infection(S, L, "Transmission rate");
+measles.after(L, P,  Duration::lognormal("Incubation period", "Incubation period sd"));
+measles.after(P, RS, Duration::lognormal("Prodromal period", "Prodromal period sd"));
+measles.rate (RS, SV, "Hospitalization rate");       // competes with the rash deadline
+measles.after(RS, R, Duration::lognormal("Rash period", "Rash period sd"));
+auto out_severe = measles.rate(SV, R, Value::inverse("Hospitalization period"));
+auto pep_clear  = measles.external(L, R, "PEP clearance");
 
 Statuses<> s;
 FREE = s.add_status("Free");
@@ -233,7 +252,8 @@ auto isolate   = s.external({FREE, Q}, ISO, "Rash in quarantine");
 auto admit     = s.external({FREE, Q, ISO}, H, "Admitted");
 auto discharge = s.external(H, FREE, "Discharged");
 
-model.set_natural_history(std::move(nh));
+model.add_virus(measles, assign::share(0.001));
+model.add_tool(mmr, assign::share(0.9));         // or assign::group_shares("school", ...)
 model.set_statuses(std::move(s));
 model.react(Trigger::entered(RS).was({Q}), isolate);   // detected at once (decision 8)
 model.react(Trigger::entered(SV), admit);
@@ -264,17 +284,17 @@ This is the measles pattern without the prodromal stage:
 ### 5.6 The R wrapper
 
 ```r
-nh <- natural_history("Flu")
-add_stage(nh, "Susceptible")
-add_stage(nh, "Infected", infectious = TRUE)
-add_stage(nh, "Recovered")
-add_infection(nh, "Susceptible", "Infected", rate = "Transmission rate")
-add_rate(nh, "Infected", "Recovered", rate = "Recovery rate", effect = "recovery")
+flu <- virus("Flu")
+add_stage(flu, "Susceptible")
+add_stage(flu, "Infected", infectious = TRUE)
+add_stage(flu, "Recovered")
+add_infection(flu, "Susceptible", "Infected", rate = "Transmission rate")
+add_rate(flu, "Infected", "Recovered", rate = "Recovery rate", effect = "recovery")
 m <- Model(1000)
 add_param(m, "Transmission rate", 0.3)
 add_param(m, "Recovery rate", 0.1)
-set_natural_history(m, nh)
-add_virus(m, virus("Flu"), seed = list(Infected = 1), prevalence = 0.01)
+add_virus(m, flu, assign_share(0.01))
+set_initial(m, assign_shares(Recovered = 0.2))
 ```
 
 - A slot takes a number, a parameter name, or a function object. The
@@ -287,6 +307,34 @@ add_virus(m, virus("Flu"), seed = list(Infected = 1), prevalence = 0.01)
   `get_hist_transition()`.
 - Python follows the same shape in snake_case. JS (embind) takes the
   declarative forms and the factories.
+
+### 5.7 Placement: `assign`
+
+Who gets what at the start of each run, for viruses, tools, initial stages
+and the groups of mixing layers, is said with one vocabulary
+(`include/epiworld/assign.hpp`). An `Assign` gives each eligible agent a label,
+or none, drawn with the model's random numbers at each reset:
+
+| Form | Labels |
+|---|---|
+| `assign::share(p)`, `assign::count(n)` | A random share (or number) of the eligible agents |
+| `assign::shares({{l, p}, ...})`, `assign::counts({{l, n}, ...})` | Several labels, each its share (or number), drawn in order from those left |
+| `assign::group_shares(layer, {p_g})`, `assign::group_counts(layer, {n_g})` | A share (or number) of each group of a mixing layer |
+| `assign::agents(ids)` | The given agents |
+| `assign::labels(v)` | `v[i]` for agent `i`; fixed (the same every run) |
+| `assign::by(fun)` | `fun(agent, model)`; an R or Python function is cheap here (once per run) |
+
+| Use | Label | Eligible |
+|---|---|---|
+| `add_virus(v, a)` | A carrier stage (default: the infection's target) | No virus, and a stage that can be infected |
+| `add_tool(t, a)` | -- | Everyone |
+| `set_initial(a)` | A stage without the virus | No virus, in the first stage |
+| `Mixing::set_groups(a, n)` | A group | Everyone |
+
+The order at each reset is fixed: the layers (so a placement can use their
+groups), the viruses, the tools, the initial stages, then the global events'
+set-up. A subset of agents to draw from (a school, a set of ids) is a group of
+a mixing layer.
 
 ## 6. Semantics
 
@@ -326,11 +374,12 @@ no longer in a source is skipped. That check replaces the earlier plan's
 
 ### 6.3 Seeding and initial conditions
 
-- `Seed` says how many agents are infected and how they split across carrier
-  stages. Agents are drawn among those whose stage has an infection
-  transition.
-- `set_initial()` places a share of the non-carriers in a stage (such as
-  Recovered) or a status.
+- `add_virus(v, a)` seeds the virus (Section 5.7). The labels are carrier
+  stages (`assign::shares({{E, 0.007}, {I, 0.003}})`); the forms without
+  labels (`assign::share(0.01)`) use the infection's target. Agents are drawn
+  among those whose stage can be infected.
+- `set_initial(a)` places the agents left without the virus in stages (such
+  as Recovered); NH-2 adds statuses the same way.
 - Seeded agents enter on day 0 and draw their durations then. They count in
   day 0, and the transmission log records them with source −1.
 - `Model::seed()` imports cases during a run through the same path.
@@ -458,7 +507,14 @@ the other would visit. That is the class of bug found in #360.
   - `add_state`, `set_state_function`, `state_of`, `get_states`,
     `print_state_codes`;
   - `set_infectious_states`, `set_excluded_states`, `initial_states()`;
-  - `epimodels::create_init_function_*`.
+  - `epimodels::create_init_function_*`;
+  - `set_natural_history()` (the virus carries it).
+- **Placement** (decision 14): `Seed`, `distribute_virus_*`,
+  `distribute_tool_*`, `Virus::set_distribution()`,
+  `Tool::set_distribution()`, the prevalence constructors
+  `Virus(name, prevalence, as_proportion)` and `Tool(...)`, `grouping::random()`,
+  and `Mixing::set_groups(vector, n)` / `set_groups(Grouping)` (now
+  `set_groups(Assign, n)`). Done in NH-1.
 - **Update helpers:** `UpdateFun`, `default_update_susceptible`,
   `default_update_exposed`, `new_state_update_transition`.
 - **Virus:** `set_state/get_state/set_queue`, `set_prob_infecting/recovery/death`,
@@ -489,16 +545,17 @@ These are separate commits with their own tests:
 
 ## 11. Phases
 
-Each phase is one PR into `v1-layers`, opened after the previous one merges,
-so nothing is stacked. Between NH-1 and NH-2, the old state API still exists
+The work is on the branch `nh-1-engine`, which also carries this plan, and
+merges into `v1-layers`. Between NH-1 and NH-2, the old state API still exists
 for the multi-status models. NH-2 removes it, before any release. Each phase
 updates the runbook table in `contact-layers.md` (Section 11.6) and reruns
 the benchmark (Section 11.7 there).
 
 - **NH-1: the engine and the single-status models.**
-  - Cells, the cell table, `NaturalHistory`, the `Chart` vocabulary and value
-    slots, the calendar, the derived queue, and the database (counts per cell
-    and per transition).
+  - Cells, the cell table, the natural history on the virus, the `Chart`
+    vocabulary and value slots, the calendar, the derived queue, and the
+    database (counts per cell and per transition).
+  - `assign` for every placement (decision 14).
   - Ports SIR, SIS, SIRD, SISD, SEIR, SEIRD, SIRLogit, DiffNet and
     Surveillance, with their tests and examples.
 - **NH-2: statuses, reactions and the old API removed.**

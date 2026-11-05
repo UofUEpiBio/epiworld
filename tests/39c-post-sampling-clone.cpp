@@ -83,7 +83,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sa
 
         // Stepped by hand, the model stays on day 0, so the latent cases
         // would not become infectious: half the initial cases start infected
-        base.initial_states({0.5, 0.0});
+        base.assign_virus(0, assign::shares({{1, 0.025}, {2, 0.025}}));
 
         size_t n_batches = 0u;
         base.set_post_sampling(

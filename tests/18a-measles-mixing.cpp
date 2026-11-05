@@ -49,12 +49,7 @@ EPIWORLD_TEST_CASE(
     add_group_mixing(model_0, contact_matrix, blocks({0u, n_agents_sz}));
 
     // Setting the distribution function of the initial cases
-    model_0.get_virus(0).set_distribution(
-        [&n_seeds](Virus<> & v, Model<> * m) -> void {
-        for (int i = 0; i < n_seeds; ++i)
-            m->get_agents()[i].set_virus(*m, v);
-        return;
-    });
+    model_0.assign_virus(0, assign::agents(first_agents(n_seeds)));
 
     size_t nsims = 400; // Reduced for faster testing
     std::vector<std::vector<epiworld_double>> transitions(nsims);
