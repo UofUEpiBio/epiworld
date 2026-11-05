@@ -17,6 +17,8 @@ using namespace epiworld;
 //
 // Model B: an SIR whose virus reads "Recovery rate (fast)" (1.0) in place of
 // "Recovery rate" (0.01). Every infected agent recovers the next day.
+//
+// Model C: the same variant, born by mutation during the run.
 
 namespace {
 
@@ -149,6 +151,71 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
             }
         }
         REQUIRE(n_recovered >= 20);
+    }
+
+    // Model C: a variant born during the run. The original never recovers;
+    // from day 5 on, every carrier mutates into a variant (a new sequence)
+    // that reads "Recovery rate (fast)" (1.0). The carriers infected from
+    // then on carry the variant and recover the next day; the database
+    // records two viruses, the variant a child of the original.
+    {
+        epimodels::ModelSIR<> model("v", N, 0.0, 0.5, 0.0);
+        model.add_param(1.0, "Recovery rate (fast)");
+        model.assign_virus(0, assign::count(10));
+
+        model.get_virus(0).set_mutation(
+            [](Agent<> *, Virus<> & v, Model<> * m) -> bool {
+                if ((m->today() < 5) || (v.get_sequence() == 1))
+                    return false;
+                v.set_sequence(1);
+                v.use_param("Recovery rate", "Recovery rate (fast)");
+                return true;
+            }
+        );
+
+        model.add_layer(layer::network("net", net));
+        model.verbose_off();
+        model.run(30, 7);
+
+        // Infected on day 7 or later (by a variant carrier): out the next day
+        int n_variant = 0, n_never = 0;
+        for (size_t i = 0u; i < N; ++i)
+        {
+            const int in = model.get_stage_entered(i, 1);
+            const int out = model.get_stage_entered(i, 2);
+            if (in >= 7)
+            {
+                REQUIRE(out - in == 1);
+                ++n_variant;
+            }
+            else if ((in >= 0) && (in < 5) && (out < 0))
+                ++n_never;
+        }
+        REQUIRE(n_variant > 20);
+        REQUIRE(n_never == 0);   // the early carriers mutated, then recovered
+
+        REQUIRE(model.get_db().get_n_viruses() == 2u);
+    }
+
+    // Guards: a virus in a model keeps its natural history, and a variant
+    // must read parameters the model has
+    {
+        epimodels::ModelSIR<> model("v", N, 0.01, 0.5, 0.1);
+        REQUIRE_THROWS(model.get_virus(0).add_stage("Another"));
+        REQUIRE_THROWS(model.get_virus(0).rate(1, 0, 0.1));
+
+        model.get_virus(0).set_mutation(
+            [](Agent<> *, Virus<> & v, Model<> *) -> bool {
+                if (v.get_sequence() == 1)
+                    return false;
+                v.set_sequence(1);
+                v.use_param("Recovery rate", "No such parameter");
+                return true;
+            }
+        );
+        model.add_layer(layer::network("net", net));
+        model.verbose_off();
+        REQUIRE_THROWS(model.run(5, 1));
     }
 
 }

@@ -240,6 +240,9 @@ public:
     /// The parameter this variant reads in place of `id`.
     ParamId param_redirect(ParamId id, const Model<TSeq> & model) const;
 
+    /// Throws if a parameter it reads (see `use_param()`) is not in `model`.
+    void check_params(const Model<TSeq> & model) const;
+
     virtual ~Virus() = default;
     virtual std::unique_ptr<Virus<TSeq>> clone_ptr() const;
 

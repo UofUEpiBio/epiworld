@@ -1873,6 +1873,9 @@ inline void Model<TSeq>::reset() {
         queue.reset();
 
     // The natural history's per-agent records (and the first stage's queue)
+    for (auto & v : viruses)
+        v->check_params(*this);
+
     if (nh)
     {
         for (auto & v : viruses)

@@ -249,7 +249,10 @@ inline void Virus<TSeq>::mutate(
 
     if (mutation)
         if (mutation(agent, *this, model))
+        {
+            check_params(*model);
             model->get_db().record_virus(*this);
+        }
 
     return;
     
@@ -900,6 +903,15 @@ inline ParamId Virus<TSeq>::param_redirect(
 template<typename TSeq>
 inline NaturalHistory<TSeq> & Virus<TSeq>::nh_edit()
 {
+    // A virus in a model (its copy there, or an agent's) keeps the model's
+    // stages and transitions; a strain changes parameters instead
+    if (id >= 0)
+        throw std::logic_error(
+            "The virus \"" + virus_name + "\" is in a model: its natural "
+            "history cannot change (a strain reads other parameters with "
+            "use_param())."
+        );
+
     // Copies share the natural history until one of them is edited
     if (!nh_def)
         nh_def = std::make_shared< NaturalHistory<TSeq> >(virus_name);
@@ -949,6 +961,19 @@ inline TransitionRef<TSeq> Virus<TSeq>::external(
 )
 {
     return nh_edit().external(std::move(from), to, std::move(label));
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::check_params(const Model<TSeq> & model) const
+{
+    for (const auto & r : param_redirects)
+        if (!model.has_param(r.second.name()))
+            throw std::logic_error(
+                "The virus \"" + virus_name + "\" reads the parameter \"" +
+                r.second.name() + "\" in place of \"" + r.first.name() +
+                "\", but the model has no such parameter (add it with "
+                "add_param())."
+            );
 }
 
 #endif
