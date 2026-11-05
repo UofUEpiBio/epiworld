@@ -137,13 +137,12 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
     this->set_agents_data(agents_data, data_ncols);
 
-    NaturalHistory<TSeq> nh(innovation_name);
-    nh.add_stage("Non adopters");
-    nh.add_stage("Adopters", stage::infectious);
-    nh.infection(NONADOPTER, ADOPTER, parname).sampler(sampler);
-    this->set_natural_history(std::move(nh));
+    Virus<TSeq> virus(innovation_name);
+    virus.add_stage("Non adopters");
+    virus.add_stage("Adopters", stage::infectious);
+    virus.infection(NONADOPTER, ADOPTER, parname).sampler(sampler);
 
-    this->add_virus(Virus<TSeq>(innovation_name), assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name(
         std::string("Diffusion of Innovations - ") + innovation_name);

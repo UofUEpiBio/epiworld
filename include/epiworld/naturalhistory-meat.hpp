@@ -421,7 +421,41 @@ inline bool NaturalHistory<TSeq>::is_source(int transition, int s) const
 }
 
 template<typename TSeq>
-inline void NaturalHistory<TSeq>::finalize(Model<TSeq> & model)
+inline bool NaturalHistory<TSeq>::same_structure(
+    const NaturalHistory<TSeq> & o
+) const
+{
+
+    if (
+        (stage_labels != o.stage_labels) ||
+        (stage_flags != o.stage_flags) ||
+        (stage_contact != o.stage_contact) ||
+        (transitions.size() != o.transitions.size())
+    )
+        return false;
+
+    for (size_t k = 0u; k < transitions.size(); ++k)
+    {
+        const auto & a = transitions[k];
+        const auto & b = o.transitions[k];
+        if (
+            (a.name != b.name) || (a.kind != b.kind) || (a.from != b.from) ||
+            (a.to != b.to) || (a.branch_to != b.branch_to) ||
+            (a.effect != b.effect) ||
+            (static_cast< bool >(a.sampler) != static_cast< bool >(b.sampler))
+        )
+            return false;
+    }
+
+    return true;
+
+}
+
+template<typename TSeq>
+inline void NaturalHistory<TSeq>::finalize(
+    Model<TSeq> & model,
+    const std::string & owner
+)
 {
 
     if (stage_labels.empty())
@@ -528,7 +562,7 @@ inline void NaturalHistory<TSeq>::finalize(Model<TSeq> & model)
             check_stage(t.duration.get_anchor(), "anchor");
 
         // Numbers become parameters
-        const std::string pname = name + ": " + t.name;
+        const std::string pname = owner + ": " + t.name;
         as_param(t.value, pname);
         as_param(t.duration.mean, pname + " (mean)");
         as_param(t.duration.sd, pname + " (sd)");
@@ -554,22 +588,17 @@ inline void NaturalHistory<TSeq>::finalize(Model<TSeq> & model)
 // Model: the natural history ------------------------------------------------
 
 template<typename TSeq>
-inline void Model<TSeq>::set_natural_history(NaturalHistory<TSeq> natural_history)
+inline void Model<TSeq>::nh_install(std::shared_ptr< NaturalHistory<TSeq> > def)
 {
 
-    if (nh)
-        throw std::logic_error(
-            "The model already has a natural history (\"" + nh->get_name() +
-            "\"); a model has one."
-        );
+    NaturalHistory<TSeq> & natural_history = *def;
 
     if (nstates != 0u)
         throw std::logic_error(
-            "The model already has states. With a natural history, the stages "
-            "are the model's states: set it before anything else."
+            "The model already has states. A virus with a natural history "
+            "gives the model its stages as its states: add it before anything "
+            "else."
         );
-
-    natural_history.finalize(*this);
 
     if (natural_history.is_carrier(0))
         throw std::logic_error(
@@ -622,9 +651,7 @@ inline void Model<TSeq>::set_natural_history(NaturalHistory<TSeq> natural_histor
     infectious_states = std::move(infectious);
     excluded_states = std::move(excluded);
 
-    nh = std::make_shared< const NaturalHistory<TSeq> >(
-        std::move(natural_history)
-    );
+    nh = std::move(def);
 
 }
 
@@ -727,7 +754,7 @@ inline void Model<TSeq>::nh_step(Agent<TSeq> & p)
     if ((st.infection >= 0) && (p.virus == nullptr))
     {
 
-        const auto & tr = nh->transitions[st.infection];
+        const auto & tr = nh_of(p).transitions[st.infection];
         Virus<TSeq> * v = tr.sampler ? tr.sampler(p, *this) : sample_virus(&p);
         if (v != nullptr)
         {
@@ -746,7 +773,7 @@ inline void Model<TSeq>::nh_step(Agent<TSeq> & p)
         for (size_t k = 0u; k < nr; ++k)
         {
 
-            const auto & tr = nh->transitions[st.rates[k]];
+            const auto & tr = nh_of(p).transitions[st.rates[k]];
             epiworld_double x = tr.value.eval(p, *this);
 
             if ((tr.effect != Effect::none) && (p.virus != nullptr))
@@ -784,7 +811,10 @@ inline void Model<TSeq>::nh_propose(
 )
 {
 
-    const auto & tr = nh->transitions[transition];
+    // The infection's target is the infecting virus's; the others, the agent's
+    const auto & tr = ((virus != nullptr) && virus->nh_def) ?
+        virus->nh_def->transitions[transition] :
+        nh_of(p).transitions[transition];
 
     // A branch draws its target
     int to = tr.to;
@@ -846,7 +876,7 @@ inline void Model<TSeq>::nh_enter(
     if (after >= 0)
     {
 
-        const auto & d = nh->transitions[after].duration;
+        const auto & d = nh_of(p).transitions[after].duration;
         int base = today();
         if ((d.get_anchor() >= 0) && (entered[d.get_anchor()] >= 0))
             base = entered[d.get_anchor()];
@@ -940,7 +970,9 @@ inline epiworld_double Model<TSeq>::nh_infection_prob(
     if (tr < 0)
         return 0.0;
 
-    return nh->transitions[tr].value.eval(target, &v, *this);
+    // The infector's virus says how infectious it is
+    const auto & h = v.nh_def ? *v.nh_def : *nh;
+    return h.transitions[tr].value.eval(target, &v, *this);
 }
 
 #endif

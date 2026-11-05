@@ -10,7 +10,7 @@ EPIWORLD_TEST_CASE("Tool targeting a virus", "[tool][target]") {
     add_random_mixing(model, 4.0);
     model.verbose_off();
 
-    Virus<> virus_b("B");
+    Virus<> virus_b = sir_virus("B");
 
     // Targeting requires the virus to be in the model
     Tool<> tool("Vaccine against A");

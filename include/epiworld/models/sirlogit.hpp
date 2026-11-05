@@ -232,15 +232,14 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
     };
 
-    NaturalHistory<TSeq> nh(vname);
-    nh.add_stage("Susceptible");
-    nh.add_stage("Infected", stage::infectious);
-    nh.add_stage("Recovered");
-    nh.infection(SUSCEPTIBLE, INFECTED, "Transmission probability").sampler(sampler);
-    nh.rate(INFECTED, RECOVERED, p_recover);
-    this->set_natural_history(std::move(nh));
+    Virus<TSeq> virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Infected", stage::infectious);
+    virus.add_stage("Recovered");
+    virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability").sampler(sampler);
+    virus.rate(INFECTED, RECOVERED, p_recover);
 
-    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Removed (SIR) (logit)");
 

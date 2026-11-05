@@ -1070,8 +1070,20 @@ inline void Model<TSeq>::add_virus(
 
     // With a natural history, the stages say where a virus takes the agent,
     // and the transitions name the parameters it reads
-    if (nh)
+    if (nh || v.nh_def)
     {
+        if (!v.nh_def)
+            throw std::logic_error(
+                "The virus \"" + v.get_name() + "\" has no natural history, "
+                "but the model's viruses do (\"" + nh->get_name() + "\")."
+            );
+        if (!nh && (nstates != 0u))
+            throw std::logic_error(
+                "The virus \"" + v.get_name() + "\" has a natural history, "
+                "but the model has states (add_state()): its stages would be "
+                "the model's states."
+            );
+
         if (
             (init_ != -99) || (post_ != -99) || (rm_ != -99) ||
             v.probability_of_infecting || v.probability_of_recovery ||
@@ -1096,6 +1108,29 @@ inline void Model<TSeq>::add_virus(
     // The model keeps its own copy (of the derived class, if any); its id and
     // lineage are recorded on the copy
     auto cloned = v.clone_ptr();
+
+    // Its own copy of the natural history, with numbers turned into model
+    // parameters (named after the virus); the first one gives the stages
+    if (v.nh_def)
+    {
+
+        auto def = std::make_shared< NaturalHistory<TSeq> >(*v.nh_def);
+        def->finalize(*this, v.get_name());
+
+        if (!nh)
+            nh_install(def);
+        else if (!nh->same_structure(*def))
+            throw std::logic_error(
+                "The natural history of \"" + v.get_name() + "\" differs from "
+                "the model's (\"" + nh->get_name() + "\"): the viruses of a "
+                "model have the same stages and transitions (their values may "
+                "differ)."
+            );
+
+        cloned->nh_def = def;
+
+    }
+
     db.record_virus(*cloned, true);
     viruses.push_back(std::shared_ptr<Virus<TSeq>>(std::move(cloned)));
     virus_assign.push_back(std::move(a));
@@ -1839,7 +1874,16 @@ inline void Model<TSeq>::reset() {
 
     // The natural history's per-agent records (and the first stage's queue)
     if (nh)
+    {
+        for (auto & v : viruses)
+            if (!v->nh_def || ((v->nh_def.get() != nh.get()) && !nh->same_structure(*v->nh_def)))
+                throw std::logic_error(
+                    "The natural history of the virus \"" + v->get_name() +
+                    "\" no longer matches the model's (was it edited after "
+                    "add_virus()?)."
+                );
         nh_reset();
+    }
 
     // The batch of sampled contacts
     if (post_sampling_on)

@@ -5,8 +5,8 @@ using namespace epiworld;
 // A virus added to a second model starts a lineage of that model
 EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target]") {
 
-    Virus<> virus_a("A");
-    Virus<> virus_b("B");
+    Virus<> virus_a = sir_virus("A");
+    Virus<> virus_b = sir_virus("B");
     virus_a.set_sequence(100);
     virus_b.set_sequence(200);
 

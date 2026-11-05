@@ -114,20 +114,17 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
         // An SIR whose infected agents never recover; the carrier's daily
         // recovery rate is where it moves (an update made mid-step)
         Model<> tiny(3);
-        NaturalHistory<> nh("flu");
-        nh.add_stage("Susceptible");
-        nh.add_stage("Infected", stage::infectious);
-        nh.add_stage("Recovered");
-        nh.infection(0, 1, 1.0);
-        nh.rate(1, 2, ValueFun<>([](Agent<> & a, Model<> & m) -> double {
+        Virus<> flu("flu");
+        flu.add_stage("Susceptible");
+        flu.add_stage("Infected", stage::infectious);
+        flu.add_stage("Recovered");
+        flu.infection(0, 1, 1.0);
+        flu.rate(1, 2, ValueFun<>([](Agent<> & a, Model<> & m) -> double {
             if (a.get_id() == 0)
                 m.get_layer_as< layer::Mixing<> >("hh").set_group(0, 1);
             return 0.0;
         }));
-        tiny.set_natural_history(std::move(nh));
         tiny.verbose_off();
-
-        Virus<> flu("flu");
         tiny.add_virus(flu, assign::agents<>({0}));
 
         auto hh = layer::mixing<>("hh");

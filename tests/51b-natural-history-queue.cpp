@@ -26,19 +26,18 @@ constexpr size_t N = 1000u;
 std::shared_ptr< Model<> > make_model_a(const std::string & mode, const AdjList & net)
 {
 
-    NaturalHistory<> nh("Waning");
-    nh.add_stage("Susceptible");
-    nh.add_stage("Infected", stage::infectious);
-    nh.add_stage("Temporarily immune");
-    nh.add_stage("Protected");
-    nh.infection(S, I, 0.3);
-    nh.rate(I, T, 0.25).effect(Effect::recovery);
-    nh.after(T, S, Duration<>::fixed(4));
-    nh.after(P, S, Duration<>::fixed(5));
+    Virus<> v("v");
+    v.add_stage("Susceptible");
+    v.add_stage("Infected", stage::infectious);
+    v.add_stage("Temporarily immune");
+    v.add_stage("Protected");
+    v.infection(S, I, 0.3);
+    v.rate(I, T, 0.25).effect(Effect::recovery);
+    v.after(T, S, Duration<>::fixed(4));
+    v.after(P, S, Duration<>::fixed(5));
 
     auto model = std::make_shared< Model<> >(N);
-    model->set_natural_history(std::move(nh));
-    model->add_virus(Virus<>("v"), assign::count(10));
+    model->add_virus(v, assign::count(10));
     model->set_initial(assign::shares({{P, 0.5}}));
     model->add_layer(layer::network("net", net));
     model->set_transmission_mode(mode);
@@ -128,7 +127,9 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
         epimodels::ModelSIR<> model("v", N, 0.0, 0.5, 0.01);
         model.add_param(1.0, "Recovery rate (fast)");
 
-        Virus<> fast("fast");
+        // A strain: a copy of the model's virus, reading its own parameter
+        Virus<> fast = model.get_virus(0);
+        fast.set_name("fast");
         fast.use_param("Recovery rate", "Recovery rate (fast)");
         model.add_virus(fast, assign::count(20));
 

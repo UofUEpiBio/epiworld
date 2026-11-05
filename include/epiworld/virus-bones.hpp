@@ -59,6 +59,10 @@ private:
 
     /// Parameters this variant reads in place of others (see `use_param()`)
     std::vector< std::pair< ParamRef, ParamRef > > param_redirects;
+
+    /// Its natural history (shared by its copies; copied on the first edit)
+    std::shared_ptr< NaturalHistory<TSeq> > nh_def = nullptr;
+    NaturalHistory<TSeq> & nh_edit();
         
 public:
 
@@ -203,6 +207,27 @@ public:
 
     void print() const;
 
+
+    /**
+     * @name Natural history
+     * @brief The disease's stages and the transitions between them, declared
+     * on the virus (see `NaturalHistory` for each method).
+     * @details `Model::add_virus()` gives the model the virus's stages (its
+     * states). A copy of the virus (a strain, or a variant from a mutation)
+     * keeps the natural history; it can read other parameters with
+     * `use_param()`. The viruses of one model share their stages.
+     */
+    ///@{
+    int add_stage(std::string label, unsigned int flags = 0u);
+    void set_contact(int s, epiworld_double weight);
+    TransitionRef<TSeq> infection(Nodes from, int to, Value<TSeq> per_contact);
+    TransitionRef<TSeq> rate(Nodes from, int to, Value<TSeq> daily_probability);
+    TransitionRef<TSeq> after(int from, int to, Duration<TSeq> d);
+    TransitionRef<TSeq> external(Nodes from, int to, std::string label);
+
+    /// The natural history (`nullptr` if the virus has none).
+    const NaturalHistory<TSeq> * get_natural_history() const { return nh_def.get(); }
+    ///@}
 
     /**
      * @brief This variant reads the model parameter `replacement` wherever a

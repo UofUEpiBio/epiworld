@@ -63,18 +63,17 @@ inline ModelSIRD<TSeq>::ModelSIRD(
     this->add_param(transmission_prob, "Transmission probability");
     this->add_param(death_rate, "Death rate");
 
-    NaturalHistory<TSeq> nh(vname);
-    nh.add_stage("Susceptible");
-    nh.add_stage("Infected", stage::infectious);
-    nh.add_stage("Recovered");
-    nh.add_stage("Deceased");
-    nh.set_contact(DECEASED, 0.0);
-    nh.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
-    nh.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
-    nh.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
-    this->set_natural_history(std::move(nh));
+    Virus<TSeq> virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Infected", stage::infectious);
+    virus.add_stage("Recovered");
+    virus.add_stage("Deceased");
+    virus.set_contact(DECEASED, 0.0);
+    virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
+    virus.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
+    virus.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
 
-    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered-Deceased (SIRD)");
 

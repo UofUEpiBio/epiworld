@@ -232,16 +232,18 @@ struct StageInfo {
 
 /**
  * @brief The natural history of a disease: stages and declared transitions.
- * @details Build it, then hand it to a model (`Model::set_natural_history()`).
- * The first stage is where agents start. Example (SIR):
+ * @details It is built on the virus (`Virus::add_stage()` and the others),
+ * and the model takes its stages from `Model::add_virus()`. The first stage
+ * is where agents start. Example (SIR):
  *
  * @code{.cpp}
- * NaturalHistory<> nh("Flu");
- * int S = nh.add_stage("Susceptible");
- * int I = nh.add_stage("Infected", stage::infectious);
- * int R = nh.add_stage("Recovered");
- * nh.infection(S, I, "Transmission rate");
- * nh.rate(I, R, "Recovery rate").effect(Effect::recovery);
+ * Virus<> flu("Flu");
+ * int S = flu.add_stage("Susceptible");
+ * int I = flu.add_stage("Infected", stage::infectious);
+ * int R = flu.add_stage("Recovered");
+ * flu.infection(S, I, "Transmission rate");
+ * flu.rate(I, R, "Recovery rate").effect(Effect::recovery);
+ * model.add_virus(flu, assign::share(0.01));
  * @endcode
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
@@ -264,8 +266,8 @@ private:
     void check_stage(int s, const char * what) const;
 
     /// Checks the declarations and derives `stages`; turns numbers into model
-    /// parameters.
-    void finalize(Model<TSeq> & model);
+    /// parameters, named after `owner` (the virus) and the transition.
+    void finalize(Model<TSeq> & model, const std::string & owner);
 
 public:
     explicit NaturalHistory(std::string name_);
@@ -301,7 +303,14 @@ public:
     /// Whether `s` is one of the transition's sources.
     bool is_source(int transition, int s) const;
 
-    /// What the engine derived about stage `s` (after `set_natural_history()`).
+    /**
+     * @brief Whether `other` has the same structure: the same stages (labels,
+     * flags, contact weights) and the same transitions (names, kinds,
+     * sources and targets). Their values may differ.
+     */
+    bool same_structure(const NaturalHistory<TSeq> & other) const;
+
+    /// What the engine derived about stage `s` (once added to a model).
     const StageInfo & get_stage_info(int s) const { return stages.at(s); }
 };
 

@@ -8,6 +8,7 @@
 #include <map>
 #include "config.hpp"
 
+#include "naturalhistory-bones.hpp"
 #include "agent-bones.hpp"
 #include "virus-bones.hpp"
 #include "viruses-bones.hpp"
@@ -17,7 +18,6 @@
 #include "globalevent-bones.hpp"
 #include "contacttracing-bones.hpp"
 #include "postsampling-bones.hpp"
-#include "naturalhistory-bones.hpp"
 #include "assign.hpp"
 
 template<typename TSeq>
@@ -373,9 +373,11 @@ protected:
     /**
      * @name Natural history
      *
-     * @details See `set_natural_history()` and `naturalhistory-bones.hpp`. The
-     * natural history is shared by the model's copies (it does not change once
-     * set); what it stores per agent is the model's, and is reset with it.
+     * @details See `naturalhistory-bones.hpp`. The first virus with a natural
+     * history installs it (`add_virus()`); the model's copy of that virus
+     * shares it. It is shared by the model's copies (it does not change once
+     * installed); what it stores per agent is the model's, and is reset with
+     * it.
      */
     ///@{
     std::shared_ptr< const NaturalHistory<TSeq> > nh = nullptr;
@@ -389,8 +391,17 @@ protected:
     static constexpr int NH_SEED = -2;    ///< Event: a seeded infection
     static constexpr int NH_INITIAL = -3; ///< Event: an initial placement
 
+    void nh_install(std::shared_ptr< NaturalHistory<TSeq> > def);
     void nh_reset();
     void nh_step(Agent<TSeq> & p);
+
+    /// The natural history whose values apply to `p`: its virus's, or (no
+    /// virus) the model's
+    const NaturalHistory<TSeq> & nh_of(const Agent<TSeq> & p) const
+    {
+        const auto & v = p.get_virus();
+        return (v && v->nh_def) ? *v->nh_def : *nh;
+    }
     void nh_propose(int transition, Agent<TSeq> & p, Virus<TSeq> * virus = nullptr);
     void nh_enter(Agent<TSeq> & p, unsigned int state_old, int transition);
     void nh_queue_move(Agent<TSeq> & p, unsigned int state_old);
@@ -781,18 +792,7 @@ public:
      */
     ///@{
 
-    /**
-     * @brief Sets the model's natural history (see `NaturalHistory`).
-     * @details Its stages become the model's states, in order, and agents
-     * start in the first one. The engine derives who transmits (the
-     * infectious stages), who is out of the layers (contact weight 0), who is
-     * pushed to, and the queue, from the declarations. Numbers in the
-     * transitions become model parameters. A model has one natural history,
-     * set once, before any state is added.
-     */
-    void set_natural_history(NaturalHistory<TSeq> natural_history);
-
-    /// The natural history (`nullptr` if the model has none).
+    /// The natural history of the model's viruses (`nullptr` if none has one).
     const NaturalHistory<TSeq> * get_natural_history() const { return nh.get(); }
 
     /**

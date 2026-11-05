@@ -205,21 +205,21 @@ inline ModelSURV<TSeq>::ModelSURV(
         };
     };
 
-    NaturalHistory<TSeq> nh(vname);
-    nh.add_stage("Susceptible");
-    nh.add_stage("Latent", stage::carrier);
-    nh.add_stage("Symptomatic", stage::infectious);
-    nh.add_stage("Symptomatic isolated", stage::carrier);
-    nh.add_stage("Asymptomatic", stage::infectious);
-    nh.add_stage("Asymptomatic isolated", stage::carrier);
-    nh.add_stage("Recovered");
-    nh.add_stage("Removed");
-    nh.set_contact(REMOVED, 0.0);
+    Virus<TSeq> covid(vname);
+    covid.add_stage("Susceptible");
+    covid.add_stage("Latent", stage::carrier);
+    covid.add_stage("Symptomatic", stage::infectious);
+    covid.add_stage("Symptomatic isolated", stage::carrier);
+    covid.add_stage("Asymptomatic", stage::infectious);
+    covid.add_stage("Asymptomatic isolated", stage::carrier);
+    covid.add_stage("Recovered");
+    covid.add_stage("Removed");
+    covid.set_contact(REMOVED, 0.0);
 
-    nh.infection(SUSCEPTIBLE, LATENT, "Prob of transmission");
+    covid.infection(SUSCEPTIBLE, LATENT, "Prob of transmission");
 
     // After the latent period, symptoms or not
-    nh.after(LATENT, SYMPTOMATIC, Duration<TSeq>(gamma_days("Latent period")))
+    covid.after(LATENT, SYMPTOMATIC, Duration<TSeq>(gamma_days("Latent period")))
       .name("Latent -> Symptomatic or Asymptomatic")
       .to({
         {SYMPTOMATIC, Value<TSeq>("Prob of symptoms")},
@@ -229,26 +229,24 @@ inline ModelSURV<TSeq>::ModelSURV(
     // The infectious period counts from the end of the latent one; isolation
     // keeps counting from there
     const Duration<TSeq> infectious(gamma_days("Infect period"));
-    nh.after(SYMPTOMATIC, RECOVERED, infectious);
-    nh.after(SYMPTOMATIC_ISOLATED, RECOVERED, infectious.since(SYMPTOMATIC));
-    nh.after(ASYMPTOMATIC, RECOVERED, infectious);
-    nh.after(ASYMPTOMATIC_ISOLATED, RECOVERED, infectious.since(ASYMPTOMATIC));
+    covid.after(SYMPTOMATIC, RECOVERED, infectious);
+    covid.after(SYMPTOMATIC_ISOLATED, RECOVERED, infectious.since(SYMPTOMATIC));
+    covid.after(ASYMPTOMATIC, RECOVERED, infectious);
+    covid.after(ASYMPTOMATIC_ISOLATED, RECOVERED, infectious.since(ASYMPTOMATIC));
 
     // Each infectious day, a risk of death (competing with the recovery)
-    nh.rate(
+    covid.rate(
         {SYMPTOMATIC, SYMPTOMATIC_ISOLATED, ASYMPTOMATIC, ASYMPTOMATIC_ISOLATED},
         REMOVED,
         "Prob. death"
     ).name("Death").effect(Effect::death);
 
     // Surveillance finds infected agents
-    nh.external({LATENT, SYMPTOMATIC}, SYMPTOMATIC_ISOLATED, "Detected");
-    nh.external(ASYMPTOMATIC, ASYMPTOMATIC_ISOLATED, "Detected asymptomatic");
+    covid.external({LATENT, SYMPTOMATIC}, SYMPTOMATIC_ISOLATED, "Detected");
+    covid.external(ASYMPTOMATIC, ASYMPTOMATIC_ISOLATED, "Detected asymptomatic");
 
-    this->set_natural_history(std::move(nh));
 
     // Virus ------------------------------------------------------------------
-    Virus<TSeq> covid(vname);
     covid.set_post_immunity("Prob. no reinfect");
     this->add_virus(covid, assign::count<TSeq>(prevalence));
 

@@ -2,7 +2,7 @@
 
 using namespace epiworld;
 
-// A disease built with NaturalHistory, run end to end, pulling and pushing.
+// A disease built on its virus, run end to end, pulling and pushing.
 //
 // Stages: S, E (carrier, a fixed 3-day latent period), I (infectious; daily
 // recovery and death compete, and a 6-day deadline ends the stage), R and D
@@ -26,25 +26,25 @@ namespace {
 constexpr int S = 0, E = 1, I = 2, R = 3, D = 4;
 constexpr size_t N = 200u;
 
-NaturalHistory<> make_disease()
+Virus<> make_disease()
 {
 
-    NaturalHistory<> nh("Test disease");
-    nh.add_stage("Susceptible");
-    nh.add_stage("Exposed", stage::carrier);
-    nh.add_stage("Infected", stage::infectious);
-    nh.add_stage("Recovered");
-    nh.add_stage("Deceased");
-    nh.set_contact(D, 0.0);
+    Virus<> v("Test disease");
+    v.add_stage("Susceptible");
+    v.add_stage("Exposed", stage::carrier);
+    v.add_stage("Infected", stage::infectious);
+    v.add_stage("Recovered");
+    v.add_stage("Deceased");
+    v.set_contact(D, 0.0);
 
-    nh.infection(S, E, "Transmission");
-    nh.after(E, I, Duration<>::fixed(3));
-    nh.rate(I, R, 0.2).effect(Effect::recovery);
-    nh.rate(I, D, "Death").effect(Effect::death);
-    nh.after(I, R, Duration<>::fixed(6)).name("End of infection");
-    nh.external(S, R, "Vaccinated");
+    v.infection(S, E, "Transmission");
+    v.after(E, I, Duration<>::fixed(3));
+    v.rate(I, R, 0.2).effect(Effect::recovery);
+    v.rate(I, D, "Death").effect(Effect::death);
+    v.after(I, R, Duration<>::fixed(6)).name("End of infection");
+    v.external(S, R, "Vaccinated");
 
-    return nh;
+    return v;
 
 }
 
@@ -54,9 +54,7 @@ std::shared_ptr< Model<> > make_model(const std::string & mode)
     auto model = std::make_shared< Model<> >(N);
     model->add_param(0.4, "Transmission");
     model->add_param(0.05, "Death");
-    model->set_natural_history(make_disease());
-
-    model->add_virus(Virus<>("v"), assign::counts({{E, 10u}, {I, 10u}}));
+    model->add_virus(make_disease(), assign::counts({{E, 10u}, {I, 10u}}));
     model->set_initial(assign::shares({{R, 0.25}}));
 
     // A ring: each agent meets the two on each side
@@ -174,41 +172,61 @@ EPIWORLD_TEST_CASE("Natural history - built and run end to end", "[natural-histo
 
     // 6. Rules
     {
-        NaturalHistory<> nh("Bad");
-        int s = nh.add_stage("S");
-        int c = nh.add_stage("C", stage::infectious);
-        nh.infection(c, s, 0.1);
+        Virus<> bad("Bad");
+        int s = bad.add_stage("S");
+        int c = bad.add_stage("C", stage::infectious);
+        bad.infection(c, s, 0.1);                  // out of a carrier stage
         Model<> m(10);
-        REQUIRE_THROWS(m.set_natural_history(nh));
+        REQUIRE_THROWS(m.add_virus(bad));
     }
     {
-        NaturalHistory<> nh("Bad");
-        int s = nh.add_stage("S");
-        int r = nh.add_stage("R");
-        nh.after(s, r, Duration<>::fixed(1));
-        nh.after(s, r, Duration<>::fixed(2)).name("Again");
+        Virus<> bad("Bad");
+        int s = bad.add_stage("S");
+        int r = bad.add_stage("R");
+        bad.after(s, r, Duration<>::fixed(1));
+        bad.after(s, r, Duration<>::fixed(2)).name("Again");   // two durations
         Model<> m(10);
-        REQUIRE_THROWS(m.set_natural_history(nh));
+        REQUIRE_THROWS(m.add_virus(bad));
     }
     {
-        NaturalHistory<> nh("Bad");
-        int s = nh.add_stage("S");
-        int c = nh.add_stage("C", stage::infectious);
-        nh.rate(s, c, 0.1);
+        Virus<> bad("Bad");
+        int s = bad.add_stage("S");
+        int c = bad.add_stage("C", stage::infectious);
+        bad.rate(s, c, 0.1);                       // the virus without infection
         Model<> m(10);
-        REQUIRE_THROWS(m.set_natural_history(nh));
+        REQUIRE_THROWS(m.add_virus(bad));
     }
     {
-        NaturalHistory<> nh("Bad");
-        nh.add_stage("S");
-        REQUIRE_THROWS(nh.set_contact(0, 0.5));
-        REQUIRE_THROWS(nh.add_stage("S"));
+        Virus<> bad("Bad");
+        bad.add_stage("S");
+        REQUIRE_THROWS(bad.set_contact(0, 0.5));
+        REQUIRE_THROWS(bad.add_stage("S"));
     }
     {
         auto model = make_model("pull");
-        REQUIRE_THROWS(model->fire(0, model->get_agent(0)));          // an infection
+        REQUIRE_THROWS(model->fire(0, model->get_agent(0)));   // an infection
         REQUIRE_THROWS(model->add_state("Another"));
-        REQUIRE_THROWS(model->set_natural_history(make_disease()));
+
+        // A strain: a copy that reads its own parameter is welcome; a virus
+        // with other stages, or none, is not
+        Virus<> strain = make_disease();
+        strain.set_name("Strain");
+        strain.use_param("Death", "Death (strain)");
+        model->add_param(0.5, "Death (strain)");
+        REQUIRE_NOTHROW(model->add_virus(strain));
+
+        Virus<> other("Other");
+        other.add_stage("Susceptible");
+        REQUIRE_THROWS(model->add_virus(other));
+        REQUIRE_THROWS(model->add_virus(Virus<>("Plain")));
+
+        // Copies share the natural history until one is edited
+        Virus<> a = make_disease();
+        Virus<> b = a;
+        REQUIRE(a.get_natural_history() == b.get_natural_history());
+        b.add_stage("Extra");
+        REQUIRE(a.get_natural_history() != b.get_natural_history());
+        REQUIRE(a.get_natural_history()->get_n_stages() == 5u);
     }
 
 }

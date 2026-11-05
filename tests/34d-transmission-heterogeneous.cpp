@@ -74,18 +74,17 @@ Run simulate(
     model.add_param(3.0, "Latent period");
     model.add_param(1.0 / 7.0, "Recovery rate");
 
-    NaturalHistory<> nh("virus");
-    nh.add_stage("Susceptible");
-    nh.add_stage("Exposed", stage::carrier);
-    nh.add_stage("Infected", stage::infectious);
-    nh.add_stage("Removed");
-    auto infection = nh.infection(0, 1, "Transmission probability");
+    Virus<> pathogen("virus");
+    pathogen.add_stage("Susceptible");
+    pathogen.add_stage("Exposed", stage::carrier);
+    pathogen.add_stage("Infected", stage::infectious);
+    pathogen.add_stage("Removed");
+    auto infection = pathogen.infection(0, 1, "Transmission probability");
     if (plain_scan_on)
         infection.sampler(plain_scan);
-    nh.after(1, 2, Duration<>::geometric("Latent period"));
-    nh.rate(2, 3, "Recovery rate").effect(Effect::recovery);
-    model.set_natural_history(std::move(nh));
-    model.add_virus(Virus<>("virus"), assign::count(20));
+    pathogen.after(1, 2, Duration<>::geometric("Latent period"));
+    pathogen.rate(2, 3, "Recovery rate").effect(Effect::recovery);
+    model.add_virus(pathogen, assign::count(20));
 
     model.seed(31);
     tests_heterogeneous_network(model, 3000u);

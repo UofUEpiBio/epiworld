@@ -62,17 +62,16 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     this->add_param(latent_period, "Latent period");
     this->add_param(recovery_rate, "Recovery rate");
 
-    NaturalHistory<TSeq> nh(vname);
-    nh.add_stage("Susceptible");
-    nh.add_stage("Exposed", stage::carrier);
-    nh.add_stage("Infected", stage::infectious);
-    nh.add_stage("Removed");
-    nh.infection(SUSCEPTIBLE, EXPOSED, "Transmission probability");
-    nh.after(EXPOSED, INFECTED, Duration<TSeq>::geometric("Latent period"));
-    nh.rate(INFECTED, REMOVED, "Recovery rate").effect(Effect::recovery);
-    this->set_natural_history(std::move(nh));
+    Virus<TSeq> virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Exposed", stage::carrier);
+    virus.add_stage("Infected", stage::infectious);
+    virus.add_stage("Removed");
+    virus.infection(SUSCEPTIBLE, EXPOSED, "Transmission probability");
+    virus.after(EXPOSED, INFECTED, Duration<TSeq>::geometric("Latent period"));
+    virus.rate(INFECTED, REMOVED, "Recovery rate").effect(Effect::recovery);
 
-    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
 

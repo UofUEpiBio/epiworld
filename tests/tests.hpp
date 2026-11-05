@@ -197,6 +197,22 @@ inline EpiTempFile epi_temp_file(
     };
 }
 
+/**
+ * A virus with ModelSIR's natural history (it reads "Transmission probability"
+ * and "Recovery rate"), in no model yet: another strain for an SIR model.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline epiworld::Virus<TSeq> sir_virus(std::string name)
+{
+    epiworld::Virus<TSeq> v(std::move(name));
+    v.add_stage("Susceptible");
+    v.add_stage("Infected", epiworld::stage::infectious);
+    v.add_stage("Recovered");
+    v.infection(0, 1, "Transmission probability");
+    v.rate(1, 2, "Recovery rate").effect(epiworld::Effect::recovery);
+    return v;
+}
+
 /// The ids 0, 1, ..., n - 1 (e.g., `assign::agents(first_agents(5))`).
 inline std::vector< size_t > first_agents(size_t n)
 {

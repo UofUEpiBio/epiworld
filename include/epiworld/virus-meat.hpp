@@ -161,7 +161,8 @@ inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
       queue_init(other.queue_init),
       queue_post(other.queue_post),
       queue_removed(other.queue_removed),
-      param_redirects(other.param_redirects)
+      param_redirects(other.param_redirects),
+      nh_def(other.nh_def)
 {
     counter_copy_construct++;
 }
@@ -182,7 +183,8 @@ inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
       queue_init(other.queue_init),
       queue_post(other.queue_post),
       queue_removed(other.queue_removed),
-      param_redirects(std::move(other.param_redirects))
+      param_redirects(std::move(other.param_redirects)),
+      nh_def(std::move(other.nh_def))
 {
     counter_move_construct++;
     // other.agent = nullptr;
@@ -207,6 +209,7 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
         queue_post = other.queue_post;
         queue_removed = other.queue_removed;
         param_redirects = other.param_redirects;
+        nh_def = other.nh_def;
         counter_copy_assign++;
     }
     return *this;
@@ -231,6 +234,7 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
         queue_post = other.queue_post;
         queue_removed = other.queue_removed;
         param_redirects = std::move(other.param_redirects);
+        nh_def = std::move(other.nh_def);
         other.agent = nullptr;
         counter_move_assign++;
     }
@@ -891,6 +895,60 @@ inline ParamId Virus<TSeq>::param_redirect(
             return r.second.id(model);
 
     return id;
+}
+
+template<typename TSeq>
+inline NaturalHistory<TSeq> & Virus<TSeq>::nh_edit()
+{
+    // Copies share the natural history until one of them is edited
+    if (!nh_def)
+        nh_def = std::make_shared< NaturalHistory<TSeq> >(virus_name);
+    else if (nh_def.use_count() > 1)
+        nh_def = std::make_shared< NaturalHistory<TSeq> >(*nh_def);
+
+    return *nh_def;
+}
+
+template<typename TSeq>
+inline int Virus<TSeq>::add_stage(std::string label, unsigned int flags)
+{
+    return nh_edit().add_stage(std::move(label), flags);
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_contact(int s, epiworld_double weight)
+{
+    nh_edit().set_contact(s, weight);
+}
+
+template<typename TSeq>
+inline TransitionRef<TSeq> Virus<TSeq>::infection(
+    Nodes from, int to, Value<TSeq> per_contact
+)
+{
+    return nh_edit().infection(std::move(from), to, std::move(per_contact));
+}
+
+template<typename TSeq>
+inline TransitionRef<TSeq> Virus<TSeq>::rate(
+    Nodes from, int to, Value<TSeq> daily_probability
+)
+{
+    return nh_edit().rate(std::move(from), to, std::move(daily_probability));
+}
+
+template<typename TSeq>
+inline TransitionRef<TSeq> Virus<TSeq>::after(int from, int to, Duration<TSeq> d)
+{
+    return nh_edit().after(from, to, std::move(d));
+}
+
+template<typename TSeq>
+inline TransitionRef<TSeq> Virus<TSeq>::external(
+    Nodes from, int to, std::string label
+)
+{
+    return nh_edit().external(std::move(from), to, std::move(label));
 }
 
 #endif

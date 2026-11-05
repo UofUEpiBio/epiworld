@@ -9721,6 +9721,341 @@ inline std::unique_ptr<GlobalEvent<TSeq>> GlobalEvent<TSeq>::clone_ptr() const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+ Start of -include/epiworld/naturalhistory-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_NATURALHISTORY_BONES_HPP
+#define EPIWORLD_NATURALHISTORY_BONES_HPP
+
+/**
+ * @file naturalhistory-bones.hpp
+ * @brief The natural history of a disease: its stages and the declared
+ * transitions between them (see `natural-history.md`).
+ *
+ * @details A natural history is a small graph. Its nodes are **stages**
+ * (susceptible, latent, infectious, recovered, ...) and its edges are
+ * **transitions**, each of one kind:
+ *
+ * - `infection()`: by contact, drawn from the model's layers (or a custom
+ *   sampler). Taking it gives the agent the virus.
+ * - `rate()`: a daily probability. The rates out of a stage compete: one
+ *   draw (`roulette()`) picks one of them, or none.
+ * - `after()`: a duration, drawn when the agent enters the stage. It is a
+ *   deadline: the agent leaves on the update of the day it falls, unless a
+ *   rate fired first.
+ * - `external()`: fired by code, through `Model::fire()`.
+ *
+ * A stage is a **carrier** (its agents hold the virus) and may be
+ * **infectious** (they transmit; this implies carrier). Entering a
+ * non-carrier stage releases the virus. There are no fixed roles: a stage is
+ * susceptible because an infection transition leaves it, and a death is a
+ * stage with contact weight 0 and no exits.
+ *
+ * Every number a transition uses is a `Value`: a number, a model parameter
+ * (by name) or a function. A number given directly becomes a model parameter
+ * when the natural history is set on a model.
+ */
+
+class Nodes;
+
+template<typename TSeq>
+class NaturalHistory;
+
+template<typename TSeq>
+class TransitionRef;
+
+/// Flags of a stage (see `NaturalHistory::add_stage()`).
+namespace stage {
+    constexpr unsigned int carrier    = 1u;      ///< Agents in it hold the virus
+    constexpr unsigned int infectious = 1u | 2u; ///< They transmit (implies carrier)
+}
+
+/// Which tool effect a rate takes (see `TransitionRef::effect()`).
+enum class Effect : uint8_t {
+    none,     ///< No tool effect
+    recovery, ///< `p` becomes `1 - (1 - p) * (1 - recovery enhancer)`
+    death     ///< `p` becomes `p * (1 - death reduction)`
+};
+
+/// One or more stages (an `int` or a list of them).
+class Nodes {
+public:
+    std::vector< int > ids;
+    Nodes(int id) : ids({id}) {}
+    Nodes(std::initializer_list< int > l) : ids(l) {}
+    Nodes(std::vector< int > v) : ids(std::move(v)) {}
+};
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+using ValueFun = std::function< epiworld_double(Agent<TSeq> &, Model<TSeq> &) >;
+
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+using DurationFun = std::function< int(Agent<TSeq> &, Model<TSeq> &) >;
+
+/// A custom infection sampler: the virus the agent catches, or `nullptr`.
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+using InfectionSampler = std::function< Virus<TSeq> * (Agent<TSeq> &, Model<TSeq> &) >;
+
+/**
+ * @brief A number a transition uses: a constant, a model parameter, or a
+ * function.
+ * @details
+ * - `Value(0.1)`: a number. When the natural history is set on a model, it
+ *   becomes a model parameter (named after the transition).
+ * - `Value("Recovery rate")`: a model parameter, by name.
+ * - `Value::inverse("Days")`, `Value::complement("p")`: `1 / p`, `1 - p`.
+ * - `Value(fun)`: `fun(agent, model)`.
+ *
+ * A parameter is read through the agent's virus, so a variant can point it to
+ * another parameter (`Virus::use_param()`).
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class Value {
+public:
+    enum class Kind : uint8_t { none, number, param, inverse, complement, fun };
+
+private:
+    Kind kind = Kind::none;
+    epiworld_double number = 0.0;
+    ParamRef param = ParamRef("");
+    ValueFun<TSeq> fun = nullptr;
+
+    friend class NaturalHistory<TSeq>;
+
+public:
+    Value() = default;
+    Value(epiworld_double x) : kind(Kind::number), number(x) {}
+    Value(int x) : Value(static_cast< epiworld_double >(x)) {}
+    Value(const char * name) : kind(Kind::param), param(std::string(name)) {}
+    Value(std::string name) : kind(Kind::param), param(std::move(name)) {}
+    Value(ValueFun<TSeq> f) : kind(Kind::fun), fun(std::move(f)) {}
+
+    static Value inverse(std::string name);    ///< `1 / parameter`
+    static Value complement(std::string name); ///< `1 - parameter`
+
+    Kind get_kind() const { return kind; }
+    bool is_set() const { return kind != Kind::none; }
+
+    /// The parameter's name ("" for a function).
+    const std::string & get_param_name() const { return param.name(); }
+
+    /// The value for this agent (its virus may redirect the parameter).
+    epiworld_double eval(Agent<TSeq> & agent, Model<TSeq> & model) const;
+
+    /// The same, with the parameter redirected by `virus` (e.g., the
+    /// infector's, for a probability of infection).
+    epiworld_double eval(
+        Agent<TSeq> & agent,
+        const Virus<TSeq> * virus,
+        Model<TSeq> & model
+    ) const;
+};
+
+/**
+ * @brief How many days a stage lasts, drawn when the agent enters it.
+ * @details Always a whole number of days, at least one.
+ * - `fixed(p)`: `p`, rounded.
+ * - `geometric(mean)`: a geometric number of days with that mean (the same as
+ *   leaving each day with probability `1 / mean`).
+ * - `lognormal(mean, sd)`, `gamma(mean, sd)`: the mean and standard deviation
+ *   of the duration, in days. A standard deviation of zero is fixed.
+ * - `fun`: `fun(agent, model)`.
+ *
+ * `since(s)` counts the duration from the day the agent entered stage `s`
+ * (in the same infection), instead of the day it entered this stage.
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class Duration {
+public:
+    enum class Kind : uint8_t { none, fixed, geometric, lognormal, gamma, fun };
+
+private:
+    Kind kind = Kind::none;
+    Value<TSeq> mean;
+    Value<TSeq> sd;
+    DurationFun<TSeq> fun = nullptr;
+    int anchor = -1;
+
+    friend class NaturalHistory<TSeq>;
+
+public:
+    Duration() = default;
+    Duration(DurationFun<TSeq> f) : kind(Kind::fun), fun(std::move(f)) {}
+
+    static Duration fixed(Value<TSeq> days);
+    static Duration geometric(Value<TSeq> mean);
+    static Duration lognormal(Value<TSeq> mean, Value<TSeq> sd);
+    static Duration gamma(Value<TSeq> mean, Value<TSeq> sd);
+
+    /// Counts from the day the agent entered stage `s` in this infection.
+    Duration since(int s) const;
+
+    Kind get_kind() const { return kind; }
+    int get_anchor() const { return anchor; }
+
+    /// Draws a number of days (at least one).
+    int draw(Agent<TSeq> & agent, Model<TSeq> & model) const;
+};
+
+/// The kind of a transition (see `naturalhistory-bones.hpp`).
+enum class TransitionKind : uint8_t { infection, rate, after, external };
+
+/**
+ * @brief A declared transition: from a set of stages to a stage (or a branch
+ * of stages), of one kind.
+ */
+template<typename TSeq>
+struct Transition {
+    std::string name;
+    TransitionKind kind;
+    std::vector< int > from;
+    int to = -1;
+
+    /// A branch: the target is drawn among these, with these probabilities.
+    std::vector< int > branch_to;
+    std::vector< Value<TSeq> > branch_prob;
+
+    Value<TSeq> value;          ///< infection (per contact) and rate
+    Duration<TSeq> duration;    ///< after
+    Effect effect = Effect::none;
+    InfectionSampler<TSeq> sampler = nullptr; ///< infection only (optional)
+};
+
+/**
+ * @brief Refines a transition just declared (chainable); converts to its id.
+ */
+template<typename TSeq>
+class TransitionRef {
+private:
+    NaturalHistory<TSeq> * nh;
+    int id;
+
+public:
+    TransitionRef(NaturalHistory<TSeq> * nh_, int id_) : nh(nh_), id(id_) {}
+    operator int() const { return id; }
+    int get_id() const { return id; }
+
+    TransitionRef & name(std::string n);     ///< Default: "From -> To"
+    TransitionRef & effect(Effect e);        ///< The tool effect a rate takes
+
+    /// The target is drawn among `targets`, with their probabilities.
+    TransitionRef & to(std::vector< std::pair< int, Value<TSeq> > > targets);
+
+    /// A custom infection sampler (infection transitions only; C++ only).
+    TransitionRef & sampler(InfectionSampler<TSeq> f);
+};
+
+/**
+ * @brief What the engine needs about a stage, derived from the declarations.
+ */
+struct StageInfo {
+    int infection = -1;           ///< The infection transition out of it
+    std::vector< int > rates;     ///< Its rate transitions, in order
+    int after = -1;               ///< Its duration transition
+    bool needs_visit = false;     ///< Has a rate or a duration
+    bool pushable = false;        ///< Its only drawn exit is a default infection
+};
+
+/**
+ * @brief The natural history of a disease: stages and declared transitions.
+ * @details It is built on the virus (`Virus::add_stage()` and the others),
+ * and the model takes its stages from `Model::add_virus()`. The first stage
+ * is where agents start. Example (SIR):
+ *
+ * @code{.cpp}
+ * Virus<> flu("Flu");
+ * int S = flu.add_stage("Susceptible");
+ * int I = flu.add_stage("Infected", stage::infectious);
+ * int R = flu.add_stage("Recovered");
+ * flu.infection(S, I, "Transmission rate");
+ * flu.rate(I, R, "Recovery rate").effect(Effect::recovery);
+ * model.add_virus(flu, assign::share(0.01));
+ * @endcode
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class NaturalHistory {
+private:
+    std::string name;
+    std::vector< std::string > stage_labels;
+    std::vector< unsigned int > stage_flags;
+    std::vector< epiworld_double > stage_contact;
+    std::vector< Transition<TSeq> > transitions;
+
+    // Derived by finalize()
+    std::vector< StageInfo > stages;
+    bool finalized = false;
+
+    friend class TransitionRef<TSeq>;
+    friend class Model<TSeq>;
+
+    int add_transition(Transition<TSeq> t);
+    void check_stage(int s, const char * what) const;
+
+    /// Checks the declarations and derives `stages`; turns numbers into model
+    /// parameters, named after `owner` (the virus) and the transition.
+    void finalize(Model<TSeq> & model, const std::string & owner);
+
+public:
+    explicit NaturalHistory(std::string name_);
+
+    /// Adds a stage; returns its id. Flags: `stage::carrier`, `stage::infectious`.
+    int add_stage(std::string label, unsigned int flags = 0u);
+
+    /// Contact weight of a stage (default 1). 0 takes its agents out of every
+    /// layer: they are not met and do not transmit.
+    void set_contact(int s, epiworld_double weight);
+
+    TransitionRef<TSeq> infection(Nodes from, int to, Value<TSeq> per_contact);
+    TransitionRef<TSeq> rate(Nodes from, int to, Value<TSeq> daily_probability);
+    TransitionRef<TSeq> after(int from, int to, Duration<TSeq> d);
+    TransitionRef<TSeq> external(Nodes from, int to, std::string label);
+
+    const std::string & get_name() const { return name; }
+    size_t get_n_stages() const { return stage_labels.size(); }
+    size_t get_n_transitions() const { return transitions.size(); }
+    const std::vector< std::string > & get_stages() const { return stage_labels; }
+    const Transition<TSeq> & get_transition(int id) const { return transitions.at(id); }
+
+    bool is_carrier(int s) const { return (stage_flags.at(s) & stage::carrier) != 0u; }
+    bool is_infectious(int s) const { return (stage_flags.at(s) & 2u) != 0u; }
+    epiworld_double get_contact(int s) const { return stage_contact.at(s); }
+
+    /// The stage's id, by label (throws if absent).
+    int stage_id(std::string_view label) const;
+
+    /// The transition's id, by name (throws if absent).
+    int transition_id(std::string_view label) const;
+
+    /// Whether `s` is one of the transition's sources.
+    bool is_source(int transition, int s) const;
+
+    /**
+     * @brief Whether `other` has the same structure: the same stages (labels,
+     * flags, contact weights) and the same transitions (names, kinds,
+     * sources and targets). Their values may differ.
+     */
+    bool same_structure(const NaturalHistory<TSeq> & other) const;
+
+    /// What the engine derived about stage `s` (once added to a model).
+    const StageInfo & get_stage_info(int s) const { return stages.at(s); }
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/naturalhistory-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
  Start of -include/epiworld/agent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -10078,6 +10413,10 @@ private:
 
     /// Parameters this variant reads in place of others (see `use_param()`)
     std::vector< std::pair< ParamRef, ParamRef > > param_redirects;
+
+    /// Its natural history (shared by its copies; copied on the first edit)
+    std::shared_ptr< NaturalHistory<TSeq> > nh_def = nullptr;
+    NaturalHistory<TSeq> & nh_edit();
         
 public:
 
@@ -10222,6 +10561,27 @@ public:
 
     void print() const;
 
+
+    /**
+     * @name Natural history
+     * @brief The disease's stages and the transitions between them, declared
+     * on the virus (see `NaturalHistory` for each method).
+     * @details `Model::add_virus()` gives the model the virus's stages (its
+     * states). A copy of the virus (a strain, or a variant from a mutation)
+     * keeps the natural history; it can read other parameters with
+     * `use_param()`. The viruses of one model share their stages.
+     */
+    ///@{
+    int add_stage(std::string label, unsigned int flags = 0u);
+    void set_contact(int s, epiworld_double weight);
+    TransitionRef<TSeq> infection(Nodes from, int to, Value<TSeq> per_contact);
+    TransitionRef<TSeq> rate(Nodes from, int to, Value<TSeq> daily_probability);
+    TransitionRef<TSeq> after(int from, int to, Duration<TSeq> d);
+    TransitionRef<TSeq> external(Nodes from, int to, std::string label);
+
+    /// The natural history (`nullptr` if the virus has none).
+    const NaturalHistory<TSeq> * get_natural_history() const { return nh_def.get(); }
+    ///@}
 
     /**
      * @brief This variant reads the model parameter `replacement` wherever a
@@ -10769,332 +11129,6 @@ struct PostSamplingScratch {
 ////////////////////////////////////////////////////////////////////////////////
 
  End of -include/epiworld/postsampling-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/naturalhistory-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_NATURALHISTORY_BONES_HPP
-#define EPIWORLD_NATURALHISTORY_BONES_HPP
-
-/**
- * @file naturalhistory-bones.hpp
- * @brief The natural history of a disease: its stages and the declared
- * transitions between them (see `natural-history.md`).
- *
- * @details A natural history is a small graph. Its nodes are **stages**
- * (susceptible, latent, infectious, recovered, ...) and its edges are
- * **transitions**, each of one kind:
- *
- * - `infection()`: by contact, drawn from the model's layers (or a custom
- *   sampler). Taking it gives the agent the virus.
- * - `rate()`: a daily probability. The rates out of a stage compete: one
- *   draw (`roulette()`) picks one of them, or none.
- * - `after()`: a duration, drawn when the agent enters the stage. It is a
- *   deadline: the agent leaves on the update of the day it falls, unless a
- *   rate fired first.
- * - `external()`: fired by code, through `Model::fire()`.
- *
- * A stage is a **carrier** (its agents hold the virus) and may be
- * **infectious** (they transmit; this implies carrier). Entering a
- * non-carrier stage releases the virus. There are no fixed roles: a stage is
- * susceptible because an infection transition leaves it, and a death is a
- * stage with contact weight 0 and no exits.
- *
- * Every number a transition uses is a `Value`: a number, a model parameter
- * (by name) or a function. A number given directly becomes a model parameter
- * when the natural history is set on a model.
- */
-
-class Nodes;
-
-template<typename TSeq>
-class NaturalHistory;
-
-template<typename TSeq>
-class TransitionRef;
-
-/// Flags of a stage (see `NaturalHistory::add_stage()`).
-namespace stage {
-    constexpr unsigned int carrier    = 1u;      ///< Agents in it hold the virus
-    constexpr unsigned int infectious = 1u | 2u; ///< They transmit (implies carrier)
-}
-
-/// Which tool effect a rate takes (see `TransitionRef::effect()`).
-enum class Effect : uint8_t {
-    none,     ///< No tool effect
-    recovery, ///< `p` becomes `1 - (1 - p) * (1 - recovery enhancer)`
-    death     ///< `p` becomes `p * (1 - death reduction)`
-};
-
-/// One or more stages (an `int` or a list of them).
-class Nodes {
-public:
-    std::vector< int > ids;
-    Nodes(int id) : ids({id}) {}
-    Nodes(std::initializer_list< int > l) : ids(l) {}
-    Nodes(std::vector< int > v) : ids(std::move(v)) {}
-};
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ValueFun = std::function< epiworld_double(Agent<TSeq> &, Model<TSeq> &) >;
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using DurationFun = std::function< int(Agent<TSeq> &, Model<TSeq> &) >;
-
-/// A custom infection sampler: the virus the agent catches, or `nullptr`.
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using InfectionSampler = std::function< Virus<TSeq> * (Agent<TSeq> &, Model<TSeq> &) >;
-
-/**
- * @brief A number a transition uses: a constant, a model parameter, or a
- * function.
- * @details
- * - `Value(0.1)`: a number. When the natural history is set on a model, it
- *   becomes a model parameter (named after the transition).
- * - `Value("Recovery rate")`: a model parameter, by name.
- * - `Value::inverse("Days")`, `Value::complement("p")`: `1 / p`, `1 - p`.
- * - `Value(fun)`: `fun(agent, model)`.
- *
- * A parameter is read through the agent's virus, so a variant can point it to
- * another parameter (`Virus::use_param()`).
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Value {
-public:
-    enum class Kind : uint8_t { none, number, param, inverse, complement, fun };
-
-private:
-    Kind kind = Kind::none;
-    epiworld_double number = 0.0;
-    ParamRef param = ParamRef("");
-    ValueFun<TSeq> fun = nullptr;
-
-    friend class NaturalHistory<TSeq>;
-
-public:
-    Value() = default;
-    Value(epiworld_double x) : kind(Kind::number), number(x) {}
-    Value(int x) : Value(static_cast< epiworld_double >(x)) {}
-    Value(const char * name) : kind(Kind::param), param(std::string(name)) {}
-    Value(std::string name) : kind(Kind::param), param(std::move(name)) {}
-    Value(ValueFun<TSeq> f) : kind(Kind::fun), fun(std::move(f)) {}
-
-    static Value inverse(std::string name);    ///< `1 / parameter`
-    static Value complement(std::string name); ///< `1 - parameter`
-
-    Kind get_kind() const { return kind; }
-    bool is_set() const { return kind != Kind::none; }
-
-    /// The parameter's name ("" for a function).
-    const std::string & get_param_name() const { return param.name(); }
-
-    /// The value for this agent (its virus may redirect the parameter).
-    epiworld_double eval(Agent<TSeq> & agent, Model<TSeq> & model) const;
-
-    /// The same, with the parameter redirected by `virus` (e.g., the
-    /// infector's, for a probability of infection).
-    epiworld_double eval(
-        Agent<TSeq> & agent,
-        const Virus<TSeq> * virus,
-        Model<TSeq> & model
-    ) const;
-};
-
-/**
- * @brief How many days a stage lasts, drawn when the agent enters it.
- * @details Always a whole number of days, at least one.
- * - `fixed(p)`: `p`, rounded.
- * - `geometric(mean)`: a geometric number of days with that mean (the same as
- *   leaving each day with probability `1 / mean`).
- * - `lognormal(mean, sd)`, `gamma(mean, sd)`: the mean and standard deviation
- *   of the duration, in days. A standard deviation of zero is fixed.
- * - `fun`: `fun(agent, model)`.
- *
- * `since(s)` counts the duration from the day the agent entered stage `s`
- * (in the same infection), instead of the day it entered this stage.
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Duration {
-public:
-    enum class Kind : uint8_t { none, fixed, geometric, lognormal, gamma, fun };
-
-private:
-    Kind kind = Kind::none;
-    Value<TSeq> mean;
-    Value<TSeq> sd;
-    DurationFun<TSeq> fun = nullptr;
-    int anchor = -1;
-
-    friend class NaturalHistory<TSeq>;
-
-public:
-    Duration() = default;
-    Duration(DurationFun<TSeq> f) : kind(Kind::fun), fun(std::move(f)) {}
-
-    static Duration fixed(Value<TSeq> days);
-    static Duration geometric(Value<TSeq> mean);
-    static Duration lognormal(Value<TSeq> mean, Value<TSeq> sd);
-    static Duration gamma(Value<TSeq> mean, Value<TSeq> sd);
-
-    /// Counts from the day the agent entered stage `s` in this infection.
-    Duration since(int s) const;
-
-    Kind get_kind() const { return kind; }
-    int get_anchor() const { return anchor; }
-
-    /// Draws a number of days (at least one).
-    int draw(Agent<TSeq> & agent, Model<TSeq> & model) const;
-};
-
-/// The kind of a transition (see `naturalhistory-bones.hpp`).
-enum class TransitionKind : uint8_t { infection, rate, after, external };
-
-/**
- * @brief A declared transition: from a set of stages to a stage (or a branch
- * of stages), of one kind.
- */
-template<typename TSeq>
-struct Transition {
-    std::string name;
-    TransitionKind kind;
-    std::vector< int > from;
-    int to = -1;
-
-    /// A branch: the target is drawn among these, with these probabilities.
-    std::vector< int > branch_to;
-    std::vector< Value<TSeq> > branch_prob;
-
-    Value<TSeq> value;          ///< infection (per contact) and rate
-    Duration<TSeq> duration;    ///< after
-    Effect effect = Effect::none;
-    InfectionSampler<TSeq> sampler = nullptr; ///< infection only (optional)
-};
-
-/**
- * @brief Refines a transition just declared (chainable); converts to its id.
- */
-template<typename TSeq>
-class TransitionRef {
-private:
-    NaturalHistory<TSeq> * nh;
-    int id;
-
-public:
-    TransitionRef(NaturalHistory<TSeq> * nh_, int id_) : nh(nh_), id(id_) {}
-    operator int() const { return id; }
-    int get_id() const { return id; }
-
-    TransitionRef & name(std::string n);     ///< Default: "From -> To"
-    TransitionRef & effect(Effect e);        ///< The tool effect a rate takes
-
-    /// The target is drawn among `targets`, with their probabilities.
-    TransitionRef & to(std::vector< std::pair< int, Value<TSeq> > > targets);
-
-    /// A custom infection sampler (infection transitions only; C++ only).
-    TransitionRef & sampler(InfectionSampler<TSeq> f);
-};
-
-/**
- * @brief What the engine needs about a stage, derived from the declarations.
- */
-struct StageInfo {
-    int infection = -1;           ///< The infection transition out of it
-    std::vector< int > rates;     ///< Its rate transitions, in order
-    int after = -1;               ///< Its duration transition
-    bool needs_visit = false;     ///< Has a rate or a duration
-    bool pushable = false;        ///< Its only drawn exit is a default infection
-};
-
-/**
- * @brief The natural history of a disease: stages and declared transitions.
- * @details Build it, then hand it to a model (`Model::set_natural_history()`).
- * The first stage is where agents start. Example (SIR):
- *
- * @code{.cpp}
- * NaturalHistory<> nh("Flu");
- * int S = nh.add_stage("Susceptible");
- * int I = nh.add_stage("Infected", stage::infectious);
- * int R = nh.add_stage("Recovered");
- * nh.infection(S, I, "Transmission rate");
- * nh.rate(I, R, "Recovery rate").effect(Effect::recovery);
- * @endcode
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class NaturalHistory {
-private:
-    std::string name;
-    std::vector< std::string > stage_labels;
-    std::vector< unsigned int > stage_flags;
-    std::vector< epiworld_double > stage_contact;
-    std::vector< Transition<TSeq> > transitions;
-
-    // Derived by finalize()
-    std::vector< StageInfo > stages;
-    bool finalized = false;
-
-    friend class TransitionRef<TSeq>;
-    friend class Model<TSeq>;
-
-    int add_transition(Transition<TSeq> t);
-    void check_stage(int s, const char * what) const;
-
-    /// Checks the declarations and derives `stages`; turns numbers into model
-    /// parameters.
-    void finalize(Model<TSeq> & model);
-
-public:
-    explicit NaturalHistory(std::string name_);
-
-    /// Adds a stage; returns its id. Flags: `stage::carrier`, `stage::infectious`.
-    int add_stage(std::string label, unsigned int flags = 0u);
-
-    /// Contact weight of a stage (default 1). 0 takes its agents out of every
-    /// layer: they are not met and do not transmit.
-    void set_contact(int s, epiworld_double weight);
-
-    TransitionRef<TSeq> infection(Nodes from, int to, Value<TSeq> per_contact);
-    TransitionRef<TSeq> rate(Nodes from, int to, Value<TSeq> daily_probability);
-    TransitionRef<TSeq> after(int from, int to, Duration<TSeq> d);
-    TransitionRef<TSeq> external(Nodes from, int to, std::string label);
-
-    const std::string & get_name() const { return name; }
-    size_t get_n_stages() const { return stage_labels.size(); }
-    size_t get_n_transitions() const { return transitions.size(); }
-    const std::vector< std::string > & get_stages() const { return stage_labels; }
-    const Transition<TSeq> & get_transition(int id) const { return transitions.at(id); }
-
-    bool is_carrier(int s) const { return (stage_flags.at(s) & stage::carrier) != 0u; }
-    bool is_infectious(int s) const { return (stage_flags.at(s) & 2u) != 0u; }
-    epiworld_double get_contact(int s) const { return stage_contact.at(s); }
-
-    /// The stage's id, by label (throws if absent).
-    int stage_id(std::string_view label) const;
-
-    /// The transition's id, by name (throws if absent).
-    int transition_id(std::string_view label) const;
-
-    /// Whether `s` is one of the transition's sources.
-    bool is_source(int transition, int s) const;
-
-    /// What the engine derived about stage `s` (after `set_natural_history()`).
-    const StageInfo & get_stage_info(int s) const { return stages.at(s); }
-};
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/naturalhistory-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -11894,9 +11928,11 @@ protected:
     /**
      * @name Natural history
      *
-     * @details See `set_natural_history()` and `naturalhistory-bones.hpp`. The
-     * natural history is shared by the model's copies (it does not change once
-     * set); what it stores per agent is the model's, and is reset with it.
+     * @details See `naturalhistory-bones.hpp`. The first virus with a natural
+     * history installs it (`add_virus()`); the model's copy of that virus
+     * shares it. It is shared by the model's copies (it does not change once
+     * installed); what it stores per agent is the model's, and is reset with
+     * it.
      */
     ///@{
     std::shared_ptr< const NaturalHistory<TSeq> > nh = nullptr;
@@ -11910,8 +11946,17 @@ protected:
     static constexpr int NH_SEED = -2;    ///< Event: a seeded infection
     static constexpr int NH_INITIAL = -3; ///< Event: an initial placement
 
+    void nh_install(std::shared_ptr< NaturalHistory<TSeq> > def);
     void nh_reset();
     void nh_step(Agent<TSeq> & p);
+
+    /// The natural history whose values apply to `p`: its virus's, or (no
+    /// virus) the model's
+    const NaturalHistory<TSeq> & nh_of(const Agent<TSeq> & p) const
+    {
+        const auto & v = p.get_virus();
+        return (v && v->nh_def) ? *v->nh_def : *nh;
+    }
     void nh_propose(int transition, Agent<TSeq> & p, Virus<TSeq> * virus = nullptr);
     void nh_enter(Agent<TSeq> & p, unsigned int state_old, int transition);
     void nh_queue_move(Agent<TSeq> & p, unsigned int state_old);
@@ -12302,18 +12347,7 @@ public:
      */
     ///@{
 
-    /**
-     * @brief Sets the model's natural history (see `NaturalHistory`).
-     * @details Its stages become the model's states, in order, and agents
-     * start in the first one. The engine derives who transmits (the
-     * infectious stages), who is out of the layers (contact weight 0), who is
-     * pushed to, and the queue, from the declarations. Numbers in the
-     * transitions become model parameters. A model has one natural history,
-     * set once, before any state is added.
-     */
-    void set_natural_history(NaturalHistory<TSeq> natural_history);
-
-    /// The natural history (`nullptr` if the model has none).
+    /// The natural history of the model's viruses (`nullptr` if none has one).
     const NaturalHistory<TSeq> * get_natural_history() const { return nh.get(); }
 
     /**
@@ -14253,8 +14287,20 @@ inline void Model<TSeq>::add_virus(
 
     // With a natural history, the stages say where a virus takes the agent,
     // and the transitions name the parameters it reads
-    if (nh)
+    if (nh || v.nh_def)
     {
+        if (!v.nh_def)
+            throw std::logic_error(
+                "The virus \"" + v.get_name() + "\" has no natural history, "
+                "but the model's viruses do (\"" + nh->get_name() + "\")."
+            );
+        if (!nh && (nstates != 0u))
+            throw std::logic_error(
+                "The virus \"" + v.get_name() + "\" has a natural history, "
+                "but the model has states (add_state()): its stages would be "
+                "the model's states."
+            );
+
         if (
             (init_ != -99) || (post_ != -99) || (rm_ != -99) ||
             v.probability_of_infecting || v.probability_of_recovery ||
@@ -14279,6 +14325,29 @@ inline void Model<TSeq>::add_virus(
     // The model keeps its own copy (of the derived class, if any); its id and
     // lineage are recorded on the copy
     auto cloned = v.clone_ptr();
+
+    // Its own copy of the natural history, with numbers turned into model
+    // parameters (named after the virus); the first one gives the stages
+    if (v.nh_def)
+    {
+
+        auto def = std::make_shared< NaturalHistory<TSeq> >(*v.nh_def);
+        def->finalize(*this, v.get_name());
+
+        if (!nh)
+            nh_install(def);
+        else if (!nh->same_structure(*def))
+            throw std::logic_error(
+                "The natural history of \"" + v.get_name() + "\" differs from "
+                "the model's (\"" + nh->get_name() + "\"): the viruses of a "
+                "model have the same stages and transitions (their values may "
+                "differ)."
+            );
+
+        cloned->nh_def = def;
+
+    }
+
     db.record_virus(*cloned, true);
     viruses.push_back(std::shared_ptr<Virus<TSeq>>(std::move(cloned)));
     virus_assign.push_back(std::move(a));
@@ -15022,7 +15091,16 @@ inline void Model<TSeq>::reset() {
 
     // The natural history's per-agent records (and the first stage's queue)
     if (nh)
+    {
+        for (auto & v : viruses)
+            if (!v->nh_def || ((v->nh_def.get() != nh.get()) && !nh->same_structure(*v->nh_def)))
+                throw std::logic_error(
+                    "The natural history of the virus \"" + v->get_name() +
+                    "\" no longer matches the model's (was it edited after "
+                    "add_virus()?)."
+                );
         nh_reset();
+    }
 
     // The batch of sampled contacts
     if (post_sampling_on)
@@ -16755,7 +16833,8 @@ inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
       queue_init(other.queue_init),
       queue_post(other.queue_post),
       queue_removed(other.queue_removed),
-      param_redirects(other.param_redirects)
+      param_redirects(other.param_redirects),
+      nh_def(other.nh_def)
 {
     counter_copy_construct++;
 }
@@ -16776,7 +16855,8 @@ inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
       queue_init(other.queue_init),
       queue_post(other.queue_post),
       queue_removed(other.queue_removed),
-      param_redirects(std::move(other.param_redirects))
+      param_redirects(std::move(other.param_redirects)),
+      nh_def(std::move(other.nh_def))
 {
     counter_move_construct++;
     // other.agent = nullptr;
@@ -16801,6 +16881,7 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
         queue_post = other.queue_post;
         queue_removed = other.queue_removed;
         param_redirects = other.param_redirects;
+        nh_def = other.nh_def;
         counter_copy_assign++;
     }
     return *this;
@@ -16825,6 +16906,7 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
         queue_post = other.queue_post;
         queue_removed = other.queue_removed;
         param_redirects = std::move(other.param_redirects);
+        nh_def = std::move(other.nh_def);
         other.agent = nullptr;
         counter_move_assign++;
     }
@@ -17485,6 +17567,60 @@ inline ParamId Virus<TSeq>::param_redirect(
             return r.second.id(model);
 
     return id;
+}
+
+template<typename TSeq>
+inline NaturalHistory<TSeq> & Virus<TSeq>::nh_edit()
+{
+    // Copies share the natural history until one of them is edited
+    if (!nh_def)
+        nh_def = std::make_shared< NaturalHistory<TSeq> >(virus_name);
+    else if (nh_def.use_count() > 1)
+        nh_def = std::make_shared< NaturalHistory<TSeq> >(*nh_def);
+
+    return *nh_def;
+}
+
+template<typename TSeq>
+inline int Virus<TSeq>::add_stage(std::string label, unsigned int flags)
+{
+    return nh_edit().add_stage(std::move(label), flags);
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::set_contact(int s, epiworld_double weight)
+{
+    nh_edit().set_contact(s, weight);
+}
+
+template<typename TSeq>
+inline TransitionRef<TSeq> Virus<TSeq>::infection(
+    Nodes from, int to, Value<TSeq> per_contact
+)
+{
+    return nh_edit().infection(std::move(from), to, std::move(per_contact));
+}
+
+template<typename TSeq>
+inline TransitionRef<TSeq> Virus<TSeq>::rate(
+    Nodes from, int to, Value<TSeq> daily_probability
+)
+{
+    return nh_edit().rate(std::move(from), to, std::move(daily_probability));
+}
+
+template<typename TSeq>
+inline TransitionRef<TSeq> Virus<TSeq>::after(int from, int to, Duration<TSeq> d)
+{
+    return nh_edit().after(from, to, std::move(d));
+}
+
+template<typename TSeq>
+inline TransitionRef<TSeq> Virus<TSeq>::external(
+    Nodes from, int to, std::string label
+)
+{
+    return nh_edit().external(std::move(from), to, std::move(label));
 }
 
 #endif
@@ -20367,7 +20503,41 @@ inline bool NaturalHistory<TSeq>::is_source(int transition, int s) const
 }
 
 template<typename TSeq>
-inline void NaturalHistory<TSeq>::finalize(Model<TSeq> & model)
+inline bool NaturalHistory<TSeq>::same_structure(
+    const NaturalHistory<TSeq> & o
+) const
+{
+
+    if (
+        (stage_labels != o.stage_labels) ||
+        (stage_flags != o.stage_flags) ||
+        (stage_contact != o.stage_contact) ||
+        (transitions.size() != o.transitions.size())
+    )
+        return false;
+
+    for (size_t k = 0u; k < transitions.size(); ++k)
+    {
+        const auto & a = transitions[k];
+        const auto & b = o.transitions[k];
+        if (
+            (a.name != b.name) || (a.kind != b.kind) || (a.from != b.from) ||
+            (a.to != b.to) || (a.branch_to != b.branch_to) ||
+            (a.effect != b.effect) ||
+            (static_cast< bool >(a.sampler) != static_cast< bool >(b.sampler))
+        )
+            return false;
+    }
+
+    return true;
+
+}
+
+template<typename TSeq>
+inline void NaturalHistory<TSeq>::finalize(
+    Model<TSeq> & model,
+    const std::string & owner
+)
 {
 
     if (stage_labels.empty())
@@ -20474,7 +20644,7 @@ inline void NaturalHistory<TSeq>::finalize(Model<TSeq> & model)
             check_stage(t.duration.get_anchor(), "anchor");
 
         // Numbers become parameters
-        const std::string pname = name + ": " + t.name;
+        const std::string pname = owner + ": " + t.name;
         as_param(t.value, pname);
         as_param(t.duration.mean, pname + " (mean)");
         as_param(t.duration.sd, pname + " (sd)");
@@ -20500,22 +20670,17 @@ inline void NaturalHistory<TSeq>::finalize(Model<TSeq> & model)
 // Model: the natural history ------------------------------------------------
 
 template<typename TSeq>
-inline void Model<TSeq>::set_natural_history(NaturalHistory<TSeq> natural_history)
+inline void Model<TSeq>::nh_install(std::shared_ptr< NaturalHistory<TSeq> > def)
 {
 
-    if (nh)
-        throw std::logic_error(
-            "The model already has a natural history (\"" + nh->get_name() +
-            "\"); a model has one."
-        );
+    NaturalHistory<TSeq> & natural_history = *def;
 
     if (nstates != 0u)
         throw std::logic_error(
-            "The model already has states. With a natural history, the stages "
-            "are the model's states: set it before anything else."
+            "The model already has states. A virus with a natural history "
+            "gives the model its stages as its states: add it before anything "
+            "else."
         );
-
-    natural_history.finalize(*this);
 
     if (natural_history.is_carrier(0))
         throw std::logic_error(
@@ -20568,9 +20733,7 @@ inline void Model<TSeq>::set_natural_history(NaturalHistory<TSeq> natural_histor
     infectious_states = std::move(infectious);
     excluded_states = std::move(excluded);
 
-    nh = std::make_shared< const NaturalHistory<TSeq> >(
-        std::move(natural_history)
-    );
+    nh = std::move(def);
 
 }
 
@@ -20673,7 +20836,7 @@ inline void Model<TSeq>::nh_step(Agent<TSeq> & p)
     if ((st.infection >= 0) && (p.virus == nullptr))
     {
 
-        const auto & tr = nh->transitions[st.infection];
+        const auto & tr = nh_of(p).transitions[st.infection];
         Virus<TSeq> * v = tr.sampler ? tr.sampler(p, *this) : sample_virus(&p);
         if (v != nullptr)
         {
@@ -20692,7 +20855,7 @@ inline void Model<TSeq>::nh_step(Agent<TSeq> & p)
         for (size_t k = 0u; k < nr; ++k)
         {
 
-            const auto & tr = nh->transitions[st.rates[k]];
+            const auto & tr = nh_of(p).transitions[st.rates[k]];
             epiworld_double x = tr.value.eval(p, *this);
 
             if ((tr.effect != Effect::none) && (p.virus != nullptr))
@@ -20730,7 +20893,10 @@ inline void Model<TSeq>::nh_propose(
 )
 {
 
-    const auto & tr = nh->transitions[transition];
+    // The infection's target is the infecting virus's; the others, the agent's
+    const auto & tr = ((virus != nullptr) && virus->nh_def) ?
+        virus->nh_def->transitions[transition] :
+        nh_of(p).transitions[transition];
 
     // A branch draws its target
     int to = tr.to;
@@ -20792,7 +20958,7 @@ inline void Model<TSeq>::nh_enter(
     if (after >= 0)
     {
 
-        const auto & d = nh->transitions[after].duration;
+        const auto & d = nh_of(p).transitions[after].duration;
         int base = today();
         if ((d.get_anchor() >= 0) && (entered[d.get_anchor()] >= 0))
             base = entered[d.get_anchor()];
@@ -20886,7 +21052,9 @@ inline epiworld_double Model<TSeq>::nh_infection_prob(
     if (tr < 0)
         return 0.0;
 
-    return nh->transitions[tr].value.eval(target, &v, *this);
+    // The infector's virus says how infectious it is
+    const auto & h = v.nh_def ? *v.nh_def : *nh;
+    return h.transitions[tr].value.eval(target, &v, *this);
 }
 
 #endif
@@ -25391,14 +25559,13 @@ inline ModelSIS<TSeq>::ModelSIS(
     this->add_param(transmission_prob, "Transmission probability");
     this->add_param(recovery_rate, "Recovery rate");
 
-    NaturalHistory<TSeq> nh(vname);
-    nh.add_stage("Susceptible");
-    nh.add_stage("Infected", stage::infectious);
-    nh.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
-    nh.rate(INFECTED, SUSCEPTIBLE, "Recovery rate").effect(Effect::recovery);
-    this->set_natural_history(std::move(nh));
+    Virus<TSeq> virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Infected", stage::infectious);
+    virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
+    virus.rate(INFECTED, SUSCEPTIBLE, "Recovery rate").effect(Effect::recovery);
 
-    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
 }
 
@@ -25477,15 +25644,14 @@ inline ModelSIR<TSeq>::ModelSIR(
     this->add_param(recovery_rate, "Recovery rate");
     this->add_param(transmission_prob, "Transmission probability");
 
-    NaturalHistory<TSeq> nh(vname);
-    nh.add_stage("Susceptible");
-    nh.add_stage("Infected", stage::infectious);
-    nh.add_stage("Recovered");
-    nh.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
-    nh.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
-    this->set_natural_history(std::move(nh));
+    Virus<TSeq> virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Infected", stage::infectious);
+    virus.add_stage("Recovered");
+    virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
+    virus.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
 
-    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered (SIR)");
    
@@ -25575,17 +25741,16 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     this->add_param(latent_period, "Latent period");
     this->add_param(recovery_rate, "Recovery rate");
 
-    NaturalHistory<TSeq> nh(vname);
-    nh.add_stage("Susceptible");
-    nh.add_stage("Exposed", stage::carrier);
-    nh.add_stage("Infected", stage::infectious);
-    nh.add_stage("Removed");
-    nh.infection(SUSCEPTIBLE, EXPOSED, "Transmission probability");
-    nh.after(EXPOSED, INFECTED, Duration<TSeq>::geometric("Latent period"));
-    nh.rate(INFECTED, REMOVED, "Recovery rate").effect(Effect::recovery);
-    this->set_natural_history(std::move(nh));
+    Virus<TSeq> virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Exposed", stage::carrier);
+    virus.add_stage("Infected", stage::infectious);
+    virus.add_stage("Removed");
+    virus.infection(SUSCEPTIBLE, EXPOSED, "Transmission probability");
+    virus.after(EXPOSED, INFECTED, Duration<TSeq>::geometric("Latent period"));
+    virus.rate(INFECTED, REMOVED, "Recovery rate").effect(Effect::recovery);
 
-    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
 
@@ -25818,21 +25983,21 @@ inline ModelSURV<TSeq>::ModelSURV(
         };
     };
 
-    NaturalHistory<TSeq> nh(vname);
-    nh.add_stage("Susceptible");
-    nh.add_stage("Latent", stage::carrier);
-    nh.add_stage("Symptomatic", stage::infectious);
-    nh.add_stage("Symptomatic isolated", stage::carrier);
-    nh.add_stage("Asymptomatic", stage::infectious);
-    nh.add_stage("Asymptomatic isolated", stage::carrier);
-    nh.add_stage("Recovered");
-    nh.add_stage("Removed");
-    nh.set_contact(REMOVED, 0.0);
+    Virus<TSeq> covid(vname);
+    covid.add_stage("Susceptible");
+    covid.add_stage("Latent", stage::carrier);
+    covid.add_stage("Symptomatic", stage::infectious);
+    covid.add_stage("Symptomatic isolated", stage::carrier);
+    covid.add_stage("Asymptomatic", stage::infectious);
+    covid.add_stage("Asymptomatic isolated", stage::carrier);
+    covid.add_stage("Recovered");
+    covid.add_stage("Removed");
+    covid.set_contact(REMOVED, 0.0);
 
-    nh.infection(SUSCEPTIBLE, LATENT, "Prob of transmission");
+    covid.infection(SUSCEPTIBLE, LATENT, "Prob of transmission");
 
     // After the latent period, symptoms or not
-    nh.after(LATENT, SYMPTOMATIC, Duration<TSeq>(gamma_days("Latent period")))
+    covid.after(LATENT, SYMPTOMATIC, Duration<TSeq>(gamma_days("Latent period")))
       .name("Latent -> Symptomatic or Asymptomatic")
       .to({
         {SYMPTOMATIC, Value<TSeq>("Prob of symptoms")},
@@ -25842,26 +26007,24 @@ inline ModelSURV<TSeq>::ModelSURV(
     // The infectious period counts from the end of the latent one; isolation
     // keeps counting from there
     const Duration<TSeq> infectious(gamma_days("Infect period"));
-    nh.after(SYMPTOMATIC, RECOVERED, infectious);
-    nh.after(SYMPTOMATIC_ISOLATED, RECOVERED, infectious.since(SYMPTOMATIC));
-    nh.after(ASYMPTOMATIC, RECOVERED, infectious);
-    nh.after(ASYMPTOMATIC_ISOLATED, RECOVERED, infectious.since(ASYMPTOMATIC));
+    covid.after(SYMPTOMATIC, RECOVERED, infectious);
+    covid.after(SYMPTOMATIC_ISOLATED, RECOVERED, infectious.since(SYMPTOMATIC));
+    covid.after(ASYMPTOMATIC, RECOVERED, infectious);
+    covid.after(ASYMPTOMATIC_ISOLATED, RECOVERED, infectious.since(ASYMPTOMATIC));
 
     // Each infectious day, a risk of death (competing with the recovery)
-    nh.rate(
+    covid.rate(
         {SYMPTOMATIC, SYMPTOMATIC_ISOLATED, ASYMPTOMATIC, ASYMPTOMATIC_ISOLATED},
         REMOVED,
         "Prob. death"
     ).name("Death").effect(Effect::death);
 
     // Surveillance finds infected agents
-    nh.external({LATENT, SYMPTOMATIC}, SYMPTOMATIC_ISOLATED, "Detected");
-    nh.external(ASYMPTOMATIC, ASYMPTOMATIC_ISOLATED, "Detected asymptomatic");
+    covid.external({LATENT, SYMPTOMATIC}, SYMPTOMATIC_ISOLATED, "Detected");
+    covid.external(ASYMPTOMATIC, ASYMPTOMATIC_ISOLATED, "Detected asymptomatic");
 
-    this->set_natural_history(std::move(nh));
 
     // Virus ------------------------------------------------------------------
-    Virus<TSeq> covid(vname);
     covid.set_post_immunity("Prob. no reinfect");
     this->add_virus(covid, assign::count<TSeq>(prevalence));
 
@@ -25964,18 +26127,17 @@ inline ModelSIRD<TSeq>::ModelSIRD(
     this->add_param(transmission_prob, "Transmission probability");
     this->add_param(death_rate, "Death rate");
 
-    NaturalHistory<TSeq> nh(vname);
-    nh.add_stage("Susceptible");
-    nh.add_stage("Infected", stage::infectious);
-    nh.add_stage("Recovered");
-    nh.add_stage("Deceased");
-    nh.set_contact(DECEASED, 0.0);
-    nh.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
-    nh.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
-    nh.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
-    this->set_natural_history(std::move(nh));
+    Virus<TSeq> virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Infected", stage::infectious);
+    virus.add_stage("Recovered");
+    virus.add_stage("Deceased");
+    virus.set_contact(DECEASED, 0.0);
+    virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
+    virus.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
+    virus.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
 
-    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered-Deceased (SIRD)");
 
@@ -26063,17 +26225,16 @@ inline ModelSISD<TSeq>::ModelSISD(
     this->add_param(recovery_rate, "Recovery rate");
     this->add_param(death_rate, "Death rate");
 
-    NaturalHistory<TSeq> nh(vname);
-    nh.add_stage("Susceptible");
-    nh.add_stage("Infected", stage::infectious);
-    nh.add_stage("Deceased");
-    nh.set_contact(DECEASED, 0.0);
-    nh.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
-    nh.rate(INFECTED, SUSCEPTIBLE, "Recovery rate").effect(Effect::recovery);
-    nh.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
-    this->set_natural_history(std::move(nh));
+    Virus<TSeq> virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Infected", stage::infectious);
+    virus.add_stage("Deceased");
+    virus.set_contact(DECEASED, 0.0);
+    virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
+    virus.rate(INFECTED, SUSCEPTIBLE, "Recovery rate").effect(Effect::recovery);
+    virus.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
 
-    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
 }
 
@@ -26168,20 +26329,19 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   this->add_param(recovery_rate, "Recovery rate");
   this->add_param(death_rate, "Death rate");
 
-  NaturalHistory<TSeq> nh(vname);
-  nh.add_stage("Susceptible");
-  nh.add_stage("Exposed", stage::carrier);
-  nh.add_stage("Infected", stage::infectious);
-  nh.add_stage("Removed");
-  nh.add_stage("Deceased");
-  nh.set_contact(DECEASED, 0.0);
-  nh.infection(SUSCEPTIBLE, EXPOSED, "Transmission probability");
-  nh.after(EXPOSED, INFECTED, Duration<TSeq>::geometric("Latent period"));
-  nh.rate(INFECTED, REMOVED, "Recovery rate").effect(Effect::recovery);
-  nh.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
-  this->set_natural_history(std::move(nh));
+  Virus<TSeq> virus(vname);
+  virus.add_stage("Susceptible");
+  virus.add_stage("Exposed", stage::carrier);
+  virus.add_stage("Infected", stage::infectious);
+  virus.add_stage("Removed");
+  virus.add_stage("Deceased");
+  virus.set_contact(DECEASED, 0.0);
+  virus.infection(SUSCEPTIBLE, EXPOSED, "Transmission probability");
+  virus.after(EXPOSED, INFECTED, Duration<TSeq>::geometric("Latent period"));
+  virus.rate(INFECTED, REMOVED, "Recovery rate").effect(Effect::recovery);
+  virus.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
 
-  this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
+  this->add_virus(virus, assign::share<TSeq>(prevalence));
 
   this->set_name("Susceptible-Exposed-Infected-Removed-Deceased (SEIRD)");
   
@@ -26442,15 +26602,14 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
     };
 
-    NaturalHistory<TSeq> nh(vname);
-    nh.add_stage("Susceptible");
-    nh.add_stage("Infected", stage::infectious);
-    nh.add_stage("Recovered");
-    nh.infection(SUSCEPTIBLE, INFECTED, "Transmission probability").sampler(sampler);
-    nh.rate(INFECTED, RECOVERED, p_recover);
-    this->set_natural_history(std::move(nh));
+    Virus<TSeq> virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Infected", stage::infectious);
+    virus.add_stage("Recovered");
+    virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability").sampler(sampler);
+    virus.rate(INFECTED, RECOVERED, p_recover);
 
-    this->add_virus(Virus<TSeq>(vname), assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Removed (SIR) (logit)");
 
@@ -26615,13 +26774,12 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
     this->set_agents_data(agents_data, data_ncols);
 
-    NaturalHistory<TSeq> nh(innovation_name);
-    nh.add_stage("Non adopters");
-    nh.add_stage("Adopters", stage::infectious);
-    nh.infection(NONADOPTER, ADOPTER, parname).sampler(sampler);
-    this->set_natural_history(std::move(nh));
+    Virus<TSeq> virus(innovation_name);
+    virus.add_stage("Non adopters");
+    virus.add_stage("Adopters", stage::infectious);
+    virus.infection(NONADOPTER, ADOPTER, parname).sampler(sampler);
 
-    this->add_virus(Virus<TSeq>(innovation_name), assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name(
         std::string("Diffusion of Innovations - ") + innovation_name);
