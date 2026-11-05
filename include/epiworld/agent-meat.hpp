@@ -140,6 +140,26 @@ inline void Agent<TSeq>::set_virus(
             " has not been registered. There are only " + std::to_string(model.get_n_viruses()) +
             " included in the model.");
 
+    // With a natural history, a virus given from outside (seeding, an
+    // import) follows the infection transition out of the agent's stage
+    if (model.nh && (state_new == -99))
+    {
+
+        const int tr = model.nh->get_stage_info(static_cast< int >(state)).infection;
+        if (tr < 0)
+            throw std::logic_error(
+                "Agent " + std::to_string(id) + " is in the stage \"" +
+                model.nh->get_stages()[state] + "\", which has no infection "
+                "transition, so it cannot be given a virus."
+            );
+
+        state_new = model.nh->get_transition(tr).to;
+        queue = Queue<TSeq>::NoOne;
+        if (model.nh_pending == -1)
+            model.nh_pending = Model<TSeq>::NH_SEED;
+
+    }
+
     if (state_new == -99)
         virus.get_state(&state_new, nullptr, nullptr);
 

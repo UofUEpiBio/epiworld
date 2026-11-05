@@ -60,23 +60,18 @@ inline ModelSIR<TSeq>::ModelSIR(
 
     this->set_population_size(n);
 
-    // Adding statuses
-    this->add_state("Susceptible", default_update_susceptible<TSeq>);
-    this->add_state("Infected", default_update_exposed<TSeq>);
-    this->add_state("Recovered");
-
-    // Setting up parameters
     this->add_param(recovery_rate, "Recovery rate");
     this->add_param(transmission_prob, "Transmission probability");
 
-    // Preparing the virus -------------------------------------------
-    Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(1,2,2);
-    
-    virus.set_prob_recovery("Recovery rate");
-    virus.set_prob_infecting("Transmission probability");
-    
-    this->add_virus(virus);
+    NaturalHistory<TSeq> nh(vname);
+    nh.add_stage("Susceptible");
+    nh.add_stage("Infected", stage::infectious);
+    nh.add_stage("Recovered");
+    nh.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
+    nh.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
+    this->set_natural_history(std::move(nh));
+
+    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered (SIR)");
    
@@ -88,9 +83,12 @@ inline ModelSIR<TSeq> & ModelSIR<TSeq>::initial_states(
     std::vector< int > /* queue_ */
 ) {
 
-    Model<TSeq>::initial_states_fun =
-        create_init_function_sir<TSeq>(proportions_)
-        ;
+    if (proportions_.size() != 1u)
+        throw std::invalid_argument(
+            "The vector of proportions must have a single element."
+            );
+
+    this->set_initial(RECOVERED, proportions_[0u]);
 
     return *this;
 

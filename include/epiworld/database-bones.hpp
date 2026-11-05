@@ -85,6 +85,19 @@ private:
 
     std::vector< int > transition_matrix;
 
+    /**
+     * @name Declared transitions (natural history)
+     * @details How many agents took each declared transition, since the last
+     * record (see `get_hist_transitions()`).
+     */
+    ///@{
+    std::vector< int > transition_today;       ///< [transition]
+    std::vector< int > hist_transition_date;
+    std::vector< int > hist_transition_id;
+    std::vector< int > hist_transition_counts;
+    void record_declared_transition(int id) { ++transition_today[static_cast< size_t >(id)]; }
+    ///@}
+
     UserData<TSeq> user_data;
 
     void update_state(
@@ -192,6 +205,19 @@ public:
         std::vector< int > & date,
         std::vector< int > & id,
         std::vector< std::string > & state,
+        std::vector< int > & counts
+    ) const;
+
+    /**
+     * @brief How many agents took each declared transition of the natural
+     * history, by day.
+     * @details One row per recorded day and transition, the transitions in
+     * the order they were declared. Seeding and initial placements are not
+     * transitions. Requires a natural history.
+     */
+    void get_hist_transitions(
+        std::vector< int > & date,
+        std::vector< std::string > & transition,
         std::vector< int > & counts
     ) const;
 

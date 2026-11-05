@@ -189,7 +189,8 @@ inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
       state_removed(other.state_removed),
       queue_init(other.queue_init),
       queue_post(other.queue_post),
-      queue_removed(other.queue_removed)
+      queue_removed(other.queue_removed),
+      param_redirects(other.param_redirects)
 {
     counter_copy_construct++;
 }
@@ -209,7 +210,8 @@ inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
       state_removed(other.state_removed),
       queue_init(other.queue_init),
       queue_post(other.queue_post),
-      queue_removed(other.queue_removed)
+      queue_removed(other.queue_removed),
+      param_redirects(std::move(other.param_redirects))
 {
     counter_move_construct++;
     // other.agent = nullptr;
@@ -233,6 +235,7 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
         queue_init = other.queue_init;
         queue_post = other.queue_post;
         queue_removed = other.queue_removed;
+        param_redirects = other.param_redirects;
         counter_copy_assign++;
     }
     return *this;
@@ -256,6 +259,7 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
         queue_init = other.queue_init;
         queue_post = other.queue_post;
         queue_removed = other.queue_removed;
+        param_redirects = std::move(other.param_redirects);
         other.agent = nullptr;
         counter_move_assign++;
     }
@@ -907,6 +911,34 @@ inline std::unique_ptr<Virus<TSeq>> Virus<TSeq>::clone_ptr() const
 {
     auto cloned = std::make_unique<Virus<TSeq>>(*this);
     return cloned;
+}
+
+template<typename TSeq>
+inline void Virus<TSeq>::use_param(std::string param, std::string replacement)
+{
+    for (auto & r : param_redirects)
+        if (r.first.name() == param)
+        {
+            r.second = ParamRef(std::move(replacement));
+            return;
+        }
+
+    param_redirects.emplace_back(
+        ParamRef(std::move(param)), ParamRef(std::move(replacement))
+    );
+}
+
+template<typename TSeq>
+inline ParamId Virus<TSeq>::param_redirect(
+    ParamId id,
+    const Model<TSeq> & model
+) const
+{
+    for (const auto & r : param_redirects)
+        if (r.first.id(model).idx == id.idx)
+            return r.second.id(model);
+
+    return id;
 }
 
 #endif

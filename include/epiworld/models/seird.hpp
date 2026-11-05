@@ -46,81 +46,6 @@ public:
     epiworld_double death_rate
   );
   
-  UpdateFun<TSeq> update_exposed_seir = [](
-    Agent<TSeq> * p,
-    Model<TSeq> * m
-  ) -> void {
-
-    // Getting the virus
-    auto v = p->get_virus();
-
-    // Does the agent become infected?
-    if (m->runif() < 1.0/(v->get_incubation(m)))
-      p->change_state(*m, ModelSEIRD<TSeq>::INFECTED);
-
-    return;
-  };
-
-  
-  UpdateFun<TSeq> update_infected = [](
-    Agent<TSeq> * p, Model<TSeq> * m
-  ) -> void {
-          
-    // Odd: Die, Even: Recover
-    epiworld_fast_uint n_events = 0u;
-
-    auto & v = p->get_virus();
-      
-    // Die
-    m->array_double_tmp[n_events++] = 
-      v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, *m));
-    
-    // Recover
-    m->array_double_tmp[n_events++] = 
-      1.0 - (1.0 - v->get_prob_recovery(m)) * (1.0 - p->get_recovery_enhancer(v, *m));
-    
-    
-#ifdef EPI_DEBUG
-    if (n_events == 0u)
-    {
-      printf_epiworld(
-        "[epi-debug] agent %i has 0 possible events!!\n",
-        static_cast<int>(p->get_id())
-      );
-      throw std::logic_error("Zero events in exposed.");
-    }
-#else
-    if (n_events == 0u)
-      return;
-#endif
-    
-    
-    // Running the roulette
-    int which = roulette(n_events, m);
-    
-    if (which < 0)
-      return;
-    
-    // Which roulette happen?
-    if ((which % 2) == 0) // If odd
-    {
-      
-      p->rm_virus(*m, ModelSEIRD<TSeq>::DECEASED);
-      
-    } else {
-      
-      p->rm_virus(*m);
-      
-    }
-    
-    return ;
-      
-    
-    
-    return;
-    
-  };
-
   ModelSEIRD<TSeq> & initial_states(
     std::vector< double > proportions_,
     std::vector< int > queue_ = {}
@@ -144,34 +69,26 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
 
     this->set_population_size(n);
   
-  // Adding statuses
-  this->add_state("Susceptible", default_update_susceptible<TSeq>);
-  this->add_state("Exposed",  this->update_exposed_seir);
-  this->add_state("Infected", this->update_infected);
-  this->add_state("Removed");
-  this->add_state("Deceased");
-
-  // Exposed agents carry the virus but are not infectious yet
-  this->set_infectious_states({INFECTED});
-  
-  // Setting up parameters
   this->add_param(transmission_prob, "Transmission probability");
   this->add_param(latent_period, "Latent period");
   this->add_param(recovery_rate, "Recovery rate");
   this->add_param(death_rate, "Death rate");
-  
-  // Preparing the virus -------------------------------------------
-  Virus<TSeq> virus(vname, prevalence, true);
-  virus.set_state(ModelSEIRD<TSeq>::EXPOSED, ModelSEIRD<TSeq>::REMOVED, ModelSEIRD<TSeq>::DECEASED);
-  
-  virus.set_prob_infecting("Transmission probability");
-  virus.set_incubation("Latent period");
-  virus.set_prob_death("Death rate");
-  virus.set_prob_recovery("Recovery rate");
-  
-  // Adding the tool and the virus
-  this->add_virus(virus);
-  
+
+  NaturalHistory<TSeq> nh(vname);
+  nh.add_stage("Susceptible");
+  nh.add_stage("Exposed", stage::carrier);
+  nh.add_stage("Infected", stage::infectious);
+  nh.add_stage("Removed");
+  nh.add_stage("Deceased");
+  nh.set_contact(DECEASED, 0.0);
+  nh.infection(SUSCEPTIBLE, EXPOSED, "Transmission probability");
+  nh.after(EXPOSED, INFECTED, Duration<TSeq>::geometric("Latent period"));
+  nh.rate(INFECTED, REMOVED, "Recovery rate").effect(Effect::recovery);
+  nh.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
+  this->set_natural_history(std::move(nh));
+
+  this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
+
   this->set_name("Susceptible-Exposed-Infected-Removed-Deceased (SEIRD)");
   
 }
@@ -182,9 +99,28 @@ inline ModelSEIRD<TSeq> & ModelSEIRD<TSeq>::initial_states(
   std::vector< int > /**/
 ) {
 
-  Model<TSeq>::initial_states_fun =
-    create_init_function_seird<TSeq>(proportions_)
-    ;
+  if (proportions_.size() != 3u)
+    throw std::invalid_argument("-proportions_- must have three entries.");
+
+  for (auto & v : proportions_)
+    if ((v < 0.0) || (v > 1.0))
+      throw std::invalid_argument(
+        "-proportions_- must have values between 0 and 1."
+      );
+
+  if ((proportions_[1u] + proportions_[2u]) > 1.0)
+    throw std::invalid_argument(
+      "The last two terms of -proportions_- must add up to less than 1."
+    );
+
+  // Of the initial cases, a share starts Infected; of the others, shares
+  // start Removed and Deceased
+  this->nh_seeds[0u].split = {
+    {EXPOSED, 1.0 - proportions_[0u]},
+    {INFECTED, proportions_[0u]}
+  };
+  this->set_initial(REMOVED, proportions_[1u]);
+  this->set_initial(DECEASED, proportions_[2u]);
 
   return *this;
 

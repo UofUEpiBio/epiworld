@@ -66,6 +66,13 @@ inline void DataBase<TSeq>::reset()
     transmission_source_exposure_date.clear();
     transmission_layer.clear();
 
+    transition_today.assign(
+        model->nh ? model->nh->get_n_transitions() : 0u, 0
+    );
+    hist_transition_date.clear();
+    hist_transition_id.clear();
+    hist_transition_counts.clear();
+
     m_hospitalizations.reset();
 
     return;
@@ -119,6 +126,10 @@ inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
     transmission_source_exposure_date(db.transmission_source_exposure_date),
     transmission_layer(db.transmission_layer),
     transition_matrix(db.transition_matrix),
+    transition_today(db.transition_today),
+    hist_transition_date(db.hist_transition_date),
+    hist_transition_id(db.hist_transition_id),
+    hist_transition_counts(db.hist_transition_counts),
     user_data(nullptr)
 {}
 
@@ -298,6 +309,14 @@ inline void DataBase<TSeq>::record()
 
         for (const auto& cell : transition_matrix)
             hist_transition_matrix.push_back(cell);
+
+        for (size_t k = 0u; k < transition_today.size(); ++k)
+        {
+            hist_transition_date.push_back(model->today());
+            hist_transition_id.push_back(static_cast< int >(k));
+            hist_transition_counts.push_back(transition_today[k]);
+            transition_today[k] = 0;
+        }
 
         // Now the diagonal must reflect the state
         for (size_t s_i = 0u; s_i < model->nstates; ++s_i)
@@ -2101,5 +2120,26 @@ inline void DataBase<TSeq>::get_hospitalizations(
 }
 
 #undef VECT_MATCH
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_hist_transitions(
+    std::vector< int > & date,
+    std::vector< std::string > & transition,
+    std::vector< int > & counts
+) const
+{
+
+    if (!model->nh)
+        throw std::logic_error(
+            "get_hist_transitions() needs a model with a natural history."
+        );
+
+    date = hist_transition_date;
+    counts = hist_transition_counts;
+    transition.resize(hist_transition_id.size());
+    for (size_t k = 0u; k < hist_transition_id.size(); ++k)
+        transition[k] = model->nh->get_transition(hist_transition_id[k]).name;
+
+}
 
 #endif

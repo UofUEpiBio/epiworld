@@ -41,27 +41,6 @@ public:
         epiworld_double recovery_rate
     );
 
-    UpdateFun<TSeq> update_exposed_seir = [](
-        Agent<TSeq> * p,
-        Model<TSeq> * m
-    ) -> void {
-
-        // Getting the virus
-        auto v = p->get_virus();
-
-        // Does the agent become infected?
-        if (m->runif() < 1.0/(v->get_incubation(m)))
-            p->change_state(*m, ModelSEIR<TSeq>::INFECTED);
-
-        return;
-    };
-
-    /**
-     * @brief Set up the initial states of the model.
-     * @param proportions_ Double vector with the following values:
-     * - 0: Proportion of non-infected agents who are removed.
-     * - 1: Proportion of exposed agents to be set as infected.
-    */
     ModelSEIR<TSeq> & initial_states(
         std::vector< double > proportions_,
         std::vector< int > queue_ = {}
@@ -83,30 +62,21 @@ inline ModelSEIR<TSeq>::ModelSEIR(
 
     this->set_population_size(n);
 
-    // Adding statuses
-    this->add_state("Susceptible", default_update_susceptible<TSeq>);
-    this->add_state("Exposed", this->update_exposed_seir);
-    this->add_state("Infected", default_update_exposed<TSeq>);
-    this->add_state("Removed");
-
-    // Exposed agents carry the virus but are not infectious yet
-    this->set_infectious_states({INFECTED});
-
-    // Setting up parameters
     this->add_param(transmission_prob, "Transmission probability");
     this->add_param(latent_period, "Latent period");
     this->add_param(recovery_rate, "Recovery rate");
 
-    // Preparing the virus -------------------------------------------
-    Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(EXPOSED, REMOVED, REMOVED);
+    NaturalHistory<TSeq> nh(vname);
+    nh.add_stage("Susceptible");
+    nh.add_stage("Exposed", stage::carrier);
+    nh.add_stage("Infected", stage::infectious);
+    nh.add_stage("Removed");
+    nh.infection(SUSCEPTIBLE, EXPOSED, "Transmission probability");
+    nh.after(EXPOSED, INFECTED, Duration<TSeq>::geometric("Latent period"));
+    nh.rate(INFECTED, REMOVED, "Recovery rate").effect(Effect::recovery);
+    this->set_natural_history(std::move(nh));
 
-    virus.set_prob_infecting("Transmission probability");
-    virus.set_incubation("Latent period");
-    virus.set_prob_recovery("Recovery rate");
-
-    // Adding the tool and the virus
-    this->add_virus(virus);
+    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
 
     this->set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
 
@@ -118,9 +88,22 @@ inline ModelSEIR<TSeq> & ModelSEIR<TSeq>::initial_states(
     std::vector< int > /**/
 ) {
 
-    Model<TSeq>::initial_states_fun =
-        create_init_function_seir<TSeq>(proportions_)
-        ;
+    if (proportions_.size() != 2u)
+        throw std::invalid_argument("-proportions_- must have two entries.");
+
+    for (auto & v : proportions_)
+        if ((v < 0.0) || (v > 1.0))
+            throw std::invalid_argument(
+                "-proportions_- must have values between 0 and 1."
+                );
+
+    // Of the initial cases, a share starts Infected; of the others, a share
+    // starts Removed
+    this->nh_seeds[0u].split = {
+        {EXPOSED, 1.0 - proportions_[0u]},
+        {INFECTED, proportions_[0u]}
+    };
+    this->set_initial(REMOVED, proportions_[1u]);
 
     return *this;
 

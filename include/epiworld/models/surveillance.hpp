@@ -25,8 +25,6 @@ public:
      * @brief Vector of days spent in latent and infectious states
      * A row-major matrix
      */
-    std::vector< epiworld_double > days_latent_and_infectious;
-
     /**
      * @name Construct a new ModelSURV object
      * 
@@ -89,21 +87,7 @@ public:
     );
     ///@}
 
-    void reset() override;
-
 };
-
-template<typename TSeq>
-inline void ModelSURV<TSeq>::reset()
-{
-    Model<TSeq>::reset();
-
-    days_latent_and_infectious.clear();
-    days_latent_and_infectious.resize(
-        2u * this->size(),
-        -1.0
-    );
-}
 
 template<typename TSeq>
 inline ModelSURV<TSeq>::ModelSURV(
@@ -126,113 +110,6 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     this->set_population_size(n);
 
-    EPI_NEW_UPDATEFUN_LAMBDA(surveillance_update_susceptible, TSeq) {
-
-        // This computes the prob of getting any neighbor variant
-        epiworld_fast_uint nviruses_tmp = 0u;
-        auto & m_ref = *m;
-        // Every network layer, in the order the layers were added
-        for (auto * net : m->get_network_layers())
-        for (auto * neighbor : net->neighbors_view(static_cast< size_t >(p->get_id())))
-        {
-                    
-            auto & v = neighbor->get_virus();
-
-            if (v == nullptr)
-                continue;
-                
-            /* And it is a function of susceptibility_reduction as well */ 
-            epiworld_double tmp_transmission = 
-                (1.0 - p->get_susceptibility_reduction(v, m_ref)) *
-                v->get_prob_infecting(m) *
-                (1.0 - neighbor->get_transmission_reduction(v, m_ref)) 
-                ; 
-        
-            m->reserve_tmp(nviruses_tmp + 1u);
-            m->array_double_tmp[nviruses_tmp]  = tmp_transmission;
-            m->array_virus_tmp[nviruses_tmp++] = &(*v);
-        }
-
-        // No virus to compute on
-        if (nviruses_tmp == 0)
-            return;
-
-        // Running the roulette
-        int which = roulette(nviruses_tmp, m);
-
-        if (which < 0)
-            return;
-
-        p->set_virus(*m, *m->array_virus_tmp[which]);
-        return;
-
-    };
-
-
-    UpdateFun<TSeq> surveillance_update_exposed = 
-    [](Agent<TSeq> * p, Model<TSeq> * m) -> void
-    {
-
-        // Dynamically getting the ModelSURV
-        ModelSURV<TSeq> * model_surv = model_cast<ModelSURV<TSeq>,TSeq>(m);
-
-        VirusPtr<TSeq> & v = p->get_virus(); 
-        epiworld_double p_die = v->get_prob_death(m) * (1.0 - p->get_death_reduction(v, *m));
-        
-        epiworld_fast_uint days_since_exposed = m->today() - v->get_date();
-        epiworld_fast_uint state = p->get_state();
-
-        // Figuring out latent period
-        auto & dat = model_surv->days_latent_and_infectious;
-        if (dat[p->get_id()] < 0)
-        {
-            epiworld_double latent_days = m->rgamma(
-                EPI_PAR(m, "Latent period"), 1.0
-            );
-
-            dat[p->get_id() * 2u] = latent_days;
-
-            dat[p->get_id() * 2u + 1u] = 
-                m->rgamma(EPI_PAR(m, "Infect period"), 1.0) +
-                latent_days;
-        }
-        
-        // If still latent, nothing happens
-        if (days_since_exposed <= dat[p->get_id() * 2u])
-            return;
-
-        // If past days infected + latent, then bye.
-        if (days_since_exposed >= dat[p->get_id() * 2u + 1u])
-        {
-            p->rm_virus(*m);
-            return;
-        }
-
-        // If it is infected, then it can be asymptomatic or symptomatic
-        if (state == ModelSURV<TSeq>::LATENT)
-        {
-
-            // Will be symptomatic?
-            if (EPI_RUNIF() < EPI_PAR(m, "Prob of symptoms"))
-                p->change_state(*m, ModelSURV<TSeq>::SYMPTOMATIC);
-            else
-                p->change_state(*m, ModelSURV<TSeq>::ASYMPTOMATIC);
-            
-            return;
-
-        }
-        
-        // Otherwise, it can be removed
-        if (EPI_RUNIF() < p_die)
-        {
-            p->change_state(*m, ModelSURV<TSeq>::REMOVED, -1);
-            return;
-        }
-        
-        return;
-
-    };
-
     std::vector< unsigned int > exposed_state = {
         SYMPTOMATIC,
         SYMPTOMATIC_ISOLATED,
@@ -246,6 +123,10 @@ inline ModelSURV<TSeq>::ModelSURV(
         Model<TSeq>* m
         ) -> void
     {
+
+        const auto * nh = m->get_natural_history();
+        const int detected = nh->transition_id("Detected");
+        const int detected_asympt = nh->transition_id("Detected asymptomatic");
 
         // How many will we find
         std::binomial_distribution<> bdist(m->size(), EPI_PAR(m, "Surveilance prob."));
@@ -275,16 +156,15 @@ inline ModelSURV<TSeq>::ModelSURV(
             if (IN(p->get_state(), exposed_state ))
             {
 
+                // The ones already isolated stay so
                 ndetected += 1.0;
                 if (p->get_state() == ModelSURV<TSeq>::ASYMPTOMATIC)
                 {
                     ndetected_asympt += 1.0;
-                    p->change_state(*m, ModelSURV<TSeq>::ASYMPTOMATIC_ISOLATED);
+                    m->fire(detected_asympt, *p);
                 }
-                else 
-                {
-                    p->change_state(*m, ModelSURV<TSeq>::SYMPTOMATIC_ISOLATED);
-                }
+                else
+                    m->fire(detected, *p);
 
             }
 
@@ -305,15 +185,6 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     };
 
-    this->add_state("Susceptible", surveillance_update_susceptible);
-    this->add_state("Latent", surveillance_update_exposed);
-    this->add_state("Symptomatic", surveillance_update_exposed);
-    this->add_state("Symptomatic isolated", surveillance_update_exposed);
-    this->add_state("Asymptomatic", surveillance_update_exposed);
-    this->add_state("Asymptomatic isolated", surveillance_update_exposed);
-    this->add_state("Recovered");
-    this->add_state("Removed");
-
     // General model parameters
     this->add_param(latent_period, "Latent period");
     this->add_param(infect_period, "Infect period");
@@ -325,34 +196,61 @@ inline ModelSURV<TSeq>::ModelSURV(
     this->add_param(prob_death, "Prob. death");
     this->add_param(prob_noreinfect, "Prob. no reinfect");
 
-    // Virus ------------------------------------------------------------------
-    Virus<TSeq> covid(vname, prevalence, false);
-    covid.set_state(LATENT, RECOVERED, REMOVED);
-    covid.set_post_immunity("Prob. no reinfect");
-    covid.set_prob_death("Prob. death");
-
-    VirusFun<TSeq> ptransmitfun = [](
-        Agent<TSeq> * p,
-        Virus<TSeq> &,
-        Model<TSeq> * m
-        ) -> epiworld_double
-    {
-        // No chance of infecting
-        epiworld_fast_uint  s = p->get_state();
-        if (s == ModelSURV<TSeq>::LATENT)
-            return static_cast<epiworld_double>(0.0);
-        else if (s == ModelSURV<TSeq>::SYMPTOMATIC_ISOLATED)
-            return static_cast<epiworld_double>(0.0);
-        else if (s == ModelSURV<TSeq>::ASYMPTOMATIC_ISOLATED)
-            return static_cast<epiworld_double>(0.0);
-
-        // Otherwise
-        return EPI_PAR(m, "Prob of transmission");
+    // The latent and infectious periods are gamma with shape the parameter
+    // and scale 1 (mean the parameter, variance the same)
+    auto gamma_days = [](const char * pname) -> DurationFun<TSeq> {
+        const std::string name(pname);
+        return [name](Agent<TSeq> &, Model<TSeq> & m) -> int {
+            return static_cast< int >(std::lround(m.rgamma(m.par(name), 1.0)));
+        };
     };
 
-    covid.set_prob_infecting_fun(ptransmitfun);
-    
-    this->add_virus(covid);
+    NaturalHistory<TSeq> nh(vname);
+    nh.add_stage("Susceptible");
+    nh.add_stage("Latent", stage::carrier);
+    nh.add_stage("Symptomatic", stage::infectious);
+    nh.add_stage("Symptomatic isolated", stage::carrier);
+    nh.add_stage("Asymptomatic", stage::infectious);
+    nh.add_stage("Asymptomatic isolated", stage::carrier);
+    nh.add_stage("Recovered");
+    nh.add_stage("Removed");
+    nh.set_contact(REMOVED, 0.0);
+
+    nh.infection(SUSCEPTIBLE, LATENT, "Prob of transmission");
+
+    // After the latent period, symptoms or not
+    nh.after(LATENT, SYMPTOMATIC, Duration<TSeq>(gamma_days("Latent period")))
+      .name("Latent -> Symptomatic or Asymptomatic")
+      .to({
+        {SYMPTOMATIC, Value<TSeq>("Prob of symptoms")},
+        {ASYMPTOMATIC, Value<TSeq>::complement("Prob of symptoms")}
+      });
+
+    // The infectious period counts from the end of the latent one; isolation
+    // keeps counting from there
+    const Duration<TSeq> infectious(gamma_days("Infect period"));
+    nh.after(SYMPTOMATIC, RECOVERED, infectious);
+    nh.after(SYMPTOMATIC_ISOLATED, RECOVERED, infectious.since(SYMPTOMATIC));
+    nh.after(ASYMPTOMATIC, RECOVERED, infectious);
+    nh.after(ASYMPTOMATIC_ISOLATED, RECOVERED, infectious.since(ASYMPTOMATIC));
+
+    // Each infectious day, a risk of death (competing with the recovery)
+    nh.rate(
+        {SYMPTOMATIC, SYMPTOMATIC_ISOLATED, ASYMPTOMATIC, ASYMPTOMATIC_ISOLATED},
+        REMOVED,
+        "Prob. death"
+    ).name("Death").effect(Effect::death);
+
+    // Surveillance finds infected agents
+    nh.external({LATENT, SYMPTOMATIC}, SYMPTOMATIC_ISOLATED, "Detected");
+    nh.external(ASYMPTOMATIC, ASYMPTOMATIC_ISOLATED, "Detected asymptomatic");
+
+    this->set_natural_history(std::move(nh));
+
+    // Virus ------------------------------------------------------------------
+    Virus<TSeq> covid(vname);
+    covid.set_post_immunity("Prob. no reinfect");
+    this->add_virus(covid, Seed::count(prevalence));
 
     this->set_user_data({"nsampled", "ndetected", "ndetected_asympt", "nasymptomatic"});
     this->add_globalevent(surveillance_program, "Surveilance program", -1);

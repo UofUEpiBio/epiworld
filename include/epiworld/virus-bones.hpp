@@ -59,6 +59,9 @@ private:
 
     // Information about how distribution works
     VirusToAgentFun<TSeq> dist = nullptr;
+
+    /// Parameters this variant reads in place of others (see `use_param()`)
+    std::vector< std::pair< ParamRef, ParamRef > > param_redirects;
         
 public:
 
@@ -215,6 +218,17 @@ public:
     void distribute(Model<TSeq> * model);
     void set_distribution(VirusToAgentFun<TSeq> fun);
     ///@}
+
+    /**
+     * @brief This variant reads the model parameter `replacement` wherever a
+     * transition of the natural history reads `param`.
+     * @details Every parameter lives in the model; a variant changes a value
+     * by pointing to another parameter (e.g., `"Recovery rate (Delta)"`).
+     */
+    void use_param(std::string param, std::string replacement);
+
+    /// The parameter this variant reads in place of `id`.
+    ParamId param_redirect(ParamId id, const Model<TSeq> & model) const;
 
     virtual ~Virus() = default;
     virtual std::unique_ptr<Virus<TSeq>> clone_ptr() const;

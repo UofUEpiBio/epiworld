@@ -143,10 +143,10 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
 
     REQUIRE_FALSE(
         (
-            moreless(h_0[0u], 4682) || 
-            moreless(h_0[1u], 100) || 
-            moreless(h_0[2u], 4723) || 
-            moreless(h_0[3u], 495))
+            (h_0[0u] != 4455) ||
+            (h_0[1u] != 100) ||
+            (h_0[2u] != 4950) ||
+            (h_0[3u] != 495))
         );
 
     // Trying SEIRD -------------------------------------------------------------

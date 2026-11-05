@@ -23,6 +23,10 @@ class ModelSISD : public Model<TSeq>
 
 public:
 
+    static const int SUSCEPTIBLE = 0;
+    static const int INFECTED    = 1;
+    static const int DECEASED    = 2;
+
     ModelSISD() = delete;
 
     ModelSISD(
@@ -51,25 +55,21 @@ inline ModelSISD<TSeq>::ModelSISD(
 
     this->set_name("Susceptible-Infected-Susceptible-Deceased (SISD)");
 
-    // Adding statuses
-    this->add_state("Susceptible", default_update_susceptible<TSeq>);
-    this->add_state("Infected", default_update_exposed<TSeq>);
-    this->add_state("Deceased");
-
-    // Setting up parameters
     this->add_param(transmission_prob, "Transmission probability");
     this->add_param(recovery_rate, "Recovery rate");
     this->add_param(death_rate, "Death rate");
 
-    // Preparing the virus -------------------------------------------
-    Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(1,0,2);
-    
-    virus.set_prob_infecting("Transmission probability");
-    virus.set_prob_recovery("Recovery rate");
-    virus.set_prob_death(0.01);
-    
-    this->add_virus(virus);
+    NaturalHistory<TSeq> nh(vname);
+    nh.add_stage("Susceptible");
+    nh.add_stage("Infected", stage::infectious);
+    nh.add_stage("Deceased");
+    nh.set_contact(DECEASED, 0.0);
+    nh.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
+    nh.rate(INFECTED, SUSCEPTIBLE, "Recovery rate").effect(Effect::recovery);
+    nh.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
+    this->set_natural_history(std::move(nh));
+
+    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
 
 }
 

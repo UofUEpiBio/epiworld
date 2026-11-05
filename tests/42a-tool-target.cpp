@@ -11,9 +11,6 @@ EPIWORLD_TEST_CASE("Tool targeting a virus", "[tool][target]") {
     model.verbose_off();
 
     Virus<> virus_b("B", 0.01, true);
-    virus_b.set_state(1, 2, 2);
-    virus_b.set_prob_infecting("Transmission probability");
-    virus_b.set_prob_recovery("Recovery rate");
 
     // Targeting requires the virus to be in the model
     Tool<> tool("Vaccine against A", 1.0, true);

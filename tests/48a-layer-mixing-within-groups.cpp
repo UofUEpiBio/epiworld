@@ -111,19 +111,30 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     for (bool queue : {true, false})
     {
 
-        epimodels::ModelSIR<> tiny("flu", 3, 0.0, 1.0, 0.0);
+        // An SIR whose infected agents never recover; the carrier's daily
+        // recovery rate is where it moves (an update made mid-step)
+        Model<> tiny(3);
+        NaturalHistory<> nh("flu");
+        nh.add_stage("Susceptible");
+        nh.add_stage("Infected", stage::infectious);
+        nh.add_stage("Recovered");
+        nh.infection(0, 1, 1.0);
+        nh.rate(1, 2, ValueFun<>([](Agent<> & a, Model<> & m) -> double {
+            if (a.get_id() == 0)
+                m.get_layer_as< layer::Mixing<> >("hh").set_group(0, 1);
+            return 0.0;
+        }));
+        tiny.set_natural_history(std::move(nh));
         tiny.verbose_off();
-        tiny.get_virus(0).set_distribution(distribute_virus_to_set<>({0}));
+
+        Virus<> flu("flu");
+        flu.set_distribution(distribute_virus_to_set<>({0}));
+        tiny.add_virus(flu);
 
         auto hh = layer::mixing<>("hh");
         hh->set_groups({0, 0, 1}, 2);
         hh->set_contact_prob(1.0);
         tiny.add_layer(hh);
-
-        tiny.set_state_function(1, [](Agent<> * a, Model<> * m) -> void {
-            if (a->get_id() == 0)
-                m->get_layer_as< layer::Mixing<> >("hh").set_group(0, 1);
-        });
 
         if (!queue)
             tiny.queuing_off();

@@ -9,44 +9,44 @@ using namespace epiworld;
 // 1. Queuing stays a pure optimisation in every mode (pull, push, auto): on
 //    and off give identical daily histories and transmission lists.
 // 2. The built-in pull scan is the same draw as the plain scan of the
-//    neighbors: a susceptible state that walks the neighbors' agents itself
-//    (`plain_scan_update` below) gives exactly the run of the built-in state
-//    in "pull" mode, so making that scan cheaper did not touch the random
-//    stream.
+//    neighbors: an infection whose sampler walks the neighbors' agents itself
+//    (`plain_scan` below) gives exactly the run of the built-in one in "pull"
+//    mode, so making that scan cheaper did not touch the random stream.
 // 3. The neighbor view used by that scan refuses indices past its end.
 //
 // (The automatic choice itself is in 34e.)
 
 namespace {
 
-// The reference pull: walks every neighbor's agent in the network layer (no
-// carrier flags), skips the latent ones (state 1) and the ones without a
-// virus, and draws at most one virus.
-void plain_scan_update(Agent<> * p, Model<> * m)
+// The reference pull, as a custom infection sampler: walks every neighbor's
+// agent in the network layer (no carrier flags), skips the latent ones (stage
+// 1) and the ones without a virus, and draws at most one virus.
+Virus<> * plain_scan(Agent<> & p, Model<> & m)
 {
 
+    static const Value<> p_contact("Transmission probability");
+
     size_t n = 0u;
-    for (auto * neighbor : tests_net(*m).neighbors_view(p->get_id()))
+    for (auto * neighbor : tests_net(m).neighbors_view(p.get_id()))
     {
 
         auto & v = neighbor->get_virus();
         if ((neighbor->get_state() == 1u) || (v == nullptr))
             continue;
 
-        m->array_double_tmp[n] =
-            (1.0 - p->get_susceptibility_reduction(v, *m)) *
-            v->get_prob_infecting(m) *
-            (1.0 - neighbor->get_transmission_reduction(v, *m));
-        m->array_virus_tmp[n++] = &(*v);
+        m.array_double_tmp[n] =
+            (1.0 - p.get_susceptibility_reduction(v, m)) *
+            p_contact.eval(p, v.get(), m) *
+            (1.0 - neighbor->get_transmission_reduction(v, m));
+        m.array_virus_tmp[n++] = &(*v);
 
     }
 
     if (n == 0u)
-        return;
+        return nullptr;
 
-    int which = roulette(n, m);
-    if (which >= 0)
-        p->set_virus(*m, *m->array_virus_tmp[which]);
+    const int which = roulette(n, &m);
+    return (which >= 0) ? m.array_virus_tmp[which] : nullptr;
 
 }
 
@@ -58,22 +58,34 @@ struct Run {
     }
 };
 
-// A SEIR whose latent (exposed) agents do not transmit. With `plain_scan`, the
-// susceptible state is the sampling function that walks the neighbors
-// directly instead of the built-in one.
+// A SEIR whose latent (exposed) agents do not transmit. With `plain_scan_on`,
+// the infection is drawn by the sampler that walks the neighbors directly
+// instead of the built-in one.
 Run simulate(
     const std::string & mode,
     bool queuing,
-    bool plain_scan
+    bool plain_scan_on
 )
 {
 
-    epimodels::ModelSEIR<> model("virus", 3000u, 20.0 / 3000.0, 0.1, 3.0, 1.0 / 7.0);
+    // ModelSEIR, declared here so the infection can take the plain sampler
+    Model<> model(3000u);
+    model.add_param(0.1, "Transmission probability");
+    model.add_param(3.0, "Latent period");
+    model.add_param(1.0 / 7.0, "Recovery rate");
 
-    if (plain_scan)
-        model.set_state_function(0u, plain_scan_update);
-    else
-        model.set_state_function(0u, default_update_susceptible<>);
+    NaturalHistory<> nh("virus");
+    nh.add_stage("Susceptible");
+    nh.add_stage("Exposed", stage::carrier);
+    nh.add_stage("Infected", stage::infectious);
+    nh.add_stage("Removed");
+    auto infection = nh.infection(0, 1, "Transmission probability");
+    if (plain_scan_on)
+        infection.sampler(plain_scan);
+    nh.after(1, 2, Duration<>::geometric("Latent period"));
+    nh.rate(2, 3, "Recovery rate").effect(Effect::recovery);
+    model.set_natural_history(std::move(nh));
+    model.add_virus(Virus<>("virus"), Seed::proportion(20.0 / 3000.0));
 
     model.seed(31);
     tests_heterogeneous_network(model, 3000u);

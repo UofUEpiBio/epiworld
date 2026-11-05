@@ -7,13 +7,6 @@ EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target
 
     Virus<> virus_a("A", 0.01, true);
     Virus<> virus_b("B", 0.01, true);
-    for (auto * v : {&virus_a, &virus_b})
-    {
-        v->set_state(1, 2, 2);
-        v->set_prob_infecting("Transmission probability");
-        v->set_prob_recovery("Recovery rate");
-    }
-
     virus_a.set_sequence(100);
     virus_b.set_sequence(200);
 

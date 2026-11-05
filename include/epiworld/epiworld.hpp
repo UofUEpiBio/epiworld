@@ -126,6 +126,7 @@ namespace epiworld {
     #include "agent-bones.hpp"
     #include "agent-meat.hpp"
     #include "model-meat-transmission.hpp"
+    #include "naturalhistory-meat.hpp"
     #include "layer-mixing.hpp"
     #include "layer-network.hpp"
 

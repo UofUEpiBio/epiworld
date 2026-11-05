@@ -120,7 +120,7 @@ inline size_t Model<TSeq>::add_exposures(
 
         epiworld_double p =
             (1.0 - agent->get_susceptibility_reduction(v, *this)) *
-            v->get_prob_infecting(this) *
+            (nh ? nh_infection_prob(*agent, *v) : v->get_prob_infecting(this)) *
             (1.0 - contact.get_transmission_reduction(v, *this))
             ;
 
@@ -233,9 +233,21 @@ inline bool Model<TSeq>::transmission_prepare()
 
     bool any = false;
 
+    // A natural history says which stages are pushed to
+    if (nh)
+    {
+        for (size_t t = 0u; t < ns; ++t)
+            if (nh->stages[t].pushable)
+            {
+                push_pushable[t] = 1;
+                any = true;
+            }
+    }
+
     // Recognizing the samplers needs std::function::target(), i.e., RTTI.
     // Without it, every state keeps pulling.
     #if defined(__cpp_rtti) || defined(__GXX_RTTI) || defined(_CPPRTTI)
+    if (!nh)
     for (size_t t = 0u; t < ns; ++t)
     {
 
@@ -449,7 +461,7 @@ inline void Model<TSeq>::transmission_push_impl()
                     // Exactly the expression the pull uses, in the same order.
                     epiworld_double p =
                         (1.0 - i.get_susceptibility_reduction(v, *this)) *
-                        v->get_prob_infecting(this) *
+                        (nh ? nh_infection_prob(i, *v) : v->get_prob_infecting(this)) *
                         (1.0 - j.get_transmission_reduction(v, *this))
                         ;
 
@@ -542,7 +554,10 @@ inline void Model<TSeq>::transmission_push_impl()
         #endif
 
         sampled_layer = target.layer;
-        i.set_virus(*this, *target.candidate);
+        if (nh)
+            nh_propose(nh->stages[i.state].infection, i, target.candidate);
+        else
+            i.set_virus(*this, *target.candidate);
 
     }
 

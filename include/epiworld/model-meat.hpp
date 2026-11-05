@@ -123,6 +123,7 @@ inline void Model<TSeq>::_add_event(
                 agent_, virus_, tool_, new_state_, queue_, action_,
                 layer_
             ));
+        events.back().transition = nh_pending;
 
     }
     else
@@ -137,6 +138,7 @@ inline void Model<TSeq>::_add_event(
         A.queue      = std::move(queue_);
         A.action     = std::move(action_);
         A.layer      = layer_;
+        A.transition = nh_pending;
 
     }
 
@@ -353,6 +355,12 @@ inline void Model<TSeq>::events_run()
 
         Event<TSeq> & a = events[nevents_tmp++];
 
+        // A declared transition applies only if the agent is still in one of
+        // its sources (it may have moved earlier in the same pass)
+        const int transition = a.transition;
+        if (nh && (transition >= 0) && !nh->is_source(transition, a.agent->state))
+            continue;
+
         // Everything read from the event after the handler runs is copied
         // first: a handler can schedule more events (e.g., a virus's
         // post-recovery hook adding a tool), which may grow `events` and leave
@@ -422,6 +430,25 @@ inline void Model<TSeq>::events_run()
 
         if (state_index_ready)
             state_index_update(p, state_old, had_virus);
+
+        // The natural history's bookkeeping: entry days, the stage's duration,
+        // the transition counts, and the queue (derived from the stages)
+        if (nh)
+        {
+
+            if (
+                (p->state != state_old) ||
+                (transition == NH_SEED) ||
+                (transition == NH_INITIAL)
+            )
+                nh_enter(*p, state_old, transition);
+
+            if (use_queuing && (p->state != state_old))
+                nh_queue_move(*p, state_old);
+
+            continue;
+
+        }
 
 
         #ifdef EPI_DEBUG
@@ -612,7 +639,14 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     state_excluded(model.state_excluded),
     transmission_mode(model.transmission_mode),
     transmission_mode_last(model.transmission_mode_last),
-    transmission_kappa(model.transmission_kappa)
+    transmission_kappa(model.transmission_kappa),
+    nh(model.nh),
+    nh_until(model.nh_until),
+    nh_entered(model.nh_entered),
+    nh_episode(model.nh_episode),
+    nh_queue(model.nh_queue),
+    nh_seeds(model.nh_seeds),
+    nh_initial(model.nh_initial)
 {
 
     // Pointing to the right place. This needs
@@ -713,7 +747,14 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     state_excluded(std::move(model.state_excluded)),
     transmission_mode(model.transmission_mode),
     transmission_mode_last(model.transmission_mode_last),
-    transmission_kappa(model.transmission_kappa)
+    transmission_kappa(model.transmission_kappa),
+    nh(std::move(model.nh)),
+    nh_until(std::move(model.nh_until)),
+    nh_entered(std::move(model.nh_entered)),
+    nh_episode(std::move(model.nh_episode)),
+    nh_queue(std::move(model.nh_queue)),
+    nh_seeds(std::move(model.nh_seeds)),
+    nh_initial(std::move(model.nh_initial))
 {
 
     db.model = this;
@@ -806,6 +847,14 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     transmission_mode = m.transmission_mode;
     transmission_mode_last = m.transmission_mode_last;
     transmission_kappa = m.transmission_kappa;
+
+    nh = m.nh;
+    nh_until = m.nh_until;
+    nh_entered = m.nh_entered;
+    nh_episode = m.nh_episode;
+    nh_queue = m.nh_queue;
+    nh_seeds = m.nh_seeds;
+    nh_initial = m.nh_initial;
 
     agents_data = m.agents_data;
     agents_data_ncols = m.agents_data_ncols;
@@ -973,7 +1022,23 @@ inline void Model<TSeq>::add_virus(
     epiworld_fast_int init_, post_, rm_;
     v.get_state(&init_, &post_, &rm_);
 
-    if (init_ == -99)
+    // With a natural history, the stages say where a virus takes the agent,
+    // and the transitions name the parameters it reads
+    if (nh)
+    {
+        if (
+            (init_ != -99) || (post_ != -99) || (rm_ != -99) ||
+            v.probability_of_infecting || v.probability_of_recovery ||
+            v.probability_of_death || v.incubation
+        )
+            throw std::logic_error(
+                "The virus \"" + v.get_name() + "\" sets states or "
+                "probabilities, but the model has a natural history: its "
+                "transitions read model parameters (a variant points to its "
+                "own with Virus::use_param())."
+            );
+    }
+    else if (init_ == -99)
         throw std::logic_error(
             "The virus \"" + v.get_name() + "\" has no -init- state."
             );
@@ -1701,6 +1766,10 @@ inline void Model<TSeq>::reset() {
     if (use_queuing)
         queue.reset();
 
+    // The natural history's per-agent records (and the first stage's queue)
+    if (nh)
+        nh_reset();
+
     // The batch of sampled contacts
     if (post_sampling_on)
     {
@@ -1713,6 +1782,9 @@ inline void Model<TSeq>::reset() {
     dist_tools();
 
     // Distributing initial state, if specified
+    if (nh)
+        nh_initial_place();
+
     initial_states_fun(this);
 
     // Global events set themselves up for the run. This happens last, with the
@@ -1754,6 +1826,12 @@ inline epiworld_fast_int Model<TSeq>::add_state(
 )
 {
 
+    if (nh)
+        throw std::logic_error(
+            "The model has a natural history: its stages are its states, and "
+            "no other state can be added."
+        );
+
     // Checking it doesn't match
     for (auto & s : states_labels)
         if (s == lab)
@@ -1774,6 +1852,12 @@ inline Model<TSeq> & Model<TSeq>::set_state_function(
     UpdateFun<TSeq> fun
 )
 {
+
+    if (nh)
+        throw std::logic_error(
+            "The model has a natural history: its stages are updated by their "
+            "declared transitions."
+        );
 
     if (state >= nstates)
         throw std::range_error(

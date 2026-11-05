@@ -17,6 +17,7 @@
 #include "globalevent-bones.hpp"
 #include "contacttracing-bones.hpp"
 #include "postsampling-bones.hpp"
+#include "naturalhistory-bones.hpp"
 
 template<typename TSeq>
 class AgentsSample;
@@ -371,6 +372,35 @@ protected:
     ///@}
 
     /**
+     * @name Natural history
+     *
+     * @details See `set_natural_history()` and `naturalhistory-bones.hpp`. The
+     * natural history is shared by the model's copies (it does not change once
+     * set); what it stores per agent is the model's, and is reset with it.
+     */
+    ///@{
+    std::shared_ptr< const NaturalHistory<TSeq> > nh = nullptr;
+    std::vector< int > nh_until;    ///< [agent] Day the stage's duration ends
+    std::vector< int > nh_entered;  ///< [agent * stage] Day entered, this infection (-1: not)
+    std::vector< int > nh_episode;  ///< [agent] Infections so far
+    std::vector< char > nh_queue;   ///< [stage] Queue mode: 0 none, 1 self, 2 everyone
+    std::vector< Seed > nh_seeds;   ///< [virus] How it is seeded (see add_virus())
+    std::vector< std::pair< int, epiworld_double > > nh_initial; ///< See set_initial()
+    int nh_pending = -1;            ///< Transition of the next event (see _add_event())
+
+    static constexpr int NH_SEED = -2;    ///< Event: a seeded infection
+    static constexpr int NH_INITIAL = -3; ///< Event: an initial placement
+
+    void nh_reset();
+    void nh_step(Agent<TSeq> & p);
+    void nh_propose(int transition, Agent<TSeq> & p, Virus<TSeq> * virus = nullptr);
+    void nh_enter(Agent<TSeq> & p, unsigned int state_old, int transition);
+    void nh_queue_move(Agent<TSeq> & p, unsigned int state_old);
+    void nh_initial_place();
+    epiworld_double nh_infection_prob(Agent<TSeq> & target, const Virus<TSeq> & v);
+    ///@}
+
+    /**
      * @brief Variables used to keep track of the events
      * to be made regarding viruses.
      */
@@ -580,6 +610,13 @@ public:
      */
     ///@{
     void add_virus(Virus<TSeq> & v);
+
+    /**
+     * @brief Adds a virus, seeded as `seed` says (see `Seed`).
+     * @details For a model with a natural history: the seeded agents are
+     * drawn among those whose stage has an infection transition.
+     */
+    void add_virus(Virus<TSeq> v, Seed seed);
     void add_tool(Tool<TSeq> & t);
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
@@ -729,6 +766,54 @@ public:
     size_t get_n_states() const;
     const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
     void print_state_codes() const;
+    ///@}
+
+    /**
+     * @name Natural history
+     * @brief The disease's stages and the declared transitions between them.
+     */
+    ///@{
+
+    /**
+     * @brief Sets the model's natural history (see `NaturalHistory`).
+     * @details Its stages become the model's states, in order, and agents
+     * start in the first one. The engine derives who transmits (the
+     * infectious stages), who is out of the layers (contact weight 0), who is
+     * pushed to, and the queue, from the declarations. Numbers in the
+     * transitions become model parameters. A model has one natural history,
+     * set once, before any state is added.
+     */
+    void set_natural_history(NaturalHistory<TSeq> natural_history);
+
+    /// The natural history (`nullptr` if the model has none).
+    const NaturalHistory<TSeq> * get_natural_history() const { return nh.get(); }
+
+    /**
+     * @brief Fires a declared transition on an agent, applied at the end of
+     * the step (or of the global event).
+     * @details Nothing happens if, when it is applied, the agent is not in one
+     * of the transition's sources. An infection is not fired: seed instead.
+     * @return Whether the agent was in a source when fired.
+     */
+    bool fire(int transition, Agent<TSeq> & agent);
+
+    /**
+     * @brief Places a share of the agents without the virus in a stage at
+     * the start of each run (e.g., 10% Recovered).
+     * @details Shares are of the agents left without the virus after seeding,
+     * and are placed in the order they are set (setting a stage again
+     * replaces its share).
+     */
+    void set_initial(int stage, epiworld_double share);
+
+    /// Day agent `id` entered `stage` in its current (or last) infection (-1: not).
+    int get_stage_entered(size_t id, int stage) const;
+
+    /// Day agent `id`'s stage duration ends (`INT_MAX`: none).
+    int get_stage_until(size_t id) const;
+
+    /// Infections agent `id` has had in the current run.
+    int get_episode(size_t id) const;
     ///@}
 
     /**

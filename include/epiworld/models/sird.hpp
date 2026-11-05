@@ -69,25 +69,22 @@ inline ModelSIRD<TSeq>::ModelSIRD(
 
     this->set_population_size(n);
 
-    // Adding statuses
-    this->add_state("Susceptible", default_update_susceptible<TSeq>);
-    this->add_state("Infected", default_update_exposed<TSeq>);
-    this->add_state("Recovered");
-    this->add_state("Deceased");
-
-    // Setting up parameters
     this->add_param(recovery_rate, "Recovery rate");
-    this->add_param(transmission_prob, "Transmission probability"),
+    this->add_param(transmission_prob, "Transmission probability");
     this->add_param(death_rate, "Death rate");
 
-    // Preparing the virus -------------------------------------------
-    Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(1,2,3);
-    virus.set_prob_recovery("Recovery rate");
-    virus.set_prob_infecting("Transmission probability");
-    virus.set_prob_death("Death rate");
-    
-    this->add_virus(virus);
+    NaturalHistory<TSeq> nh(vname);
+    nh.add_stage("Susceptible");
+    nh.add_stage("Infected", stage::infectious);
+    nh.add_stage("Recovered");
+    nh.add_stage("Deceased");
+    nh.set_contact(DECEASED, 0.0);
+    nh.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
+    nh.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
+    nh.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
+    this->set_natural_history(std::move(nh));
+
+    this->add_virus(Virus<TSeq>(vname), Seed::proportion(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered-Deceased (SIRD)");
 
@@ -100,9 +97,18 @@ inline ModelSIRD<TSeq> & ModelSIRD<TSeq>::initial_states(
     std::vector< int > /**/ 
 ) {
 
-    Model<TSeq>::initial_states_fun = 
-        create_init_function_sird<TSeq>(proportions_)
-        ;
+    if (proportions_.size() != 2u)
+        throw std::invalid_argument(
+            "The vector of proportions must have two elements."
+            );
+
+    if ((proportions_[0u] + proportions_[1u]) >= 1.0)
+        throw std::invalid_argument(
+            "The proportions must sum up to less than 1."
+            );
+
+    this->set_initial(RECOVERED, proportions_[0u]);
+    this->set_initial(DECEASED, proportions_[1u]);
 
     return *this;
 
