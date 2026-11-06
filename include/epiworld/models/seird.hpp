@@ -126,6 +126,12 @@ public:
     std::vector< int > queue_ = {}
   ) override;
 
+    /// States of any virus in this model (`Virus::set_state()`): the
+    /// model's own, and those a user adds (`InfectionStates::apply()`)
+    static constexpr InfectionStates infection_states{EXPOSED, REMOVED, DECEASED};
+
+    /// This model's entry in a `ModelRegistry`: arguments, states, builder
+    static ModelInfo<TSeq> model_info();
 };
 
 
@@ -162,7 +168,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   
   // Preparing the virus -------------------------------------------
   Virus<TSeq> virus(vname, prevalence, true);
-  virus.set_state(ModelSEIRD<TSeq>::EXPOSED, ModelSEIRD<TSeq>::REMOVED, ModelSEIRD<TSeq>::DECEASED);
+  infection_states.apply(virus);
   
   virus.set_prob_infecting("Transmission probability");
   virus.set_incubation("Latent period");
@@ -190,5 +196,36 @@ inline ModelSEIRD<TSeq> & ModelSEIRD<TSeq>::initial_states(
 
 }
 
+
+template<typename TSeq>
+inline ModelInfo<TSeq> ModelSEIRD<TSeq>::model_info()
+{
+
+    using uint_t = epiworld_fast_uint;
+
+    return {"SEIRD", "Susceptible-Exposed-Infected-Recovered-Deceased",
+        "SEIR, where infected agents may also die.",
+        "Disease",
+        {
+            ParamInfo::agents(10000),
+            ParamInfo::prevalence(0.01),
+            ParamInfo::probability("transmission_prob", "Transmission probability",
+                0.05, "Probability that a contact with an infected agent infects."),
+            ParamInfo::duration("latent_period", "Latent period", 7.0,
+                "Mean days in the exposed state (infected, not yet infectious)."),
+            ParamInfo::probability("recovery_rate", "Recovery rate", 0.14,
+                "Daily probability that an infected agent recovers."),
+            ParamInfo::probability("death_rate", "Death rate", 0.01,
+                "Daily probability that an infected agent dies.")
+        },
+        infection_states,
+        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
+            return std::make_unique< ModelSEIRD<TSeq> >(
+                a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
+                a("transmission_prob"), a("latent_period"), a("recovery_rate"),
+                a("death_rate")
+            );
+        }};
+}
 
 #endif

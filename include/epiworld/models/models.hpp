@@ -118,6 +118,27 @@ namespace epimodels {
     #include "sirlogit.hpp"
     #include "diffnet.hpp"
     #include "seirquarantine.hpp"
+
+    /**
+     * @brief Adds the core models to a model registry.
+     * @ingroup epi_models
+     *
+     * @details Each model's entry is its `model_info()`. `ModelSIRLogit` and
+     * `ModelDiffNet` take data arrays and are built directly.
+     */
+    template<typename TSeq = EPI_DEFAULT_TSEQ>
+    inline ModelRegistry<TSeq> & register_models(ModelRegistry<TSeq> & registry)
+    {
+        return registry
+            .add(ModelSIS<TSeq>::model_info())
+            .add(ModelSIR<TSeq>::model_info())
+            .add(ModelSEIR<TSeq>::model_info())
+            .add(ModelSISD<TSeq>::model_info())
+            .add(ModelSIRD<TSeq>::model_info())
+            .add(ModelSEIRD<TSeq>::model_info())
+            .add(ModelSEIRQuarantine<TSeq>::model_info())
+            .add(ModelSURV<TSeq>::model_info());
+    }
 }
 
 #endif

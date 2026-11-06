@@ -154,6 +154,12 @@ public:
     std::unique_ptr< Model<TSeq> > clone_ptr() override;
     void next() override;
 
+    /// States of any virus in this model (`Virus::set_state()`): the
+    /// model's own, and those a user adds (`InfectionStates::apply()`)
+    static constexpr InfectionStates infection_states{LATENT, RECOVERED, -99};
+
+    /// This model's entry in a `ModelRegistry`: arguments, states, builder
+    static ModelInfo<TSeq> model_info();
 };
 
 template<typename TSeq>
@@ -692,7 +698,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     // Designing the disease
     Virus<> measles("Measles");
-    measles.set_state(LATENT, RECOVERED);
+    infection_states.apply(measles);
     measles.set_prob_infecting("Transmission rate");
     measles.set_prob_recovery("Rash period");
     measles.set_incubation("Incubation period");
@@ -739,4 +745,84 @@ inline void ModelMeaslesSchool<TSeq>::next() {
 }
 
 #undef LOCAL_UPDATE_FUN
+template<typename TSeq>
+inline ModelInfo<TSeq> ModelMeaslesSchool<TSeq>::model_info()
+{
+
+    using uint_t = epiworld_fast_uint;
+    using int_t  = epiworld_fast_int;
+
+    // One initial case in a school of 500
+    return {"MeaslesSchool", "Measles in a school",
+        "Measles in a fully mixed school, with quarantine of unvaccinated "
+        "contacts and isolation of detected cases.",
+        "",
+        {
+            ParamInfo::agents(500),
+            ParamInfo::count("prevalence", "", 1.0,
+                "Number of agents infected (latent) at the start."),
+            {"contact_rate", "Contact rate", 15.0 / 0.9 / 4.0, 0.0,
+                std::numeric_limits< double >::infinity(), false,
+                "Average number of contacts per agent per day."},
+            ParamInfo::probability("transmission_rate", "Transmission rate", 0.9,
+                "Probability of transmission per contact with an infectious "
+                "agent."),
+            ParamInfo::probability("vax_efficacy", "Vax efficacy", 0.97,
+                "Probability that the vaccine prevents infection."),
+            ParamInfo::probability("vax_reduction_recovery_rate",
+                "(IGNORED) Vax improved recovery", 0.5, "Not used by the model."),
+            ParamInfo::duration("incubation_period", "Incubation period", 12.0,
+                "Mean days from exposure to the prodromal stage."),
+            ParamInfo::duration("prodromal_period", "Prodromal period", 4.0,
+                "Mean days infectious before the rash."),
+            ParamInfo::duration("rash_period", "Rash period", 3.0,
+                "Mean days with rash."),
+            ParamInfo::duration("days_undetected", "Days undetected", 2.0,
+                "Average number of days before a case with rash is detected."),
+            ParamInfo::probability("hospitalization_rate", "Hospitalization rate",
+                0.035, "Daily probability that an agent with rash is "
+                "hospitalized (0.035: about 10% of cases)."),
+            ParamInfo::duration("hospitalization_period",
+                "Hospitalization period", 7.0,
+                "Average number of days in the hospital."),
+            ParamInfo::probability("prop_vaccinated", "Vaccination rate",
+                1.0 - 1.0 / 15.0, "Proportion of agents vaccinated."),
+            ParamInfo::period("quarantine_period", "Quarantine period", 21.0,
+                "Days in quarantine for the contacts of a detected case "
+                "(negative: no quarantine)."),
+            ParamInfo::probability("quarantine_willingness",
+                "Quarantine willingness", 1.0,
+                "Probability that a contact complies with quarantine."),
+            ParamInfo::period("isolation_period", "Isolation period", 4.0,
+                "Days in isolation for a detected case (negative: no "
+                "isolation)."),
+            ParamInfo::duration("incubation_period_sd", "Incubation period sd",
+                2.5, "Standard deviation of the (lognormal) incubation period, "
+                "in days; 0 gives a fixed period."),
+            ParamInfo::duration("prodromal_period_sd", "Prodromal period sd",
+                1.7, "Standard deviation of the (lognormal) prodromal period, "
+                "in days; 0 gives a fixed period."),
+            ParamInfo::duration("rash_period_sd", "Rash period sd", 1.0,
+                "Standard deviation of the (lognormal) rash period, in days; 0 "
+                "gives a fixed period.")
+        },
+        infection_states,
+        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
+            return std::make_unique< ModelMeaslesSchool<TSeq> >(
+                static_cast< uint_t >(a("n")),
+                static_cast< uint_t >(a("prevalence")), a("contact_rate"),
+                a("transmission_rate"), a("vax_efficacy"),
+                a("vax_reduction_recovery_rate"), a("incubation_period"),
+                a("prodromal_period"), a("rash_period"), a("days_undetected"),
+                a("hospitalization_rate"), a("hospitalization_period"),
+                a("prop_vaccinated"),
+                static_cast< int_t >(a("quarantine_period")),
+                a("quarantine_willingness"),
+                static_cast< int_t >(a("isolation_period")),
+                a("incubation_period_sd"), a("prodromal_period_sd"),
+                a("rash_period_sd")
+            );
+        }};
+}
+
 #endif

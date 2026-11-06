@@ -34,6 +34,12 @@ public:
         epiworld_double death_rate
     );
 
+    /// States of any virus in this model (`Virus::set_state()`): the
+    /// model's own, and those a user adds (`InfectionStates::apply()`)
+    static constexpr InfectionStates infection_states{1, 0, 2};
+
+    /// This model's entry in a `ModelRegistry`: arguments, states, builder
+    static ModelInfo<TSeq> model_info();
 };
 
 template<typename TSeq>
@@ -63,7 +69,7 @@ inline ModelSISD<TSeq>::ModelSISD(
 
     // Preparing the virus -------------------------------------------
     Virus<TSeq> virus(vname, prevalence, true);
-    virus.set_state(1,0,2);
+    infection_states.apply(virus);
     
     virus.set_prob_infecting("Transmission probability");
     virus.set_prob_recovery("Recovery rate");
@@ -71,6 +77,34 @@ inline ModelSISD<TSeq>::ModelSISD(
     
     this->add_virus(virus);
 
+}
+
+template<typename TSeq>
+inline ModelInfo<TSeq> ModelSISD<TSeq>::model_info()
+{
+
+    using uint_t = epiworld_fast_uint;
+
+    return {"SISD", "Susceptible-Infected-Susceptible-Deceased",
+        "SIS, where infected agents may also die.",
+        "Disease",
+        {
+            ParamInfo::agents(10000),
+            ParamInfo::prevalence(0.01),
+            ParamInfo::probability("transmission_prob", "Transmission probability",
+                0.05, "Probability that a contact with an infected agent infects."),
+            ParamInfo::probability("recovery_rate", "Recovery rate", 0.14,
+                "Daily probability that an infected agent recovers."),
+            ParamInfo::probability("death_rate", "Death rate", 0.01,
+                "Daily probability that an infected agent dies.")
+        },
+        infection_states,
+        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
+            return std::make_unique< ModelSISD<TSeq> >(
+                a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
+                a("transmission_prob"), a("recovery_rate"), a("death_rate")
+            );
+        }};
 }
 
 #endif
