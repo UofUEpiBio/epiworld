@@ -87,6 +87,10 @@ public:
     );
     ///@}
 
+
+    /// This model's entry in a `ModelRegistry`: arguments and builder
+    static ModelInfo<TSeq> model_info();
+
 };
 
 template<typename TSeq>
@@ -262,6 +266,58 @@ inline ModelSURV<TSeq>::ModelSURV(
     this->set_name("Surveillance");
 
 
+}
+
+template<typename TSeq>
+inline ModelInfo<TSeq> ModelSURV<TSeq>::model_info()
+{
+
+    using uint_t = epiworld_fast_uint;
+
+    return {"SURV", "Surveillance (SEIR with symptoms and vaccination)",
+        "Latent agents become symptomatic or asymptomatic; surveillance "
+        "detects and isolates cases, and a share of agents is vaccinated.",
+        "Disease",
+        {
+            ParamInfo::agents(10000),
+            ParamInfo::count("prevalence", "", 50.0,
+                "Number of agents infected at the start."),
+            ParamInfo::probability("efficacy_vax", "Vax efficacy", 0.9,
+                "Probability that the vaccine prevents infection."),
+            ParamInfo::duration("latent_period", "Latent period", 3.0,
+                "Mean days in the latent state."),
+            ParamInfo::duration("infect_period", "Infect period", 6.0,
+                "Mean days infectious."),
+            ParamInfo::probability("prob_symptoms", "Prob of symptoms", 0.6,
+                "Probability that an infected agent develops symptoms."),
+            ParamInfo::probability("prop_vaccinated", "", 0.25,
+                "Proportion of agents vaccinated."),
+            ParamInfo::probability("prop_vax_redux_transm",
+                "Vax redux transmission", 0.5,
+                "Factor by which the vaccine reduces transmission."),
+            ParamInfo::probability("prop_vax_redux_infect", "", 0.5,
+                "Factor by which the vaccine reduces infection (not used by "
+                "the model)."),
+            ParamInfo::probability("surveillance_prob", "Surveilance prob.",
+                0.001, "Daily probability that an agent is tested."),
+            ParamInfo::probability("transmission_prob", "Prob of transmission",
+                1.0, "Probability that a contact with an infected agent "
+                "infects."),
+            ParamInfo::probability("prob_death", "Prob. death", 0.001,
+                "Probability that an infected agent dies."),
+            ParamInfo::probability("prob_noreinfect", "Prob. no reinfect", 0.9,
+                "Probability that a recovered agent is not reinfected.")
+        },
+        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
+            return std::make_unique< ModelSURV<TSeq> >(
+                a.virus_name(), static_cast< uint_t >(a("n")),
+                static_cast< uint_t >(a("prevalence")), a("efficacy_vax"),
+                a("latent_period"), a("infect_period"), a("prob_symptoms"),
+                a("prop_vaccinated"), a("prop_vax_redux_transm"),
+                a("prop_vax_redux_infect"), a("surveillance_prob"),
+                a("transmission_prob"), a("prob_death"), a("prob_noreinfect")
+            );
+        }};
 }
 
 #endif

@@ -132,9 +132,11 @@ $(NAME)_SOURCES := \
 	49b-contact-rate-param.cpp \
 	49c-seir-quarantine-layers.cpp \
 	50a-rng-seed-reset.cpp \
-	51a-natural-history.cpp \
-	51b-natural-history-queue.cpp \
-	51c-natural-history-models.cpp
+	51a-model-registry.cpp \
+	51b-model-registry-errors.cpp \
+	52a-natural-history.cpp \
+	52b-natural-history-queue.cpp \
+	52c-natural-history-models.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
 # covered and would inflate the figure.

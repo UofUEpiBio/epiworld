@@ -134,6 +134,9 @@ namespace epiworld {
     #include "globalevents/quarantinetrigger-meat.hpp"
     #include "globalevents/bubbles-meat.hpp"
 
+    #include "registry-bones.hpp"
+    #include "registry-meat.hpp"
+
     #include "models/models.hpp"
 
 }

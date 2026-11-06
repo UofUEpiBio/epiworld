@@ -1272,6 +1272,77 @@ transition rates), as for the consolidated SEIR models.
   generic constructor); epiworldjs drops its own `cpp/registry.hpp`.
 - Then epiworldRShiny is ported, once (see Section 6): its apps build every
   model with layers and the registry's constructor.
+- **As built** (settled 2026-11-03):
+  - The registry is a core component (`registry-bones.hpp`,
+    `registry-meat.hpp`): `ParamInfo`, `ModelArgs`, `ModelInfo`
+    and `ModelRegistry`, a value rather than global state. Each
+    registered model defines its entry next to its constructor, as a static
+    `model_info()`, and each library registers its models in its umbrella
+    header, next to their includes: `epimodels::register_models(registry)`
+    in `models.hpp`, `measles::register_models(registry)` in `measles.hpp`
+    (the core does not include `include/measles`). A registry starts empty;
+    every model then has the same API: `list_models()`, `get_model_info(id)`
+    and `make_model(id, values, virus_name)`.
+  - `make_model()` builds the model only. It has no layers, which the user adds
+    as for a model built directly; epiworldjs keeps its population presets
+    (random mixing, a contact matrix, a network) on top of the registry.
+  - Each `ParamInfo` carries both names: `arg`, the argument every wrapper
+    takes (`transmission_prob`, epiworldR's names), and `name`, the model
+    parameter it sets (`"Transmission probability"`; empty for `n` and the
+    prevalence). It also has the default, hard limits (checked before
+    building), whether the value is whole, and a description. Values are
+    numbers only: with entities gone and contact matrices on the layers, no
+    registered model takes anything else.
+  - A virus a user adds to a registered model is a strain of the model's own:
+    a copy of `get_virus(0)` with its own name, its own sequence
+    (`Virus::set_sequence()`: a virus whose sequence is on record is that
+    variant) and, if need be, its own parameters (`Virus::use_param()`), so it
+    has the same stages. A model still carries
+    any number of viruses: this replaces epiworldR's per-model `add_virus.*`
+    methods. (#356 gave each entry its `InfectionStates`, the init, post and
+    removed states of the old API; #363 removed them with that API: see
+    `natural-history.md`.)
+  - Registered: SIS, SIR, SEIR, SISD, SIRD, SEIRD, SEIRQuarantine, SURV, and
+    the three measles models. `ModelSIRLogit` and `ModelDiffNet` take data
+    arrays and keep their own bindings.
+  - The defaults follow the wrappers' examples (epiworldjs' registry and the
+    measles R package). JS slider steps are not in the core.
+  - Measles' natural history lives in the model, not the virus, so a second
+    virus in a measles model inherits its timing: #355, independent of the
+    registry.
+
+### Variants by id, no sequence template -- after NH-2, before NH-3 (added 2026-11-06)
+
+Genetic sequences were meant for mutating viruses, but nothing uses them as
+sequences: every model, test, example and wrapper uses the default
+`TSeq = int`, and the tests that mutate (41, 42b, 52b) or tell viruses apart
+(42c) use the sequence as a counter. They cost a template parameter on every
+class (66 headers), a hasher, `default_sequence()`, and a guess that broke a
+test in #363: `add_virus()` treats a virus whose sequence is on record as
+that variant, so a copy of the model's virus silently merges with it. Two
+PRs, in this order:
+
+- **V-1: variants by id** (changes behavior and the API).
+  - A variant gets an id when it is created, by `add_virus()` (always a new
+    variant) or by a mutation, and records its parent's id. The lineages
+    and the tools' lineage targets (42b, 42c) work on those ids.
+  - A mutation function says whether the virus mutated and may change its
+    parameters (`use_param()`); the engine gives the new variant its id and
+    parent.
+  - Removed: `set_sequence()`, `get_sequence()`, the hasher, the
+    `default_sequence()` specializations, the merge by sequence, and the
+    sequence columns of the outputs. A strain of a model's virus is a copy
+    with its own name (the registry's recipe loses its `set_sequence()`).
+- **V-2: no `TSeq` template.** `Model<TSeq>`, `Virus<TSeq>`, `Agent<TSeq>`
+  and the rest become plain classes (`Model<>` becomes `Model`). Mechanical,
+  but it touches every header and every wrapper, so it goes in alone, when
+  no other code PR is open on `v1-layers`.
+
+**When.** Right after #363 (NH-1 and NH-2) merges, before NH-3 (docs, model
+diagrams, the benchmark runners) and NH-4 (the wrapper ports). The docs are
+then written once against the final types, and each wrapper ports the
+natural history, the variants and the plain classes in one pass (Section
+11.5). Both PRs come before Phase 4.
 
 ### Phase 6 -- independent exposures, 1.0.0, bindings, docs
 
@@ -1372,6 +1443,7 @@ exercise the network layer, the queue, and the single-layer path that every
 | 3d-1b (#339) | its merge | none | build time and peak memory back to the 0.x level; the 1,000,000-agent simulation times rechecked |
 | 3d-2, 3d-3 | each merge | none expected | no change: the scenarios use no entities, so a change is a cost on the shared path |
 | Registry (#312) | its merge | none, unless building a model by hand changes (the runners add their own states) | build time |
+| NH-1, NH-2 (#363); V-1, V-2 | NH-3 (the runners are rewritten then) | the runners declare the SEIRH as a natural history and use the plain classes (`Model`, not `Model<>`) | time per step of the cell table and the calendar; V-2 should change nothing |
 | Phase 4 | each merge | if participation replaces `set_infectious_states()` | cost per step of the participation checks |
 | Phase 5 | its merge | none | no change (push for mixing layers; the scenarios have none) |
 | Phase 6 | its merge | none | the combination rule changes the draws: attack rates are checked against the other engines, and `epiworld-v1` gets calibration factors only if it leaves the agreement the others meet; time per step of independent exposures (Phase 0: about 4 ns per contact) |
@@ -1596,7 +1668,8 @@ that on `v1-layers` this plan is the source of truth.
 | 3d-2 | The measles mixing models lose `contact_matrix`: the user adds the mixing layer (`add_layer(model, layer_mixing("mixing", groups, contact_matrix = cm))`); bind `distribute_tool_to_groups()` / `distribute_virus_to_groups()` (vaccination by school, the measles vignettes); measles R package: constructors, tests and vignettes rewritten for the layer; epiworldjs: the measles presets add the layer instead of entities. |
 | 3d-3b | `Bubbles`: bind `make_layer(q_household)` and the bubble contact probability (`set_ties()` / the constructor) (epiworldR, as built in #229: `bubbles(ties = "complete", layer, household_contact_prob, bubble_contact_prob)` builds the layer with `make_layer()` and adds it itself; the docs say which flavor and ties match which policy); `ties = "complete"` names the household layer, not a network layer; `get_created_ties()` / `restore_network()` (if bound) become defunct. |
 | 3d | Membership builders (replacing the entity distribution functions). Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing layers take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
-| Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()`; epiworldjs drops `cpp/registry.hpp`; measles registers its models. |
+| Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()` (plus `get_model_info()`), with the named constructors kept as thin shims taking `ParamInfo::arg` names; `add_virus()` adds a strain of the model's virus (epiworldR's `add_virus.*` methods go; see NH-4); epiworldjs builds from the core registry and keeps only its population presets and slider steps; measles calls `measles::register_models()`. |
+| Variants, no `TSeq` (V-1, V-2; with NH-4) | Ported together with the natural history (NH-4): the sequence bindings go (defunct stubs), variants are reported by id and parent, and `Model<>` becomes `Model` in the bindings. |
 | 4 | Exclusion / `isolate(agent, keep)`, layer-targeted tools, schedules, persistence. |
 | 5 | Re-vendor only, unless a push/pull setting becomes public. |
 | epiworldRShiny (once, after the registry) | Its apps (`inst/models/shiny_*.R`) build every model through the registry and layers: networks from `agents_smallworld()` become a `layer_network()`, the `*CONN` apps a base model with a random-mixing layer (or dropped, since the base apps then cover them), renamed arguments (`transmission_prob`, `latent_period`); the measles app follows the measles port. |
@@ -1621,11 +1694,12 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-06).
 | Phase 3d-1 (groupings) | #335 merged (+ #336 merged: whole-number counts) | #224, #225 merged | #39, #40 merged | #23 merged, #24 (superseded by #25: close) | #67 merged (re-vendor only) |
 | 3d-1b (networks without maps, #339) | #341 merged | #227 merged | #42 merged | #27 merged | #70 merged |
 | Phase 3d-2 (measles on layers) | #340 merged (+ `master`: the queue fix, #338; #345 merged: log capacity, group counts) | #226 merged | #41 merged (re-vendor only) | #25 merged | #68 merged |
-| Phase 3d-3a (entities and the model tracer removed) | #349 merged | #228 merged (with #351) | with 3d-3b | with 3d-3b | with 3d-3b |
-| `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`), #228 merged | #43 (`main` -> `v1-layers`: epiworldpy#34) | #29 (`main` -> `v1-layers`: epiworldjs#26, #28) | #71 (`main` -> `v1-layers`: measles#69) |
-| Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged (+ #230: the peer row is an approximation) | #43 (with 3d-3a, #351; first `Bubbles` binding: `epiworldpy.Bubbles`, `make_layer()`, `add_globalevent()`) | #29 (with 3d-3a, #351; re-vendor only) | #71 (with 3d-3a, #351 and measles#69; re-vendor only) |
-| Registry (#312) | not started | | | | |
-| Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 (replaces #358-#360, closed); NH-1 and NH-2 (branch `nh-1-engine`, with the plan): #363; NH-3, NH-4 not started | to port (NH-4) | to port (NH-4) | to port (NH-4) | to port (NH-4) |
+| Phase 3d-3a (entities and the model tracer removed) | #349 merged | #228 merged (with #351) | with 3d-3b (#43 merged) | with 3d-3b (#29 merged) | with 3d-3b (#71 merged) |
+| `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`), #228 merged | #43 merged (`main` -> `v1-layers`: epiworldpy#34) | #29 merged (`main` -> `v1-layers`: epiworldjs#26, #28) | #71 merged (`main` -> `v1-layers`: measles#69) |
+| Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged (+ #230: the peer row is an approximation) | #43 merged (with 3d-3a, #351; first `Bubbles` binding: `epiworldpy.Bubbles`, `make_layer()`, `add_globalevent()`) | #29 merged (with 3d-3a, #351; re-vendor only) | #71 merged (with 3d-3a, #351 and measles#69; re-vendor only) |
+| Registry (#312) | #356 merged (its `InfectionStates` removed by #363: a user's virus is a strain of the model's) | | | | |
+| Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 merged (replaces #358-#360, closed); NH-1 and NH-2 (branch `nh-1-engine`): #363; NH-3, NH-4 not started | to port (NH-4) | to port (NH-4) | to port (NH-4) | to port (NH-4) |
+| Variants by id (V-1) and no `TSeq` template (V-2) (after #363, before NH-3) | not started | with NH-4 | with NH-4 | with NH-4 | with NH-4 |
 | Phases 4, 5, 6 | not started | | | | |
 
 epiworldRShiny (Section 6): not started; one port after the registry.
@@ -1646,9 +1720,10 @@ Stages 3d-3a (#33) and 3d-3b (#34, pin 07ed7a0d) are merged with no
 regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 0.91 because the 0.x run happened to be faster (the 1.0 run was faster too).
 
-**Next** (as of the date above): the 3d-3a + 3d-3b ports of epiworldpy
-(#43), epiworldjs (#29) and measles (#71) wait to be merged; then
-the registry (#312).
+**Next** (as of the date above): #363 (NH-1 and NH-2, with the registry
+merged in) waits for review; then V-1 (variants by id) and V-2 (no `TSeq`
+template); then NH-3 (docs and runners) and NH-4 (the wrapper ports, which
+also port the registry; then the epiworldRShiny port); then Phase 4.
 
 ### 11.7 A benchmark rerun
 

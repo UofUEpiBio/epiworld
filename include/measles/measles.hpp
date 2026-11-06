@@ -38,6 +38,23 @@ namespace measles {
     #include "measlesschool.hpp"
     #include "measlesmixing.hpp"
     #include "measlesmixingriskquarantine.hpp"
+
+    /**
+     * @brief Adds the measles models to a model registry.
+     *
+     * @details Each model's entry is its `model_info()`, with the defaults of
+     * the measles R package. They name their own virus ("Measles").
+     */
+    template<typename TSeq = EPI_DEFAULT_TSEQ>
+    inline epiworld::ModelRegistry<TSeq> & register_models(
+        epiworld::ModelRegistry<TSeq> & registry
+    )
+    {
+        return registry
+            .add(ModelMeaslesMixing<TSeq>::model_info())
+            .add(ModelMeaslesMixingRiskQuarantine<TSeq>::model_info())
+            .add(ModelMeaslesSchool<TSeq>::model_info());
+    }
 }
 
 #endif

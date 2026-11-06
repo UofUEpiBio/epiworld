@@ -155,6 +155,10 @@ public:
         return days_quarantine_triggered;
     };
 
+
+    /// This model's entry in a `ModelRegistry`: arguments and builder
+    static ModelInfo<TSeq> model_info();
+
 };
 
 template<typename TSeq>
@@ -396,6 +400,103 @@ template<typename TSeq>
 inline std::unique_ptr<Model<TSeq>> ModelMeaslesMixingRiskQuarantine<TSeq>::clone_ptr()
 {
     return std::make_unique<ModelMeaslesMixingRiskQuarantine<TSeq>>(*this);
+}
+
+template<typename TSeq>
+inline ModelInfo<TSeq> ModelMeaslesMixingRiskQuarantine<TSeq>::model_info()
+{
+
+    using uint_t = epiworld_fast_uint;
+    using int_t  = epiworld_fast_int;
+
+    // One initial case among 9,000 agents (the measles R package's examples)
+    return {"MeaslesMixingRiskQuarantine",
+        "Measles with population mixing and risk-based quarantine",
+        "Measles where the quarantine of a traced contact lasts by the "
+        "contact's risk (high, medium, low), on a mixing layer (which the "
+        "user adds).",
+        "",
+        {
+            ParamInfo::agents(9000),
+            ParamInfo::probability("prevalence", "", 1.0 / 9000.0,
+                "Proportion of agents infected at the start."),
+            ParamInfo::probability("transmission_rate", "Transmission rate", 0.9,
+                "Probability of transmission per contact with an infectious "
+                "agent."),
+            ParamInfo::probability("vax_efficacy", "Vax efficacy", 0.97,
+                "Probability that the vaccine prevents infection."),
+            ParamInfo::duration("incubation_period", "Incubation period", 12.0,
+                "Mean days from exposure to the prodromal stage."),
+            ParamInfo::duration("prodromal_period", "Prodromal period", 4.0,
+                "Mean days infectious before the rash."),
+            ParamInfo::duration("rash_period", "Rash period", 3.0,
+                "Mean days with rash."),
+            ParamInfo::probability("hospitalization_rate", "Hospitalization rate",
+                0.035, "Daily probability that an agent with rash is "
+                "hospitalized (0.035: about 10% of cases)."),
+            ParamInfo::duration("hospitalization_period",
+                "Hospitalization period", 7.0,
+                "Average number of days in the hospital."),
+            ParamInfo::duration("days_undetected", "Days undetected", 2.0,
+                "Average number of days before a case with rash is detected."),
+            ParamInfo::period("quarantine_period_high", "Quarantine period high",
+                21.0, "Days in quarantine for high-risk contacts (negative: no "
+                "quarantine)."),
+            ParamInfo::period("quarantine_period_medium",
+                "Quarantine period medium", 14.0, "Days in quarantine for "
+                "medium-risk contacts (negative: no quarantine)."),
+            ParamInfo::period("quarantine_period_low", "Quarantine period low",
+                7.0, "Days in quarantine for low-risk contacts (negative: no "
+                "quarantine)."),
+            ParamInfo::probability("quarantine_willingness",
+                "Quarantine willingness", 1.0,
+                "Probability that a contact complies with quarantine."),
+            ParamInfo::probability("isolation_willingness",
+                "Isolation willingness", 1.0,
+                "Probability that a detected case complies with isolation."),
+            ParamInfo::period("isolation_period", "Isolation period", 4.0,
+                "Days in isolation for a detected case (negative: no "
+                "isolation)."),
+            ParamInfo::probability("prop_vaccinated", "Vaccination rate",
+                1.0 - 1.0 / 15.0, "Proportion of agents vaccinated."),
+            ParamInfo::probability("detection_rate_quarantine",
+                "Detection rate quarantine", 0.5, "Daily probability that an "
+                "infected agent in quarantine is detected."),
+            ParamInfo::probability("contact_tracing_success_rate",
+                "Contact tracing success rate", 1.0,
+                "Probability that a contact is traced."),
+            ParamInfo::count("contact_tracing_days_window",
+                "Contact tracing days window", 4.0,
+                "Days before detection whose contacts are traced."),
+            ParamInfo::duration("incubation_period_sd", "Incubation period sd",
+                2.5, "Standard deviation of the (lognormal) incubation period, "
+                "in days; 0 gives a fixed period."),
+            ParamInfo::duration("prodromal_period_sd", "Prodromal period sd",
+                1.7, "Standard deviation of the (lognormal) prodromal period, "
+                "in days; 0 gives a fixed period."),
+            ParamInfo::duration("rash_period_sd", "Rash period sd", 1.0,
+                "Standard deviation of the (lognormal) rash period, in days; 0 "
+                "gives a fixed period.")
+        },
+        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
+            return std::make_unique< ModelMeaslesMixingRiskQuarantine<TSeq> >(
+                static_cast< uint_t >(a("n")), a("prevalence"),
+                a("transmission_rate"), a("vax_efficacy"),
+                a("incubation_period"), a("prodromal_period"),
+                a("rash_period"), a("hospitalization_rate"),
+                a("hospitalization_period"), a("days_undetected"),
+                static_cast< int_t >(a("quarantine_period_high")),
+                static_cast< int_t >(a("quarantine_period_medium")),
+                static_cast< int_t >(a("quarantine_period_low")),
+                a("quarantine_willingness"), a("isolation_willingness"),
+                static_cast< int_t >(a("isolation_period")),
+                a("prop_vaccinated"), a("detection_rate_quarantine"),
+                a("contact_tracing_success_rate"),
+                static_cast< uint_t >(a("contact_tracing_days_window")),
+                a("incubation_period_sd"), a("prodromal_period_sd"),
+                a("rash_period_sd")
+            );
+        }};
 }
 
 #endif

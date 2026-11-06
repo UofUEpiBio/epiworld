@@ -35,6 +35,9 @@ public:
         epiworld_double recovery_rate
     );
 
+
+    /// This model's entry in a `ModelRegistry`: arguments and builder
+    static ModelInfo<TSeq> model_info();
 };
 
 template<typename TSeq>
@@ -62,6 +65,31 @@ inline ModelSIS<TSeq>::ModelSIS(
 
     this->add_virus(virus, assign::share<TSeq>(prevalence));
 
+}
+
+template<typename TSeq>
+inline ModelInfo<TSeq> ModelSIS<TSeq>::model_info()
+{
+
+    using uint_t = epiworld_fast_uint;
+
+    return {"SIS", "Susceptible-Infected-Susceptible",
+        "Infected agents become susceptible again when they recover.",
+        "Disease",
+        {
+            ParamInfo::agents(10000),
+            ParamInfo::prevalence(0.01),
+            ParamInfo::probability("transmission_prob", "Transmission probability",
+                0.05, "Probability that a contact with an infected agent infects."),
+            ParamInfo::probability("recovery_rate", "Recovery rate", 0.14,
+                "Daily probability that an infected agent recovers.")
+        },
+        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
+            return std::make_unique< ModelSIS<TSeq> >(
+                a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
+                a("transmission_prob"), a("recovery_rate")
+            );
+        }};
 }
 
 #endif

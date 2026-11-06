@@ -429,7 +429,8 @@ no longer in a source is skipped. That check replaces the earlier plan's
 - Recovery and death effects apply to the transitions tagged with
   `.effect()`.
 - All of them read model parameters.
-- A variant redirects parameters with `use_param()`.
+- A variant redirects parameters with `use_param()`. Variants are
+  identified by id and parent, not by sequence (V-1 in `contact-layers.md`).
 - Tools cannot shorten an `after` duration in 1.0.0. That is a later
   addition (a per-agent factor read on entry).
 
@@ -580,6 +581,9 @@ deadline calendar are not built (the deadlines are checked per agent).
   - Removes everything in Section 9 and rewrites the remaining tests and
     examples.
   - Includes the measles policy commits of Section 10.
+- **Between NH-2 and NH-3: variants by id (V-1) and no `TSeq` template
+  (V-2)**, as in `contact-layers.md` ("Variants by id, no sequence
+  template"), so NH-3 documents, and NH-4 ports, the final API once.
 - **NH-3: docs and runners.** `docs/impl`, the README, model diagrams drawn
   from the declarations, and the epiworld-benchmark runners.
 - **NH-4: wrappers.** epiworldR, epiworldpy, epiworldjs and measles, as in
