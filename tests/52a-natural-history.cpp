@@ -286,11 +286,11 @@ EPIWORLD_TEST_CASE("Natural history - built and run end to end", "[natural-histo
         first.set_statuses(st);
         REQUIRE_NOTHROW(first.add_virus(make_disease()));
 
+        // Stage 6 is no disease stage, though the statuses have seven
         Statuses<> bad;
-        bad.add_status("Free");
-        bad.add_status("Isolated");
-        bad.add_status("Away");
-        bad.after(1, 0, Duration<>::fixed(5).since(2 * D));   // no such stage
+        for (int k = 0; k < 7; ++k)
+            bad.add_status("Status " + std::to_string(k));
+        bad.after(1, 0, Duration<>::fixed(5).since(D + 2));
         REQUIRE_THROWS(make_model("pull")->set_statuses(bad));
     }
 
