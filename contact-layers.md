@@ -1698,7 +1698,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-06).
 | Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged (+ #230: the peer row is an approximation) | #43 merged (with 3d-3a, #351; first `Bubbles` binding: `epiworldpy.Bubbles`, `make_layer()`, `add_globalevent()`) | #29 merged (with 3d-3a, #351; re-vendor only) | #71 merged (with 3d-3a, #351 and measles#69; re-vendor only) |
 | Registry (#312) | #356 merged (its `InfectionStates` removed by #363: a user's virus is a strain of the model's) | | | | |
 | Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 merged (replaces #358-#360, closed); NH-1 and NH-2: #363 merged; NH-3, NH-4 not started | to port (NH-4) | to port (NH-4) | to port (NH-4) | to port (NH-4) |
-| Variants by id (V-1) and no `TSeq` template (V-2) (after #363, before NH-3) | V-1 (branch `v1-variants-by-id`): this PR; V-2 not started | with NH-4 | with NH-4 | with NH-4 | with NH-4 |
+| Variants by id (V-1) and no `TSeq` template (V-2) (after #363, before NH-3) | V-1 (branch `v1-variants-by-id`): #364; V-2 not started | with NH-4 | with NH-4 | with NH-4 | with NH-4 |
 | Phases 4, 5, 6 | not started | | | | |
 
 epiworldRShiny (Section 6): not started; one port after the registry.
@@ -1719,7 +1719,7 @@ Stages 3d-3a (#33) and 3d-3b (#34, pin 07ed7a0d) are merged with no
 regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 0.91 because the 0.x run happened to be faster (the 1.0 run was faster too).
 
-**Next** (as of the date above): V-1 (variants by id) waits for review;
+**Next** (as of the date above): V-1 (#364, variants by id) waits for review;
 then V-2 (no `TSeq` template), alone; then NH-3 (docs and runners) and NH-4 (the wrapper ports, which
 also port the registry; then the epiworldRShiny port); then Phase 4.
 
