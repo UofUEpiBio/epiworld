@@ -49,12 +49,6 @@ inline ParamInfo ParamInfo::prevalence(double value)
         "Proportion of agents infected at the start.");
 }
 
-template<typename TSeq>
-inline void InfectionStates::apply(Virus<TSeq> & virus) const
-{
-    virus.set_state(init, post, removed);
-}
-
 inline ModelArgs::ModelArgs(
     std::map< std::string, double > values_, std::string vname_
 ) : values(std::move(values_)), vname(std::move(vname_)) {}

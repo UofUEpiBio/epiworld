@@ -52,9 +52,9 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
         run(100);
 
     std::vector< int > h_0, h_1, h_2;
-    model_0.get_db().get_hist_total(nullptr, nullptr, &h_0);
-    model_1.get_db().get_hist_total(nullptr, nullptr, &h_1);
-    model_2.get_db().get_hist_total(nullptr, nullptr, &h_2);
+    model_0.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
+    model_1.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_1);
+    model_2.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_2);
 
     // Getting transition matrix
     auto tmat_0 = model_0.get_db().get_transition_probability(false);

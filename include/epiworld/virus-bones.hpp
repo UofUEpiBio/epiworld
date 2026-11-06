@@ -42,23 +42,14 @@ private:
     int id   = -99;    
     int lineage_id = -99; ///< Id of the founding virus (kept across mutations).
     uint64_t lineage_bit = uint64_t(1) << 63; ///< Bit matched against Tool::target_mask.
-    epiworld_fast_int state_init    = -99; ///< Change of state when added to agent.
-    epiworld_fast_int state_post    = -99; ///< Change of state when removed from agent.
-    epiworld_fast_int state_removed = -99; ///< Change of state when agent is removed
-
-    epiworld_fast_int queue_init    = Queue<TSeq>::Everyone; ///< Change of state when added to agent.
-    epiworld_fast_int queue_post    = -Queue<TSeq>::Everyone; ///< Change of state when removed from agent.
-    epiworld_fast_int queue_removed = -Queue<TSeq>::Everyone; ///< Change of state when agent is removed
-
     MutFun<TSeq>          mutation                 = nullptr;
-    PostRecoveryFun<TSeq> post_recovery_fun        = nullptr;
-    VirusFun<TSeq>        probability_of_infecting = nullptr;
-    VirusFun<TSeq>        probability_of_recovery  = nullptr;
-    VirusFun<TSeq>        probability_of_death     = nullptr;
-    VirusFun<TSeq>        incubation               = nullptr;
 
-    // Information about how distribution works
-    VirusToAgentFun<TSeq> dist = nullptr;
+    /// Parameters this variant reads in place of others (see `use_param()`)
+    std::vector< std::pair< ParamRef, ParamRef > > param_redirects;
+
+    /// Its natural history (shared by its copies; copied on the first edit)
+    std::shared_ptr< NaturalHistory<TSeq> > nh_def = nullptr;
+    NaturalHistory<TSeq> & nh_edit();
         
 public:
 
@@ -75,11 +66,6 @@ public:
 
     Virus(std::string name = "unknown virus");
     
-    Virus(
-        std::string name,
-        epiworld_double prevalence,
-        bool as_proportion
-    );
     
     #ifdef EPI_DEBUG_VIRUS
     
@@ -119,102 +105,49 @@ public:
      */
     int get_lineage_id() const;
 
-    /**
-     * @name Get and set the tool functions
-     * 
-     * @param v The virus over which to operate
-     * @param fun the function to be used
-     * 
-     * @return epiworld_double 
-     */
-    ///@{
-    epiworld_double get_prob_infecting(Model<TSeq> * model);
-    epiworld_double get_prob_recovery(Model<TSeq> * model);
-    epiworld_double get_prob_death(Model<TSeq> * model);
-    epiworld_double get_incubation(Model<TSeq> * model);
-    
-    void post_recovery(Model<TSeq> * model);
-    void set_post_recovery(PostRecoveryFun<TSeq> fun);
-    void set_post_immunity(epiworld_double prob);
-    void set_post_immunity(std::string param);
-
-    void set_prob_infecting_fun(VirusFun<TSeq> fun);
-    void set_prob_recovery_fun(VirusFun<TSeq> fun);
-    void set_prob_death_fun(VirusFun<TSeq> fun);
-    void set_incubation_fun(VirusFun<TSeq> fun);
-    
-    void set_prob_infecting(std::string param);
-    void set_prob_recovery(std::string param);
-    void set_prob_death(std::string param);
-    void set_incubation(std::string param);
-
-    // Deleting pointer versions to avoid mistakes
-    void set_prob_infecting(epiworld_double * prob) = delete;
-    void set_prob_recovery(epiworld_double * prob) = delete;
-    void set_prob_death(epiworld_double * prob) = delete;
-    void set_incubation(epiworld_double * prob) = delete;
-    void set_post_immunity(epiworld_double * prob) = delete;
-    
-    void set_prob_infecting(epiworld_double prob);
-    void set_prob_recovery(epiworld_double prob);
-    void set_prob_death(epiworld_double prob);
-    void set_incubation(epiworld_double prob);
-    ///@}
-
-
     void set_name(std::string name);
     std::string get_name() const;
-
-    /**
-     * @name Get and set the state and queue
-     * 
-     * After applied, viruses can change the state and affect
-     * the queue of agents. These function sets the default values,
-     * which are retrieved when adding or removing a virus does not
-     * specify a change in state or in queue.
-     * 
-     * @param init After the virus/tool is added to the agent.
-     * @param end After the virus/tool is removed.
-     * @param removed After the agent (Agent) is removed.
-     */
-    ///@{
-    void set_state(
-        epiworld_fast_int init,
-        epiworld_fast_int end,
-        epiworld_fast_int removed = -99
-        );
-        
-    void set_queue(
-        epiworld_fast_int init,
-        epiworld_fast_int end,
-        epiworld_fast_int removed = -99
-        );
-
-    void get_state(
-        epiworld_fast_int * init,
-        epiworld_fast_int * end,
-        epiworld_fast_int * removed = nullptr
-        ) const;
-
-    void get_queue(
-        epiworld_fast_int * init,
-        epiworld_fast_int * end,
-        epiworld_fast_int * removed = nullptr
-        ) const;
-    ///@}
 
     bool operator==(const Virus<TSeq> & other) const;
     bool operator!=(const Virus<TSeq> & other) const {return !operator==(other);};
 
     void print() const;
 
+
     /**
-     * @brief Get information about the prevalence of the virus
+     * @name Natural history
+     * @brief The disease's stages and the transitions between them, declared
+     * on the virus (see `NaturalHistory` for each method).
+     * @details `Model::add_virus()` gives the model the virus's stages (its
+     * states). A copy of the virus (a strain, or a variant from a mutation)
+     * keeps the natural history; it can read other parameters with
+     * `use_param()`. The viruses of one model share their stages.
      */
     ///@{
-    void distribute(Model<TSeq> * model);
-    void set_distribution(VirusToAgentFun<TSeq> fun);
+    int add_stage(std::string label, unsigned int flags = 0u);
+    void set_contact(int s, epiworld_double weight);
+    TransitionRef<TSeq> infection(Nodes from, int to, Value<TSeq> per_contact);
+    TransitionRef<TSeq> rate(Nodes from, int to, Value<TSeq> daily_probability);
+    TransitionRef<TSeq> after(int from, int to, Duration<TSeq> d);
+    TransitionRef<TSeq> external(Nodes from, int to, std::string label);
+
+    /// The natural history (`nullptr` if the virus has none).
+    const NaturalHistory<TSeq> * get_natural_history() const { return nh_def.get(); }
     ///@}
+
+    /**
+     * @brief This variant reads the model parameter `replacement` wherever a
+     * transition of the natural history reads `param`.
+     * @details Every parameter lives in the model; a variant changes a value
+     * by pointing to another parameter (e.g., `"Recovery rate (Delta)"`).
+     */
+    void use_param(std::string param, std::string replacement);
+
+    /// The parameter this variant reads in place of `id`.
+    ParamId param_redirect(ParamId id, const Model<TSeq> & model) const;
+
+    /// Throws if a parameter it reads (see `use_param()`) is not in `model`.
+    void check_params(const Model<TSeq> & model) const;
 
     virtual ~Virus() = default;
     virtual std::unique_ptr<Virus<TSeq>> clone_ptr() const;

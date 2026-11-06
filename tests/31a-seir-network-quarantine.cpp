@@ -32,8 +32,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     // Replace virus to infect only agent 0 (in block 0)
     Virus<> v1 = model.get_virus(0);
     model.rm_virus(0);
-    v1.set_distribution(dist_virus<>(0));
-    model.add_virus(v1);
+    model.add_virus(v1, dist_virus<>(0));
 
     // Set up the SBM network (disconnected blocks)
     model.add_layer(layer::network(
@@ -49,7 +48,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     for (size_t i = 500; i < 1000; ++i)
     {
         const auto & a = model.get_agent(i);
-        if (a.get_state() != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
+        if (model.get_stage(a) != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
         {
             n_wrong++;
         }
@@ -63,7 +62,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     for (size_t i = 0; i < 500; ++i)
     {
         const auto & a = model.get_agent(i);
-        if (a.get_state() != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
+        if (model.get_stage(a) != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
         {
             n_affected_block0++;
         }
@@ -100,8 +99,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     // Replace virus to infect only agent 0
     Virus<> v2 = model2.get_virus(0);
     model2.rm_virus(0);
-    v2.set_distribution(dist_virus<>(0));
-    model2.add_virus(v2);
+    model2.add_virus(v2, dist_virus<>(0));
 
     model2.add_layer(layer::network(
         "network", rgraph_sbm(block_sizes, full_mixing, true, model2)
@@ -113,13 +111,17 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
 
     // With full mixing and high transmission, all (or nearly all) agents should
     // end up recovered (no quarantine/isolation since detection is off)
-    std::vector< int > totals;
-    model2.get_db().get_today_total(nullptr, &totals);
-
-    // Hospitalized agents also recover eventually, so combine
-    // hospitalized + recovered for the final check
-    int total_final = totals[epimodels::ModelSEIRQuarantine<>::RECOVERED] +
-                      totals[epimodels::ModelSEIRQuarantine<>::HOSPITALIZED];
+    // Severe (hospitalized) agents also recover eventually, so count both
+    int total_final = 0;
+    for (const auto & a : model2.get_agents())
+    {
+        const int s = model2.get_stage(a);
+        if (
+            (s == epimodels::ModelSEIRQuarantine<>::RECOVERED) ||
+            (s == epimodels::ModelSEIRQuarantine<>::SEVERE)
+        )
+            ++total_final;
+    }
 
     // With high transmission and connected graph, we expect most agents to be
     // recovered

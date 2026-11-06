@@ -61,43 +61,11 @@
     epiworld::Virus<tseq> & v, \
     epiworld::Model<tseq> * m) -> void
 
-#define EPI_NEW_POSTRECOVERYFUN(funname,tseq) inline void \
-    (funname)( \
-    epiworld::Agent<tseq> * p, \
-    epiworld::Virus<tseq> & v, \
-    epiworld::Model<tseq> * m\
-    )
-
-#define EPI_NEW_POSTRECOVERYFUN_LAMBDA(funname,tseq) \
-    epiworld::PostRecoveryFun<tseq> funname = \
-    [](epiworld::Agent<tseq> * p, \
-    epiworld::Virus<tseq> & v , \
-    epiworld::Model<tseq> * m) -> void
-
-#define EPI_NEW_VIRUSFUN(funname,tseq) inline epiworld_double \
-    (funname)( \
-    epiworld::Agent<tseq> * p, \
-    epiworld::Virus<tseq> & v, \
-    epiworld::Model<tseq> * m\
-    )
-
-#define EPI_NEW_VIRUSFUN_LAMBDA(funname,TSeq) \
-    epiworld::VirusFun<TSeq> funname = \
-    [](epiworld::Agent<TSeq> * p, \
-    epiworld::Virus<TSeq> & v, \
-    epiworld::Model<TSeq> * m) -> epiworld_double
-
 #define EPI_RUNIF() m->runif()
 
 #define EPI_TOKENPASTE(a,b) a ## b
 #define MPAR(num) *(m->EPI_TOKENPASTE(p,num))
 
-#define EPI_NEW_UPDATEFUN(funname,tseq) inline void \
-    (funname)(epiworld::Agent<tseq> * p, epiworld::Model<tseq> * m)
-
-#define EPI_NEW_UPDATEFUN_LAMBDA(funname,tseq) \
-    epiworld::UpdateFun<tseq> funname = \
-    [](epiworld::Agent<tseq> * p, epiworld::Model<tseq> * m) -> void
 
 #define EPI_NEW_GLOBALFUN(funname,tseq) inline void \
     (funname)(epiworld::Model<tseq>* m)

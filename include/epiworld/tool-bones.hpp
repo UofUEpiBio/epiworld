@@ -39,16 +39,10 @@ protected:
     ToolFun<TSeq> recovery_enhancer        = nullptr;
     ToolFun<TSeq> death_reduction          = nullptr;
 
-    ToolToAgentFun<TSeq> dist = nullptr;
 
     /// Bitmask of targeted virus lineages (all ones: every virus).
     uint64_t target_mask = ~uint64_t(0);
 
-    epiworld_fast_int state_init = -99;
-    epiworld_fast_int state_post = -99;
-
-    epiworld_fast_int queue_init = Queue<TSeq>::NoOne; ///< Change of state when added to agent.
-    epiworld_fast_int queue_post = Queue<TSeq>::NoOne; ///< Change of state when removed from agent.
 
     void set_agent(Agent<TSeq> * p, size_t idx);
 
@@ -59,11 +53,6 @@ public:
 
     Tool();
     Tool(std::string name = "unknown tool");
-    Tool(
-        std::string name,
-        epiworld_double prevalence,
-        bool as_proportion
-    );
 
     virtual ~Tool() = default;
 
@@ -141,18 +130,12 @@ public:
     void set_date(int d);
     int get_date() const;
 
-    void set_state(epiworld_fast_int init, epiworld_fast_int post);
-    void set_queue(epiworld_fast_int init, epiworld_fast_int post);
-    void get_state(epiworld_fast_int * init, epiworld_fast_int * post);
-    void get_queue(epiworld_fast_int * init, epiworld_fast_int * post);
 
     bool operator==(const Tool<TSeq> & other) const;
     bool operator!=(const Tool<TSeq> & other) const {return !operator==(other);};
 
     void print() const;
 
-    void distribute(Model<TSeq> * model);
-    void set_distribution(ToolToAgentFun<TSeq> fun);
 
     virtual std::unique_ptr<Tool<TSeq>> clone_ptr() const; 
 

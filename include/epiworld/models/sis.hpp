@@ -22,8 +22,8 @@ class ModelSIS : public Model<TSeq>
 
 public:
 
-    static const int SUSCEPTIBLE = 0;
-    static const int INFECTED    = 1;
+    static constexpr int SUSCEPTIBLE = 0;
+    static constexpr int INFECTED    = 1;
 
     ModelSIS() = delete;
 
@@ -35,11 +35,8 @@ public:
         epiworld_double recovery_rate
     );
 
-    /// States of any virus in this model (`Virus::set_state()`): the
-    /// model's own, and those a user adds (`InfectionStates::apply()`)
-    static constexpr InfectionStates infection_states{INFECTED, SUSCEPTIBLE, SUSCEPTIBLE};
 
-    /// This model's entry in a `ModelRegistry`: arguments, states, builder
+    /// This model's entry in a `ModelRegistry`: arguments and builder
     static ModelInfo<TSeq> model_info();
 };
 
@@ -57,23 +54,16 @@ inline ModelSIS<TSeq>::ModelSIS(
 
     this->set_name("Susceptible-Infected-Susceptible (SIS)");
 
-    // Adding statuses
-    this->add_state("Susceptible", default_update_susceptible<TSeq>);
-    this->add_state("Infected", default_update_exposed<TSeq>);
-
-    // Setting up parameters
     this->add_param(transmission_prob, "Transmission probability");
     this->add_param(recovery_rate, "Recovery rate");
 
-    // Preparing the virus -------------------------------------------
-    Virus<TSeq> virus(vname, prevalence, true);
-    infection_states.apply(virus);
-    
-    virus.set_prob_infecting("Transmission probability");
-    virus.set_prob_recovery("Recovery rate");
-    virus.set_prob_death(0.0);
-    
-    this->add_virus(virus);
+    Virus<TSeq> virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Infected", stage::infectious);
+    virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
+    virus.rate(INFECTED, SUSCEPTIBLE, "Recovery rate").effect(Effect::recovery);
+
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
 }
 
@@ -94,7 +84,6 @@ inline ModelInfo<TSeq> ModelSIS<TSeq>::model_info()
             ParamInfo::probability("recovery_rate", "Recovery rate", 0.14,
                 "Daily probability that an infected agent recovers.")
         },
-        infection_states,
         [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
             return std::make_unique< ModelSIS<TSeq> >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),

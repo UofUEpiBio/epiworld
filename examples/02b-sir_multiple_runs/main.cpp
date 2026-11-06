@@ -29,9 +29,9 @@ int main() {
         {
 
             if (iternum == 0u)
-                m->get_db().get_today_total(nullptr, &results[iternum]);
+                m->get_db().get_today_total(nullptr, nullptr, &results[iternum]);
             else
-                m->get_db().get_today_total(&labels, &results[iternum]);
+                m->get_db().get_today_total(nullptr, &labels, &results[iternum]);
 
             return;
 

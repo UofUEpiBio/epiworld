@@ -39,7 +39,7 @@ std::unique_ptr< epimodels::ModelSIR<> > make(
     model->verbose_off();
 
     auto hh = layer::mixing<>("households");
-    hh->set_groups(households(), n_groups);
+    hh->set_groups(assign::labels(households()), n_groups);
     contacts(*hh);
     model->add_layer(hh);
 
@@ -63,7 +63,7 @@ std::vector< int > states(Model<> & m)
 {
     std::vector< int > out;
     for (const auto & a : m.get_agents())
-        out.push_back(static_cast< int >(a.get_state()));
+        out.push_back(m.get_stage(a));
     return out;
 }
 
@@ -91,7 +91,7 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
         model->add_globalevent(move, "move", 5);
         model->run(60, 46);
 
-        model->get_db().get_hist_total(nullptr, nullptr, &hist[queue]);
+        model->get_db().get_hist_total(nullptr, nullptr, nullptr, &hist[queue]);
         std::vector< int > d, t, v, se, lay;
         model->get_db().get_transmissions(d, src[queue], t, v, se, lay);
 
@@ -111,19 +111,26 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     for (bool queue : {true, false})
     {
 
-        epimodels::ModelSIR<> tiny("flu", 3, 0.0, 1.0, 0.0);
+        // An SIR whose infected agents never recover; the carrier's daily
+        // recovery rate is where it moves (an update made mid-step)
+        Model<> tiny(3);
+        Virus<> flu("flu");
+        flu.add_stage("Susceptible");
+        flu.add_stage("Infected", stage::infectious);
+        flu.add_stage("Recovered");
+        flu.infection(0, 1, 1.0);
+        flu.rate(1, 2, ValueFun<>([](Agent<> & a, Model<> & m) -> double {
+            if (a.get_id() == 0)
+                m.get_layer_as< layer::Mixing<> >("hh").set_group(0, 1);
+            return 0.0;
+        }));
         tiny.verbose_off();
-        tiny.get_virus(0).set_distribution(distribute_virus_to_set<>({0}));
+        tiny.add_virus(flu, assign::agents<>({0}));
 
         auto hh = layer::mixing<>("hh");
-        hh->set_groups({0, 0, 1}, 2);
+        hh->set_groups(assign::labels({0, 0, 1}), 2);
         hh->set_contact_prob(1.0);
         tiny.add_layer(hh);
-
-        tiny.set_state_function(1, [](Agent<> * a, Model<> * m) -> void {
-            if (a->get_id() == 0)
-                m->get_layer_as< layer::Mixing<> >("hh").set_group(0, 1);
-        });
 
         if (!queue)
             tiny.queuing_off();
@@ -160,7 +167,7 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     auto clique = make(
         [](layer::Mixing<> & l) { l.set_contact_prob(1.0); }, 0.0, 1.0, 0.0
     );
-    clique->get_virus(0).set_distribution(distribute_virus_to_set<>({0}));
+    clique->assign_virus(0, assign::agents<>({0}));
     clique->run(1, 3);
 
     std::vector< int > expected(n, 0);
@@ -172,7 +179,7 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     auto pairs = make(
         [](layer::Mixing<> & l) { l.set_contact_prob(0.3); }, 0.0, 1.0, 0.0
     );
-    pairs->get_virus(0).set_distribution(distribute_virus_to_set<>({0}));
+    pairs->assign_virus(0, assign::agents<>({0}));
 
     std::vector< double > infected;
     bool outside = false;

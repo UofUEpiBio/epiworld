@@ -8,6 +8,7 @@
 #include <map>
 #include "config.hpp"
 
+#include "naturalhistory-bones.hpp"
 #include "agent-bones.hpp"
 #include "virus-bones.hpp"
 #include "viruses-bones.hpp"
@@ -17,6 +18,7 @@
 #include "globalevent-bones.hpp"
 #include "contacttracing-bones.hpp"
 #include "postsampling-bones.hpp"
+#include "assign.hpp"
 
 template<typename TSeq>
 class AgentsSample;
@@ -130,6 +132,8 @@ protected:
 
     std::vector< VirusPtr<TSeq> > viruses = {};
     std::vector< ToolPtr<TSeq> > tools = {};
+    std::vector< Assign<TSeq> > virus_assign = {}; ///< [virus] Who gets it at each reset
+    std::vector< Assign<TSeq> > tool_assign = {};  ///< [tool] Who gets it at each reset
 
     std::shared_ptr< epi_xoshiro256ss > engine = std::make_shared< epi_xoshiro256ss >();
 
@@ -167,10 +171,6 @@ protected:
 
     std::vector< UpdateFun<TSeq> >    state_fun = {};                  ///< Functions to update states
     std::vector< std::string >        states_labels = {};              ///< Labels of the states
-
-    /** Function to distribute states. Goes along with the function  */
-    std::function<void(Model<TSeq>*)> initial_states_fun = [](Model<TSeq> * /**/)
-    -> void {};
 
     epiworld_fast_uint nstates = 0u;
 
@@ -316,8 +316,8 @@ protected:
 
     /**
      * @name Infectious and excluded states
-     * @details See `set_infectious_states()` and `set_excluded_states()`. The
-     * per-state masks are built at `reset()`.
+     * @details Derived from the natural history and the statuses (see
+     * `nh_build_states()`). The per-state masks are built at `reset()`.
      */
     ///@{
     std::vector< int > infectious_states;     ///< Empty: every state
@@ -326,15 +326,6 @@ protected:
     std::vector< char > state_excluded;       ///< [state]
     void state_masks_build();
     ///@}
-
-    /**
-     * @brief Takes the agents in these states out of the mixing layers: they
-     * are not met at all, and their group's contacts go to the others.
-     * @details Interim, for `epimodels::ModelSEIRQuarantine` (isolated,
-     * quarantined and hospitalized agents); participation (contact layers,
-     * Phase 4) replaces it. Agents in an excluded state do not transmit either.
-     */
-    void set_excluded_states(std::vector< int > states);
 
     /**
      * @name Network transmission
@@ -356,7 +347,7 @@ protected:
         int layer;                  // Layer of the candidate's contact
     };
 
-    std::vector< char > push_pushable;       ///< [state] Uses default_update_susceptible
+    std::vector< char > push_pushable;       ///< [state] Infected by a default infection only
     std::vector< char > push_source_ok;      ///< [state] Infectious, and some state is pushable
     std::vector< int >  push_slot;           ///< [agent] Index in push_targets, or -1
     std::vector< PushTarget > push_targets;
@@ -368,6 +359,79 @@ protected:
     void transmission_push();
     template<bool Record> void transmission_push_impl();
     void transmission_update_others();
+    ///@}
+
+    /**
+     * @name Natural history
+     *
+     * @details See `naturalhistory-bones.hpp`. The first virus with a natural
+     * history installs it (`add_virus()`); the model's copy of that virus
+     * shares it. It is shared by the model's copies (it does not change once
+     * installed); what it stores per agent is the model's, and is reset with
+     * it.
+     */
+    ///@{
+    std::shared_ptr< const NaturalHistory<TSeq> > nh = nullptr;
+    std::vector< int > nh_until;    ///< [agent] Day the stage's duration ends
+    std::vector< int > nh_entered;  ///< [agent * stage] Day entered, this infection (-1: not)
+    std::vector< int > nh_episode;  ///< [agent] Infections so far
+    std::vector< char > nh_queue;   ///< [stage] Queue mode: 0 none, 1 self, 2 everyone
+    Assign<TSeq> nh_initial;        ///< See set_initial()
+    int nh_pending = -1;            ///< Transition of the next event (see _add_event())
+
+    /// Event: a seeded infection, and an initial placement (status transitions
+    /// are `-2 - index`, see `TransitionRef`)
+    static constexpr int NH_SEED = std::numeric_limits< int >::min();
+    static constexpr int NH_INITIAL = std::numeric_limits< int >::min() + 1;
+
+    /// The statuses (`nullptr`: one status, "Free")
+    std::shared_ptr< const Statuses<TSeq> > st = nullptr;
+    std::vector< int > nh_status_until; ///< [agent] Day the status's duration ends
+    std::vector< int > nh_status_since; ///< [agent] Day the status was entered
+    std::vector< int > nh_status_sod;   ///< [agent] Status at the start of the day it last changed
+
+    struct Reaction {
+        Trigger on;
+        int transition;                          ///< Fired, or (-1) ...
+        std::function< void(Agent<TSeq> &, Model<TSeq> &) > fun; ///< ... called
+    };
+    std::vector< Reaction > nh_reactions;
+
+    size_t nh_nstatus() const { return st ? st->get_n_stages() : 1u; }
+    int nh_stage_of(unsigned int cell) const { return static_cast< int >(cell / nh_nstatus()); }
+    int nh_status_of(unsigned int cell) const { return static_cast< int >(cell % nh_nstatus()); }
+    unsigned int nh_cell(int stage, int status) const
+    {
+        return static_cast< unsigned int >(stage) * static_cast< unsigned int >(nh_nstatus()) +
+            static_cast< unsigned int >(status);
+    }
+    static bool nh_is_status_tr(int t) { return (t <= -2) && (t > NH_INITIAL); }
+    static int nh_status_tr(int t) { return -2 - t; }
+    int nh_db_id(int t) const
+    {
+        return nh_is_status_tr(t) ?
+            static_cast< int >(nh->get_n_transitions()) + nh_status_tr(t) : t;
+    }
+    void nh_build_states();
+    void nh_react(Agent<TSeq> & p, int transition, int stage_old);
+    bool nh_removed(int stage) const;
+
+    void nh_install(std::shared_ptr< NaturalHistory<TSeq> > def);
+    void nh_reset();
+    void nh_step(Agent<TSeq> & p);
+
+    /// The natural history whose values apply to `p`: its virus's, or (no
+    /// virus) the model's
+    const NaturalHistory<TSeq> & nh_of(const Agent<TSeq> & p) const
+    {
+        const auto & v = p.get_virus();
+        return (v && v->nh_def) ? *v->nh_def : *nh;
+    }
+    void nh_propose(int transition, Agent<TSeq> & p, Virus<TSeq> * virus = nullptr);
+    void nh_enter(Agent<TSeq> & p, unsigned int state_old, int transition);
+    void nh_queue_move(Agent<TSeq> & p, unsigned int state_old);
+    void nh_initial_place();
+    epiworld_double nh_infection_prob(Agent<TSeq> & target, const Virus<TSeq> & v);
     ///@}
 
     /**
@@ -579,8 +643,24 @@ public:
      * indicating number of individuals.
      */
     ///@{
-    void add_virus(Virus<TSeq> & v);
-    void add_tool(Tool<TSeq> & t);
+    /**
+     * @brief Adds a virus, and who gets it at the start of each run.
+     * @details `a` gives each agent without a virus whose stage can be
+     * infected a label: the stage it starts in (a carrier stage), or, for the
+     * forms without labels (e.g., `assign::share()`), the infection's target.
+     * By default, no one gets it (see `assign.hpp`).
+     */
+    void add_virus(const Virus<TSeq> & v, Assign<TSeq> a = Assign<TSeq>());
+
+    /// Adds a tool, and who gets it at the start of each run (default: no one).
+    void add_tool(const Tool<TSeq> & t, Assign<TSeq> a = Assign<TSeq>());
+
+    /// Replaces who gets virus `id` (e.g., the virus of a built-in model).
+    void assign_virus(size_t id, Assign<TSeq> a);
+
+    /// Replaces who gets tool `id`.
+    void assign_tool(size_t id, Assign<TSeq> a);
+
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
     ///@}
@@ -705,30 +785,75 @@ public:
     const Model<TSeq> & print(bool lite = false) const;
 
     /**
-     * @name Manage state (states) in the model
-     *
-     * @details
-     *
-     * The functions `get_state` return the current values for the
-     * states included in the model. The function `set_state_function`
-     * replaces the update function associated with an existing state.
-     *
-     * @param lab `std::string` Name of the state.
-     *
-     * @return `add_state*` returns the ID (index) of the registered state.
-     * @return `set_state_function` returns a reference to the model.
-     * @return `get_state_*` returns a vector of pairs with the
-     * states and their labels.
+     * @brief The number of the engine's states: one per pair of stage (of the
+     * virus's natural history) and status (of the model's statuses), stage
+     * major (`state = stage * n_statuses + status`). Use `get_stage()` and
+     * `get_status()` for an agent's.
+     */
+    size_t get_n_states() const;
+
+    /**
+     * @name Natural history
+     * @brief The disease's stages and the declared transitions between them.
      */
     ///@{
-    epiworld_fast_int state_of(std::string_view name);
-    epiworld_fast_int add_state(std::string lab, UpdateFun<TSeq> fun = nullptr);
-    Model<TSeq> & set_state_function(epiworld_fast_uint state, UpdateFun<TSeq> fun = nullptr);
-    Model<TSeq> & set_state_function(std::string_view name, UpdateFun<TSeq> fun = nullptr);
-    const std::vector< std::string > & get_states() const;
-    size_t get_n_states() const;
-    const std::vector< UpdateFun<TSeq> > & get_state_fun() const;
-    void print_state_codes() const;
+
+    /// The natural history of the model's viruses (`nullptr` if none has one).
+    const NaturalHistory<TSeq> * get_natural_history() const { return nh.get(); }
+
+    /**
+     * @brief Fires a declared transition on an agent, applied at the end of
+     * the step (or of the global event).
+     * @details Nothing happens if, when it is applied, the agent is not in one
+     * of the transition's sources. An infection is not fired: seed instead.
+     * @return Whether the agent was in a source when fired.
+     */
+    bool fire(int transition, Agent<TSeq> & agent);
+
+    /**
+     * @brief Places agents left without a virus in stages at the start of
+     * each run (e.g., `assign::shares({{R, 0.1}})`: 10% Recovered).
+     * @details The labels are stages without the virus; the eligible agents
+     * are those left without a virus, in the first stage. Replaces what was
+     * set before.
+     */
+    void set_initial(Assign<TSeq> a);
+
+    /// Day agent `id` entered `stage` in its current (or last) infection (-1: not).
+    int get_stage_entered(size_t id, int stage) const;
+
+    /// Day agent `id`'s stage duration ends (`INT_MAX`: none).
+    int get_stage_until(size_t id) const;
+
+    /// Infections agent `id` has had in the current run.
+    int get_episode(size_t id) const;
+
+    /// The stage and the status of an agent.
+    int get_stage(const Agent<TSeq> & agent) const;
+    int get_status(const Agent<TSeq> & agent) const;
+
+    /**
+     * @brief Sets the model's statuses (see `Statuses`): where agents are,
+     * and the transitions between them. Between runs only.
+     */
+    void set_statuses(Statuses<TSeq> s);
+
+    /// The statuses (`nullptr` if the model has one, "Free").
+    const Statuses<TSeq> * get_statuses() const { return st.get(); }
+
+    /**
+     * @brief When `on` happens to an agent, fire `transition` on it (or call
+     * `fun`), in the same step.
+     * @details Reactions link the axes: e.g., entering Rash fires
+     * "Quarantined -> Isolated". Within a day, stage changes apply first, then
+     * status changes, then reactions (which see the resulting status; `.was()`
+     * reads the one at the start of the day).
+     */
+    void react(Trigger on, int transition);
+    void react(Trigger on, std::function< void(Agent<TSeq> &, Model<TSeq> &) > fun);
+
+    /// A transition's id (stage or status), by name.
+    int transition_id(std::string_view name) const;
     ///@}
 
     /**
@@ -804,39 +929,18 @@ public:
      * @details The contacts that carry a virus, layer by layer in the order
      * the layers were added and each layer in its own order, are all
      * exposures of one draw (`sample_virus(agent, contacts, n, layer)` adds
-     * them). Only contacts in the model's infectious states are sources (see
-     * `set_infectious_states()`). This is what `default_update_susceptible`
-     * does; a pushing step (networks only) gives the same distribution.
+     * them). Only contacts in an infectious stage (`stage::infectious`) are
+     * sources. This is what a default infection does; a pushing step
+     * (networks only) gives the same distribution.
      * @throws std::logic_error if `agent` carries a virus.
      */
     Virus<TSeq> * sample_virus(Agent<TSeq> * agent);
 
     /**
-     * @brief Sets the states whose agents transmit (by default, every state:
-     * any agent carrying a virus).
-     * @details Said once for the model, every layer follows it. Agents in the
-     * other states may carry a virus (e.g., Exposed in an SEIR model) but infect
-     * nobody, in any layer; they can still be met (in a mixing layer, they take
-     * their share of each agent's contacts).
-     * @param states State ids; an empty list makes every state infectious.
-     * Called during a run (e.g., from a global event), it applies from the
-     * next step.
-     * @throws std::range_error for a state out of range (at `reset()` if
-     * called before the first one).
-     */
-    Model<TSeq> & set_infectious_states(std::vector< int > states);
-
-    /// The states set by `set_infectious_states()` (empty: every state).
-    const std::vector< int > & get_infectious_states() const
-    {
-        return infectious_states;
-    }
-
-    /**
      * @name Network transmission mode
      *
-     * @details States whose update function is `default_update_susceptible`
-     * can be updated by pulling (each
+     * @details Stages whose only drawn exit is a default infection (no
+     * custom sampler) can be updated by pulling (each
      * susceptible agent scans its neighbors) or by pushing (each agent with a
      * virus adds its infection odds to its susceptible neighbors). Both give
      * the same distribution of who gets infected, and by whom; only the random
@@ -894,18 +998,6 @@ public:
     TransmissionSums get_transmission_sums() const;
     ///@}
 
-    /**
-     * @name Initial states
-     *
-     * @details These functions are called before the simulation starts.
-     *
-     * @param proportions_ Vector of proportions for each state.
-     * @param queue_ Vector of queue for each state.
-     */
-    virtual Model<TSeq> & initial_states(
-        std::vector< double > /*proportions_*/,
-        std::vector< int > /*queue_*/
-    ) {return *this;};
 
     /**
      * @name Setting and accessing parameters from the model

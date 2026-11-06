@@ -8,7 +8,7 @@
 
 /**
  * Probability that a measles stage lasts d days, d = 1, ..., dmax (entry
- * d - 1): the lognormal draw of `MeaslesStages::draw_days()`, rounded to whole
+ * d - 1): the lognormal draw of `Duration::lognormal()`, rounded to whole
  * days with a minimum of one.
  */
 inline std::vector< double > measles_stage_pmf(
@@ -85,29 +85,36 @@ inline MeaslesRashExits measles_rash_exits(
 }
 
 /**
- * Number of agents that moved from state `from` to state `to` on each day of
+ * Number of agents that took the declared transition `name` on each day of
  * the last run (entry `d` is day `d`).
  */
+template<typename TSeq>
+inline std::vector< int > transitions_by_day(
+    const epiworld::Model<TSeq> & model,
+    const std::string & name
+) {
+
+    std::vector< std::string > transition;
+    std::vector< int > date, counts;
+    model.get_db().get_hist_transitions(date, transition, counts);
+
+    std::vector< int > out(model.get_ndays() + 1, 0);
+    for (size_t i = 0u; i < date.size(); ++i)
+        if (transition[i] == name)
+            out[date[i]] += counts[i];
+
+    return out;
+
+}
+
+/// The same, for the stage transition `from -> to` (its default name).
 template<typename TSeq>
 inline std::vector< int > transitions_by_day(
     const epiworld::Model<TSeq> & model,
     const std::string & from,
     const std::string & to
 ) {
-
-    std::vector< std::string > state_from, state_to;
-    std::vector< int > date, counts;
-    model.get_db().get_hist_transition_matrix(
-        state_from, state_to, date, counts, true
-    );
-
-    std::vector< int > out(model.get_ndays() + 1, 0);
-    for (size_t i = 0u; i < date.size(); ++i)
-        if ((state_from[i] == from) && (state_to[i] == to))
-            out[date[i]] += counts[i];
-
-    return out;
-
+    return transitions_by_day(model, from + " -> " + to);
 }
 
 #endif

@@ -25,9 +25,8 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     // Copy the original virus
     Virus<> v1 = model.get_virus(0);
     model.rm_virus(0);
-    v1.set_distribution(dist_virus<>(0));
 
-    model.add_virus(v1);
+    model.add_virus(v1, dist_virus<>(0));
 
 
     // Running and checking the results
@@ -40,7 +39,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     for (const auto & a : model.get_agents())
     {
-        if (static_cast<int>(a.get_state()) != model.state_of("Susceptible"))
+        if (model.get_stage(a) != model.SUSCEPTIBLE)
         {
             if (mixing.get_group(a.get_id()) == 0)
             {
@@ -78,7 +77,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         {
             n_right++;
         }
-        else if (static_cast<int>(a.get_state()) != model.state_of("Susceptible"))
+        else if (model.get_stage(a) != model.SUSCEPTIBLE)
         {
             if (mixing.get_group(a.get_id()) == 1)
             {
@@ -103,7 +102,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     model.print();
 
     std::vector< int > totals;
-    model.get_db().get_today_total(nullptr, &totals);
+    model.get_db().get_today_total(nullptr, nullptr, &totals);
 
     std::vector< int > expected_totals = {
         0, 0, 0,
@@ -114,7 +113,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
 
     // Random groups of 2000, drawn at every reset: 6000 agents in a group,
     // 2000 in each, and the rest in none
-    mixing.set_groups(grouping::random<>({2000.0, 2000.0, 2000.0}));
+    mixing.set_groups(assign::counts({{0, 2000u}, {1, 2000u}, {2, 2000u}}), 3u);
     model.run(50, 123);
 
     std::vector< size_t > sizes(4u, 0u);

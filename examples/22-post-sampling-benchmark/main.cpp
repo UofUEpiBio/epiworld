@@ -85,7 +85,7 @@ static void add_mixing(Model<> & model, size_t n)
         groups[i] = std::min(i / size, N_GROUPS - 1u);
 
     auto mixing = layer::mixing<>("mixing");
-    mixing->set_groups(groups, N_GROUPS);
+    mixing->set_groups(assign::labels(groups), N_GROUPS);
     mixing->set_contact_matrix(contact_matrix());
     model.add_layer(mixing);
 }
@@ -117,7 +117,7 @@ static ModelMeasles build_measles(size_t n)
 
     // Everyone in one group, meeting 15 others a day
     auto mixing = layer::mixing<>("mixing");
-    mixing->set_groups(std::vector< size_t >(n, 0u), 1u);
+    mixing->set_groups(assign::labels(std::vector< size_t >(n, 0u)), 1u);
     mixing->set_contact_matrix({15.0});
     model.add_layer(mixing);
 
@@ -176,9 +176,12 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
         );
         model.seed(20260930);
         add_mixing(model, n);
+        // The uninfected cells (stage x 4 statuses + status): susceptible,
+        // free or quarantined
         return bench::time_runs(
             model, o.days, o.reps,
-            {model.SUSCEPTIBLE, model.QUARANTINED_SUSCEPTIBLE}
+            {model.SUSCEPTIBLE * 4 + model.FREE,
+             model.SUSCEPTIBLE * 4 + model.QUARANTINED}
         );
     }
 
@@ -186,7 +189,8 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
     model.seed(20260930);
     return bench::time_runs(
         model, o.days, o.reps,
-        {model.SUSCEPTIBLE, model.QUARANTINED_SUSCEPTIBLE}
+        {static_cast< size_t >(model.SUSCEPTIBLE * 4 + model.FREE),
+             static_cast< size_t >(model.SUSCEPTIBLE * 4 + model.QUARANTINED)}
     );
 }
 

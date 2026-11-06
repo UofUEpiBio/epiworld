@@ -46,7 +46,7 @@ EPIWORLD_TEST_CASE("Bubbles - replicates are independent", "[bubbles]") {
                 // Outbreak size: everyone who left the susceptible state.
                 int infected = 0;
                 for (auto & a : m->get_agents())
-                    if (a.get_state() != 0)
+                    if (m->get_stage(a) != 0)
                         ++infected;
 
                 res.outbreak[run_id] = infected;

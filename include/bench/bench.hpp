@@ -48,7 +48,7 @@ inline uint64_t run_checksum(epiworld::Model<> & m)
 {
     uint64_t h = 1469598103934665603ull;
     std::vector< int > counts;
-    m.get_db().get_hist_total(nullptr, nullptr, &counts);
+    m.get_db().get_hist_total(nullptr, nullptr, nullptr, &counts);
     hash_ints(h, counts);
     std::vector< int > date, source, target, virus, sexp, layer;
     m.get_db().get_transmissions(date, source, target, virus, sexp, layer);
@@ -100,7 +100,7 @@ inline Timing time_runs(
         res.ms.push_back(cpu_ms(t0, t1));
 
         std::vector< int > today;
-        model.get_db().get_today_total(nullptr, &today);
+        model.get_db().get_today_total(nullptr, nullptr, &today);
         double uninfected = 0.0;
         for (size_t s : uninfected_states)
             uninfected += today[s];

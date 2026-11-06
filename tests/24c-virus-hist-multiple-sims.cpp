@@ -13,7 +13,7 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
 
     // Create a simple SIR model
     epimodels::ModelSIR<> model(
-        "test virus", 1000, 10.0, 0.9, 0.3
+        "test virus", 1000, 0.01, 0.9, 0.3
     );
 
     model.seed(1231);
@@ -105,10 +105,11 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
 
     // Also check that the model's current database only has the LAST simulation's data
     std::vector<int> virus_date, virus_id, virus_counts;
-    std::vector<std::string> virus_state;
+    std::vector<std::string> virus_state, virus_status;
     model.get_db().get_hist_virus(
         virus_date,
         virus_id,
+        virus_status,
         virus_state,
         virus_counts
     );

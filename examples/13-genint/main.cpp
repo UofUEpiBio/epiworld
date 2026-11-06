@@ -11,7 +11,7 @@ void add_random_mixing(Model<> & model, double contact_rate)
 {
     model.add_param(contact_rate, "Contact rate");
     auto mix = layer::mixing<>("random mixing");
-    mix->set_groups(std::vector< size_t >(model.size(), 0u), 1u);
+    mix->set_groups(assign::labels(std::vector< size_t >(model.size(), 0u)), 1u);
     mix->set_contact_matrix({1.0});
     mix->set_contact_rate("Contact rate");
     model.add_layer(mix);
@@ -27,7 +27,7 @@ std::vector< double > expected_gentime(
 
     std::vector< int > date, counts;
     std::vector< std::string > state;
-    model.get_db().get_hist_total(&date, &state, &counts);
+    model.get_db().get_hist_total(&date, nullptr, &state, &counts);
 
     std::vector< double > S(ndays, 0.0);
     for (size_t i = 0u; i < date.size(); ++i)

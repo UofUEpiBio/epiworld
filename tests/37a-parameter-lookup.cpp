@@ -73,12 +73,12 @@ EPIWORLD_TEST_CASE("Parameter lookup by name", "[parameters]") {
     model_b.run(60, 123);
 
     std::vector< int > hist_a, hist_b;
-    model_a.get_db().get_hist_total(nullptr, nullptr, &hist_a);
-    model_b.get_db().get_hist_total(nullptr, nullptr, &hist_b);
+    model_a.get_db().get_hist_total(nullptr, nullptr, nullptr, &hist_a);
+    model_b.get_db().get_hist_total(nullptr, nullptr, nullptr, &hist_b);
     REQUIRE(hist_a == hist_b);
 
     std::vector< int > today;
-    model_a.get_db().get_today_total(nullptr, &today);
+    model_a.get_db().get_today_total(nullptr, nullptr, &today);
     REQUIRE(today[0u] < 2000); // Something happened
 
 }

@@ -6,23 +6,22 @@ int main()
   // Creating a model
   epiworld::Model<> model(1000);
 
-  model.add_state("Susceptible", epiworld::default_update_susceptible<>);
-  auto infected_state = model.add_state("Infected", epiworld::default_update_exposed<>);
-  auto removed_state = model.add_state("Removed");
-
-  // Creating a virus
-  epiworld::Virus<> covid19("covid 19", 0.05, true);
-  covid19.set_prob_infecting(0.8);
-  covid19.set_state(infected_state, removed_state, removed_state);
+  // Creating a virus, with its natural history
+  epiworld::Virus<> covid19("covid 19");
+  covid19.add_stage("Susceptible");
+  covid19.add_stage("Infected", epiworld::stage::infectious);
+  covid19.add_stage("Removed");
+  covid19.infection(0, 1, 0.8);
+  covid19.rate(1, 2, 0.5).effect(epiworld::Effect::recovery);
 
   // Creating a tool
-  epiworld::Tool<> vax("vaccine", .5, true);
+  epiworld::Tool<> vax("vaccine");
   vax.set_susceptibility_reduction(.95);
 
   // Adding the tool and virus
-  model.add_virus(covid19);
+  model.add_virus(covid19, epiworld::assign::share(0.05));
 
-  model.add_tool(vax);
+  model.add_tool(vax, epiworld::assign::share(.5));
 
   // Generating a random pop
   model.add_layer(epiworld::layer::network(

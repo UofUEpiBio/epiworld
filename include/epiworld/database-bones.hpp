@@ -85,6 +85,19 @@ private:
 
     std::vector< int > transition_matrix;
 
+    /**
+     * @name Declared transitions (natural history)
+     * @details How many agents took each declared transition, since the last
+     * record (see `get_hist_transitions()`).
+     */
+    ///@{
+    std::vector< int > transition_today;       ///< [transition]
+    std::vector< int > hist_transition_date;
+    std::vector< int > hist_transition_id;
+    std::vector< int > hist_transition_counts;
+    void record_declared_transition(int id) { ++transition_today[static_cast< size_t >(id)]; }
+    ///@}
+
     UserData<TSeq> user_data;
 
     void update_state(
@@ -108,6 +121,26 @@ private:
     );
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
+
+    /**
+     * @brief The status and the stage of a state of the engine (the one place
+     * the pair is split; models without statuses have the status "Free").
+     */
+    void split_state(
+        epiworld_fast_uint state,
+        std::string & status,
+        std::string & stage
+    ) const;
+
+    /// `split_state()` over a vector of states.
+    void split_states(
+        const std::vector< epiworld_fast_uint > & states,
+        std::vector< std::string > * status,
+        std::vector< std::string > * stage
+    ) const;
+
+    /// Today's total of a stage (`by_stage`) or of a status.
+    int today_total_of(const std::string & name, bool by_stage) const;
 
 
 public:
@@ -146,27 +179,38 @@ public:
     /**
      * @name Get recorded information from the model
      *
-     * @param what std::string, The state, e.g., 0, 1, 2, ...
-     * @return In `get_today_total`, the current counts of `what`.
-     * @return In `get_today_virus`, the current counts of `what` for
+     * @details The counts are by status and stage: one row per pair (and
+     * day, and virus or tool, in the histories). Models without statuses
+     * report the status "Free". A total by stage or by status is a sum over
+     * the rows.
+     *
+     * @param stage A stage's name.
+     * @param status A status's name.
+     * @return In `get_today_total_stage(stage)` and
+     * `get_today_total_status(status)`, how many agents are in that stage (in
+     * any status) or in that status (in any stage) now. A stage and a status
+     * may share a name; each function looks only among its own.
+     * @return In `get_today_total`, the current counts of each pair.
+     * @return In `get_today_virus`, the current counts of each pair for
      * each virus.
-     * @return In `get_hist_total`, the time series of `what`
-     * @return In `get_hist_virus`, the time series of what for each virus.
-     * @return In `get_hist_total_date` and `get_hist_virus_date` the
-     * corresponding date
+     * @return In `get_hist_total`, the time series of each pair.
+     * @return In `get_hist_virus` and `get_hist_tool`, the time series of
+     * each pair for each virus and tool.
      * @return In `get_active_cases`, the number of active cases (currently infected individuals)
      * for each virus at each point in time.
      */
     ///@{
-    int get_today_total(const std::string & what) const;
-    int get_today_total(const epiworld_fast_uint & what) const;
+    int get_today_total_stage(const std::string & stage) const;
+    int get_today_total_status(const std::string & status) const;
     void get_today_total(
-        std::vector< std::string > * state = nullptr,
-        std::vector< int > * counts = nullptr
+        std::vector< std::string > * status,
+        std::vector< std::string > * stage,
+        std::vector< int > * counts
     ) const;
 
     void get_today_virus(
-        std::vector< std::string > & state,
+        std::vector< std::string > & status,
+        std::vector< std::string > & stage,
         std::vector< int > & id,
         std::vector< int > & counts
     ) const;
@@ -177,27 +221,45 @@ public:
 
     void get_hist_total(
         std::vector< int > * date,
-        std::vector< std::string > * state,
+        std::vector< std::string > * status,
+        std::vector< std::string > * stage,
         std::vector< int > * counts
     ) const;
 
     void get_hist_virus(
         std::vector< int > & date,
         std::vector< int > & id,
-        std::vector< std::string > & state,
+        std::vector< std::string > & status,
+        std::vector< std::string > & stage,
         std::vector< int > & counts
     ) const;
 
     void get_hist_tool(
         std::vector< int > & date,
         std::vector< int > & id,
-        std::vector< std::string > & state,
+        std::vector< std::string > & status,
+        std::vector< std::string > & stage,
+        std::vector< int > & counts
+    ) const;
+
+    /**
+     * @brief How many agents took each declared transition of the natural
+     * history, by day.
+     * @details One row per recorded day and transition, the transitions in
+     * the order they were declared. Seeding and initial placements are not
+     * transitions. Requires a natural history.
+     */
+    void get_hist_transitions(
+        std::vector< int > & date,
+        std::vector< std::string > & transition,
         std::vector< int > & counts
     ) const;
 
     void get_hist_transition_matrix(
-        std::vector< std::string > & state_from,
-        std::vector< std::string > & state_to,
+        std::vector< std::string > & status_from,
+        std::vector< std::string > & stage_from,
+        std::vector< std::string > & status_to,
+        std::vector< std::string > & stage_to,
         std::vector< int > & date,
         std::vector< int > & counts,
         bool skip_zeros

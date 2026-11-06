@@ -112,12 +112,7 @@ using MixerFun = std::function<epiworld_double(Agent<TSeq>*,VirusPtr<TSeq>&,Mode
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 using MutFun = std::function<bool(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using PostRecoveryFun = std::function<void(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using VirusFun = std::function<epiworld_double(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
-
+/// The engine's update of the agents in a state (see `nh_build_states()`)
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 using UpdateFun = std::function<void(Agent<TSeq>*,Model<TSeq>*)>;
 
@@ -141,8 +136,9 @@ enum class EventAction : uint8_t {
 /**
  * @brief How network transmission is sampled each step.
  *
- * @details Susceptible agents whose update function is
- * `default_update_susceptible` can acquire a virus in two ways that give the same distribution of outcomes:
+ * @details Agents in a stage whose only drawn exit is a default infection
+ * (no custom sampler) can acquire a virus in two ways that give the same
+ * distribution of outcomes:
  *
  * - `pull`: each susceptible agent scans its neighbors and draws its infector
  *   with `roulette()` (the approach of epiworld <= 0.15).
@@ -186,18 +182,6 @@ enum class TransmissionMode : uint8_t {
 #endif
 
 /**
- * @brief Decides how to distribute viruses at initialization
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using VirusToAgentFun = std::function<void(Virus<TSeq>&,Model<TSeq>*)>;
-
-/**
- * @brief Decides how to distribute tools at initialization
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ToolToAgentFun = std::function<void(Tool<TSeq>&,Model<TSeq>*)>;
-
-/**
  * @brief Event data for update an agent
  *
  * @tparam TSeq
@@ -211,6 +195,7 @@ struct Event {
     epiworld_fast_int queue;
     EventAction action;
     int layer = -1; ///< Layer of the contact that transmitted the virus, if any
+    int transition = -1; ///< Declared transition of the natural history (-1: none)
 public:
 /**
      * @brief Construct a new Event object

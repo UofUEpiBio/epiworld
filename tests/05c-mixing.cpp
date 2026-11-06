@@ -32,10 +32,7 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
     // Creating three groups
 
 
-    model_1.get_virus(0).set_distribution(
-        distribute_virus_randomly(n_infected, false)
-        // dist_virus
-    );
+    model_1.assign_virus(0, assign::count(n_infected));
 
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims, -1.0);
@@ -71,7 +68,7 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
         }
     }
     // Normalizing the average
-    auto states = model_1.get_states();
+    auto states = tests_state_labels(model_1);
     size_t n_states = states.size();
     for (size_t i = 0; i < n_states; ++i)
     {

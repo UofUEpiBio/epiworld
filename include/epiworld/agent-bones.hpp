@@ -127,6 +127,8 @@ class Agent {
     friend class Tool<TSeq>;
     friend class Queue<TSeq>;
     friend class AgentsSample<TSeq>;
+    friend class DataBase<TSeq>;
+    friend class layer::Network<TSeq>;
 protected:
 
     unsigned int state = 0u;
@@ -141,6 +143,58 @@ protected:
 
     void reset(); ///< Resets the agent to the initial state (no virus, no tools, state 0.)
 
+    /**
+     * @name The engine's changes (with the target state and queue)
+     * @details -99 means the default: no change of state (tools), the
+     * infection's target (a virus given from outside).
+     */
+    ///@{
+    void add_tool(
+        Model<TSeq> & model,
+        const Tool<TSeq> & tool,
+        epiworld_fast_int state_new,
+        epiworld_fast_int queue
+        );
+
+    void set_virus(
+        Model<TSeq> & model,
+        const Virus<TSeq> & virus,
+        epiworld_fast_int state_new,
+        epiworld_fast_int queue
+        );
+
+    void rm_tool(
+        Model<TSeq> & model,
+        epiworld_fast_uint tool_idx,
+        epiworld_fast_int state_new,
+        epiworld_fast_int queue
+    );
+
+    void rm_tool(
+        Model<TSeq> & model,
+        ToolPtr<TSeq> & tool,
+        epiworld_fast_int state_new,
+        epiworld_fast_int queue
+    );
+
+    void rm_virus(
+        Model<TSeq> & model,
+        epiworld_fast_int state_new,
+        epiworld_fast_int queue
+    );
+
+    void change_state(
+        Model<TSeq> & model,
+        epiworld_fast_uint new_state,
+        epiworld_fast_int queue = 0
+        );
+
+    /// The engine's index of the agent's stage and status (see
+    /// `Model::get_stage()` and `Model::get_status()`).
+    unsigned int get_state() const;
+    unsigned int get_state_prev() const;
+    ///@}
+
 public:
 
     Agent() = default;
@@ -151,49 +205,20 @@ public:
 
     /**
      * @name Add/Remove Virus/Tool
-     * 
-     * Any of these is ultimately reflected at the end of the iteration.
-     * 
+     *
+     * Any of these is ultimately reflected at the end of the iteration. A
+     * virus given to an agent takes it through the infection transition out
+     * of its stage (see `NaturalHistory`); moving an agent otherwise is done
+     * with `Model::fire()`.
+     *
      * @param tool Tool to add
      * @param virus Virus to add
-     * @param state_new state after the change
-     * @param queue 
      */
     ///@{
-    void add_tool(
-        Model<TSeq> & model,
-        const Tool<TSeq> & tool,
-        epiworld_fast_int state_new = -99,
-        epiworld_fast_int queue = -99
-        );
-
-    void set_virus(
-        Model<TSeq> & model,
-        const Virus<TSeq> & virus,
-        epiworld_fast_int state_new = -99,
-        epiworld_fast_int queue = -99
-        );
-
-    void rm_tool(
-        Model<TSeq> & model,
-        epiworld_fast_uint tool_idx,
-        epiworld_fast_int state_new = -99,
-        epiworld_fast_int queue = -99
-    );
-
-    void rm_tool(
-        Model<TSeq> & model,
-        ToolPtr<TSeq> & tool,
-        epiworld_fast_int state_new = -99,
-        epiworld_fast_int queue = -99
-    );
-
-    void rm_virus(
-        Model<TSeq> & model,
-        epiworld_fast_int state_new = -99,
-        epiworld_fast_int queue = -99
-    );
-
+    void add_tool(Model<TSeq> & model, const Tool<TSeq> & tool);
+    void set_virus(Model<TSeq> & model, const Virus<TSeq> & virus);
+    void rm_tool(Model<TSeq> & model, epiworld_fast_uint tool_idx);
+    void rm_tool(Model<TSeq> & model, ToolPtr<TSeq> & tool);
     void rm_agent_by_virus(Model<TSeq> & model) = delete; ///< Agent removed by virus
     ///@}
     
@@ -225,15 +250,7 @@ public:
     /// @brief Applies the virus' mutation function (throws if the agent has no virus).
     void mutate_virus(Model<TSeq> & model);
 
-
-    void change_state(
-        Model<TSeq> & model,
-        epiworld_fast_uint new_state,
-        epiworld_fast_int queue = 0
-        );
-
-    unsigned int get_state() const;
-    unsigned int get_state_prev() const;
+    /// The last day the agent's stage or status changed.
     int get_state_last_changed() const;
 
 

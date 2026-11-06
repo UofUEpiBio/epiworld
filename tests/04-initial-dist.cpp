@@ -13,7 +13,8 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_0)
     ));
 
-    model_0.initial_states({0.5}).
+    model_0.set_initial(assign::shares({{2, 0.5}}));
+    model_0.
         verbose_off().
         run(100, 1231);
 
@@ -25,14 +26,15 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_1)
     ));
 
-    model_1.initial_states({.5}).
+    model_1.set_initial(assign::shares({{2, 0.5}}));
+    model_1.
         queuing_off().
         verbose_off().
         run(100, 1231);
 
     std::vector< int > h_0, h_1;
-    model_0.get_db().get_hist_total(nullptr, nullptr, &h_0);
-    model_1.get_db().get_hist_total(nullptr, nullptr, &h_1);
+    model_0.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
+    model_1.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_1);
 
     // Getting transition matrix
     auto tmat_0 = model_0.get_db().get_transition_probability(false);
@@ -74,15 +76,17 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_2)
     ));
 
+    // 30% of the initial cases start Infected, 50% of the others Removed
+    model_2.assign_virus(0, assign::shares({{1, 0.007}, {2, 0.003}}));
+    model_2.set_initial(assign::shares({{3, 0.5}}));
     model_2.
         queuing_off().
         verbose_off().
-        initial_states({.3, .5}, {}).
         run(100, 1231).
         print(false);
 
     h_0.clear();
-    model_2.get_db().get_hist_total(nullptr, nullptr, &h_0);
+    model_2.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
 
     REQUIRE_FALSE(
         ((h_0[0u] != 4950) || (h_0[1u] != 70) || (h_0[2u] != 30) || (h_0[3u] != 4950))
@@ -94,13 +98,14 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         );
     add_random_mixing(model_3, 2);
 
-    model_3.initial_states({.5}).
+    model_3.set_initial(assign::shares({{2, 0.5}}));
+    model_3.
         verbose_off().
         run(100, 222).
         print(false);
 
     h_0.clear();
-    model_3.get_db().get_hist_total(nullptr, nullptr, &h_0);
+    model_3.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
 
     REQUIRE_FALSE(
         ((h_0[0u] != 4950) || (h_0[1u] != 100) || (h_0[2u] != 4950))
@@ -112,13 +117,15 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     );
     add_random_mixing(model_4, 2);
 
-    model_4.initial_states({.3, .5}).
+    model_4.assign_virus(0, assign::shares({{1, 0.007}, {2, 0.003}}));
+    model_4.set_initial(assign::shares({{3, 0.5}}));
+    model_4.
         verbose_off().
         run(100, 222).
         print(false);
 
     h_0.clear();
-    model_4.get_db().get_hist_total(nullptr, nullptr, &h_0);
+    model_4.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
 
     REQUIRE_FALSE(
         ((h_0[0u] != 4950) || (h_0[1u] != 70) || (h_0[2u] != 30) || (h_0[3u] != 4950))
@@ -133,20 +140,21 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_5)
     ));
 
-    model_5.initial_states({0.5, .05}).
+    model_5.set_initial(assign::shares({{2, 0.5}, {3, 0.05}}));
+    model_5.
         verbose_off().
         run(100, 1231).
         print(false);
 
     h_0.clear();
-    model_5.get_db().get_hist_total(nullptr, nullptr, &h_0);
+    model_5.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
 
     REQUIRE_FALSE(
         (
-            moreless(h_0[0u], 4682) || 
-            moreless(h_0[1u], 100) || 
-            moreless(h_0[2u], 4723) || 
-            moreless(h_0[3u], 495))
+            (h_0[0u] != 4455) ||
+            (h_0[1u] != 100) ||
+            (h_0[2u] != 4950) ||
+            (h_0[3u] != 495))
         );
 
     // Trying SEIRD -------------------------------------------------------------
@@ -158,13 +166,15 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         "network", rgraph_smallworld(10000, 5, 0.01, false, model_6)
     ));
 
-    model_6.initial_states({0.5, .1, .1}).
+    model_6.assign_virus(0, assign::shares({{1, 0.05}, {2, 0.05}}));
+    model_6.set_initial(assign::shares({{3, 0.1}, {4, 0.1}}));
+    model_6.
         verbose_off().
         run(100, 1231).
         print(false);
 
     h_0.clear();
-    model_6.get_db().get_hist_total(nullptr, nullptr, &h_0);
+    model_6.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
 
     REQUIRE_FALSE(
         (
@@ -182,13 +192,15 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
     );
     add_random_mixing(model_7, 4);
 
-    model_7.initial_states({0.5, .1, .1}).
+    model_7.assign_virus(0, assign::shares({{1, 0.05}, {2, 0.05}}));
+    model_7.set_initial(assign::shares({{3, 0.1}, {4, 0.1}}));
+    model_7.
         verbose_off().
         run(100, 1231).
         print(false);
 
     h_0.clear();
-    model_7.get_db().get_hist_total(nullptr, nullptr, &h_0);
+    model_7.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
 
     REQUIRE_FALSE(
         (

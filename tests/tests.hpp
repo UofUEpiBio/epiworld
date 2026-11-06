@@ -41,7 +41,7 @@ inline void add_random_mixing(epiworld::Model<TSeq> & model, double contact_rate
 {
     model.add_param(contact_rate, "Contact rate");
     auto mix = epiworld::layer::mixing<TSeq>("random mixing");
-    mix->set_groups(std::vector< size_t >(model.size(), 0u), 1u);
+    mix->set_groups(epiworld::assign::labels<TSeq>(std::vector< size_t >(model.size(), 0u)), 1u);
     mix->set_contact_matrix({1.0});
     mix->set_contact_rate("Contact rate");
     model.add_layer(mix);
@@ -78,7 +78,7 @@ inline std::vector< size_t > ranges(
 
 /**
  * Adds a mixing layer named "mixing" with the contact matrix (column-major) and
- * the groups, fixed or a grouping (what ModelSIRMixing and ModelSEIRMixing did
+ * the groups, fixed (a vector) or an `Assign` (what ModelSIRMixing and ModelSEIRMixing did
  * in epiworld 0.x).
  */
 template<typename TSeq, typename G>
@@ -89,15 +89,13 @@ inline void add_group_mixing(
 )
 {
     auto mix = epiworld::layer::mixing<TSeq>("mixing");
+    const size_t n_groups = static_cast< size_t >(std::lround(
+        std::sqrt(static_cast< double >(contact_matrix.size()))
+    ));
     if constexpr (std::is_same_v< G, std::vector< size_t > >)
-        mix->set_groups(
-            std::move(groups),
-            static_cast< size_t >(std::lround(
-                std::sqrt(static_cast< double >(contact_matrix.size()))
-            ))
-        );
+        mix->set_groups(epiworld::assign::labels<TSeq>(groups), n_groups);
     else
-        mix->set_groups(std::move(groups));
+        mix->set_groups(std::move(groups), n_groups);
     mix->set_contact_matrix(std::move(contact_matrix));
     model.add_layer(mix);
 }
@@ -199,16 +197,35 @@ inline EpiTempFile epi_temp_file(
     };
 }
 
+/**
+ * A virus with ModelSIR's natural history (it reads "Transmission probability"
+ * and "Recovery rate"), in no model yet: another strain for an SIR model.
+ */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline epiworld::VirusToAgentFun<TSeq> dist_virus(int i)
+inline epiworld::Virus<TSeq> sir_virus(std::string name)
 {
-    return [i](epiworld::Virus<TSeq> & v, epiworld::Model<TSeq> * m) -> void {
+    epiworld::Virus<TSeq> v(std::move(name));
+    v.add_stage("Susceptible");
+    v.add_stage("Infected", epiworld::stage::infectious);
+    v.add_stage("Recovered");
+    v.infection(0, 1, "Transmission probability");
+    v.rate(1, 2, "Recovery rate").effect(epiworld::Effect::recovery);
+    return v;
+}
 
-            m->get_agents()[i].set_virus(*m, v);
-            return;
+/// The ids 0, 1, ..., n - 1 (e.g., `assign::agents(first_agents(5))`).
+inline std::vector< size_t > first_agents(size_t n)
+{
+    std::vector< size_t > ids(n);
+    std::iota(ids.begin(), ids.end(), 0u);
+    return ids;
+}
 
-        };
-
+/// Agent `i` gets it (see `assign::agents()`).
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+inline epiworld::Assign<TSeq> dist_virus(int i)
+{
+    return epiworld::assign::agents<TSeq>({static_cast< size_t >(i)});
 }
 
 /**
@@ -298,6 +315,7 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
             return;
         
         m->get_db().get_today_total(
+            nullptr,
             nullptr,
             &(final_distribution->at(n))
         );
@@ -498,12 +516,36 @@ inline std::vector<epiworld_double> tests_calculate_avg_transitions(
     return avg_transitions;
 };
 
+/**
+ * Labels of the engine's states, in order: "Status / Stage" pairs (just the
+ * stage without statuses), state = stage * n_statuses + status.
+ */
+template<typename TSeq>
+inline std::vector< std::string > tests_state_labels(
+    const epiworld::Model<TSeq> & model
+) {
+    std::vector< std::string > out;
+    const auto * nh = model.get_natural_history();
+    const auto * st = model.get_statuses();
+    if (nh == nullptr)
+        return out;
+    for (const auto & stage : nh->get_stages())
+    {
+        if (st == nullptr)
+            out.push_back(stage);
+        else
+            for (const auto & status : st->get_stages())
+                out.push_back(status + " / " + stage);
+    }
+    return out;
+}
+
 template<typename ModelType>
 void inline tests_print_avg_transitions(
     const std::vector<epiworld_double> & avg_transitions,
     const ModelType & model
 ) {
-    auto states = model.get_states();
+    auto states = tests_state_labels(model);
     size_t n_states = states.size();
 
     // Printing the entry as a matrix

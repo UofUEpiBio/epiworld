@@ -18,7 +18,7 @@ static Run run_model(Model<> & model)
 
     Run r;
     std::vector< int > date, virus, sexp, sexp_layer;
-    model.get_db().get_hist_total(&date, nullptr, &r.hist);
+    model.get_db().get_hist_total(&date, nullptr, nullptr, &r.hist);
     model.get_db().get_transmissions(
         r.tdate, r.tsource, r.ttarget, virus, sexp, sexp_layer
     );

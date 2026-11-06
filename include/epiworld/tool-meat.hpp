@@ -111,30 +111,6 @@ inline Tool<TSeq>::Tool(std::string name)
 }
 
 template<typename TSeq>
-inline Tool<TSeq>::Tool(
-    std::string name,
-    epiworld_double prevalence,
-    bool as_proportion
-    )
-{
-
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        sequence = -1;
-    }
-    else
-    {
-        sequence = nullptr;
-    }
-
-    set_name(name);
-
-    set_distribution(
-        distribute_tool_randomly<TSeq>(prevalence, as_proportion)
-    );
-}
-
-template<typename TSeq>
 inline void Tool<TSeq>::set_sequence(TSeq d) {
     sequence = std::make_shared<TSeq>(d);
 }
@@ -516,54 +492,6 @@ inline int Tool<TSeq>::get_date() const
     return date;
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_state(
-    epiworld_fast_int init,
-    epiworld_fast_int end
-)
-{
-    state_init = init;
-    state_post = end;
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::set_queue(
-    epiworld_fast_int init,
-    epiworld_fast_int end
-)
-{
-    queue_init = init;
-    queue_post = end;
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::get_state(
-    epiworld_fast_int * init,
-    epiworld_fast_int * post
-)
-{
-    if (init != nullptr)
-        *init = state_init;
-
-    if (post != nullptr)
-        *post = state_post;
-
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::get_queue(
-    epiworld_fast_int * init,
-    epiworld_fast_int * post
-)
-{
-    if (init != nullptr)
-        *init = queue_init;
-
-    if (post != nullptr)
-        *post = queue_post;
-
-}
-
 template<>
 inline bool Tool<std::vector<int>>::operator==(
     const Tool<std::vector<int>> & other
@@ -582,17 +510,9 @@ inline bool Tool<std::vector<int>>::operator==(
     if (tool_name != other.tool_name)
         return false;
     
-    if (state_init != other.state_init)
-        return false;
 
-    if (state_post != other.state_post)
-        return false;
 
-    if (queue_init != other.queue_init)
-        return false;
 
-    if (queue_post != other.queue_post)
-        return false;
 
     if (target_mask != other.target_mask)
         return false;
@@ -620,17 +540,9 @@ inline bool Tool<TSeq>::operator==(const Tool<TSeq> & other) const
     if (tool_name != other.tool_name)
         return false;
     
-    if (state_init != other.state_init)
-        return false;
 
-    if (state_post != other.state_post)
-        return false;
 
-    if (queue_init != other.queue_init)
-        return false;
 
-    if (queue_post != other.queue_post)
-        return false;
 
     if (target_mask != other.target_mask)
         return false;
@@ -646,10 +558,6 @@ inline void Tool<TSeq>::print() const
 
     printf_epiworld("Tool       : %s\n", this->get_name().c_str());
     printf_epiworld("Id         : %s\n", (id < 0)? std::string("(empty)").c_str() : std::to_string(id).c_str());
-    printf_epiworld("state_init : %i\n", static_cast<int>(state_init));
-    printf_epiworld("state_post : %i\n", static_cast<int>(state_post));
-    printf_epiworld("queue_init : %i\n", static_cast<int>(queue_init));
-    printf_epiworld("queue_post : %i\n", static_cast<int>(queue_post));
 
     if (target_mask != ~uint64_t(0))
     {
@@ -659,25 +567,6 @@ inline void Tool<TSeq>::print() const
         printf_epiworld("targets    : %s\n", tgts.c_str());
     }
 
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::distribute(Model<TSeq> * model)
-{
-
-    if (dist)
-    {
-
-        dist(*this, model);
-
-    }
-
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::set_distribution(ToolToAgentFun<TSeq> fun)
-{
-    dist = fun;
 }
 
 template<typename TSeq>

@@ -9,23 +9,24 @@ using namespace epiworld;
 
 namespace {
 
-// An SIR-like model over `n` agents with default (all-layer) pulling
+// A model over `n` agents with default (all-layer) pulling; its stages come
+// from its viruses (make_virus())
 Model<> make_model(size_t n)
 {
     Model<> m(n);
-    m.add_state("Susceptible", default_update_susceptible<>);
-    m.add_state("Infected", default_update_exposed<>);
-    m.add_state("Recovered");
     m.verbose_off();
     return m;
 }
 
+// An SIR virus, with its own probabilities
 Virus<> make_virus(std::string name, double p_inf, double p_rec = 0.0)
 {
-    Virus<> v(name, 0.0, true);
-    v.set_state(1, 2, 2);
-    v.set_prob_infecting(p_inf);
-    v.set_prob_recovery(p_rec);
+    Virus<> v(name);
+    v.add_stage("Susceptible");
+    v.add_stage("Infected", stage::infectious);
+    v.add_stage("Recovered");
+    v.infection(0, 1, p_inf);
+    v.rate(1, 2, p_rec).effect(Effect::recovery);
     return v;
 }
 
@@ -69,8 +70,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
             Model<> m = make_model(n);
             Virus<> v = make_virus("flu", p);
-            v.set_distribution(distribute_virus_to_set<>(evens));
-            m.add_virus(v);
+            m.add_virus(v, assign::agents<>(evens));
             m.add_param(w, "Weight");
             auto net = layer::network("pairs", graph);
             if (param != nullptr)
@@ -79,7 +79,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
             m.run(1, 2026);
 
             return (
-                static_cast< double >(m.get_db().get_today_total("Infected")) -
+                static_cast< double >(m.get_db().get_today_total_stage("Infected")) -
                 static_cast< double >(pairs)
             ) / static_cast< double >(pairs);
 
@@ -114,11 +114,9 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
         Model<> m = make_model(n);
 
         Virus<> a = make_virus("flu A", 0.2, 0.1);
-        a.set_distribution(distribute_virus_randomly<>(0.01));
         Virus<> b = make_virus("flu B", 0.2, 0.1);
-        b.set_distribution(distribute_virus_randomly<>(0.01));
-        m.add_virus(a);
-        m.add_virus(b);
+        m.add_virus(a, assign::share<>(0.01));
+        m.add_virus(b, assign::share<>(0.01));
         m.seed(77);
 
         auto net_a = layer::network("a", rgraph_smallworld(n, 6, 0.1, false, m));
@@ -167,15 +165,14 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
             Model<> m = make_model(n);
             Virus<> v = make_virus("flu", 0.05, 0.1);
-            v.set_distribution(distribute_virus_randomly<>(0.01));
-            m.add_virus(v);
+            m.add_virus(v, assign::share<>(0.01));
             m.seed(5);
 
             m.add_layer(layer::network(
                 "ties", rgraph_smallworld(n, 4, 0.1, false, m)
             ));
             auto mixing = layer::mixing("crowd");
-            mixing->set_groups(std::vector< size_t >(n, 0u), 1u);
+            mixing->set_groups(assign::labels(std::vector< size_t >(n, 0u)), 1u);
             mixing->set_contact_matrix({2.0});
             m.add_layer(mixing);
 
@@ -222,8 +219,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
             Model<> m = make_model(n);
             Virus<> v = make_virus("flu", 1.0);
-            v.set_distribution(distribute_virus_to_set<>({0u}));
-            m.add_virus(v);
+            m.add_virus(v, assign::agents<>({0u}));
             m.add_param(0.0, "Weight");
             Virus<> other = make_virus("other", 1.0);
             m.add_virus(other);
@@ -239,7 +235,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
             m.run(1, 1);
 
             INFO("mode " << mode << ", scenario " << scenario);
-            const size_t infected = m.get_db().get_today_total("Infected");
+            const size_t infected = m.get_db().get_today_total_stage("Infected");
 
             if (scenario < 2)
                 REQUIRE(infected == 1u);
@@ -265,8 +261,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
             Model<> m = make_model(n);
             Virus<> v = make_virus("flu", 1.0);
-            v.set_distribution(distribute_virus_to_set<>({0u}));
-            m.add_virus(v);
+            m.add_virus(v, assign::agents<>({0u}));
             if (!queuing)
                 m.queuing_off();
 
@@ -287,7 +282,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
             INFO("mode " << mode << ", queuing " << queuing);
             REQUIRE(m.get_last_transmission_mode() == TransmissionMode::pull);
-            REQUIRE(m.get_db().get_today_total("Infected") == n);
+            REQUIRE(m.get_db().get_today_total_stage("Infected") == n);
 
         }
 

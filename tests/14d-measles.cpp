@@ -45,12 +45,7 @@ EPIWORLD_TEST_CASE(
     );
 
     // Setting the distribution function of the initial cases
-    model.get_virus(0).set_distribution(
-        [&n_seeds](Virus<> & v, Model<> * m) -> void {
-        for (int i = 0; i < n_seeds; ++i)
-            m->get_agents()[i].set_virus(*m, v);
-        return;
-    });
+    model.assign_virus(0, assign::agents(first_agents(n_seeds)));
 
     int ndays = 60;
 
@@ -85,17 +80,15 @@ EPIWORLD_TEST_CASE(
     // =====================================================================
     // Test 2: Outbreak size should match "ever infected" count
     // =====================================================================
-    std::vector<std::string> states;
+    std::vector<std::string> stages;
     std::vector<int> counts;
-    db.get_today_total(&states, &counts);
-    
+    db.get_today_total(nullptr, &stages, &counts);
+
+    // Everyone not susceptible (in any status) was infected
     int ever_infected = 0;
-    for (size_t i = 0; i < states.size(); i++) {
-        // Everyone except Susceptible and Quarantined Susceptible was infected
-        if (states[i] != "Susceptible" && 
-            states[i] != "Quarantined Susceptible")
+    for (size_t i = 0; i < stages.size(); i++)
+        if (stages[i] != "Susceptible")
             ever_infected += counts[i];
-    }
 
     REQUIRE(final_outbreak_size == ever_infected);
 
@@ -104,9 +97,9 @@ EPIWORLD_TEST_CASE(
     // =====================================================================
     std::vector<int> hist_date;
     std::vector<int> hist_id;
-    std::vector<std::string> hist_state;
+    std::vector<std::string> hist_status, hist_stage;
     std::vector<int> hist_counts;
-    db.get_hist_virus(hist_date, hist_id, hist_state, hist_counts);
+    db.get_hist_virus(hist_date, hist_id, hist_status, hist_stage, hist_counts);
 
     for (int hist_count : hist_counts)
     {

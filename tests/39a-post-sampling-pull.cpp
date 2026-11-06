@@ -23,11 +23,7 @@ epimodels::ModelSIR<> make_ring()
 
     Virus<> v = model.get_virus(0);
     model.rm_virus(0);
-    v.set_distribution([](Virus<> & virus, Model<> * m) -> void {
-        m->get_agents()[2].set_virus(*m, virus);
-        m->get_agents()[6].set_virus(*m, virus);
-    });
-    model.add_virus(v);
+    model.add_virus(v, assign::agents({2u, 6u}));
 
     std::vector< int > source, target;
     for (int i = 0; i < 8; ++i)
@@ -66,9 +62,9 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
 
             // The state the sampling saw: the contacted agents are still
             // susceptible, since the events were not applied yet.
-            b.state_ok = (p->get_state() == 1u);
+            b.state_ok = (m->get_stage(*p) == 1);
             for (auto c : b.contacts)
-                b.state_ok = b.state_ok && (m->get_agent(c).get_state() == 0u);
+                b.state_ok = b.state_ok && (m->get_stage(m->get_agent(c)) == 0);
 
             batches.push_back(b);
             log.push_back("cb" + std::to_string(m->today()));
@@ -177,7 +173,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
         model.run(40, 331);
 
         std::vector< int > h;
-        model.get_db().get_hist_total(nullptr, nullptr, &h);
+        model.get_db().get_hist_total(nullptr, nullptr, nullptr, &h);
         return h;
 
     };

@@ -19,9 +19,9 @@ $(NAME)_SOURCES := \
 	06-mixing.cpp \
 	06b-mixing.cpp \
 	09-distribute-tools-and-viruses.cpp \
-	09b-distribute-randomly-to-set.cpp \
-	09c-distribute-to-set-scaling.cpp \
-	09d-distribute-uniform.cpp \
+	09b-assign-in-groups.cpp \
+	09c-assign-scaling.cpp \
+	09d-assign-uniform.cpp \
 	10-generation-interval.cpp \
 	11-random-numbers.cpp \
 	12-diagrams.cpp \
@@ -38,7 +38,6 @@ $(NAME)_SOURCES := \
 	14k-measles-stages.cpp \
 	14l-measles-stages-laws.cpp \
 	15-edgelist-after-run-multiple.cpp \
-	16-multiple-events.cpp \
 	17a-mixing-quarantine.cpp \
 	17b-mixing-quarantine.cpp \
 	17c-mixing-quarantine.cpp \
@@ -134,7 +133,10 @@ $(NAME)_SOURCES := \
 	49c-seir-quarantine-layers.cpp \
 	50a-rng-seed-reset.cpp \
 	51a-model-registry.cpp \
-	51b-model-registry-errors.cpp
+	51b-model-registry-errors.cpp \
+	52a-natural-history.cpp \
+	52b-natural-history-queue.cpp \
+	52c-natural-history-models.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
 # covered and would inflate the figure.

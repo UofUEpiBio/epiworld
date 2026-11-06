@@ -40,12 +40,7 @@ EPIWORLD_TEST_CASE("Measles model (R0)", "[ModelMeaslesSchoolR0]") {
     model_0.set_param("Quarantine period", -1.0);
 
     // Setting the distribution function of the initial cases
-    model_0.get_virus(0).set_distribution(
-        [&n_seeds](Virus<> & v, Model<> * m) -> void {
-        for (int i = 0; i < n_seeds; ++i)
-            m->get_agents()[i].set_virus(*m, v);
-        return;
-    });
+    model_0.assign_virus(0, assign::agents(first_agents(n_seeds)));
 
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * n_seeds, -1.0);

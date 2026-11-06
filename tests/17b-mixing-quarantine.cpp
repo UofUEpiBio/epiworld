@@ -38,20 +38,14 @@ EPIWORLD_TEST_CASE(
     // Copy the original virus
     Virus<> v1 = model.get_virus(0);
     model.rm_virus(0);
-    v1.set_distribution(dist_virus<>(0));
 
-    model.add_virus(v1);
+    model.add_virus(v1, dist_virus<>(0));
 
     // Creating three groups
 
 
     // Setting the distribution function of the initial cases
-    model.get_virus(0).set_distribution(
-        [&n_seeds](Virus<> & v, Model<> * m) -> void {
-        for (int i = 0; i < static_cast<int>(n_seeds); ++i)
-            m->get_agents()[i].set_virus(*m, v);
-        return;
-    });
+    model.assign_virus(0, assign::agents(first_agents(n_seeds)));
 
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * n_seeds, -1.0);
@@ -74,9 +68,15 @@ EPIWORLD_TEST_CASE(
     // Checking the expected and effective R0
     epiworld_double effective_contact_rate =
         std::accumulate(contact_matrix.begin(), contact_matrix.end(), 0.0) / 3.0;
-    epiworld_double R0_expected = 
+    // Recovering and becoming severe compete (one roulette() draw): the daily
+    // probabilities of each are their odds over 1 plus the sum of the odds
+    const double ro = model("Recovery rate") / (1.0 - model("Recovery rate"));
+    const double ho = model("Hospitalization rate") / (1.0 - model("Hospitalization rate"));
+    const double p_rec = ro / (1.0 + ro + ho);
+    const double p_sev = ho / (1.0 + ro + ho);
+    epiworld_double R0_expected =
         effective_contact_rate * model("Transmission probability") /
-            (model("Recovery rate") + model("Hospitalization rate"));
+            (p_rec + p_sev);
 
     epiworld_double R0 = 0.0;
     for (size_t i = 0; i < R0s.size(); ++i)
@@ -86,56 +86,38 @@ EPIWORLD_TEST_CASE(
     R0 /= static_cast<epiworld_double>(R0s.size());
     printf_epiworld("R0 observed: %.2f (expected %.2f)\n", R0, R0_expected);
 
-    // Transition to Infected
+    // A cell is a (stage, status) pair: stage * 4 + status. The share of the
+    // agents in a cell who are in a given stage the next day, whatever their
+    // status then:
     using MQ = epimodels::ModelSEIRQuarantine<>;
-    #define mat(i, j) avg_transitions[j * model.get_n_states() + i]
-    // Detected or not, a hospitalization
-    #define hosp(i) (mat(i, MQ::HOSPITALIZED) + mat(i, MQ::DETECTED_HOSPITALIZED))
+    auto C = [](int s, int k) { return static_cast< size_t >(s * 4 + k); };
+    const size_t ns = model.get_n_states();
+    auto to_stage = [&](size_t from, int s) {
+        double x = 0.0;
+        for (int k = 0; k < 4; ++k)
+            x += avg_transitions[C(s, k) * ns + from];
+        return x;
+    };
 
-    std::cout << "Transition to infected: " <<
-        mat(MQ::EXPOSED, MQ::INFECTED) << " (expected: " << 
+    const double to_i = to_stage(C(MQ::EXPOSED, MQ::FREE), MQ::INFECTED);
+    const double to_r = to_stage(C(MQ::INFECTED, MQ::FREE), MQ::RECOVERED);
+    const double to_sv = to_stage(C(MQ::INFECTED, MQ::FREE), MQ::SEVERE);
+    const double from_sv = to_stage(C(MQ::SEVERE, MQ::HOSPITALIZED), MQ::RECOVERED);
+
+    std::cout << "Transition to infected: " << to_i << " (expected: " <<
         1.0/model("Latent period") << ")" << std::endl;
-
-    // Transition to recovered
-    std::cout << "Transition to recovered: " <<
-        mat(MQ::INFECTED, MQ::RECOVERED) << " (expected: " << 
-        model("Recovery rate") << ")" << std::endl;
-
-    // Transition to hospitalized
-    std::cout << "Transition to hospitalized: " <<
-        hosp(MQ::INFECTED) << " (expected: " << 
-        model("Hospitalization rate") << ")" << std::endl;
-
-    // Transition from hospitalized
-    std::cout << "Transition from hospitalized: " <<
-        mat(MQ::HOSPITALIZED, MQ::RECOVERED) << " (expected: " << 
+    std::cout << "Transition to recovered: " << to_r << " (expected: " <<
+        p_rec << ")" << std::endl;
+    std::cout << "Transition to severe: " << to_sv << " (expected: " <<
+        p_sev << ")" << std::endl;
+    std::cout << "Transition from severe: " << from_sv << " (expected: " <<
         (1.0 / model("Hospitalization period")) << ")" << std::endl;
 
-    // R0
     REQUIRE_FALSE(moreless(R0, R0_expected, 0.1));
-
-    // Transition to infected
-    REQUIRE_FALSE(
-        moreless(mat(MQ::EXPOSED, MQ::INFECTED), 1.0/model("Latent period"), 0.05)
-    );
-
-    // Transition to recovered
-    REQUIRE_FALSE(
-        moreless(mat(MQ::INFECTED, MQ::RECOVERED), model("Recovery rate"), 0.05)
-    );
-
-    // Transition to hospitalized
-    REQUIRE_FALSE(
-        moreless(hosp(MQ::INFECTED), model("Hospitalization rate"), 0.05)
-    );
-
-    // Transition from hospitalized
-    REQUIRE_FALSE(
-        moreless(mat(MQ::HOSPITALIZED, MQ::RECOVERED), 1.0 / model("Hospitalization period"), 0.05)
-    );
-    
-    #undef mat
-    #undef hosp
+    REQUIRE_FALSE(moreless(to_i, 1.0/model("Latent period"), 0.05));
+    REQUIRE_FALSE(moreless(to_r, p_rec, 0.02));
+    REQUIRE_FALSE(moreless(to_sv, p_sev, 0.02));
+    REQUIRE_FALSE(moreless(from_sv, 1.0 / model("Hospitalization period"), 0.05));
 
 
 }

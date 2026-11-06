@@ -104,7 +104,7 @@ int main() {
             groups[i] = i / group_size;
 
         auto mixing = layer::mixing<>("mixing");
-        mixing->set_groups(groups, n_groups);
+        mixing->set_groups(assign::labels(groups), n_groups);
         mixing->set_contact_matrix(contact_matrix);
         model_mix.add_layer(mixing);
 

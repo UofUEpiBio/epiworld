@@ -22,7 +22,7 @@ int main() {
         household[i] = i / 4u;
 
     auto home = layer::mixing<>("household");
-    home->set_groups(household, n / 4u);
+    home->set_groups(assign::labels(household), n / 4u);
     home->set_contact_prob({0.5});
     model.add_layer(home);
 
@@ -34,7 +34,7 @@ int main() {
     // quarter older adults), drawn at random; entry (g, h) is the share of the
     // daily public contacts of someone in g made with people in h
     auto public_spaces = layer::mixing<>("public");
-    public_spaces->set_groups(grouping::random<>({0.25, 0.5, 0.25}, true));
+    public_spaces->set_groups(assign::shares({{0, 0.25}, {1, 0.5}, {2, 0.25}}), 3u);
     public_spaces->set_contact_matrix({
         0.6, 0.3, 0.1,
         0.2, 0.6, 0.2,

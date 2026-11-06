@@ -2,40 +2,39 @@
 
 using namespace epiworld;
 
-// Random distribution functions must pick every candidate with the same
-// probability. They used to clamp runif_index()'s draw after decrementing the
-// number of candidates, which moved the last candidate's draws onto the one
-// before it: with one recipient, the last candidate could never be picked.
+// Random placements must pick every candidate with the same probability.
+// (The distribution functions of epiworld 0.x used to clamp runif_index()'s
+// draw after decrementing the number of candidates, which moved the last
+// candidate's draws onto the one before it.)
 EPIWORLD_TEST_CASE(
-    "Random distribution functions pick candidates uniformly",
-    "[DistFuns][DistUniform]"
+    "Random placements pick candidates uniformly",
+    "[assign][uniform]"
 ) {
 
     size_t nexperiments = 3000u;
 
-    // Tools and virus_randomly(): 3 agents, one recipient each; the mixing
+    // Tools and a virus: 3 agents, one recipient each; the mixing
     // layer puts the three in one group
     epimodels::ModelSIR<> model(
         "a virus", 3u, 0.0, 0.0, 0.0
     );
     add_random_mixing(model, 0.0);
-    model.get_virus(0).set_distribution(
-        distribute_virus_randomly<>(1, false)
-    );
+    model.assign_virus(0, assign::count<>(1));
+
+    // Agents 0 and 2 are group 0 of "pair"
+    auto pair = layer::mixing<>("pair");
+    pair->set_groups(assign::labels(std::vector< int >{0, 1, 0}), 2u);
+    pair->set_contact_prob(0.0);
+    model.add_layer(pair);
 
     Tool<> tool_set("in set");
-    tool_set.set_distribution(distribute_tool_randomly<>(1, false, {0u, 2u}));
-    model.add_tool(tool_set);
+    model.add_tool(tool_set, assign::group_counts<>("pair", {1.0, 0.0}));
 
     Tool<> tool_all("anyone");
-    tool_all.set_distribution(distribute_tool_randomly<>(1, false));
-    model.add_tool(tool_all);
+    model.add_tool(tool_all, assign::count<>(1));
 
     Tool<> tool_group("by group");
-    tool_group.set_distribution(
-        distribute_tool_to_groups<>("random mixing", {1.0}, false)
-    );
-    model.add_tool(tool_group);
+    model.add_tool(tool_group, assign::group_counts<>("random mixing", {1.0}));
 
     std::map< std::string, std::vector< double > > picked;
     for (auto name : {"virus", "in set", "anyone", "by group"})
@@ -57,14 +56,12 @@ EPIWORLD_TEST_CASE(
         true, false
     );
 
-    // virus_to_groups() in a model of its own (an agent holds one virus)
+    // A virus by group, in a model of its own (an agent holds one virus)
     epimodels::ModelSIR<> model_group(
         "a virus", 3u, 0.0, 0.0, 0.0
     );
     add_random_mixing(model_group, 0.0);
-    model_group.get_virus(0).set_distribution(
-        distribute_virus_to_groups<>("random mixing", {1.0}, false)
-    );
+    model_group.assign_virus(0, assign::group_counts<>("random mixing", {1.0}));
 
     picked["virus by group"] = std::vector< double >(3u, 0.0);
     model_group.run_multiple(

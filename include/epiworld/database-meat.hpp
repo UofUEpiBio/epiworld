@@ -66,6 +66,17 @@ inline void DataBase<TSeq>::reset()
     transmission_source_exposure_date.clear();
     transmission_layer.clear();
 
+    transition_today.assign(
+        model->nh ?
+            model->nh->get_n_transitions() +
+                (model->st ? model->st->get_n_transitions() : 0u) :
+            0u,
+        0
+    );
+    hist_transition_date.clear();
+    hist_transition_id.clear();
+    hist_transition_counts.clear();
+
     m_hospitalizations.reset();
 
     return;
@@ -119,6 +130,10 @@ inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
     transmission_source_exposure_date(db.transmission_source_exposure_date),
     transmission_layer(db.transmission_layer),
     transition_matrix(db.transition_matrix),
+    transition_today(db.transition_today),
+    hist_transition_date(db.hist_transition_date),
+    hist_transition_id(db.hist_transition_id),
+    hist_transition_counts(db.hist_transition_counts),
     user_data(nullptr)
 {}
 
@@ -298,6 +313,14 @@ inline void DataBase<TSeq>::record()
 
         for (const auto& cell : transition_matrix)
             hist_transition_matrix.push_back(cell);
+
+        for (size_t k = 0u; k < transition_today.size(); ++k)
+        {
+            hist_transition_date.push_back(model->today());
+            hist_transition_id.push_back(static_cast< int >(k));
+            hist_transition_counts.push_back(transition_today[k]);
+            transition_today[k] = 0;
+        }
 
         // Now the diagonal must reflect the state
         for (size_t s_i = 0u; s_i < model->nstates; ++s_i)
@@ -745,29 +768,112 @@ inline void DataBase<TSeq>::record_transition(
 }
 
 template<typename TSeq>
-inline int DataBase<TSeq>::get_today_total(
-    const std::string & what
+inline void DataBase<TSeq>::split_state(
+    epiworld_fast_uint state,
+    std::string & status,
+    std::string & stage
 ) const
 {
 
-    for (auto i = 0u; i < model->states_labels.size(); ++i)
+    if (!model->nh)
     {
-        if (model->states_labels[i] == what)
-            return today_total[i];
+        status = "Free";
+        stage = model->states_labels[state];
+        return;
     }
 
-    throw std::range_error("The value '" + what + "' is not in the model.");
+    const unsigned int c = static_cast< unsigned int >(state);
+    stage = model->nh->get_stages()[static_cast< size_t >(model->nh_stage_of(c))];
+    status = model->st ?
+        model->st->get_stages()[static_cast< size_t >(model->nh_status_of(c))] :
+        std::string("Free");
 
 }
 
 template<typename TSeq>
+inline void DataBase<TSeq>::split_states(
+    const std::vector< epiworld_fast_uint > & states,
+    std::vector< std::string > * status,
+    std::vector< std::string > * stage
+) const
+{
+
+    std::string k, s;
+    if (status != nullptr)
+        status->resize(states.size());
+    if (stage != nullptr)
+        stage->resize(states.size());
+
+    for (size_t i = 0u; i < states.size(); ++i)
+    {
+        split_state(states[i], k, s);
+        if (status != nullptr)
+            (*status)[i] = k;
+        if (stage != nullptr)
+            (*stage)[i] = s;
+    }
+
+}
+
+template<typename TSeq>
+inline int DataBase<TSeq>::today_total_of(
+    const std::string & name,
+    bool by_stage
+) const
+{
+
+    bool found = false;
+    int total = 0;
+    std::string k, s;
+    for (epiworld_fast_uint i = 0u; i < today_total.size(); ++i)
+    {
+        split_state(i, k, s);
+        if ((by_stage ? s : k) == name)
+        {
+            found = true;
+            total += today_total[i];
+        }
+    }
+
+    if (!found)
+        throw std::range_error(
+            "'" + name + "' is not a " + (by_stage ? "stage" : "status") +
+            " of the model."
+        );
+
+    return total;
+
+}
+
+template<typename TSeq>
+inline int DataBase<TSeq>::get_today_total_stage(
+    const std::string & stage
+) const
+{
+    return today_total_of(stage, true);
+}
+
+template<typename TSeq>
+inline int DataBase<TSeq>::get_today_total_status(
+    const std::string & status
+) const
+{
+    return today_total_of(status, false);
+}
+
+template<typename TSeq>
 inline void DataBase<TSeq>::get_today_total(
-    std::vector< std::string > * state,
+    std::vector< std::string > * status,
+    std::vector< std::string > * stage,
     std::vector< int > * counts
 ) const
 {
-    if (state != nullptr)
-        (*state) = model->states_labels;
+
+    std::vector< epiworld_fast_uint > states(today_total.size());
+    for (size_t i = 0u; i < states.size(); ++i)
+        states[i] = static_cast< epiworld_fast_uint >(i);
+
+    split_states(states, status, stage);
 
     if (counts != nullptr)
         *counts = today_total;
@@ -776,37 +882,39 @@ inline void DataBase<TSeq>::get_today_total(
 
 template<typename TSeq>
 inline void DataBase<TSeq>::get_today_virus(
-    std::vector< std::string > & state,
+    std::vector< std::string > & status,
+    std::vector< std::string > & stage,
     std::vector< int > & id,
     std::vector< int > & counts
     ) const
 {
-    
-    // Total entries = number of viruses × number of states
-    size_t n_viruses = today_virus.size();
-    size_t n_states = model->states_labels.size();
-    size_t total_entries = n_viruses * n_states;
 
-    state.resize(total_entries, "");
-    id.resize(total_entries, 0);
-    counts.resize(total_entries, 0);
+    // One row per virus and state
+    const size_t n_viruses = today_virus.size();
+    const size_t n_states = model->states_labels.size();
 
-    size_t n = 0u;
+    std::vector< epiworld_fast_uint > states;
+    states.reserve(n_viruses * n_states);
+    id.clear();
+    counts.clear();
+
     for (epiworld_fast_uint v = 0u; v < n_viruses; ++v)
         for (epiworld_fast_uint s = 0u; s < n_states; ++s)
         {
-            state[n]   = model->states_labels[s];
-            id[n]      = static_cast<int>(v);
-            counts[n]  = today_virus[v][s];
-            ++n;
+            states.push_back(s);
+            id.push_back(static_cast<int>(v));
+            counts.push_back(today_virus[v][s]);
         }
+
+    split_states(states, &status, &stage);
 
 }
 
 template<typename TSeq>
 inline void DataBase<TSeq>::get_hist_total(
     std::vector< int > * date,
-    std::vector< std::string > * state,
+    std::vector< std::string > * status,
+    std::vector< std::string > * stage,
     std::vector< int > * counts
 ) const
 {
@@ -814,17 +922,10 @@ inline void DataBase<TSeq>::get_hist_total(
     if (date != nullptr)
         *date = hist_total_date;
 
-    if (state != nullptr)
-    {
-        state->resize(hist_total_state.size(), "");
-        for (epiworld_fast_uint i = 0u; i < hist_total_state.size(); ++i)
-            state->operator[](i) = model->states_labels[hist_total_state[i]];
-    }
+    split_states(hist_total_state, status, stage);
 
     if (counts != nullptr)
         *counts = hist_total_counts;
-
-    return;
 
 }
 
@@ -832,44 +933,31 @@ template<typename TSeq>
 inline void DataBase<TSeq>::get_hist_virus(
     std::vector< int > & date,
     std::vector< int > & id,
-    std::vector< std::string > & state,
+    std::vector< std::string > & status,
+    std::vector< std::string > & stage,
     std::vector< int > & counts
 ) const {
 
     date = hist_virus_date;
-    const auto& labels = model->states_labels;
-    
     id = hist_virus_id;
-    state.resize(hist_virus_state.size(), "");
-    for (epiworld_fast_uint i = 0u; i < hist_virus_state.size(); ++i)
-        state[i] = labels[hist_virus_state[i]];
-
+    split_states(hist_virus_state, &status, &stage);
     counts = hist_virus_counts;
 
-    return;
-
 }
-
 
 template<typename TSeq>
 inline void DataBase<TSeq>::get_hist_tool(
     std::vector< int > & date,
     std::vector< int > & id,
-    std::vector< std::string > & state,
+    std::vector< std::string > & status,
+    std::vector< std::string > & stage,
     std::vector< int > & counts
 ) const {
 
     date = hist_tool_date;
-    const auto& labels = model->states_labels;
-    
     id = hist_tool_id;
-    state.resize(hist_tool_state.size(), "");
-    for (size_t i = 0u; i < hist_tool_state.size(); ++i)
-        state[i] = labels[hist_tool_state[i]];
-
+    split_states(hist_tool_state, &status, &stage);
     counts = hist_tool_counts;
-
-    return;
 
 }
 
@@ -887,8 +975,10 @@ inline void DataBase<TSeq>::get_today_transition_matrix(
 
 template<typename TSeq>
 inline void DataBase<TSeq>::get_hist_transition_matrix(
-    std::vector< std::string > & state_from,
-    std::vector< std::string > & state_to,
+    std::vector< std::string > & status_from,
+    std::vector< std::string > & stage_from,
+    std::vector< std::string > & status_to,
+    std::vector< std::string > & stage_to,
     std::vector< int > & date,
     std::vector< int > & counts,
     bool skip_zeros
@@ -896,16 +986,12 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 {
 
     size_t n = this->hist_transition_matrix.size();
-    
-    // Clearing the previous vectors
-    state_from.clear();
-    state_to.clear();
+
+    std::vector< epiworld_fast_uint > from, to;
+    from.reserve(n);
+    to.reserve(n);
     date.clear();
     counts.clear();
-
-    // Reserving space
-    state_from.reserve(n);
-    state_to.reserve(n);
     date.reserve(n);
     counts.reserve(n);
 
@@ -914,7 +1000,11 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 
     // If n is zero, then we are done
     if (n == 0u)
+    {
+        split_states(from, &status_from, &stage_from);
+        split_states(to, &status_to, &stage_to);
         return;
+    }
 
     for (size_t step = 0u; step <= n_steps; ++step) // The final step counts
     {
@@ -933,8 +1023,8 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
                 if (skip_zeros && v == 0)
                     continue;
                                 
-                state_from.push_back(model->states_labels[i]);
-                state_to.push_back(model->states_labels[j]);
+                from.push_back(static_cast< epiworld_fast_uint >(i));
+                to.push_back(static_cast< epiworld_fast_uint >(j));
                 date.push_back(hist_total_date[step * n_states]);
                 counts.push_back(v);
 
@@ -943,7 +1033,8 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
         }
     }
 
-    return;
+    split_states(from, &status_from, &stage_from);
+    split_states(to, &status_to, &stage_to);
 
 
 }
@@ -1112,13 +1203,16 @@ inline RunOutputs DataBase<TSeq>::get_run_outputs(
         return names;
     };
 
-    // Labels of the states, given their ids
-    auto labels = [this](const std::vector< epiworld_fast_uint > & ids) {
-        std::vector< std::string > names;
-        names.reserve(ids.size());
-        for (auto i : ids)
-            names.push_back(model->states_labels[i]);
-        return names;
+    // The status and stage columns of a vector of states
+    auto add_pairs = [this](
+        OutputTable & t,
+        const std::vector< epiworld_fast_uint > & states,
+        const std::string & prefix
+    ) {
+        std::vector< std::string > status, stage;
+        split_states(states, &status, &stage);
+        t.add(prefix + "status", status);
+        t.add(prefix + "stage", stage);
     };
 
     RunOutputs out;
@@ -1151,7 +1245,7 @@ inline RunOutputs DataBase<TSeq>::get_run_outputs(
             t.add("date", hist_virus_date);
             t.add("virus_id", hist_virus_id);
             t.add("virus", vnames(hist_virus_id));
-            t.add("state", labels(hist_virus_state));
+            add_pairs(t, hist_virus_state, "");
             t.add("n", hist_virus_counts);
         }
         else if (what == "tool_info")
@@ -1174,14 +1268,14 @@ inline RunOutputs DataBase<TSeq>::get_run_outputs(
         {
             t.add("date", hist_tool_date);
             t.add("id", hist_tool_id);
-            t.add("state", labels(hist_tool_state));
+            add_pairs(t, hist_tool_state, "");
             t.add("n", hist_tool_counts);
         }
         else if (what == "total_hist")
         {
             t.add("date", hist_total_date);
             t.add("nviruses", hist_total_nviruses_active);
-            t.add("state", labels(hist_total_state));
+            add_pairs(t, hist_total_state, "");
             t.add("counts", hist_total_counts);
         }
         else if (what == "transmission")
@@ -1198,7 +1292,7 @@ inline RunOutputs DataBase<TSeq>::get_run_outputs(
         else if (what == "transition")
         {
             std::vector< int > date, counts;
-            std::vector< std::string > from, to;
+            std::vector< epiworld_fast_uint > from, to;
             int ns = model->nstates;
             for (int i = 0; i <= model->today(); ++i)
                 for (int f = 0; f < ns; ++f)
@@ -1208,13 +1302,13 @@ inline RunOutputs DataBase<TSeq>::get_run_outputs(
                         if (n == 0)
                             continue;
                         date.push_back(i);
-                        from.push_back(model->states_labels[f]);
-                        to.push_back(model->states_labels[s]);
+                        from.push_back(static_cast< epiworld_fast_uint >(f));
+                        to.push_back(static_cast< epiworld_fast_uint >(s));
                         counts.push_back(n);
                     }
             t.add("date", date);
-            t.add("from", from);
-            t.add("to", to);
+            add_pairs(t, from, "from_");
+            add_pairs(t, to, "to_");
             t.add("counts", counts);
         }
         else if (what == "reproductive")
@@ -1466,7 +1560,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::get_transition_probability
     bool normalize
 ) const {
 
-    const auto& states_labels = model->get_states();
+    const auto& states_labels = model->states_labels;
     size_t n_state = states_labels.size();
     size_t n_days   = model->get_ndays();
     std::vector< epiworld_double > res(n_state * n_state, 0.0);
@@ -2101,5 +2195,33 @@ inline void DataBase<TSeq>::get_hospitalizations(
 }
 
 #undef VECT_MATCH
+
+template<typename TSeq>
+inline void DataBase<TSeq>::get_hist_transitions(
+    std::vector< int > & date,
+    std::vector< std::string > & transition,
+    std::vector< int > & counts
+) const
+{
+
+    if (!model->nh)
+        throw std::logic_error(
+            "get_hist_transitions() needs a model with a natural history."
+        );
+
+    date = hist_transition_date;
+    counts = hist_transition_counts;
+    // Stage transitions first, then the status ones
+    const int n_stage = static_cast< int >(model->nh->get_n_transitions());
+    transition.resize(hist_transition_id.size());
+    for (size_t k = 0u; k < hist_transition_id.size(); ++k)
+    {
+        const int t = hist_transition_id[k];
+        transition[k] = (t < n_stage) ?
+            model->nh->get_transition(t).name :
+            model->st->get_transition(t - n_stage).name;
+    }
+
+}
 
 #endif

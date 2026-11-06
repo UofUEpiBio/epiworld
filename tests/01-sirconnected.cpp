@@ -23,8 +23,8 @@ EPIWORLD_TEST_CASE("SIRCON", "[SIR connected]") {
     model_1.run(100, 131);
 
     std::vector< int > h_0, h_1;
-    model_0.get_db().get_hist_total(nullptr, nullptr, &h_0);
-    model_1.get_db().get_hist_total(nullptr, nullptr, &h_1);
+    model_0.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
+    model_1.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_1);
 
     // Getting transition matrix
     auto tmat_0 = model_0.get_db().get_transition_probability(false);

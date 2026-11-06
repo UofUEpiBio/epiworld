@@ -5,9 +5,9 @@ using namespace epiworld;
 
 // Every registered model, core and measles: built from the registry with a
 // value of its own for every argument, it carries those values as its
-// parameters, its virus has the entry's states, and it runs on the layer a
-// user would add. A virus added with the entry's states spreads through the
-// model's states like the model's own.
+// parameters, its virus has a natural history, and it runs on the layer a
+// user would add. A strain of the model's virus spreads through the same
+// stages as the model's own.
 EPIWORLD_TEST_CASE("Model registry - every model", "[registry]") {
 
     ModelRegistry<> registry;
@@ -49,11 +49,7 @@ EPIWORLD_TEST_CASE("Model registry - every model", "[registry]") {
                 REQUIRE(model->get_param(p.name) == values[p.arg]);
         }
 
-        epiworld_fast_int init, post, removed;
-        model->get_virus(0u).get_state(&init, &post, &removed);
-        REQUIRE(init == info.virus_states.init);
-        REQUIRE(post == info.virus_states.post);
-        REQUIRE(removed == info.virus_states.removed);
+        REQUIRE(model->get_virus(0u).get_natural_history() != nullptr);
 
         if (!info.virus_name.empty())
             REQUIRE(
@@ -66,7 +62,7 @@ EPIWORLD_TEST_CASE("Model registry - every model", "[registry]") {
         if (info.id.find("MeaslesMixing") == 0u)
         {
             auto mix = layer::mixing<>("mixing");
-            mix->set_groups(std::vector< size_t >(model->size(), 0u), 1u);
+            mix->set_groups(assign::labels<>(std::vector< size_t >(model->size(), 0u)), 1u);
             mix->set_contact_matrix({10.0});
             model->add_layer(mix);
         }
@@ -90,23 +86,22 @@ EPIWORLD_TEST_CASE("Model registry - every model", "[registry]") {
     }
 
     std::vector< int > d1, d2, n1, n2;
-    std::vector< std::string > s1, s2;
-    from_registry->get_db().get_hist_total(&d1, &s1, &n1);
-    direct.get_db().get_hist_total(&d2, &s2, &n2);
+    std::vector< std::string > k1, k2, s1, s2;
+    from_registry->get_db().get_hist_total(&d1, &k1, &s1, &n1);
+    direct.get_db().get_hist_total(&d2, &k2, &s2, &n2);
     REQUIRE(n1 == n2);
 
-    // A second virus with the model's infection states: its first cases are
-    // exposed, as with the model's own virus, and it spreads
+    // A strain of the model's virus: its first cases are exposed, as with the
+    // model's own virus, and it spreads
     auto model = registry.make_model("SEIR", {{"n", 2000}}, "flu");
     model->verbose_off();
     model->add_layer(layer::network("network", graph::smallworld<>(6, 0.1)));
 
-    Virus<> other("other", 0.01, true);
-    other.set_prob_infecting("Transmission probability");
-    other.set_incubation("Latent period");
-    other.set_prob_recovery("Recovery rate");
-    registry.get_model_info("SEIR").virus_states.apply(other);
-    model->add_virus(other);
+    // (Its own sequence: a virus whose sequence is on record is that variant)
+    Virus<> other = model->get_virus(0u);
+    other.set_name("other");
+    other.set_sequence(1);
+    model->add_virus(other, assign::count<>(20u));
 
     // Seeded at reset (a run of 0 days)
     model->run(0, 7);
@@ -116,7 +111,7 @@ EPIWORLD_TEST_CASE("Model registry - every model", "[registry]") {
         if ((a.get_virus() != nullptr) && (a.get_virus()->get_name() == "other"))
         {
             ++seeded;
-            REQUIRE(static_cast< int >(a.get_state()) == exposed);
+            REQUIRE(model->get_stage(a) == exposed);
         }
     REQUIRE(seeded == 20u);
 

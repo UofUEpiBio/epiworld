@@ -29,7 +29,7 @@ int main() {
     for (int r = 0; r < total_replicates; ++r)
     {
         sir.run(60);
-        sir.get_db().get_today_total(&labels, &results[r]);
+        sir.get_db().get_today_total(nullptr, &labels, &results[r]);
         sir.reset();
         std::cout << "Replicate " << r << " done" << std::endl;
     }

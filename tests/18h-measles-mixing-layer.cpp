@@ -37,9 +37,7 @@ EPIWORLD_TEST_CASE(
         model, {10.0, 2.0, 1.0, 2.0, 10.0, 2.0, 1.0, 2.0, 10.0},
         ranges(n, {{0u, 1000u}, {1000u, 2000u}, {2000u, n - 1u}})
     );
-    model.get_tool(0).set_distribution(
-        distribute_tool_to_groups<>("mixing", {0.2, 0.5, 0.8})
-    );
+    model.assign_tool(0, assign::group_shares<>("mixing", {0.2, 0.5, 0.8}));
     auto & mixing = model.get_layer_as< layer::Mixing<> >("mixing");
 
     model.run(60, 7);

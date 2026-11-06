@@ -15,10 +15,10 @@ class ModelSIRD : public Model<TSeq>
 {
 public:
 
-    static const int SUSCEPTIBLE = 0;
-    static const int INFECTED    = 1;
-    static const int RECOVERED   = 2;
-    static const int DECEASED    = 3;
+    static constexpr int SUSCEPTIBLE = 0;
+    static constexpr int INFECTED    = 1;
+    static constexpr int RECOVERED   = 2;
+    static constexpr int DECEASED    = 3;
 
     ModelSIRD() = delete;
 
@@ -43,23 +43,10 @@ public:
     );
     ///@}
 
-    /**
-     * @brief Set the initial states of the model
-     * @param proportions_ Double vector with two elements:
-     * - The proportion of non-infected individuals who have recovered.
-     * - The proportion of non-infected individuals who have died.
-    */
-    ModelSIRD<TSeq> & initial_states(
-        std::vector< double > proportions_,
-        std::vector< int > queue_ = {}
-    ) override;
     
 
-    /// States of any virus in this model (`Virus::set_state()`): the
-    /// model's own, and those a user adds (`InfectionStates::apply()`)
-    static constexpr InfectionStates infection_states{1, 2, 3};
 
-    /// This model's entry in a `ModelRegistry`: arguments, states, builder
+    /// This model's entry in a `ModelRegistry`: arguments and builder
     static ModelInfo<TSeq> model_info();
 };
 
@@ -76,44 +63,27 @@ inline ModelSIRD<TSeq>::ModelSIRD(
 
     this->set_population_size(n);
 
-    // Adding statuses
-    this->add_state("Susceptible", default_update_susceptible<TSeq>);
-    this->add_state("Infected", default_update_exposed<TSeq>);
-    this->add_state("Recovered");
-    this->add_state("Deceased");
-
-    // Setting up parameters
     this->add_param(recovery_rate, "Recovery rate");
-    this->add_param(transmission_prob, "Transmission probability"),
+    this->add_param(transmission_prob, "Transmission probability");
     this->add_param(death_rate, "Death rate");
 
-    // Preparing the virus -------------------------------------------
-    Virus<TSeq> virus(vname, prevalence, true);
-    infection_states.apply(virus);
-    virus.set_prob_recovery("Recovery rate");
-    virus.set_prob_infecting("Transmission probability");
-    virus.set_prob_death("Death rate");
-    
-    this->add_virus(virus);
+    Virus<TSeq> virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Infected", stage::infectious);
+    virus.add_stage("Recovered");
+    virus.add_stage("Deceased");
+    virus.set_contact(DECEASED, 0.0);
+    virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
+    virus.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
+    virus.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
+
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered-Deceased (SIRD)");
 
    
 }
 
-template<typename TSeq>
-inline ModelSIRD<TSeq> & ModelSIRD<TSeq>::initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > /**/ 
-) {
-
-    Model<TSeq>::initial_states_fun = 
-        create_init_function_sird<TSeq>(proportions_)
-        ;
-
-    return *this;
-
-}
 
 template<typename TSeq>
 inline ModelInfo<TSeq> ModelSIRD<TSeq>::model_info()
@@ -134,7 +104,6 @@ inline ModelInfo<TSeq> ModelSIRD<TSeq>::model_info()
             ParamInfo::probability("death_rate", "Death rate", 0.01,
                 "Daily probability that an infected agent dies.")
         },
-        infection_states,
         [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
             return std::make_unique< ModelSIRD<TSeq> >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),

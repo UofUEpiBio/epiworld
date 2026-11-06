@@ -37,8 +37,8 @@ EPIWORLD_TEST_CASE(
     for (int seed = 1; seed <= 10; ++seed)
     {
         model.run(150, seed);
-        REQUIRE(model.get_db().get_today_total("Isolated Recovered") == 0);
-        REQUIRE(model.get_db().get_today_total("Recovered") == 50);
+        REQUIRE(model.get_db().get_today_total_status("Isolated") == 0);
+        REQUIRE(model.get_db().get_today_total_stage("Recovered") == 50);
     }
 
 }

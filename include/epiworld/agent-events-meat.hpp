@@ -93,9 +93,6 @@ inline void Model<TSeq>::_event_rm_virus(Event<TSeq> & a)
     Agent<TSeq> * p    = a.agent;
     VirusPtr<TSeq> & v = a.virus;
 
-    // Calling the virus action over the removed virus
-    v->post_recovery(this);
-
     p->virus = nullptr;
 
     // Change of state needs to be recorded and updated on the

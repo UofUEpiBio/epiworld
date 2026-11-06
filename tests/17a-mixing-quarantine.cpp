@@ -34,9 +34,8 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     // Copy the original virus
     Virus<> v1 = model.get_virus(0);
     model.rm_virus(0);
-    v1.set_distribution(dist_virus<>(0));
 
-    model.add_virus(v1);
+    model.add_virus(v1, dist_virus<>(0));
 
 
     // Running and checking the results
@@ -48,7 +47,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
 
     for (const Agent<> & a : model.get_agents())
     {
-        if (a.get_state() != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
+        if (model.get_stage(a) != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
         {
             if (mixing.get_group(a.get_id()) == 0)
             {
@@ -92,7 +91,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
         {
             continue;
         }
-        else if (a.get_state() != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
+        else if (model.get_stage(a) != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
         {
             if (mixing.get_group(a.get_id()) == 1)
             {
@@ -116,23 +115,25 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     model.run(50, 123); 
     model.print();
 
-    std::vector< int > totals;
-    model.get_db().get_today_total(nullptr, &totals);
-
-    std::vector< int > expected_totals(model.get_n_states(), 0);
-    expected_totals[expected_totals.size() - 1] = static_cast<int>(model.size());
-
-    // In the totals, hospitalized agents also count as recovered
-    // So we set the last element to be the sum of the last two
-    // and the second to last to be zero.
-    totals[totals.size() - 1] += totals[totals.size() - 2];
-    totals[totals.size() - 2] = 0;
-
-    REQUIRE_THAT(totals, Catch::Equals(expected_totals));
+    // Everyone ends recovered or severe (in hospital), none of them free
+    // and severe, quarantined or isolated
+    using MQ = epimodels::ModelSEIRQuarantine<>;
+    int n_done = 0;
+    for (const auto & a : model.get_agents())
+    {
+        const int s = model.get_stage(a);
+        const int k = model.get_status(a);
+        if (
+            ((s == MQ::RECOVERED) && (k == MQ::FREE)) ||
+            ((s == MQ::SEVERE) && (k == MQ::HOSPITALIZED))
+        )
+            ++n_done;
+    }
+    REQUIRE(n_done == static_cast< int >(model.size()));
 
     // Random groups of 2000, drawn at every reset: 6000 agents in a group,
     // 2000 in each, and the rest in none
-    mixing.set_groups(grouping::random<>({2000.0, 2000.0, 2000.0}));
+    mixing.set_groups(assign::counts({{0, 2000u}, {1, 2000u}, {2, 2000u}}), 3u);
     model.run(50, 123);
 
     std::vector< size_t > sizes(4u, 0u);

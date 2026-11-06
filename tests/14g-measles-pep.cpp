@@ -44,24 +44,14 @@ MS make_measles_model(int n_seeds, bool with_pep)
             1.0,       // PEP IG willingness
             300.0,     // PEP MMR window
             300.0,     // PEP IG window
-            {
-                MS::QUARANTINED_LATENT,
-                MS::QUARANTINED_SUSCEPTIBLE,
-                MS::QUARANTINED_PRODROMAL
-            },
-            {MS::RECOVERED, MS::SUSCEPTIBLE, MS::RECOVERED},
-            {MS::LATENT, MS::SUSCEPTIBLE, MS::PRODROMAL}
+            {MS::SUSCEPTIBLE, MS::LATENT, MS::PRODROMAL},
+            {MS::QUARANTINED}
         );
 
         model.add_globalevent(pep);
     }
 
-    model.get_virus(0).set_distribution(
-        [n_seeds](Virus<> & virus, Model<> * model_ptr) -> void {
-            for (int i = 0; i < n_seeds; ++i)
-                model_ptr->get_agents()[i].set_virus(*model_ptr, virus);
-        }
-    );
+    model.assign_virus(0, assign::agents(first_agents(n_seeds)));
 
     return model;
 }

@@ -43,7 +43,7 @@ size_t quarantined_ever(TModel & model)
 
     std::vector< std::string > states;
     std::vector< int > counts;
-    model.get_db().get_hist_total(nullptr, &states, &counts);
+    model.get_db().get_hist_total(nullptr, &states, nullptr, &counts);
 
     size_t n = 0u;
     for (size_t i = 0u; i < states.size(); ++i)
@@ -108,12 +108,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - mixing and tracing", "[post-samplin
         );
 
         add_group_mixing(model, {2.0}, blocks({0u, n}));
-        model.get_virus(0).set_distribution(
-            [](Virus<> & v, Model<> * m) -> void {
-                for (int i = 0; i < 10; ++i)
-                    m->get_agents()[i].set_virus(*m, v);
-            }
-        );
+        model.assign_virus(0, assign::agents(first_agents(10)));
 
         Delivered d;
         count_deliveries(model, d);

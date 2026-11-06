@@ -22,9 +22,9 @@ class ModelSIR : public Model<TSeq>
 {
 public:
 
-    static const int SUSCEPTIBLE = 0;
-    static const int INFECTED    = 1;
-    static const int RECOVERED   = 2;
+    static constexpr int SUSCEPTIBLE = 0;
+    static constexpr int INFECTED    = 1;
+    static constexpr int RECOVERED   = 2;
 
     ModelSIR() = delete;
 
@@ -36,22 +36,10 @@ public:
         epiworld_double recovery_rate
     );
 
-    /**
-     * @brief Set the initial states of the model
-     * @param proportions_ Double vector with a single element:
-     * - The proportion of non-infected individuals who have recovered.
-    */
-    ModelSIR<TSeq> & initial_states(
-        std::vector< double > proportions_,
-        std::vector< int > queue_ = {}
-    ) override;
     
 
-    /// States of any virus in this model (`Virus::set_state()`): the
-    /// model's own, and those a user adds (`InfectionStates::apply()`)
-    static constexpr InfectionStates infection_states{1, 2, 2};
 
-    /// This model's entry in a `ModelRegistry`: arguments, states, builder
+    /// This model's entry in a `ModelRegistry`: arguments and builder
     static ModelInfo<TSeq> model_info();
 };
 
@@ -67,41 +55,22 @@ inline ModelSIR<TSeq>::ModelSIR(
 
     this->set_population_size(n);
 
-    // Adding statuses
-    this->add_state("Susceptible", default_update_susceptible<TSeq>);
-    this->add_state("Infected", default_update_exposed<TSeq>);
-    this->add_state("Recovered");
-
-    // Setting up parameters
     this->add_param(recovery_rate, "Recovery rate");
     this->add_param(transmission_prob, "Transmission probability");
 
-    // Preparing the virus -------------------------------------------
-    Virus<TSeq> virus(vname, prevalence, true);
-    infection_states.apply(virus);
-    
-    virus.set_prob_recovery("Recovery rate");
-    virus.set_prob_infecting("Transmission probability");
-    
-    this->add_virus(virus);
+    Virus<TSeq> virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Infected", stage::infectious);
+    virus.add_stage("Recovered");
+    virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
+    virus.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
+
+    this->add_virus(virus, assign::share<TSeq>(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered (SIR)");
    
 }
 
-template<typename TSeq>
-inline ModelSIR<TSeq> & ModelSIR<TSeq>::initial_states(
-    std::vector< double > proportions_,
-    std::vector< int > /* queue_ */
-) {
-
-    Model<TSeq>::initial_states_fun =
-        create_init_function_sir<TSeq>(proportions_)
-        ;
-
-    return *this;
-
-}
 
 template<typename TSeq>
 inline ModelInfo<TSeq> ModelSIR<TSeq>::model_info()
@@ -120,7 +89,6 @@ inline ModelInfo<TSeq> ModelSIR<TSeq>::model_info()
             ParamInfo::probability("recovery_rate", "Recovery rate", 0.14,
                 "Daily probability that an infected agent recovers.")
         },
-        infection_states,
         [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
             return std::make_unique< ModelSIR<TSeq> >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),

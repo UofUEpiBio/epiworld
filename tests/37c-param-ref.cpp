@@ -7,9 +7,7 @@ using namespace epiworld;
 static void build_model(
     Model<> & model,
     const std::vector< std::string > & order,
-    Virus<> & virus,
-    const UpdateFun<> & update_exposed,
-    const UpdateFun<> & update_infected
+    Virus<> & virus
 ) {
 
     std::map< std::string, epiworld_double > values = {
@@ -18,12 +16,7 @@ static void build_model(
     for (auto & name : order)
         model.add_param(values[name], name);
 
-    model.add_state("Susceptible", default_update_susceptible<>);
-    model.add_state("Exposed", update_exposed);
-    model.add_state("Infected", update_infected);
-    model.add_state("Recovered");
-
-    model.add_virus(virus);
+    model.add_virus(virus, assign::share(0.01));
 
     model.seed(8812);
     model.add_layer(layer::network(
@@ -36,30 +29,28 @@ static void build_model(
 /**
  * @brief One ParamRef used by models with different parameter layouts
  *
- * The same virus (set_prob_infecting("beta")) and the same update functions
- * (new_state_update_transition) run in models whose parameters were added
- * in different orders. Each model must read its own values, even when runs
+ * The same virus (its transitions read "beta", "incubation" and "gamma")
+ * runs in models whose parameters were added in different orders. Each model must read its own values, even when runs
  * alternate between models and after a model adds a parameter.
  */
 EPIWORLD_TEST_CASE("ParamRef across models", "[parameters][ParamRef]") {
 
-    Virus<> virus("a virus", 0.01, true);
-    virus.set_state(1, 3, 3);
-    virus.set_prob_infecting("beta");
-    virus.set_prob_recovery("gamma");
-
-    auto update_exposed = new_state_update_transition<>({"incubation"}, {2u});
-    auto update_infected = new_state_update_transition<>({"gamma"}, {3u});
+    Virus<> virus("a virus");
+    virus.add_stage("Susceptible");
+    virus.add_stage("Exposed", stage::carrier);
+    virus.add_stage("Infected", stage::infectious);
+    virus.add_stage("Recovered");
+    virus.infection(0, 1, "beta");
+    virus.rate(1, 2, "incubation");
+    virus.rate(2, 3, "gamma");
 
     Model<> model_a(2000);
     Model<> model_b(2000);
     build_model(
-        model_a, {"beta", "incubation", "gamma", "padding"},
-        virus, update_exposed, update_infected
+        model_a, {"beta", "incubation", "gamma", "padding"}, virus
     );
     build_model(
-        model_b, {"padding", "gamma", "incubation", "beta"},
-        virus, update_exposed, update_infected
+        model_b, {"padding", "gamma", "incubation", "beta"}, virus
     );
 
     REQUIRE(model_a.get_param_id("beta").idx != model_b.get_param_id("beta").idx);
@@ -68,10 +59,10 @@ EPIWORLD_TEST_CASE("ParamRef across models", "[parameters][ParamRef]") {
     std::vector< int > hist_a, hist_b, hist_a2, hist_b2;
 
     model_a.run(60, 331);
-    model_a.get_db().get_hist_total(nullptr, nullptr, &hist_a);
+    model_a.get_db().get_hist_total(nullptr, nullptr, nullptr, &hist_a);
 
     model_b.run(60, 331);
-    model_b.get_db().get_hist_total(nullptr, nullptr, &hist_b);
+    model_b.get_db().get_hist_total(nullptr, nullptr, nullptr, &hist_b);
 
     // Same values, so the same simulation
     REQUIRE(hist_a == hist_b);
@@ -79,15 +70,15 @@ EPIWORLD_TEST_CASE("ParamRef across models", "[parameters][ParamRef]") {
     // Alternating back, and after adding a parameter (a new layout)
     model_a.add_param(0.0, "unused");
     model_a.run(60, 331);
-    model_a.get_db().get_hist_total(nullptr, nullptr, &hist_a2);
+    model_a.get_db().get_hist_total(nullptr, nullptr, nullptr, &hist_a2);
     REQUIRE(hist_a2 == hist_a);
 
     model_b.run(60, 331);
-    model_b.get_db().get_hist_total(nullptr, nullptr, &hist_b2);
+    model_b.get_db().get_hist_total(nullptr, nullptr, nullptr, &hist_b2);
     REQUIRE(hist_b2 == hist_b);
 
     std::vector< int > today;
-    model_a.get_db().get_today_total(nullptr, &today);
+    model_a.get_db().get_today_total(nullptr, nullptr, &today);
     REQUIRE(today[3u] > 0); // Some agents recovered
 
     // A change made by name is seen through the cached positions

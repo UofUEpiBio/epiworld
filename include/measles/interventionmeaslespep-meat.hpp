@@ -16,27 +16,20 @@ inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
     epiworld_double ig_willingness,
     epiworld_double mmr_window,
     epiworld_double ig_window,
-    std::vector< int > target_states,
-    std::vector< int > states_if_pep_effective,
-    std::vector< int > states_if_pep_ineffective,
+    std::vector< int > target_stages,
+    std::vector< int > target_statuses,
     std::vector< int > agent_groups
 ) {
 
     this->set_name(name);
 
-    // Must match the length
-    if (target_states.size() != states_if_pep_effective.size() || target_states.size() != states_if_pep_ineffective.size())
+    if (target_stages.empty())
         throw std::logic_error(
-            "The length of the target states and the destination states for "
-            "PEP must be the same. These are currently: " +
-            std::to_string(target_states.size()) + " and " +
-            std::to_string(states_if_pep_effective.size()) +
-            ", respectively."
+            "InterventionMeaslesPEP needs the stages of the agents offered PEP."
         );
 
-    this->_target_states = target_states;
-    this->_states_if_pep_effective = states_if_pep_effective;
-    this->_states_if_pep_ineffective = states_if_pep_ineffective;
+    this->_target_stages = std::move(target_stages);
+    this->_target_statuses = std::move(target_statuses);
 
     // An empty vector means "no groups": the whole population is treated
     // as a single exposed group. Its length can only be checked against
@@ -73,6 +66,14 @@ inline void InterventionMeaslesPEP<TSeq>::_setup(
             " entries, but the model has " +
             std::to_string(model->size()) + " agents."
         );
+
+    // The model's transitions that clear the virus and release the agent
+    auto find = [model](const char * name, int & id) -> bool {
+        try { id = model->transition_id(name); return true; }
+        catch (const std::logic_error &) { return false; }
+    };
+    this->_has_cleared = find("PEP cleared", this->_tr_cleared);
+    this->_has_release = find("PEP release", this->_tr_release);
 
     // Randomizing willingness
     this->_willing_to_receive_mmr.assign(model->size(), false);
@@ -182,11 +183,9 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     triggering_agents.clear();
     date_infectious.clear();
 
-    // Making room (we will iterate this vectors
-    // later to figure out the state changes.)
+    // Making room (we will iterate this vector later to figure out the
+    // transitions)
     _to_receive_pep.clear();
-    _next_if_effective.clear();
-    _next_if_ineffective.clear();
 
     // -------------------------------------------------------------------
     // Step 1: date the exposure.
@@ -325,10 +324,10 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
     //
     // We are not doing individual contact tracing: everyone in an exposed
     // group is assumed to have been exposed. Every agent of that group
-    // still in a PEP-target state is therefore offered PEP, whether or not
+    // still in a PEP-target stage and status is therefore offered PEP, whether or not
     // they were recorded as having met the index case. Agents who are
     // already immune or otherwise ineligible are excluded by not being in
-    // a target state.
+    // a target stage and status.
     //
     // Groups let this be narrowed to, say, the classroom the identified
     // case belongs to. Without them the exposed group is the entire
@@ -355,8 +354,13 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         auto & agent = model->get_agent(agent_i);
 
         // Is the agent eligible for PEP?
-        int agent_state = static_cast<int>(agent.get_state());
-        if (!IN(agent_state, this->_target_states))
+        if (!IN(model->get_stage(agent), this->_target_stages))
+            continue;
+
+        if (
+            !this->_target_statuses.empty() &&
+            !IN(model->get_status(agent), this->_target_statuses)
+        )
             continue;
 
         // Already under prophylaxis: there is nothing to add by dosing
@@ -387,52 +391,27 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
         else
             continue;
 
-        // Finding the corresponding state for PEP
-        auto it = std::find(
-            this->_target_states.begin(),
-            this->_target_states.end(),
-            agent_state
-        );
-
-        // No need to check it, we know it is there
-        auto pos = std::distance(this->_target_states.begin(), it);
-
-        // Recording the information of the agent
-        // so we can decide to what state to move
         _to_receive_pep.push_back(agent.get_id());
-        _next_if_effective.push_back(_states_if_pep_effective[pos]);
-        _next_if_ineffective.push_back(_states_if_pep_ineffective[pos]);
 
     }
 
-    // Second set of iterations (figuring out if the agents
-    // will recover or not)
+    // Second set of iterations (the tools are in place): does the PEP clear
+    // the virus? Then the agent is released
     model->events_run();
-    for (size_t i = 0u; i < _to_receive_pep.size(); ++i)
+    for (size_t id : _to_receive_pep)
     {
-        auto & agent = model->get_agent(_to_receive_pep[i]);
 
-        int next_state_success = _next_if_effective[i];
-        int next_state_failure = _next_if_ineffective[i];
+        auto & agent = model->get_agent(id);
 
-        // Recovery is only possible if the agent has a virus
-        // and the tool reduces susceptibility.
         auto & agent_v = agent.get_virus();
-        if (agent_v != nullptr)
-        {
-            auto recovers = agent.get_susceptibility_reduction(
-                agent.get_virus(), *model
-            );
+        if (
+            this->_has_cleared && (agent_v != nullptr) &&
+            (agent.get_susceptibility_reduction(agent_v, *model) > model->runif())
+        )
+            model->fire(this->_tr_cleared, agent);
 
-            if (recovers > model->runif())
-            {
-                agent.rm_virus(*model, next_state_success);
-                continue;
-            }
-
-        } 
-        
-        agent.change_state(*model, next_state_failure);
+        if (this->_has_release)
+            model->fire(this->_tr_release, agent);
 
     }
 
@@ -442,42 +421,6 @@ template<typename TSeq>
 inline std::unique_ptr< GlobalEvent<TSeq> > InterventionMeaslesPEP<TSeq>::clone_ptr() const
 {
     return std::make_unique< InterventionMeaslesPEP<TSeq>>(*this);
-}
-
-template<typename TSeq>
-inline bool InterventionMeaslesPEP<TSeq>::agent_recovers(
-    Agent<TSeq> & p,
-    Model<TSeq> & m,
-    int next_state
-) {
-
-    // If the agent has PEP, then we have to figure out if it works or not
-    if (p.has_tool("PEP MMR"))
-    {
-
-        // Adding the tool
-        auto & tool = p.get_tool("PEP MMR");
-        if (tool->get_susceptibility_reduction(p.get_virus(), m) > 0.0)
-        {
-            p.rm_virus(m, next_state);
-            return true;
-        }
-    }
-
-    if (p.has_tool("PEP IG"))
-    {
-
-        // Adding the tool
-        auto & tool = p.get_tool("PEP IG");
-        if (tool->get_susceptibility_reduction(p.get_virus(), m) > 0.0)
-        {
-            p.rm_virus(m, next_state);
-            return true;
-        }
-    }
-
-    return false;
-
 }
 
 #endif

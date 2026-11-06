@@ -7,34 +7,40 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
     // Creating a model
     Model<> model(40);
 
-    // Declaring the three statuses in the model
-    auto susceptible_state = model.add_state("Susceptible", epiworld::default_update_susceptible<>);
-    auto exposed_state = model.add_state("Exposed", epiworld::default_update_exposed<>);
-    auto removed_state = model.add_state("Removed");
-
     // Adding the tool and virus. Transmission is certain, recovery takes one
-    // day, nobody dies, and recovered agents go back to susceptible but are
-    // immune: the outbreak sweeps the network once.
+    // day (the tool makes it certain), nobody dies (the tool prevents it), and
+    // recovered agents go back to susceptible but are immune: the outbreak
+    // sweeps the network once.
     model.add_param(1.0, "Infectiousness");
     model.add_param(1.0, "Immunity");
     model.add_param(1.0, "Death reduction");
 
-    Virus<> virus("covid 19", 10, false);
-    virus.set_post_immunity("Immunity");
-    virus.set_state(exposed_state, susceptible_state, removed_state);
-    virus.set_prob_death(.01);
-    virus.set_prob_infecting_fun(
-        [](Agent<> *, Virus<> &, Model<> * m) { return m->par("Infectiousness"); }
-    );
-    virus.set_incubation(3.0);
-    model.add_virus(virus);
+    Virus<> virus("covid 19");
+    const size_t susceptible_state = virus.add_stage("Susceptible");
+    const size_t exposed_state = virus.add_stage("Exposed", stage::infectious);
+    const size_t removed_state = virus.add_stage("Removed");
+    virus.infection(0, 1, ValueFun<>(
+        [](Agent<> &, Model<> & m) { return m.par("Infectiousness"); }
+    ));
+    const int recovery = virus.rate(1, 0, 0.0).effect(Effect::recovery);
+    virus.rate(1, 2, 0.01).effect(Effect::death);
+    model.add_virus(virus, assign::count(10));
 
-    epiworld::Tool<> tool("vaccine", 1.0, true);
+    // The recovered get a tool that blocks infection (a reaction)
+    epiworld::Tool<> immunity("immunity");
+    immunity.set_susceptibility_reduction("Immunity");
+    model.add_tool(immunity, assign::count(0));
+    model.react(
+        Trigger::fired(recovery),
+        [](Agent<> & p, Model<> & m) { p.add_tool(m, m.get_tool("immunity")); }
+    );
+
+    epiworld::Tool<> tool("vaccine");
     tool.set_death_reduction("Death reduction");
     tool.set_recovery_enhancer_fun(
         [](Tool<> &, Agent<> *, VirusPtr<> &, Model<> *) { return 1.0; }
     );
-    model.add_tool(tool);
+    model.add_tool(tool, assign::share(1.0));
 
     // Generating a random pop
     model.add_layer(layer::network(
@@ -57,13 +63,14 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
 
     // The daily history: each day accounts for every agent (staying or moving),
     // and its days add up to the counts above
-    std::vector< std::string > state_from, state_to;
+    std::vector< std::string > status_from, state_from, status_to, state_to;
     std::vector< int > hist_date, hist_counts;
     model.get_db().get_hist_transition_matrix(
-        state_from, state_to, hist_date, hist_counts, false
+        status_from, state_from, status_to, state_to, hist_date, hist_counts,
+        false
     );
 
-    const auto & labels = model.get_states();
+    const auto labels = tests_state_labels(model);
     auto state_id = [&labels](const std::string & s) {
         return static_cast< size_t >(
             std::find(labels.begin(), labels.end(), s) - labels.begin()
@@ -84,7 +91,6 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
     REQUIRE(per_day == std::vector< int >(per_day.size(), static_cast< int >(model.size())));
     REQUIRE(summed == transitions);
 
-    REQUIRE(model.get_virus(0).get_incubation(&model) == 3.0);
     REQUIRE(moves(exposed_state, exposed_state) == 0.0);
     REQUIRE(moves(exposed_state, removed_state) == 0.0);
 

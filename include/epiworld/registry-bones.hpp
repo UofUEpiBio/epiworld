@@ -56,26 +56,6 @@ struct ParamInfo {
 };
 
 /**
- * @brief The states a virus moves agents through in a model.
- * @ingroup epi_models
- *
- * @details A model's states are shared by every virus it carries: where a
- * virus puts an agent it infects (`init`), where the agent goes when it
- * recovers (`post`), and where it goes when it is removed (`removed`), as
- * `Virus::set_state()` takes them. Each registered model defines them once
- * (`infection_states`), sets them on its own virus, and gives them to the
- * viruses a user adds (`apply()`).
- */
-struct InfectionStates {
-    epiworld_fast_int init;
-    epiworld_fast_int post;
-    epiworld_fast_int removed;
-
-    template<typename TSeq>
-    void apply(Virus<TSeq> & virus) const;
-};
-
-/**
  * @brief The values a registered model's builder receives.
  * @ingroup epi_models
  *
@@ -98,14 +78,18 @@ public:
 };
 
 /**
- * @brief A model the registry can build: its arguments, states and builder.
+ * @brief A model the registry can build: its arguments and builder.
  * @ingroup epi_models
  *
  * @details Each registered model returns its own from a static
  * `model_info()`, next to its constructor. `params` lists the constructor's
  * arguments in its order. The builder calls the constructor and nothing else:
  * the model it returns has no layers, which are added the same way as for a
- * model built directly (`Model::add_layer()`).
+ * model built directly (`Model::add_layer()`). A virus a user adds to the
+ * model is a strain of the model's own: a copy of `get_virus(0)` with its own
+ * name, its own sequence (`Virus::set_sequence()`; a virus whose sequence is on
+ * record is that variant) and, if need be, its own parameters
+ * (`Virus::use_param()`), so it has the same stages.
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 struct ModelInfo {
@@ -114,7 +98,6 @@ struct ModelInfo {
     std::string description;          ///< One paragraph
     std::string virus_name;           ///< Default virus name; empty if the model names its own
     std::vector< ParamInfo > params;  ///< Constructor arguments, in order
-    InfectionStates virus_states;     ///< The model's `infection_states`
     std::function< std::unique_ptr< Model<TSeq> >(const ModelArgs &) > build;
 };
 
