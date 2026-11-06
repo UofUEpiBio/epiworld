@@ -30,10 +30,10 @@ EPIWORLD_TEST_CASE("SEIR recovery follows the virus and tools", "[seir-recovery]
         model.run(10, 2201);
 
         const auto & db = model.get_db();
-        CHECK(db.get_today_total("Susceptible") == n - n_seeds);
-        CHECK(db.get_today_total("Exposed") == 0);
-        CHECK(db.get_today_total("Infected") == (with_tool ? 0 : n_seeds));
-        CHECK(db.get_today_total("Removed") == (with_tool ? n_seeds : 0));
+        CHECK(db.get_today_total_stage("Susceptible") == n - n_seeds);
+        CHECK(db.get_today_total_stage("Exposed") == 0);
+        CHECK(db.get_today_total_stage("Infected") == (with_tool ? 0 : n_seeds));
+        CHECK(db.get_today_total_stage("Removed") == (with_tool ? n_seeds : 0));
 
     }
 

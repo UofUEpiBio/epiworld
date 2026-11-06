@@ -79,7 +79,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
             m.run(1, 2026);
 
             return (
-                static_cast< double >(m.get_db().get_today_total("Infected")) -
+                static_cast< double >(m.get_db().get_today_total_stage("Infected")) -
                 static_cast< double >(pairs)
             ) / static_cast< double >(pairs);
 
@@ -235,7 +235,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
             m.run(1, 1);
 
             INFO("mode " << mode << ", scenario " << scenario);
-            const size_t infected = m.get_db().get_today_total("Infected");
+            const size_t infected = m.get_db().get_today_total_stage("Infected");
 
             if (scenario < 2)
                 REQUIRE(infected == 1u);
@@ -282,7 +282,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
             INFO("mode " << mode << ", queuing " << queuing);
             REQUIRE(m.get_last_transmission_mode() == TransmissionMode::pull);
-            REQUIRE(m.get_db().get_today_total("Infected") == n);
+            REQUIRE(m.get_db().get_today_total_stage("Infected") == n);
 
         }
 

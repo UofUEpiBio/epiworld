@@ -1,7 +1,7 @@
 #ifndef MEASLESSCHOOL_HPP
 #define MEASLESSCHOOL_HPP
 
-#include "measlesbase.hpp"
+#include "modelmeasles.hpp"
 
 using namespace epiworld;
 
@@ -9,7 +9,7 @@ using namespace epiworld;
  * @brief Measles model of a school, with quarantine and isolation
  *
  * @details The disease, the statuses and the rules linking them are those of
- * `ModelMeaslesBase`: stages Susceptible, Latent, Prodromal, Rash, Severe and
+ * `ModelMeasles`: stages Susceptible, Latent, Prodromal, Rash, Severe and
  * Recovered; statuses Free, Quarantined, Isolated and Hospitalized. Agents
  * with rash do not transmit.
  *
@@ -35,7 +35,7 @@ using namespace epiworld;
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelMeaslesSchool final :
-    public ModelMeaslesBase<TSeq>,
+    public ModelMeasles<TSeq>,
     public QuarantineTrigger<TSeq>
 {
 
@@ -106,9 +106,9 @@ template<typename TSeq>
 inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
 
     auto * model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
-    constexpr int RASH = ModelMeaslesBase<TSeq>::RASH;
-    constexpr int SEVERE = ModelMeaslesBase<TSeq>::SEVERE;
-    constexpr int FREE = ModelMeaslesBase<TSeq>::FREE;
+    constexpr int RASH = ModelMeasles<TSeq>::RASH;
+    constexpr int SEVERE = ModelMeasles<TSeq>::SEVERE;
+    constexpr int FREE = ModelMeasles<TSeq>::FREE;
 
     // Quarantine and isolation can be shut off if negative
     const bool quarantine_on = EPI_PAR(model, "Quarantine period") >= 0;

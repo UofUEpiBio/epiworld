@@ -1,7 +1,7 @@
 #ifndef EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 #define EPIWORLD_MODELS_MEASLESMIXINGRISKQUARANTINE_HPP
 
-#include "measlesbase.hpp"
+#include "modelmeasles.hpp"
 
 using namespace epiworld;
 
@@ -14,7 +14,7 @@ using namespace epiworld;
  * @brief Measles model with population mixing and risk-based quarantine strategies
  *
  * @details The disease, the statuses and the rules linking them are those of
- * `ModelMeaslesBase`: stages Susceptible, Latent, Prodromal, Rash, Severe and
+ * `ModelMeasles`: stages Susceptible, Latent, Prodromal, Rash, Severe and
  * Recovered; statuses Free, Quarantined, Isolated and Hospitalized. Agents
  * with rash do not transmit.
  *
@@ -50,7 +50,7 @@ using namespace epiworld;
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixingRiskQuarantine final : public ModelMeaslesBase<TSeq>
+class ModelMeaslesMixingRiskQuarantine final : public ModelMeasles<TSeq>
 {
 private:
 
@@ -174,8 +174,8 @@ template<typename TSeq>
 inline void ModelMeaslesMixingRiskQuarantine<TSeq>::_quarantine_process(Model<TSeq> * m) {
 
     auto * model = model_cast<ModelMeaslesMixingRiskQuarantine<TSeq>,TSeq>(m);
-    constexpr int RASH = ModelMeaslesBase<TSeq>::RASH;
-    constexpr int FREE = ModelMeaslesBase<TSeq>::FREE;
+    constexpr int RASH = ModelMeasles<TSeq>::RASH;
+    constexpr int FREE = ModelMeasles<TSeq>::FREE;
     const int isolated = m->transition_id("Isolated");
     const int quarantined = m->transition_id("Quarantined");
     auto & mixing = measles_mixing_layer(*m);

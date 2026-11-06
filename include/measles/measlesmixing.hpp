@@ -1,7 +1,7 @@
 #ifndef EPIWORLD_MODELS_MEASLESMIXING_HPP
 #define EPIWORLD_MODELS_MEASLESMIXING_HPP
 
-#include "measlesbase.hpp"
+#include "modelmeasles.hpp"
 
 using namespace epiworld;
 
@@ -14,7 +14,7 @@ using namespace epiworld;
  * @brief Measles model with population mixing, quarantine, and contact tracing
  *
  * @details The disease, the statuses and the rules linking them are those of
- * `ModelMeaslesBase`: stages Susceptible, Latent, Prodromal, Rash, Severe and
+ * `ModelMeasles`: stages Susceptible, Latent, Prodromal, Rash, Severe and
  * Recovered; statuses Free, Quarantined, Isolated and Hospitalized.
  *
  * A free agent with rash is detected and isolated with probability 1 / "Days
@@ -56,7 +56,7 @@ using namespace epiworld;
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixing final : public ModelMeaslesBase<TSeq>
+class ModelMeaslesMixing final : public ModelMeasles<TSeq>
 {
 private:
 
@@ -176,8 +176,8 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
     auto * model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
     const int isolated = m->transition_id("Isolated");
     const int quarantined = m->transition_id("Quarantined");
-    constexpr int RASH = ModelMeaslesBase<TSeq>::RASH;
-    constexpr int FREE = ModelMeaslesBase<TSeq>::FREE;
+    constexpr int RASH = ModelMeasles<TSeq>::RASH;
+    constexpr int FREE = ModelMeasles<TSeq>::FREE;
 
     // Contact tracing from the detected agents
     auto & ct = measles_mixing_layer(*m).get_tracing();

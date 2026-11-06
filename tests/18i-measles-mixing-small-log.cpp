@@ -37,7 +37,7 @@ EPIWORLD_TEST_CASE(
     // A count beyond the group (or beyond size_t) takes the whole group
     mixing.assign_virus(0, assign::group_counts<>("mixing", {1e20}));
     mixing.run(0, 1);
-    REQUIRE(mixing.get_db().get_today_total("Susceptible") == 0);
+    REQUIRE(mixing.get_db().get_today_total_stage("Susceptible") == 0);
 
     // Not a whole number of agents
     for (double bad : {std::numeric_limits< double >::infinity(), 1.5})

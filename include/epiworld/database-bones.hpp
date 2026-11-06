@@ -139,6 +139,9 @@ private:
         std::vector< std::string > * stage
     ) const;
 
+    /// Today's total of a stage (`by_stage`) or of a status.
+    int today_total_of(const std::string & name, bool by_stage) const;
+
 
 public:
 
@@ -181,9 +184,12 @@ public:
      * report the status "Free". A total by stage or by status is a sum over
      * the rows.
      *
-     * @param what A stage's or a status's name.
-     * @return In `get_today_total(what)`, how many agents are in that stage
-     * or status now.
+     * @param stage A stage's name.
+     * @param status A status's name.
+     * @return In `get_today_total_stage(stage)` and
+     * `get_today_total_status(status)`, how many agents are in that stage (in
+     * any status) or in that status (in any stage) now. A stage and a status
+     * may share a name; each function looks only among its own.
      * @return In `get_today_total`, the current counts of each pair.
      * @return In `get_today_virus`, the current counts of each pair for
      * each virus.
@@ -194,7 +200,8 @@ public:
      * for each virus at each point in time.
      */
     ///@{
-    int get_today_total(const std::string & what) const;
+    int get_today_total_stage(const std::string & stage) const;
+    int get_today_total_status(const std::string & status) const;
     void get_today_total(
         std::vector< std::string > * status,
         std::vector< std::string > * stage,

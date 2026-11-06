@@ -111,7 +111,7 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
         auto model = make_model_a(modes[m], net);
         std::vector< double > final_i;
         auto saver = [&final_i](size_t, Model<> * mod) -> void {
-            final_i.push_back(mod->get_db().get_today_total("Infected"));
+            final_i.push_back(mod->get_db().get_today_total_stage("Infected"));
         };
         model->run_multiple(40, 200, 2024, saver, true, false);
 

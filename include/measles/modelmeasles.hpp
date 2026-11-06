@@ -1,5 +1,5 @@
-#ifndef MEASLES_MEASLESBASE_HPP
-#define MEASLES_MEASLESBASE_HPP
+#ifndef MEASLES_MODELMEASLES_HPP
+#define MEASLES_MODELMEASLES_HPP
 
 #include <algorithm>
 #include <limits>
@@ -54,7 +54,7 @@ using namespace epiworld;
  * @ingroup disease_specific
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesBase : public Model<TSeq>
+class ModelMeasles : public Model<TSeq>
 {
 protected:
 
@@ -137,7 +137,7 @@ public:
 };
 
 template<typename TSeq>
-inline void ModelMeaslesBase<TSeq>::measles_build(
+inline void ModelMeasles<TSeq>::measles_build(
     Assign<TSeq> seed,
     Duration<TSeq> quarantine_period,
     std::string reduction_param,
@@ -156,7 +156,7 @@ inline void ModelMeaslesBase<TSeq>::measles_build(
 
     virus.infection(SUSCEPTIBLE, LATENT, "Transmission rate").sampler(
         [](Agent<TSeq> & p, Model<TSeq> & m) -> Virus<TSeq> * {
-            auto * mm = dynamic_cast< ModelMeaslesBase<TSeq> * >(&m);
+            auto * mm = dynamic_cast< ModelMeasles<TSeq> * >(&m);
             if (mm == nullptr)
                 throw std::logic_error(
                     "The measles virus samples its contacts with a measles "
@@ -238,7 +238,7 @@ inline void ModelMeaslesBase<TSeq>::measles_build(
 }
 
 template<typename TSeq>
-inline void ModelMeaslesBase<TSeq>::draw_willingness()
+inline void ModelMeasles<TSeq>::draw_willingness()
 {
     quarantine_willingness.assign(this->size(), false);
     isolation_willingness.assign(this->size(), false);
@@ -252,7 +252,7 @@ inline void ModelMeaslesBase<TSeq>::draw_willingness()
 }
 
 template<typename TSeq>
-inline Virus<TSeq> * ModelMeaslesBase<TSeq>::infect(Agent<TSeq> & p)
+inline Virus<TSeq> * ModelMeasles<TSeq>::infect(Agent<TSeq> & p)
 {
 
     // An immune agent cannot be infected: no contacts drawn
@@ -273,7 +273,7 @@ inline Virus<TSeq> * ModelMeaslesBase<TSeq>::infect(Agent<TSeq> & p)
 }
 
 template<typename TSeq>
-inline void ModelMeaslesBase<TSeq>::check_stage_sds(
+inline void ModelMeasles<TSeq>::check_stage_sds(
     epiworld_double incubation_period_sd,
     epiworld_double prodromal_period_sd,
     epiworld_double rash_period_sd,

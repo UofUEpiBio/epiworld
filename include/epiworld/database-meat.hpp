@@ -816,8 +816,9 @@ inline void DataBase<TSeq>::split_states(
 }
 
 template<typename TSeq>
-inline int DataBase<TSeq>::get_today_total(
-    const std::string & what
+inline int DataBase<TSeq>::today_total_of(
+    const std::string & name,
+    bool by_stage
 ) const
 {
 
@@ -827,7 +828,7 @@ inline int DataBase<TSeq>::get_today_total(
     for (epiworld_fast_uint i = 0u; i < today_total.size(); ++i)
     {
         split_state(i, k, s);
-        if ((k == what) || (s == what))
+        if ((by_stage ? s : k) == name)
         {
             found = true;
             total += today_total[i];
@@ -836,11 +837,28 @@ inline int DataBase<TSeq>::get_today_total(
 
     if (!found)
         throw std::range_error(
-            "'" + what + "' is neither a stage nor a status of the model."
+            "'" + name + "' is not a " + (by_stage ? "stage" : "status") +
+            " of the model."
         );
 
     return total;
 
+}
+
+template<typename TSeq>
+inline int DataBase<TSeq>::get_today_total_stage(
+    const std::string & stage
+) const
+{
+    return today_total_of(stage, true);
+}
+
+template<typename TSeq>
+inline int DataBase<TSeq>::get_today_total_status(
+    const std::string & status
+) const
+{
+    return today_total_of(status, false);
 }
 
 template<typename TSeq>

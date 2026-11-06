@@ -39,7 +39,7 @@ EPIWORLD_TEST_CASE("Tool targeting a virus", "[tool][target]") {
     // A global event records, each day, the date and the agents infected
     model.set_user_data({"Infected", "Day"});
     model.add_globalevent([](Model<> * m) -> void {
-        m->add_user_data(0u, m->get_db().get_today_total("Infected"));
+        m->add_user_data(0u, m->get_db().get_today_total_stage("Infected"));
         m->add_user_data(1u, static_cast< epiworld_double >(m->today()));
     }, "Record infected");
 

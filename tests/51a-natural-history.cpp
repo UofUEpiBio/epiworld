@@ -227,5 +227,29 @@ EPIWORLD_TEST_CASE("Natural history - built and run end to end", "[natural-histo
         REQUIRE(a.get_natural_history() != b.get_natural_history());
         REQUIRE(a.get_natural_history()->get_n_stages() == 5u);
     }
+    {
+        // A status may share a stage's name: the totals ask for one or the
+        // other. A transition name may not be both the virus's and the
+        // statuses'.
+        auto model = make_model("pull");
+        Statuses<> st;
+        st.add_status("Free");
+        st.add_status("Recovered");
+        st.external(0, 1, "Released");
+        model->set_statuses(st);
+        model->run(2, 123);
+        const auto & db = model->get_db();
+        REQUIRE(db.get_today_total_stage("Recovered") >= 45);
+        REQUIRE(db.get_today_total_status("Recovered") == 0);
+        REQUIRE(db.get_today_total_status("Free") == static_cast< int >(N));
+        REQUIRE_THROWS(db.get_today_total_stage("Free"));
+        REQUIRE_THROWS(db.get_today_total_status("Exposed"));
+
+        Statuses<> clash;
+        clash.add_status("Free");
+        clash.add_status("Away");
+        clash.external(0, 1, "Vaccinated");
+        REQUIRE_THROWS(model->set_statuses(clash));
+    }
 
 }

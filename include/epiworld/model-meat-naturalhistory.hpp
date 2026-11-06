@@ -80,11 +80,21 @@ inline void Model<TSeq>::nh_build_states()
     const int ns = static_cast< int >(nh->get_n_stages());
     const int nk = static_cast< int >(nh_nstatus());
 
-    // A status transition's stages are the virus's
+    // A status transition's stages are the virus's, and its name is not one
+    // of the virus's (transition_id() finds either by name)
     if (st)
         for (size_t t = 0u; t < st->get_n_transitions(); ++t)
-            for (int s : st->get_transition(static_cast< int >(t)).when)
+        {
+            const auto & tr = st->get_transition(static_cast< int >(t));
+            for (int s : tr.when)
                 nh->check_stage(s, "when");
+            for (size_t u = 0u; u < nh->get_n_transitions(); ++u)
+                if (nh->get_transition(static_cast< int >(u)).name == tr.name)
+                    throw std::logic_error(
+                        "The virus and the statuses both have a transition "
+                        "named \"" + tr.name + "\"; give them different names."
+                    );
+        }
 
     // Every cell with a drawn exit (of its stage or its status) is updated
     UpdateFun<TSeq> update = [](Agent<TSeq> * p, Model<TSeq> * m) -> void {

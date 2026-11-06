@@ -32,9 +32,9 @@ EPIWORLD_TEST_CASE("Exposed agents do not transmit", "[seir-exposed]") {
             model->run(30, 1912);
 
             // Susceptible, Exposed, Infected
-            CHECK(model->get_db().get_today_total("Susceptible") == n - n_seeds);
-            CHECK(model->get_db().get_today_total("Exposed") == n_seeds);
-            CHECK(model->get_db().get_today_total("Infected") == 0);
+            CHECK(model->get_db().get_today_total_stage("Susceptible") == n - n_seeds);
+            CHECK(model->get_db().get_today_total_stage("Exposed") == n_seeds);
+            CHECK(model->get_db().get_today_total_stage("Infected") == 0);
 
         }
     }

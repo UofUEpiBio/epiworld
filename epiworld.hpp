@@ -4646,6 +4646,9 @@ private:
         std::vector< std::string > * stage
     ) const;
 
+    /// Today's total of a stage (`by_stage`) or of a status.
+    int today_total_of(const std::string & name, bool by_stage) const;
+
 
 public:
 
@@ -4688,9 +4691,12 @@ public:
      * report the status "Free". A total by stage or by status is a sum over
      * the rows.
      *
-     * @param what A stage's or a status's name.
-     * @return In `get_today_total(what)`, how many agents are in that stage
-     * or status now.
+     * @param stage A stage's name.
+     * @param status A status's name.
+     * @return In `get_today_total_stage(stage)` and
+     * `get_today_total_status(status)`, how many agents are in that stage (in
+     * any status) or in that status (in any stage) now. A stage and a status
+     * may share a name; each function looks only among its own.
      * @return In `get_today_total`, the current counts of each pair.
      * @return In `get_today_virus`, the current counts of each pair for
      * each virus.
@@ -4701,7 +4707,8 @@ public:
      * for each virus at each point in time.
      */
     ///@{
-    int get_today_total(const std::string & what) const;
+    int get_today_total_stage(const std::string & stage) const;
+    int get_today_total_status(const std::string & status) const;
     void get_today_total(
         std::vector< std::string > * status,
         std::vector< std::string > * stage,
@@ -5810,8 +5817,9 @@ inline void DataBase<TSeq>::split_states(
 }
 
 template<typename TSeq>
-inline int DataBase<TSeq>::get_today_total(
-    const std::string & what
+inline int DataBase<TSeq>::today_total_of(
+    const std::string & name,
+    bool by_stage
 ) const
 {
 
@@ -5821,7 +5829,7 @@ inline int DataBase<TSeq>::get_today_total(
     for (epiworld_fast_uint i = 0u; i < today_total.size(); ++i)
     {
         split_state(i, k, s);
-        if ((k == what) || (s == what))
+        if ((by_stage ? s : k) == name)
         {
             found = true;
             total += today_total[i];
@@ -5830,11 +5838,28 @@ inline int DataBase<TSeq>::get_today_total(
 
     if (!found)
         throw std::range_error(
-            "'" + what + "' is neither a stage nor a status of the model."
+            "'" + name + "' is not a " + (by_stage ? "stage" : "status") +
+            " of the model."
         );
 
     return total;
 
+}
+
+template<typename TSeq>
+inline int DataBase<TSeq>::get_today_total_stage(
+    const std::string & stage
+) const
+{
+    return today_total_of(stage, true);
+}
+
+template<typename TSeq>
+inline int DataBase<TSeq>::get_today_total_status(
+    const std::string & status
+) const
+{
+    return today_total_of(status, false);
 }
 
 template<typename TSeq>
@@ -19942,11 +19967,21 @@ inline void Model<TSeq>::nh_build_states()
     const int ns = static_cast< int >(nh->get_n_stages());
     const int nk = static_cast< int >(nh_nstatus());
 
-    // A status transition's stages are the virus's
+    // A status transition's stages are the virus's, and its name is not one
+    // of the virus's (transition_id() finds either by name)
     if (st)
         for (size_t t = 0u; t < st->get_n_transitions(); ++t)
-            for (int s : st->get_transition(static_cast< int >(t)).when)
+        {
+            const auto & tr = st->get_transition(static_cast< int >(t));
+            for (int s : tr.when)
                 nh->check_stage(s, "when");
+            for (size_t u = 0u; u < nh->get_n_transitions(); ++u)
+                if (nh->get_transition(static_cast< int >(u)).name == tr.name)
+                    throw std::logic_error(
+                        "The virus and the statuses both have a transition "
+                        "named \"" + tr.name + "\"; give them different names."
+                    );
+        }
 
     // Every cell with a drawn exit (of its stage or its status) is updated
     UpdateFun<TSeq> update = [](Agent<TSeq> * p, Model<TSeq> * m) -> void {

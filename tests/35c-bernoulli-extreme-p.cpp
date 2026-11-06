@@ -20,7 +20,7 @@ EPIWORLD_TEST_CASE("Bernoulli graphs - p = 0 and p = 1", "[rgraph_bernoulli]") {
         ));
 
         model.run(0, 123);
-        const int susceptible0 = model.get_db().get_today_total("Susceptible");
+        const int susceptible0 = model.get_db().get_today_total_stage("Susceptible");
         REQUIRE(susceptible0 < static_cast< int >(n));
 
         std::vector< int > source, target;
@@ -28,7 +28,7 @@ EPIWORLD_TEST_CASE("Bernoulli graphs - p = 0 and p = 1", "[rgraph_bernoulli]") {
         REQUIRE(source.empty());
 
         model.run(30, 123);
-        REQUIRE(model.get_db().get_today_total("Susceptible") == susceptible0);
+        REQUIRE(model.get_db().get_today_total_stage("Susceptible") == susceptible0);
 
         AdjList full = rgraph_bernoulli(n, 1.0, directed, model);
         REQUIRE(full.ecount() == (directed ? n * (n - 1u) : n * (n - 1u) / 2u));
