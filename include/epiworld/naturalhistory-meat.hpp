@@ -133,11 +133,16 @@ inline int Duration<TSeq>::draw(Agent<TSeq> & agent, Model<TSeq> & model) const
     case Kind::geometric:
     {
         // Days until the first success of a daily Bernoulli(1 / mean): the
-        // same as leaving each day with that probability.
+        // same as leaving each day with that probability. Drawn by inversion
+        // in floating point and capped like the other kinds, since an integer
+        // geometric draw overflows for long means (e.g., 1e9 days).
         const epiworld_double m = mean.eval(agent, model);
         if (!(m > 1.0))
             return 1;
-        return 1 + model.rgeom(1.0 / m);
+        const epiworld_double u = 1.0 - model.runif(); // in (0, 1]
+        return whole(
+            1.0 + std::floor(std::log(u) / std::log1p(-1.0 / m))
+        );
     }
 
     case Kind::lognormal:
