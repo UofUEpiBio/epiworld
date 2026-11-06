@@ -27,20 +27,15 @@ private:
 
     HospitalizationsTracker<TSeq> m_hospitalizations; ///< Tracker for hospitalization events
 
-    // Variants information
-    MapVec_type<int,int> virus_id; ///< The squence is the key
+    // Variants, by id: the model's viruses first (founders), then the
+    // run's mutations
     std::vector< std::string > virus_name;
-    std::vector< TSeq> virus_sequence;
     std::vector< int > virus_origin_date;
     std::vector< int > virus_parent_id;
 
-    MapVec_type<int,int> tool_id; ///< The squence is the key
+    // Tools, by id
     std::vector< std::string > tool_name;
-    std::vector< TSeq> tool_sequence;
     std::vector< int > tool_origin_date;
-
-    std::function<std::vector<int>(const TSeq&)> seq_hasher = default_seq_hasher<TSeq>;
-    std::function<std::string(const TSeq &)> seq_writer = default_seq_writer<TSeq>;
 
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     std::vector< std::vector<int> > today_virus;
@@ -156,23 +151,21 @@ public:
     // DataBase<TSeq> & operator=(const DataBase<TSeq> & m);
 
     /**
-     * @brief Registering a new variant
+     * @brief Records a new variant, giving the virus its id
      *
-     * @param v Pointer to the new virus.
-     * Since viruses are originated in the agent, the numbers simply move around.
-     * From the parent virus to the new virus. And the total number of infected
-     * does not change.
-     * @param founder `true` when `Model::add_virus()` registers the virus,
-     * which then starts its own lineage (unless its sequence is on record).
+     * @param v The virus.
+     * @param founder `true` when `Model::add_virus()` records the virus: it
+     * starts its own lineage (and the variants of the last run are dropped).
+     * Otherwise `v` has mutated: the new variant is a child of the id it had,
+     * and its agent's counts move from the parent to it.
      */
     void record_virus(Virus<TSeq> & v, bool founder = false);
-    void record_tool(Tool<TSeq> & t);
-    void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
+    void record_tool(Tool<TSeq> & t); ///< Gives the tool the next id.
     void reset();
+    void drop_variants(); ///< Keeps the model's viruses, dropping the run's variants.
     Model<TSeq> * get_model();
     void record();
 
-    const std::vector< TSeq > & get_sequence() const;
     const std::vector< int > & get_nexposed() const;
     size_t size() const;
 

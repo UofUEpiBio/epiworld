@@ -11,15 +11,6 @@ inline Virus<TSeq>::Virus()
     counter_construct++;
     #endif
 
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        baseline_sequence = -1;
-    }
-    else
-    {
-        baseline_sequence = nullptr;
-    }
-
 }
 
 template<typename TSeq>
@@ -30,15 +21,6 @@ inline Virus<TSeq>::Virus(
     #ifdef EPI_DEBUG_VIRUS
     counter_construct++;
     #endif
-
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        baseline_sequence = -1;
-    }
-    else
-    {
-        baseline_sequence = nullptr;
-    }
     
     set_name(name);
 }
@@ -72,7 +54,6 @@ inline Virus<TSeq>::~Virus()
 template<typename TSeq>
 inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
     : agent(other.agent),
-      baseline_sequence(other.baseline_sequence),
       virus_name(other.virus_name),
       date(other.date),
       id(other.id),
@@ -88,7 +69,6 @@ inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
 template<typename TSeq>
 inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
     : agent(other.agent),
-      baseline_sequence(std::move(other.baseline_sequence)),
       virus_name(std::move(other.virus_name)),
       date(other.date),
       id(other.id),
@@ -107,7 +87,6 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
 {
     if (this != &other) {
         agent = other.agent;
-        baseline_sequence = other.baseline_sequence;
         virus_name = other.virus_name;
         date = other.date;
         id = other.id;
@@ -126,7 +105,6 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
 {
     if (this != &other) {
         agent = other.agent;
-        baseline_sequence = std::move(other.baseline_sequence);
         virus_name = std::move(other.virus_name);
         date = other.date;
         id = other.id;
@@ -162,32 +140,6 @@ inline void Virus<TSeq>::set_mutation(
     MutFun<TSeq> fun
 ) {
     mutation = MutFun<TSeq>(fun);
-}
-
-template<typename TSeq>
-inline EPI_TYPENAME_TRAITS(TSeq, int) Virus<TSeq>::get_sequence()
-{
-
-    return baseline_sequence;
-
-}
-
-template<typename TSeq>
-inline void Virus<TSeq>::set_sequence(TSeq sequence)
-{
-
-    baseline_sequence = std::make_shared<TSeq>(sequence);
-    return;
-
-}
-
-template<>
-inline void Virus<int>::set_sequence(int sequence)
-{
-
-    baseline_sequence = sequence;
-    return;
-
 }
 
 
@@ -261,61 +213,10 @@ inline std::string Virus<TSeq>::get_name() const
 
 }
 
-template<>
-inline bool Virus<std::vector<int>>::operator==(
-    const Virus<std::vector<int>> & other
-    ) const
-{
-    
-    EPI_DEBUG_FAIL_AT_TRUE(
-        baseline_sequence->size() != other.baseline_sequence->size(),
-        "Virus:: baseline_sequence don't match"
-        )
-
-    for (size_t i = 0u; i < baseline_sequence->size(); ++i)
-    {
-
-        EPI_DEBUG_FAIL_AT_TRUE(
-            baseline_sequence->operator[](i) != other.baseline_sequence->operator[](i),
-            "Virus:: baseline_sequence[i] don't match"
-            )
-
-    }
-
-    EPI_DEBUG_FAIL_AT_TRUE(
-        virus_name != other.virus_name,
-        "Virus:: virus_name don't match"
-        )
-    
-
-
-
-
-
-
-    return true;
-
-}
-
 template<typename TSeq>
 inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
 {
     
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        EPI_DEBUG_FAIL_AT_TRUE(
-            baseline_sequence != other.baseline_sequence,
-            "Virus:: baseline_sequence don't match"
-        )
-    }
-    else
-    {
-        EPI_DEBUG_FAIL_AT_TRUE(
-            baseline_sequence != other.baseline_sequence,
-            "Virus:: baseline_sequence don't match"
-        )
-    }
-
     EPI_DEBUG_FAIL_AT_TRUE(
         virus_name != other.virus_name,
         "Virus:: virus_name don't match"

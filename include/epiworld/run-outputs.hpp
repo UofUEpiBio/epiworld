@@ -52,7 +52,7 @@ inline const std::vector< std::string > & run_output_names()
 /**
  * @brief Writes a table as a space-separated file with a header.
  *
- * Strings are double-quoted, except for the `*_sequence` columns.
+ * Strings are double-quoted.
  *
  * In `EPI_DEBUG` builds, each line is prefixed with the id of the thread that
  * wrote it (a leading `thread` column), as the CSVs always were. It describes
@@ -72,12 +72,11 @@ inline void write_table(const std::string & fn, const OutputTable & table)
     for (size_t j = 0u; j < table.colnames.size(); ++j)
         file << table.colnames[j] << (j + 1u < table.colnames.size() ? " " : "\n");
 
-    // Quoting only the string columns that are not sequences
+    // Quoting the string columns
     std::vector< bool > quote(table.columns.size());
     for (size_t j = 0u; j < quote.size(); ++j)
         quote[j] =
-            std::holds_alternative< std::vector< std::string > >(table.columns[j]) &&
-            table.colnames[j].find("_sequence") == std::string::npos;
+            std::holds_alternative< std::vector< std::string > >(table.columns[j]);
 
     for (size_t i = 0u; i < table.nrow(); ++i)
     {

@@ -7,8 +7,6 @@ EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target
 
     Virus<> virus_a = sir_virus("A");
     Virus<> virus_b = sir_virus("B");
-    virus_a.set_sequence(100);
-    virus_b.set_sequence(200);
 
     // No recovery: infected agents stay infected
     epimodels::ModelSIR<> first("C", 1000, 0.0, 0.5, 0.0);
@@ -28,11 +26,11 @@ EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target
     REQUIRE(second.get_virus(1).get_lineage_id() == 1);
     REQUIRE(second.get_virus(2).get_lineage_id() == 2);
 
-    // Adding a virus twice keeps its record and lineage
+    // Adding a virus twice records two lineages
     first.add_virus(virus_a);
-    REQUIRE(first.get_virus(2).get_id() == 1);
-    REQUIRE(first.get_virus(2).get_lineage_id() == 1);
-    REQUIRE(first.get_db().get_n_viruses() == 2u);
+    REQUIRE(first.get_virus(2).get_id() == 2);
+    REQUIRE(first.get_virus(2).get_lineage_id() == 2);
+    REQUIRE(first.get_db().get_n_viruses() == 3u);
 
     Tool<> tool("Vaccine against A");
     tool.set_susceptibility_reduction(1.0);

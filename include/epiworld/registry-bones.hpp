@@ -87,9 +87,8 @@ public:
  * the model it returns has no layers, which are added the same way as for a
  * model built directly (`Model::add_layer()`). A virus a user adds to the
  * model is a strain of the model's own: a copy of `get_virus(0)` with its own
- * name, its own sequence (`Virus::set_sequence()`; a virus whose sequence is on
- * record is that variant) and, if need be, its own parameters
- * (`Virus::use_param()`), so it has the same stages.
+ * name and, if need be, its own parameters (`Virus::use_param()`), so it has
+ * the same stages.
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 struct ModelInfo {

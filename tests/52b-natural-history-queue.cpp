@@ -154,10 +154,10 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
     }
 
     // Model C: a variant born during the run. The original never recovers;
-    // from day 5 on, every carrier mutates into a variant (a new sequence)
-    // that reads "Recovery rate (fast)" (1.0). The carriers infected from
-    // then on carry the variant and recover the next day; the database
-    // records two viruses, the variant a child of the original.
+    // from day 5 on, every carrier of it mutates into a variant that reads
+    // "Recovery rate (fast)" (1.0). The carriers infected from then on carry
+    // a variant and recover the next day; the database records each
+    // mutation as a variant, a child of the original.
     {
         epimodels::ModelSIR<> model("v", N, 0.0, 0.5, 0.0);
         model.add_param(1.0, "Recovery rate (fast)");
@@ -165,9 +165,8 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
 
         model.get_virus(0).set_mutation(
             [](Agent<> *, Virus<> & v, Model<> * m) -> bool {
-                if ((m->today() < 5) || (v.get_sequence() == 1))
+                if ((m->today() < 5) || (v.get_id() != 0))
                     return false;
-                v.set_sequence(1);
                 v.use_param("Recovery rate", "Recovery rate (fast)");
                 return true;
             }
@@ -194,7 +193,12 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
         REQUIRE(n_variant > 20);
         REQUIRE(n_never == 0);   // the early carriers mutated, then recovered
 
-        REQUIRE(model.get_db().get_n_viruses() == 2u);
+        auto info = model.get_db().get_run_outputs({"virus_info"}).at("virus_info");
+        const auto & parent = std::get< std::vector< int > >(info.columns[3u]);
+        REQUIRE(parent.size() >= 2u);
+        REQUIRE(parent[0u] == -99);
+        for (size_t k = 1u; k < parent.size(); ++k)
+            REQUIRE(parent[k] == 0);
     }
 
     // Guards: a virus in a model keeps its natural history, and a variant
@@ -206,9 +210,8 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
 
         model.get_virus(0).set_mutation(
             [](Agent<> *, Virus<> & v, Model<> *) -> bool {
-                if (v.get_sequence() == 1)
+                if (v.get_id() != 0)
                     return false;
-                v.set_sequence(1);
                 v.use_param("Recovery rate", "No such parameter");
                 return true;
             }

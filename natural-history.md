@@ -118,7 +118,7 @@ every compatible disease state.
 | `Statuses` | model | Status nodes, their contact weight per layer, and the transitions between them. The default is one status, "Free". |
 | Transition | either axis | A named, counted edge from a set of source nodes to a target (or a branch of targets), of one kind (Section 5.1). |
 | Reaction | model | "When transition T fires, or stage X is entered, fire transition U" (or call a function). It links the two axes. |
-| Virus | model | A disease: its natural history, name, sequence, mutation, lineage, and parameter redirections (`use_param()`). |
+| Virus | model | A disease: its natural history, name, id and parent, mutation, lineage, and parameter redirections (`use_param()`). |
 | `Assign` | model | Who gets a virus, a tool, an initial stage or a group at the start of each run (Section 5.7). |
 | Tool | model | Effects on susceptibility, transmission, recovery and death, read from model parameters. No states, no queue. |
 | Model | -- | The population, layers, parameters, viruses (and their stages), statuses, reactions and global events. Runs the step. |

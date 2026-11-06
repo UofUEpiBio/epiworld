@@ -18,10 +18,10 @@ class Tool;
  * 
  * @tparam TSeq 
  * @details
- * Raw transmisibility of a virus should be a function of its genetic
- * sequence. Nonetheless, transmisibility can be reduced as a result of
- * having one or more tools to fight the virus. Because of this, transmisibility
- * should be a function of the agent.
+ * A virus is identified by its id, which the model assigns: `Model::add_virus()`
+ * records a new variant (the founder of a lineage), and so does every
+ * mutation (a child of the variant it changed). Tools can reduce what a
+ * virus does, so its effects are a function of the agent.
  */
 template<typename TSeq>
 class Virus {
@@ -34,8 +34,6 @@ private:
     
     Agent<TSeq> * agent = nullptr;
 
-    EPI_TYPENAME_TRAITS(TSeq, int) baseline_sequence = 
-        EPI_TYPENAME_TRAITS(TSeq, int)(); 
 
     std::string virus_name = "unknown virus";
     int date = -99;
@@ -78,11 +76,19 @@ public:
     ~Virus();
     #endif
     
+    /**
+     * @brief Mutation
+     * @details The function returns `true` when it changed the virus (it may
+     * change its name or, with `use_param()`, the parameters it reads). The
+     * model then records the virus as a new variant: a new id, whose parent is
+     * the id it had, in the same lineage. Each mutation is a new variant, even
+     * if two of them made the same change.
+     */
+    ///@{
     void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);
+    ///@}
     
-    EPI_TYPENAME_TRAITS(TSeq, int) get_sequence();
-    void set_sequence(TSeq sequence);
     
     Agent<TSeq> * get_agent();
     void set_agent(Agent<TSeq> * p);
