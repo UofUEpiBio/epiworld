@@ -388,8 +388,42 @@ protected:
     Assign<TSeq> nh_initial;        ///< See set_initial()
     int nh_pending = -1;            ///< Transition of the next event (see _add_event())
 
-    static constexpr int NH_SEED = -2;    ///< Event: a seeded infection
-    static constexpr int NH_INITIAL = -3; ///< Event: an initial placement
+    /// Event: a seeded infection, and an initial placement (status transitions
+    /// are `-2 - index`, see `TransitionRef`)
+    static constexpr int NH_SEED = std::numeric_limits< int >::min();
+    static constexpr int NH_INITIAL = std::numeric_limits< int >::min() + 1;
+
+    /// The statuses (`nullptr`: one status, "Free")
+    std::shared_ptr< const Statuses<TSeq> > st = nullptr;
+    std::vector< int > nh_status_until; ///< [agent] Day the status's duration ends
+    std::vector< int > nh_status_since; ///< [agent] Day the status was entered
+    std::vector< int > nh_status_sod;   ///< [agent] Status at the start of the day it last changed
+
+    struct Reaction {
+        Trigger on;
+        int transition;                          ///< Fired, or (-1) ...
+        std::function< void(Agent<TSeq> &, Model<TSeq> &) > fun; ///< ... called
+    };
+    std::vector< Reaction > nh_reactions;
+
+    size_t nh_nstatus() const { return st ? st->get_n_stages() : 1u; }
+    int nh_stage_of(unsigned int cell) const { return static_cast< int >(cell / nh_nstatus()); }
+    int nh_status_of(unsigned int cell) const { return static_cast< int >(cell % nh_nstatus()); }
+    unsigned int nh_cell(int stage, int status) const
+    {
+        return static_cast< unsigned int >(stage) * static_cast< unsigned int >(nh_nstatus()) +
+            static_cast< unsigned int >(status);
+    }
+    static bool nh_is_status_tr(int t) { return (t <= -2) && (t > NH_INITIAL); }
+    static int nh_status_tr(int t) { return -2 - t; }
+    int nh_db_id(int t) const
+    {
+        return nh_is_status_tr(t) ?
+            static_cast< int >(nh->get_n_transitions()) + nh_status_tr(t) : t;
+    }
+    void nh_build_states();
+    void nh_react(Agent<TSeq> & p, int transition, int stage_old);
+    bool nh_removed(int stage) const;
 
     void nh_install(std::shared_ptr< NaturalHistory<TSeq> > def);
     void nh_reset();
@@ -821,6 +855,33 @@ public:
 
     /// Infections agent `id` has had in the current run.
     int get_episode(size_t id) const;
+
+    /// The stage and the status of an agent.
+    int get_stage(const Agent<TSeq> & agent) const;
+    int get_status(const Agent<TSeq> & agent) const;
+
+    /**
+     * @brief Sets the model's statuses (see `Statuses`): where agents are,
+     * and the transitions between them. Between runs only.
+     */
+    void set_statuses(Statuses<TSeq> s);
+
+    /// The statuses (`nullptr` if the model has one, "Free").
+    const Statuses<TSeq> * get_statuses() const { return st.get(); }
+
+    /**
+     * @brief When `on` happens to an agent, fire `transition` on it (or call
+     * `fun`), in the same step.
+     * @details Reactions link the axes: e.g., entering Rash fires
+     * "Quarantined -> Isolated". Within a day, stage changes apply first, then
+     * status changes, then reactions (which see the resulting status; `.was()`
+     * reads the one at the start of the day).
+     */
+    void react(Trigger on, int transition);
+    void react(Trigger on, std::function< void(Agent<TSeq> &, Model<TSeq> &) > fun);
+
+    /// A transition's id (stage or status), by name.
+    int transition_id(std::string_view name) const;
     ///@}
 
     /**

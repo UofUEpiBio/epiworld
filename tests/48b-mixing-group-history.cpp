@@ -163,9 +163,7 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
     model.add_globalevent([&present](Model<> * m) {
         for (const auto & a : m->get_agents())
         {
-            const int s = static_cast< int >(a.get_state());
-            present[m->today() + 1][a.get_id()] =
-                (s < Q::ISOLATED) || (s > Q::HOSPITALIZED);
+            present[m->today() + 1][a.get_id()] = (m->get_status(a) == Q::FREE);
         }
     }, "presence");
 

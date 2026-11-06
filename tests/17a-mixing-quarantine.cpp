@@ -47,7 +47,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
 
     for (const Agent<> & a : model.get_agents())
     {
-        if (a.get_state() != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
+        if (model.get_stage(a) != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
         {
             if (mixing.get_group(a.get_id()) == 0)
             {
@@ -91,7 +91,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
         {
             continue;
         }
-        else if (a.get_state() != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
+        else if (model.get_stage(a) != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
         {
             if (mixing.get_group(a.get_id()) == 1)
             {
@@ -115,19 +115,21 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     model.run(50, 123); 
     model.print();
 
-    std::vector< int > totals;
-    model.get_db().get_today_total(nullptr, &totals);
-
-    std::vector< int > expected_totals(model.get_n_states(), 0);
-    expected_totals[expected_totals.size() - 1] = static_cast<int>(model.size());
-
-    // In the totals, hospitalized agents also count as recovered
-    // So we set the last element to be the sum of the last two
-    // and the second to last to be zero.
-    totals[totals.size() - 1] += totals[totals.size() - 2];
-    totals[totals.size() - 2] = 0;
-
-    REQUIRE_THAT(totals, Catch::Equals(expected_totals));
+    // Everyone ends recovered or severe (in hospital), none of them free
+    // and severe, quarantined or isolated
+    using MQ = epimodels::ModelSEIRQuarantine<>;
+    int n_done = 0;
+    for (const auto & a : model.get_agents())
+    {
+        const int s = model.get_stage(a);
+        const int k = model.get_status(a);
+        if (
+            ((s == MQ::RECOVERED) && (k == MQ::FREE)) ||
+            ((s == MQ::SEVERE) && (k == MQ::HOSPITALIZED))
+        )
+            ++n_done;
+    }
+    REQUIRE(n_done == static_cast< int >(model.size()));
 
     // Random groups of 2000, drawn at every reset: 6000 agents in a group,
     // 2000 in each, and the rest in none

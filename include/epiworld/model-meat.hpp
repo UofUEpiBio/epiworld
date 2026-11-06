@@ -356,10 +356,38 @@ inline void Model<TSeq>::events_run()
         Event<TSeq> & a = events[nevents_tmp++];
 
         // A declared transition applies only if the agent is still in one of
-        // its sources (it may have moved earlier in the same pass)
+        // its sources (it may have moved earlier in the same pass). Its event
+        // carries the target stage or status, made a cell here.
         const int transition = a.transition;
-        if (nh && (transition >= 0) && !nh->is_source(transition, a.agent->state))
-            continue;
+        if (nh && (transition != -1))
+        {
+
+            const unsigned int c = a.agent->state;
+            const int s = nh_stage_of(c);
+            const int k = nh_status_of(c);
+
+            if (nh_is_status_tr(transition))
+            {
+                if (!st->is_source(nh_status_tr(transition), k) || nh_removed(s))
+                    continue;
+                a.new_state = static_cast< epiworld_fast_int >(
+                    nh_cell(s, static_cast< int >(a.new_state))
+                );
+            }
+            else
+            {
+                if ((transition >= 0) && !nh->is_source(transition, s))
+                    continue;
+                a.new_state = static_cast< epiworld_fast_int >(
+                    nh_cell(static_cast< int >(a.new_state), k)
+                );
+            }
+
+            // The status it had at the start of the day
+            if (a.agent->state_last_changed != today())
+                nh_status_sod[static_cast< size_t >(a.agent->id)] = k;
+
+        }
 
         // Everything read from the event after the handler runs is copied
         // first: a handler can schedule more events (e.g., a virus's
@@ -436,15 +464,55 @@ inline void Model<TSeq>::events_run()
         if (nh)
         {
 
+            const int s_old = nh_stage_of(state_old);
+            const int s_new = nh_stage_of(p->state);
+
+            // Entering a stage: entry days, the stage's duration, episodes
             if (
-                (p->state != state_old) ||
+                (s_new != s_old) ||
                 (transition == NH_SEED) ||
                 (transition == NH_INITIAL)
             )
-                nh_enter(*p, state_old, transition);
+                nh_enter(*p, static_cast< unsigned int >(s_old), transition);
+
+            // Entering a status: its day, and its duration (which may count
+            // from a stage's entry)
+            if (st && (nh_status_of(p->state) != nh_status_of(state_old)))
+            {
+
+                const size_t id = static_cast< size_t >(p->id);
+                const int k = nh_status_of(p->state);
+                nh_status_since[id] = today();
+                const int after = st->stages[static_cast< size_t >(k)].after;
+                if (after >= 0)
+                {
+                    const auto & d = st->transitions[after].duration;
+                    int base = today();
+                    if (d.get_anchor() >= 0)
+                    {
+                        const int e = nh_entered[id * nh->get_n_stages() +
+                            static_cast< size_t >(d.get_anchor())];
+                        if (e >= 0)
+                            base = e;
+                    }
+                    nh_status_until[id] = base + d.draw(*p, *this);
+                }
+                else
+                    nh_status_until[id] = INT_MAX;
+
+            }
+
+            // Counted, if a declared transition did it
+            if ((transition != -1) && (transition != NH_SEED) &&
+                (transition != NH_INITIAL) && (p->state != state_old))
+                db.record_declared_transition(nh_db_id(transition));
 
             if (use_queuing && (p->state != state_old))
                 nh_queue_move(*p, state_old);
+
+            // Reactions (they may schedule more events, applied in this pass)
+            if (p->state != state_old)
+                nh_react(*p, transition, s_old);
 
             continue;
 
@@ -646,7 +714,12 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     nh_entered(model.nh_entered),
     nh_episode(model.nh_episode),
     nh_queue(model.nh_queue),
-    nh_initial(model.nh_initial)
+    nh_initial(model.nh_initial),
+    st(model.st),
+    nh_status_until(model.nh_status_until),
+    nh_status_since(model.nh_status_since),
+    nh_status_sod(model.nh_status_sod),
+    nh_reactions(model.nh_reactions)
 {
 
     // Pointing to the right place. This needs
@@ -754,7 +827,12 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
     nh_entered(std::move(model.nh_entered)),
     nh_episode(std::move(model.nh_episode)),
     nh_queue(std::move(model.nh_queue)),
-    nh_initial(std::move(model.nh_initial))
+    nh_initial(std::move(model.nh_initial)),
+    st(std::move(model.st)),
+    nh_status_until(std::move(model.nh_status_until)),
+    nh_status_since(std::move(model.nh_status_since)),
+    nh_status_sod(std::move(model.nh_status_sod)),
+    nh_reactions(std::move(model.nh_reactions))
 {
 
     db.model = this;
@@ -856,6 +934,11 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     nh_episode = m.nh_episode;
     nh_queue = m.nh_queue;
     nh_initial = m.nh_initial;
+    st = m.st;
+    nh_status_until = m.nh_status_until;
+    nh_status_since = m.nh_status_since;
+    nh_status_sod = m.nh_status_sod;
+    nh_reactions = m.nh_reactions;
 
     agents_data = m.agents_data;
     agents_data_ncols = m.agents_data_ncols;
@@ -983,7 +1066,7 @@ inline void Model<TSeq>::dist_virus()
         for (auto & p : population)
             eligible[static_cast< size_t >(p.id)] =
                 (p.virus == nullptr) &&
-                (!nh || (nh->stages[p.state].infection >= 0));
+                (!nh || (nh->stages[static_cast< size_t >(nh_stage_of(p.state))].infection >= 0));
 
         const std::vector< int > labels = virus_assign[k].draw(*this, eligible);
         const Virus<TSeq> & v = *viruses[k];

@@ -145,11 +145,11 @@ inline void Agent<TSeq>::set_virus(
     if (model.nh && (state_new == -99))
     {
 
-        const int tr = model.nh->get_stage_info(static_cast< int >(state)).infection;
+        const int tr = model.nh->get_stage_info(model.nh_stage_of(state)).infection;
         if (tr < 0)
             throw std::logic_error(
                 "Agent " + std::to_string(id) + " is in the stage \"" +
-                model.nh->get_stages()[state] + "\", which has no infection "
+                model.nh->get_stages()[model.nh_stage_of(state)] + "\", which has no infection "
                 "transition, so it cannot be given a virus."
             );
 

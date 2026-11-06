@@ -57,10 +57,13 @@ EPIWORLD_TEST_CASE("SEIR quarantine traces every layer", "[seir-quarantine]") {
 
     std::vector< size_t > quarantined;
     for (const auto & a : model.get_agents())
-        if (a.get_state() == Model_::QUARANTINED_SUSCEPTIBLE)
+        if (
+            (model.get_status(a) == Model_::QUARANTINED) &&
+            (model.get_stage(a) == Model_::SUSCEPTIBLE)
+        )
             quarantined.push_back(static_cast< size_t >(a.get_id()));
 
-    REQUIRE(model.get_agent(0).get_state() == static_cast< unsigned int >(Model_::ISOLATED));
+    REQUIRE(model.get_status(model.get_agent(0)) == Model_::ISOLATED);
     REQUIRE_THAT(quarantined, Catch::Equals(std::vector< size_t >{1, 2, 3, 39}));
 
 }

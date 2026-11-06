@@ -236,12 +236,23 @@ inline bool Model<TSeq>::transmission_prepare()
     // A natural history says which stages are pushed to
     if (nh)
     {
-        for (size_t t = 0u; t < ns; ++t)
-            if (nh->stages[t].pushable)
+        // A cell is pushed to if its stage's only drawn exit is a default
+        // infection, its status has no drawn exit, and it is in the layers
+        for (size_t c = 0u; c < ns; ++c)
+        {
+            const unsigned int cu = static_cast< unsigned int >(c);
+            const bool status_drawn = st &&
+                st->stages[static_cast< size_t >(nh_status_of(cu))].needs_visit;
+            const bool excluded = !state_excluded.empty() && state_excluded[c];
+            if (
+                nh->stages[static_cast< size_t >(nh_stage_of(cu))].pushable &&
+                !status_drawn && !excluded
+            )
             {
-                push_pushable[t] = 1;
+                push_pushable[c] = 1;
                 any = true;
             }
+        }
     }
 
     // Recognizing the samplers needs std::function::target(), i.e., RTTI.
@@ -555,7 +566,10 @@ inline void Model<TSeq>::transmission_push_impl()
 
         sampled_layer = target.layer;
         if (nh)
-            nh_propose(nh->stages[i.state].infection, i, target.candidate);
+            nh_propose(
+                nh->stages[static_cast< size_t >(nh_stage_of(i.state))].infection,
+                i, target.candidate
+            );
         else
             i.set_virus(*this, *target.candidate);
 

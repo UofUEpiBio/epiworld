@@ -176,9 +176,12 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
         );
         model.seed(20260930);
         add_mixing(model, n);
+        // The uninfected cells (stage x 4 statuses + status): susceptible,
+        // free or quarantined
         return bench::time_runs(
             model, o.days, o.reps,
-            {model.SUSCEPTIBLE, model.QUARANTINED_SUSCEPTIBLE}
+            {model.SUSCEPTIBLE * 4 + model.FREE,
+             model.SUSCEPTIBLE * 4 + model.QUARANTINED}
         );
     }
 

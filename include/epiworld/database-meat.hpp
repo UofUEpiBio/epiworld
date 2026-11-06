@@ -67,7 +67,11 @@ inline void DataBase<TSeq>::reset()
     transmission_layer.clear();
 
     transition_today.assign(
-        model->nh ? model->nh->get_n_transitions() : 0u, 0
+        model->nh ?
+            model->nh->get_n_transitions() +
+                (model->st ? model->st->get_n_transitions() : 0u) :
+            0u,
+        0
     );
     hist_transition_date.clear();
     hist_transition_id.clear();
@@ -2136,9 +2140,16 @@ inline void DataBase<TSeq>::get_hist_transitions(
 
     date = hist_transition_date;
     counts = hist_transition_counts;
+    // Stage transitions first, then the status ones
+    const int n_stage = static_cast< int >(model->nh->get_n_transitions());
     transition.resize(hist_transition_id.size());
     for (size_t k = 0u; k < hist_transition_id.size(); ++k)
-        transition[k] = model->nh->get_transition(hist_transition_id[k]).name;
+    {
+        const int t = hist_transition_id[k];
+        transition[k] = (t < n_stage) ?
+            model->nh->get_transition(t).name :
+            model->st->get_transition(t - n_stage).name;
+    }
 
 }
 

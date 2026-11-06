@@ -193,6 +193,9 @@ struct Transition {
     Duration<TSeq> duration;    ///< after
     Effect effect = Effect::none;
     InfectionSampler<TSeq> sampler = nullptr; ///< infection only (optional)
+
+    /// A status transition: only for agents in one of these stages (empty: any)
+    std::vector< int > when;
 };
 
 /**
@@ -206,8 +209,11 @@ private:
 
 public:
     TransitionRef(NaturalHistory<TSeq> * nh_, int id_) : nh(nh_), id(id_) {}
-    operator int() const { return id; }
-    int get_id() const { return id; }
+
+    /// The transition's id for `Model::fire()` and reactions: a stage
+    /// transition's own index, or, for a status transition, `-2 - index`.
+    operator int() const { return nh->status_chart ? (-2 - id) : id; }
+    int get_id() const { return static_cast< int >(*this); }
 
     TransitionRef & name(std::string n);     ///< Default: "From -> To"
     TransitionRef & effect(Effect e);        ///< The tool effect a rate takes
@@ -217,6 +223,10 @@ public:
 
     /// A custom infection sampler (infection transitions only; C++ only).
     TransitionRef & sampler(InfectionSampler<TSeq> f);
+
+    /// A status transition: only for agents in these stages (read at the
+    /// start of the day).
+    TransitionRef & when(Nodes stages);
 };
 
 /**
@@ -248,7 +258,7 @@ struct StageInfo {
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 class NaturalHistory {
-private:
+protected:
     std::string name;
     std::vector< std::string > stage_labels;
     std::vector< unsigned int > stage_flags;
@@ -261,6 +271,7 @@ private:
 
     friend class TransitionRef<TSeq>;
     friend class Model<TSeq>;
+    bool status_chart = false; ///< See `Statuses`
 
     int add_transition(Transition<TSeq> t);
     void check_stage(int s, const char * what) const;
@@ -312,6 +323,49 @@ public:
 
     /// What the engine derived about stage `s` (once added to a model).
     const StageInfo & get_stage_info(int s) const { return stages.at(s); }
+};
+
+/**
+ * @brief The statuses of a model: where agents are (free, quarantined,
+ * isolated, hospitalized), and the transitions between them.
+ * @details The same vocabulary as a natural history (`rate()`, `after()`,
+ * `external()`), without infections or carriers. A status transition can be
+ * restricted to agents in some stages (`TransitionRef::when()`); a duration
+ * can count from a stage's entry (`Duration::since()`). A status with contact
+ * weight 0 takes its agents out of every layer. The first status is where
+ * agents start. Set on a model with `Model::set_statuses()`; a model without
+ * statuses has one, "Free".
+ */
+template<typename TSeq = EPI_DEFAULT_TSEQ>
+class Statuses : public NaturalHistory<TSeq> {
+public:
+    Statuses() : NaturalHistory<TSeq>("Statuses") { this->status_chart = true; }
+
+    /// Adds a status; returns its id.
+    int add_status(std::string label) { return this->add_stage(std::move(label)); }
+
+    TransitionRef<TSeq> infection(Nodes, int, Value<TSeq>) = delete;
+};
+
+/**
+ * @brief What a reaction responds to (see `Model::react()`).
+ * @details `Trigger::entered(s)`: an agent enters stage `s`;
+ * `Trigger::fired(t)`: transition `t` is applied. `.was({statuses})`: only if
+ * the agent's status at the start of the day was one of these.
+ */
+struct Trigger {
+    enum class Kind : uint8_t { entered, fired } kind = Kind::entered;
+    int target = -1;
+    std::vector< int > was_status; ///< Empty: any status
+
+    static Trigger entered(int stage) { return {Kind::entered, stage, {}}; }
+    static Trigger fired(int transition) { return {Kind::fired, transition, {}}; }
+    Trigger was(std::vector< int > statuses) const
+    {
+        Trigger t(*this);
+        t.was_status = std::move(statuses);
+        return t;
+    }
 };
 
 #endif
