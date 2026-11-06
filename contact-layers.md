@@ -1625,7 +1625,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-06).
 | `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`), #228 merged | #43 (`main` -> `v1-layers`: epiworldpy#34) | #29 (`main` -> `v1-layers`: epiworldjs#26, #28) | #71 (`main` -> `v1-layers`: measles#69) |
 | Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged (+ #230: the peer row is an approximation) | #43 (with 3d-3a, #351; first `Bubbles` binding: `epiworldpy.Bubbles`, `make_layer()`, `add_globalevent()`) | #29 (with 3d-3a, #351; re-vendor only) | #71 (with 3d-3a, #351 and measles#69; re-vendor only) |
 | Registry (#312) | not started | | | | |
-| Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 (replaces #358-#360, closed); NH-1 and NH-2 (branch `nh-1-engine`, with the plan): this PR; NH-3, NH-4 not started | to port (NH-4) | to port (NH-4) | to port (NH-4) | to port (NH-4) |
+| Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 (replaces #358-#360, closed); NH-1 and NH-2 (branch `nh-1-engine`, with the plan): #363; NH-3, NH-4 not started | to port (NH-4) | to port (NH-4) | to port (NH-4) | to port (NH-4) |
 | Phases 4, 5, 6 | not started | | | | |
 
 epiworldRShiny (Section 6): not started; one port after the registry.
