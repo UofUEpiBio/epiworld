@@ -19836,7 +19836,10 @@ inline void NaturalHistory<TSeq>::finalize(
                 "The " + where + " must lead to a carrier stage."
             );
 
+        // An anchor is a disease stage: the model checks the statuses' own
+        // against the virus (as it does `.when()`)
         if (
+            !status_chart &&
             (t.kind == TransitionKind::after) &&
             (t.duration.get_anchor() >= 0)
         )
@@ -19967,14 +19970,20 @@ inline void Model<TSeq>::nh_build_states()
     const int ns = static_cast< int >(nh->get_n_stages());
     const int nk = static_cast< int >(nh_nstatus());
 
-    // A status transition's stages are the virus's, and its name is not one
-    // of the virus's (transition_id() finds either by name)
+    // A status transition's stages (`.when()` and a duration's `.since()`)
+    // are the virus's, and its name is not one of the virus's
+    // (transition_id() finds either by name)
     if (st)
         for (size_t t = 0u; t < st->get_n_transitions(); ++t)
         {
             const auto & tr = st->get_transition(static_cast< int >(t));
             for (int s : tr.when)
                 nh->check_stage(s, "when");
+            if (
+                (tr.kind == TransitionKind::after) &&
+                (tr.duration.get_anchor() >= 0)
+            )
+                nh->check_stage(tr.duration.get_anchor(), "anchor");
             for (size_t u = 0u; u < nh->get_n_transitions(); ++u)
                 if (nh->get_transition(static_cast< int >(u)).name == tr.name)
                     throw std::logic_error(
@@ -20020,9 +20029,13 @@ inline void Model<TSeq>::nh_build_states()
                 infectious_states.push_back(c);
 
             // Carriers in the layers queue their contacts; the others with a
-            // drawn exit queue themselves
+            // drawn exit queue themselves, except those whose only exit is an
+            // infection drawn from their contacts (the default sampler),
+            // which the carriers queue. A custom sampler need not use the
+            // contacts, so its agents queue themselves.
+            const bool contact_driven = sinfo.pushable && !status_drawn;
             nh_queue[c] = (nh->is_carrier(s) && !excluded) ? 2 :
-                ((drawn && !((sinfo.infection >= 0) && !sinfo.needs_visit && !status_drawn)) ? 1 : 0);
+                ((drawn && !contact_driven) ? 1 : 0);
 
         }
 

@@ -568,7 +568,10 @@ inline void NaturalHistory<TSeq>::finalize(
                 "The " + where + " must lead to a carrier stage."
             );
 
+        // An anchor is a disease stage: the model checks the statuses' own
+        // against the virus (as it does `.when()`)
         if (
+            !status_chart &&
             (t.kind == TransitionKind::after) &&
             (t.duration.get_anchor() >= 0)
         )

@@ -251,5 +251,47 @@ EPIWORLD_TEST_CASE("Natural history - built and run end to end", "[natural-histo
         clash.external(0, 1, "Vaccinated");
         REQUIRE_THROWS(model->set_statuses(clash));
     }
+    {
+        // A custom sampler need not use the contacts: its agents are visited
+        // with queuing on, as with it off (here, without a layer or seeds)
+        for (bool queuing : {true, false})
+        {
+            Virus<> v("Sampled");
+            v.add_stage("S");
+            v.add_stage("I", stage::infectious);
+            v.infection(0, 1, 1.0).sampler(
+                [](Agent<> &, Model<> & m) -> Virus<> * {
+                    return &m.get_virus(0);
+                }
+            );
+            Model<> m(10);
+            m.verbose_off();
+            m.add_virus(v);
+            if (!queuing)
+                m.queuing_off();
+            m.run(1, 1);
+            REQUIRE(m.get_db().get_today_total_stage("I") == 10);
+        }
+    }
+    {
+        // A status duration's anchor is a disease stage, whichever of the
+        // virus and the statuses comes first
+        Statuses<> st;
+        st.add_status("Free");
+        st.add_status("Isolated");
+        st.after(1, 0, Duration<>::fixed(5).since(I));
+        REQUIRE_NOTHROW(make_model("pull")->set_statuses(st));
+
+        Model<> first(10);
+        first.set_statuses(st);
+        REQUIRE_NOTHROW(first.add_virus(make_disease()));
+
+        Statuses<> bad;
+        bad.add_status("Free");
+        bad.add_status("Isolated");
+        bad.add_status("Away");
+        bad.after(1, 0, Duration<>::fixed(5).since(2 * D));   // no such stage
+        REQUIRE_THROWS(make_model("pull")->set_statuses(bad));
+    }
 
 }
