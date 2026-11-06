@@ -54,16 +54,16 @@ EPIWORLD_TEST_CASE(
         
         int current_day = m->today();
         
-        // Check each agent for state transitions to hospitalized states
+        // Check each agent for status changes to Hospitalized
         for (size_t i = 0; i < m->size(); ++i)
         {
             auto & agent = m->get_agent(i);
-            unsigned int current_state = agent.get_state();
+            unsigned int current_state = static_cast< unsigned int >(m->get_status(agent));
             unsigned int prev_state = previous_states[i];
             
-            // Check if agent transitioned to HOSPITALIZED (10)
-            bool now_hospitalized = (current_state == measles::ModelMeaslesSchool<>::HOSPITALIZED);
-            bool was_hospitalized = (prev_state == measles::ModelMeaslesSchool<>::HOSPITALIZED);
+            // Check if agent became Hospitalized
+            bool now_hospitalized = (static_cast< int >(current_state) == measles::ModelMeaslesSchool<>::HOSPITALIZED);
+            bool was_hospitalized = (static_cast< int >(prev_state) == measles::ModelMeaslesSchool<>::HOSPITALIZED);
             
             if (now_hospitalized && !was_hospitalized)
             {

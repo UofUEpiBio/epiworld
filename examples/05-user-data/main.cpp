@@ -6,9 +6,6 @@ int main()
 
     // Setting up model --------------------------------------------------------
     epiworld::Model<> model(200);
-    model.add_state("Susceptible", epiworld::default_update_susceptible<>);
-    auto exposed_state = model.add_state("Exposed", epiworld::default_update_exposed<>);
-    auto removed_state = model.add_state("Removed");
 
 
     model.set_user_data({"agent_id", "virus_id"});
@@ -21,23 +18,13 @@ int main()
     model.add_param(.3, "recovery");
 
     // Setting up virus --------------------------------------------------------
+    // Infected agents recover at the rate their tools give them
     epiworld::Virus<> v("covid");
-    v.set_state(exposed_state, removed_state, removed_state);
-
-    EPI_NEW_POSTRECOVERYFUN_LAMBDA(immunity, int)
-    {
-        // Post immunity
-        p->add_tool(*m, *m->get_tools()[1u]);
-
-        m->add_user_data({
-            static_cast< epiworld_double >(p->get_id()),
-            static_cast< epiworld_double >(v.get_id())
-            });
-
-    };
-
-    v.set_post_recovery(immunity);
-    v.set_prob_infecting("infectiousness");
+    v.add_stage("Susceptible");
+    v.add_stage("Exposed", epiworld::stage::infectious);
+    v.add_stage("Removed");
+    v.infection(0, 1, "infectiousness");
+    const int recovery = v.rate(1, 2, 0.0).effect(epiworld::Effect::recovery);
 
     // Setting up tool ---------------------------------------------------------
     epiworld::Tool<> is("immune system");
@@ -45,12 +32,20 @@ int main()
     is.set_death_reduction(.9);
     is.set_recovery_enhancer("recovery");
 
-    epiworld::Tool<> postImm("post immunity");
-    postImm.set_susceptibility_reduction(1.0);
-
     model.add_tool(is, epiworld::assign::share(1.0));
-    model.add_tool(postImm, epiworld::assign::count(0));
     model.add_virus(v, epiworld::assign::count(5));
+
+    // Each recovery is recorded in the user data (the recovered are immune:
+    // Removed has no infection)
+    model.react(
+        epiworld::Trigger::fired(recovery),
+        [](epiworld::Agent<> & p, epiworld::Model<> & m) {
+            m.add_user_data({
+                static_cast< epiworld_double >(p.get_id()),
+                static_cast< epiworld_double >(0) // the only virus
+            });
+        }
+    );
     model.run(112, 30);
     model.print();
 

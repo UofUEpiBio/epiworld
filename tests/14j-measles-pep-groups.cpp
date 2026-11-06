@@ -76,8 +76,7 @@ measles::InterventionMeaslesPEP<> make_pep(std::vector< int > groups = {})
         static_cast<double>(PEP_WINDOW),
         static_cast<double>(PEP_WINDOW),
         {MS::SUSCEPTIBLE},
-        {MS::SUSCEPTIBLE},
-        {MS::SUSCEPTIBLE},
+        {MS::FREE},
         groups
     );
 }

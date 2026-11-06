@@ -42,7 +42,7 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     for (size_t i = 0u; i < n; ++i)
     {
         const bool reached =
-            model.get_agent(i).get_state() != epimodels::ModelSIR<>::SUSCEPTIBLE;
+            model.get_stage(model.get_agent(i)) != epimodels::ModelSIR<>::SUSCEPTIBLE;
 
         if (!reached)
             continue;
@@ -89,7 +89,7 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
 
     size_t reached_solo = 0u;
     for (auto & a : solo.get_agents())
-        if (a.get_state() != epimodels::ModelSIR<>::SUSCEPTIBLE)
+        if (solo.get_stage(a) != epimodels::ModelSIR<>::SUSCEPTIBLE)
             ++reached_solo;
     REQUIRE(reached_solo == 1u);
 

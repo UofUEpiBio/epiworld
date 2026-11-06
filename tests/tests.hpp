@@ -316,6 +316,7 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
         
         m->get_db().get_today_total(
             nullptr,
+            nullptr,
             &(final_distribution->at(n))
         );
 
@@ -515,12 +516,36 @@ inline std::vector<epiworld_double> tests_calculate_avg_transitions(
     return avg_transitions;
 };
 
+/**
+ * Labels of the engine's states, in order: "Status / Stage" pairs (just the
+ * stage without statuses), state = stage * n_statuses + status.
+ */
+template<typename TSeq>
+inline std::vector< std::string > tests_state_labels(
+    const epiworld::Model<TSeq> & model
+) {
+    std::vector< std::string > out;
+    const auto * nh = model.get_natural_history();
+    const auto * st = model.get_statuses();
+    if (nh == nullptr)
+        return out;
+    for (const auto & stage : nh->get_stages())
+    {
+        if (st == nullptr)
+            out.push_back(stage);
+        else
+            for (const auto & status : st->get_stages())
+                out.push_back(status + " / " + stage);
+    }
+    return out;
+}
+
 template<typename ModelType>
 void inline tests_print_avg_transitions(
     const std::vector<epiworld_double> & avg_transitions,
     const ModelType & model
 ) {
-    auto states = model.get_states();
+    auto states = tests_state_labels(model);
     size_t n_states = states.size();
 
     // Printing the entry as a matrix

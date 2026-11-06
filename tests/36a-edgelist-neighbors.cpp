@@ -199,13 +199,17 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
     );
 
     Model<> model(3);
-    model.add_state("Susceptible");
+    model.add_param(0.5, "Transmission probability");
+    model.add_param(0.1, "Recovery rate");
+    model.add_virus(sir_virus<int>("v"));
     model.add_layer(layer::network(
         "network", AdjList({0, 1}, {1, 2}, 3, false)
     ));
 
     Model<> wrong_size(4);
-    wrong_size.add_state("Susceptible");
+    wrong_size.add_param(0.5, "Transmission probability");
+    wrong_size.add_param(0.1, "Recovery rate");
+    wrong_size.add_virus(sir_virus<int>("v"));
     wrong_size.add_layer(layer::network(
         "network", AdjList({0, 1}, {1, 2}, 3, false)
     ));

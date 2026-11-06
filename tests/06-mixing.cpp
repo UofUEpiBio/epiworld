@@ -40,7 +40,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
 
     for (const auto & a : model.get_agents())
     {
-        if (static_cast<int>(a.get_state()) != model.state_of("Susceptible"))
+        if (model.get_stage(a) != model.SUSCEPTIBLE)
         {
             if (mixing.get_group(a.get_id()) == 0)
             {
@@ -78,7 +78,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
         {
             n_right++;
         }
-        else if (static_cast<int>(a.get_state()) != model.state_of("Susceptible"))
+        else if (model.get_stage(a) != model.SUSCEPTIBLE)
         {
             if (mixing.get_group(a.get_id()) == 1)
             {
@@ -103,7 +103,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
     model.print();
 
     std::vector< int > totals;
-    model.get_db().get_today_total(nullptr, &totals);
+    model.get_db().get_today_total(nullptr, nullptr, &totals);
 
     std::vector< int > expected_totals = {
         0, 0,

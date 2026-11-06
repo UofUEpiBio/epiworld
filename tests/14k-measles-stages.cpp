@@ -44,8 +44,10 @@ EPIWORLD_TEST_CASE(
     model.verbose_off();
 
     // Only day `day` has transitions, and all n agents make them
+    // (a status transition by its name, with `to` empty)
     auto all_on = [&](const std::string & from, const std::string & to, int day) {
-        auto counts = transitions_by_day(model, from, to);
+        auto counts = to.empty() ?
+            transitions_by_day(model, from) : transitions_by_day(model, from, to);
         int total = 0;
         for (auto c : counts)
             total += c;
@@ -59,26 +61,25 @@ EPIWORLD_TEST_CASE(
     REQUIRE(all_on("Rash", "Recovered", 10));
 
     // Quarantining every latent agent on day 2: the latent period still ends
-    // on day 5. The rash starts in isolation on day 8; isolation is off, so
-    // agents are released to Rash the next day, and the rash period still
-    // ends on day 10
+    // on day 5. The rash starts in quarantine on day 8, which isolates the
+    // agent; isolation is off (its period is less than a day), so agents are
+    // released the next day, and the rash period still ends on day 10
     model.add_globalevent(
         [](Model<> * m) -> void {
             for (auto & agent : m->get_agents())
-                if (agent.get_state() == measles::ModelMeaslesMixing<>::LATENT)
-                    agent.change_state(
-                        *m, measles::ModelMeaslesMixing<>::QUARANTINED_LATENT
-                    );
+                if (m->get_stage(agent) == measles::ModelMeaslesMixing<>::LATENT)
+                    m->fire(m->transition_id("Quarantined"), agent);
         },
         "Quarantine everyone",
         2
     );
 
     model.run(20, 123);
-    REQUIRE(all_on("Latent", "Quarantined Latent", 2));
-    REQUIRE(all_on("Quarantined Latent", "Quarantined Prodromal", 5));
-    REQUIRE(all_on("Quarantined Prodromal", "Isolated", 8));
-    REQUIRE(all_on("Isolated", "Rash", 9));
+    REQUIRE(all_on("Quarantined", "", 2));
+    REQUIRE(all_on("Latent", "Prodromal", 5));
+    REQUIRE(all_on("Prodromal", "Rash", 8));
+    REQUIRE(all_on("Onset in quarantine", "", 8));
+    REQUIRE(all_on("Isolation ends", "", 9));
     REQUIRE(all_on("Rash", "Recovered", 10));
 
     // The same course in the risk-based quarantine model
@@ -152,9 +153,7 @@ EPIWORLD_TEST_CASE(
     model_import.verbose_off();
     model_import.add_globalevent(
         [](Model<> * m) -> void {
-            m->get_agent(0).set_virus(
-                *m, m->get_virus(0), measles::ModelMeaslesMixing<>::LATENT
-            );
+            m->get_agent(0).set_virus(*m, m->get_virus(0));
         },
         "Import a case",
         3
@@ -182,9 +181,9 @@ EPIWORLD_TEST_CASE(
 
     auto history = [&](int seed) {
         model_risk.run(30, seed);
-        std::vector< std::string > from, to;
+        std::vector< std::string > transition;
         std::vector< int > date, counts;
-        model_risk.get_db().get_hist_transition_matrix(from, to, date, counts, true);
+        model_risk.get_db().get_hist_transitions(date, transition, counts);
         return std::make_pair(date, counts);
     };
 

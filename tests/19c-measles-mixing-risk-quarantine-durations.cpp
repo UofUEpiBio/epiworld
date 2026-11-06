@@ -81,10 +81,8 @@ inline TestResults test_model_builder_20d(
         model("Quarantine period low") << " -> ";
     std::vector< double > final_sizes = test_compute_final_sizes(
         final_distribution,
-        {
-            measles::ModelMeaslesMixingRiskQuarantine<>::SUSCEPTIBLE,
-            measles::ModelMeaslesMixingRiskQuarantine<>::QUARANTINED_SUSCEPTIBLE
-        },
+        // Susceptible, in any of the four statuses (state = stage * 4 + status)
+        {0u, 1u, 2u, 3u},
         nsims,
         true
     );

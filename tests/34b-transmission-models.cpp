@@ -9,8 +9,8 @@ using namespace epiworld;
 //    susceptibles ignore exposed, hospitalized, and recovered neighbors.
 // 2. Queuing stays a pure optimisation in every mode: on and off give
 //    identical runs, even with ties added and removed mid-run.
-// 3. Only the default susceptible samplers are pushed: a custom function
-//    always pulls -- and gives exactly the pulled run.
+// 3. Only default infections are pushed: a custom sampler always pulls --
+//    and gives exactly the pulled run.
 // 4. In a dense, high-prevalence epidemic, "auto" uses both steps.
 
 namespace {
@@ -38,11 +38,11 @@ Outcomes simulate(Model<> & model, int ndays, int nsims)
         const size_t ns = m->get_n_states();
 
         std::vector< int > today;
-        m->get_db().get_today_total(nullptr, &today);
+        m->get_db().get_today_total(nullptr, nullptr, &today);
         out.final_size.add(static_cast< double >(m->size() - today[0u]));
 
         std::vector< int > counts;
-        m->get_db().get_hist_total(nullptr, nullptr, &counts);
+        m->get_db().get_hist_total(nullptr, nullptr, nullptr, &counts);
         double peak = 0.0;
         for (size_t k = 0u; k < counts.size(); k += ns)
         {
@@ -76,8 +76,8 @@ void check_same(const Moments & a, const Moments & b, const std::string & what)
     CHECK(std::abs(z) <= 5.0);
 }
 
-// A custom SEIRH: exposed, hospitalized, and recovered agents keep the virus
-// but do not transmit (the epiworld-benchmark model).
+// A custom SEIRH: exposed and hospitalized agents keep the virus but do not
+// transmit (the epiworld-benchmark model).
 void build_seirh(Model<> & model)
 {
     model.add_param(0.06, "Transmission rate");
@@ -86,20 +86,17 @@ void build_seirh(Model<> & model)
     model.add_param(0.15, "Recovery rate");
     model.add_param(0.15, "Hospital recovery rate");
 
-    model.add_state("Susceptible", default_update_susceptible<>);
-    model.add_state("Exposed", new_state_update_transition<>({"Incubation rate"}, {2u}));
-    model.add_state("Infected", new_state_update_transition<>(
-        {"Hospitalization rate", "Recovery rate"}, {3u, 4u}
-    ));
-    model.add_state("Hospitalized", new_state_update_transition<>(
-        {"Hospital recovery rate"}, {4u}
-    ));
-    model.add_state("Recovered");
-    model.set_infectious_states({2});
-
     Virus<> v("pathogen");
-    v.set_state(1, 4, 4);
-    v.set_prob_infecting("Transmission rate");
+    v.add_stage("Susceptible");
+    v.add_stage("Exposed", stage::carrier);
+    v.add_stage("Infected", stage::infectious);
+    v.add_stage("Hospitalized", stage::carrier);
+    v.add_stage("Recovered");
+    v.infection(0, 1, "Transmission rate");
+    v.rate(1, 2, "Incubation rate");
+    v.rate(2, 3, "Hospitalization rate");
+    v.rate(2, 4, "Recovery rate");
+    v.rate(3, 4, "Hospital recovery rate");
     model.add_virus(v, assign::share(0.02));
 }
 
@@ -126,7 +123,7 @@ struct Run {
 Run record(Model<> & m)
 {
     Run r;
-    m.get_db().get_hist_total(nullptr, nullptr, &r.counts);
+    m.get_db().get_hist_total(nullptr, nullptr, nullptr, &r.counts);
     std::vector< int > virus, sexp, sexp_layer;
     m.get_db().get_transmissions(r.date, r.source, r.target, virus, sexp, sexp_layer);
     return r;
@@ -204,22 +201,20 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
         REQUIRE(runs[0] == runs[1]);
     }
 
-    // 3. Custom functions pull ------------------------------------------------
+    // 3. Custom samplers pull ------------------------------------------------
     {
         auto sir = [](bool wrapped) {
             Model<> m(1000);
-            if (wrapped)
-                m.add_state("Susceptible", [](Agent<> * p, Model<> * mm) -> void {
-                    default_update_susceptible<>(p, mm);
-                });
-            else
-                m.add_state("Susceptible", default_update_susceptible<>);
-            m.add_state("Infected", default_update_exposed<>);
-            m.add_state("Recovered");
             Virus<> v("flu");
-            v.set_state(1, 2, 2);
-            v.set_prob_infecting(0.3);
-            v.set_prob_recovery(0.2);
+            v.add_stage("Susceptible");
+            v.add_stage("Infected", stage::infectious);
+            v.add_stage("Recovered");
+            auto infection = v.infection(0, 1, 0.3);
+            if (wrapped)
+                infection.sampler([](Agent<> & p, Model<> & mm) -> Virus<> * {
+                    return mm.sample_virus(&p);
+                });
+            v.rate(1, 2, 0.2).effect(Effect::recovery);
             m.add_virus(v, assign::share(0.02));
             m.seed(99);
             m.add_layer(layer::network(

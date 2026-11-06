@@ -28,10 +28,11 @@ EPIWORLD_TEST_CASE("Virus history across multiple days", "[virus_hist]") {
 
     // Get virus history
     std::vector<int> virus_date, virus_id, virus_counts;
-    std::vector<std::string> virus_state;
+    std::vector<std::string> virus_state, virus_status;
     model.get_db().get_hist_virus(
         virus_date,
         virus_id,
+        virus_status,
         virus_state,
         virus_counts
     );
@@ -68,6 +69,7 @@ EPIWORLD_TEST_CASE("Virus history across multiple days", "[virus_hist]") {
     std::vector<std::string> total_state;
     model.get_db().get_hist_total(
         &total_date,
+        nullptr,
         &total_state,
         &total_counts
     );

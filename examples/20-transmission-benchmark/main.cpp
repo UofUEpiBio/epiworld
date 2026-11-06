@@ -119,20 +119,17 @@ static void build_seirh(Model<> & model, size_t n)
     model.add_param(recovery, "Recovery rate");
     model.add_param(1.0 / hosp_days, "Hospital recovery rate");
 
-    model.add_state("Susceptible", default_update_susceptible<>);
-    model.add_state("Exposed", new_state_update_transition<>({"Incubation rate"}, {2u}));
-    model.add_state("Infected", new_state_update_transition<>(
-        {"Hospitalization rate", "Recovery rate"}, {3u, 4u}
-    ));
-    model.add_state("Hospitalized", new_state_update_transition<>(
-        {"Hospital recovery rate"}, {4u}
-    ));
-    model.add_state("Recovered");
-    model.set_infectious_states({2});
-
     Virus<> pathogen("Benchmark pathogen");
-    pathogen.set_state(1, 4, 4);
-    pathogen.set_prob_infecting("Transmission rate");
+    pathogen.add_stage("Susceptible");
+    pathogen.add_stage("Exposed", stage::carrier);
+    pathogen.add_stage("Infected", stage::infectious);
+    pathogen.add_stage("Hospitalized", stage::carrier);
+    pathogen.add_stage("Recovered");
+    pathogen.infection(0, 1, "Transmission rate");
+    pathogen.rate(1, 2, "Incubation rate");
+    pathogen.rate(2, 3, "Hospitalization rate");
+    pathogen.rate(2, 4, "Recovery rate");
+    pathogen.rate(3, 4, "Hospital recovery rate");
     model.add_virus(pathogen, assign::count(100.0));
 
     model.add_layer(layer::network(

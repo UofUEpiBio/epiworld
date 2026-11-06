@@ -120,7 +120,6 @@ namespace epiworld {
     #include "tool-bones.hpp"
     #include "tool-meat.hpp"
 
-    #include "agent-meat-state.hpp"
     #include "agent-bones.hpp"
     #include "agent-meat.hpp"
     #include "model-meat-transmission.hpp"

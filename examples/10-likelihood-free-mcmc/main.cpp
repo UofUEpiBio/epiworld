@@ -31,7 +31,7 @@ std::vector< int > simfun(
     model.run(50);
            
     std::vector< int > res;
-    model.get_db().get_today_total(nullptr, &res);
+    model.get_db().get_today_total(nullptr, nullptr, &res);
 
     return res;
 
@@ -79,7 +79,7 @@ int main()
     model.print();
 
     std::vector< int > obs_dat;
-    model.get_db().get_today_total(nullptr, &obs_dat);
+    model.get_db().get_today_total(nullptr, nullptr, &obs_dat);
 
     lfmcmc.set_observed_data(obs_dat);
     lfmcmc.set_rand_engine(model.get_rand_endgine());
@@ -89,7 +89,7 @@ int main()
     lfmcmc.run(par0, 2000, 1);
     
     lfmcmc.set_params_names({"Immune recovery", "Infectiousness"});
-    lfmcmc.set_stats_names(model.get_states());
+    lfmcmc.set_stats_names(model.get_natural_history()->get_stages());
 
     lfmcmc.print();
 

@@ -25,7 +25,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     auto counts = [&model]() -> std::vector< int > {
         std::vector< int > out;
-        model.get_db().get_hist_total(nullptr, nullptr, &out);
+        model.get_db().get_hist_total(nullptr, nullptr, nullptr, &out);
         return out;
     };
 
@@ -36,7 +36,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     size_t susceptible_end = 0u;
     for (auto & a : model.get_agents())
-        if (a.get_state() == epimodels::ModelSIR<>::SUSCEPTIBLE)
+        if (model.get_stage(a) == epimodels::ModelSIR<>::SUSCEPTIBLE)
             ++susceptible_end;
     REQUIRE(susceptible_end < n / 2u);
 
@@ -54,7 +54,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     size_t susceptible_edit = 0u;
     for (auto & a : model.get_agents())
-        if (a.get_state() == epimodels::ModelSIR<>::SUSCEPTIBLE)
+        if (model.get_stage(a) == epimodels::ModelSIR<>::SUSCEPTIBLE)
             ++susceptible_edit;
     // (the matrix closes after day 1, so only that day's contacts got through)
     REQUIRE(susceptible_edit > n - 40u);
@@ -72,7 +72,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     size_t susceptible_closed = 0u;
     for (auto & a : model.get_agents())
-        if (a.get_state() == epimodels::ModelSIR<>::SUSCEPTIBLE)
+        if (model.get_stage(a) == epimodels::ModelSIR<>::SUSCEPTIBLE)
             ++susceptible_closed;
     REQUIRE(susceptible_closed == n - 1u);
 
@@ -107,7 +107,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
     copy->run(30, 77);
     size_t susceptible_copy = 0u;
     for (auto & a : copy->get_agents())
-        if (a.get_state() == epimodels::ModelSIR<>::SUSCEPTIBLE)
+        if (model.get_stage(a) == epimodels::ModelSIR<>::SUSCEPTIBLE)
             ++susceptible_copy;
     REQUIRE(susceptible_copy == n - 1u);
 

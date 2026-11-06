@@ -43,7 +43,7 @@ size_t quarantined_ever(TModel & model)
 
     std::vector< std::string > states;
     std::vector< int > counts;
-    model.get_db().get_hist_total(nullptr, &states, &counts);
+    model.get_db().get_hist_total(nullptr, &states, nullptr, &counts);
 
     size_t n = 0u;
     for (size_t i = 0u; i < states.size(); ++i)

@@ -9,23 +9,24 @@ using namespace epiworld;
 
 namespace {
 
-// An SIR-like model over `n` agents with default (all-layer) pulling
+// A model over `n` agents with default (all-layer) pulling; its stages come
+// from its viruses (make_virus())
 Model<> make_model(size_t n)
 {
     Model<> m(n);
-    m.add_state("Susceptible", default_update_susceptible<>);
-    m.add_state("Infected", default_update_exposed<>);
-    m.add_state("Recovered");
     m.verbose_off();
     return m;
 }
 
+// An SIR virus, with its own probabilities
 Virus<> make_virus(std::string name, double p_inf, double p_rec = 0.0)
 {
     Virus<> v(name);
-    v.set_state(1, 2, 2);
-    v.set_prob_infecting(p_inf);
-    v.set_prob_recovery(p_rec);
+    v.add_stage("Susceptible");
+    v.add_stage("Infected", stage::infectious);
+    v.add_stage("Recovered");
+    v.infection(0, 1, p_inf);
+    v.rate(1, 2, p_rec).effect(Effect::recovery);
     return v;
 }
 

@@ -41,7 +41,7 @@ EPIWORLD_TEST_CASE("Network layers - redrawn and fixed", "[layer-network]") {
         model.run(10, 1);
         auto first = ties(model, "contacts");
         std::vector< int > hist_first;
-        model.get_db().get_hist_total(nullptr, nullptr, &hist_first);
+        model.get_db().get_hist_total(nullptr, nullptr, nullptr, &hist_first);
 
         model.run(10, 2);
         auto second = ties(model, "contacts");
@@ -49,7 +49,7 @@ EPIWORLD_TEST_CASE("Network layers - redrawn and fixed", "[layer-network]") {
         model.run(10, 1);
         auto again = ties(model, "contacts");
         std::vector< int > hist_again;
-        model.get_db().get_hist_total(nullptr, nullptr, &hist_again);
+        model.get_db().get_hist_total(nullptr, nullptr, nullptr, &hist_again);
 
         REQUIRE(first.size() == n * 4u / 2u);
         REQUIRE(first != second);

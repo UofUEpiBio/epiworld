@@ -112,12 +112,7 @@ using MixerFun = std::function<epiworld_double(Agent<TSeq>*,VirusPtr<TSeq>&,Mode
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 using MutFun = std::function<bool(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using PostRecoveryFun = std::function<void(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using VirusFun = std::function<epiworld_double(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
-
+/// The engine's update of the agents in a state (see `nh_build_states()`)
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 using UpdateFun = std::function<void(Agent<TSeq>*,Model<TSeq>*)>;
 
@@ -141,8 +136,9 @@ enum class EventAction : uint8_t {
 /**
  * @brief How network transmission is sampled each step.
  *
- * @details Susceptible agents whose update function is
- * `default_update_susceptible` can acquire a virus in two ways that give the same distribution of outcomes:
+ * @details Agents in a stage whose only drawn exit is a default infection
+ * (no custom sampler) can acquire a virus in two ways that give the same
+ * distribution of outcomes:
  *
  * - `pull`: each susceptible agent scans its neighbors and draws its infector
  *   with `roulette()` (the approach of epiworld <= 0.15).

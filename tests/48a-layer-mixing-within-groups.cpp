@@ -63,7 +63,7 @@ std::vector< int > states(Model<> & m)
 {
     std::vector< int > out;
     for (const auto & a : m.get_agents())
-        out.push_back(static_cast< int >(a.get_state()));
+        out.push_back(m.get_stage(a));
     return out;
 }
 
@@ -91,7 +91,7 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
         model->add_globalevent(move, "move", 5);
         model->run(60, 46);
 
-        model->get_db().get_hist_total(nullptr, nullptr, &hist[queue]);
+        model->get_db().get_hist_total(nullptr, nullptr, nullptr, &hist[queue]);
         std::vector< int > d, t, v, se, lay;
         model->get_db().get_transmissions(d, src[queue], t, v, se, lay);
 

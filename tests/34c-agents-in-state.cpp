@@ -20,7 +20,7 @@ void check_index(Model<> * m, Tally & tally)
 {
 
     std::vector< int > counts;
-    m->get_db().get_today_total(nullptr, &counts);
+    m->get_db().get_today_total(nullptr, nullptr, &counts);
 
     std::vector< int > seen(m->size(), 0);
     bool ok = true;
@@ -33,7 +33,7 @@ void check_index(Model<> * m, Tally & tally)
 
         for (auto id : ids)
         {
-            if (m->get_agent(id).get_state() != s)
+            if (m->get_stage(m->get_agent(id)) != static_cast< int >(s))
                 ok = false;
             seen[id]++;
         }

@@ -46,7 +46,7 @@ EPIWORLD_TEST_CASE("Natural history - surveillance and diffnet and logit models"
         for (auto & a : model.get_agents())
             REQUIRE(
                 (a.get_virus() != nullptr) ==
-                nh->is_carrier(static_cast< int >(a.get_state()))
+                nh->is_carrier(model.get_stage(a))
             );
 
         std::vector< int > date, counts;
@@ -85,7 +85,7 @@ EPIWORLD_TEST_CASE("Natural history - surveillance and diffnet and logit models"
 
         std::vector< int > date, counts;
         std::vector< std::string > state;
-        model.get_db().get_hist_total(&date, &state, &counts);
+        model.get_db().get_hist_total(&date, nullptr, &state, &counts);
 
         int last = -1;
         for (size_t k = 0u; k < date.size(); ++k)

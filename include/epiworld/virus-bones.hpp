@@ -42,20 +42,7 @@ private:
     int id   = -99;    
     int lineage_id = -99; ///< Id of the founding virus (kept across mutations).
     uint64_t lineage_bit = uint64_t(1) << 63; ///< Bit matched against Tool::target_mask.
-    epiworld_fast_int state_init    = -99; ///< Change of state when added to agent.
-    epiworld_fast_int state_post    = -99; ///< Change of state when removed from agent.
-    epiworld_fast_int state_removed = -99; ///< Change of state when agent is removed
-
-    epiworld_fast_int queue_init    = Queue<TSeq>::Everyone; ///< Change of state when added to agent.
-    epiworld_fast_int queue_post    = -Queue<TSeq>::Everyone; ///< Change of state when removed from agent.
-    epiworld_fast_int queue_removed = -Queue<TSeq>::Everyone; ///< Change of state when agent is removed
-
     MutFun<TSeq>          mutation                 = nullptr;
-    PostRecoveryFun<TSeq> post_recovery_fun        = nullptr;
-    VirusFun<TSeq>        probability_of_infecting = nullptr;
-    VirusFun<TSeq>        probability_of_recovery  = nullptr;
-    VirusFun<TSeq>        probability_of_death     = nullptr;
-    VirusFun<TSeq>        incubation               = nullptr;
 
     /// Parameters this variant reads in place of others (see `use_param()`)
     std::vector< std::pair< ParamRef, ParamRef > > param_redirects;
@@ -118,89 +105,8 @@ public:
      */
     int get_lineage_id() const;
 
-    /**
-     * @name Get and set the tool functions
-     * 
-     * @param v The virus over which to operate
-     * @param fun the function to be used
-     * 
-     * @return epiworld_double 
-     */
-    ///@{
-    epiworld_double get_prob_infecting(Model<TSeq> * model);
-    epiworld_double get_prob_recovery(Model<TSeq> * model);
-    epiworld_double get_prob_death(Model<TSeq> * model);
-    epiworld_double get_incubation(Model<TSeq> * model);
-    
-    void post_recovery(Model<TSeq> * model);
-    void set_post_recovery(PostRecoveryFun<TSeq> fun);
-    void set_post_immunity(epiworld_double prob);
-    void set_post_immunity(std::string param);
-
-    void set_prob_infecting_fun(VirusFun<TSeq> fun);
-    void set_prob_recovery_fun(VirusFun<TSeq> fun);
-    void set_prob_death_fun(VirusFun<TSeq> fun);
-    void set_incubation_fun(VirusFun<TSeq> fun);
-    
-    void set_prob_infecting(std::string param);
-    void set_prob_recovery(std::string param);
-    void set_prob_death(std::string param);
-    void set_incubation(std::string param);
-
-    // Deleting pointer versions to avoid mistakes
-    void set_prob_infecting(epiworld_double * prob) = delete;
-    void set_prob_recovery(epiworld_double * prob) = delete;
-    void set_prob_death(epiworld_double * prob) = delete;
-    void set_incubation(epiworld_double * prob) = delete;
-    void set_post_immunity(epiworld_double * prob) = delete;
-    
-    void set_prob_infecting(epiworld_double prob);
-    void set_prob_recovery(epiworld_double prob);
-    void set_prob_death(epiworld_double prob);
-    void set_incubation(epiworld_double prob);
-    ///@}
-
-
     void set_name(std::string name);
     std::string get_name() const;
-
-    /**
-     * @name Get and set the state and queue
-     * 
-     * After applied, viruses can change the state and affect
-     * the queue of agents. These function sets the default values,
-     * which are retrieved when adding or removing a virus does not
-     * specify a change in state or in queue.
-     * 
-     * @param init After the virus/tool is added to the agent.
-     * @param end After the virus/tool is removed.
-     * @param removed After the agent (Agent) is removed.
-     */
-    ///@{
-    void set_state(
-        epiworld_fast_int init,
-        epiworld_fast_int end,
-        epiworld_fast_int removed = -99
-        );
-        
-    void set_queue(
-        epiworld_fast_int init,
-        epiworld_fast_int end,
-        epiworld_fast_int removed = -99
-        );
-
-    void get_state(
-        epiworld_fast_int * init,
-        epiworld_fast_int * end,
-        epiworld_fast_int * removed = nullptr
-        ) const;
-
-    void get_queue(
-        epiworld_fast_int * init,
-        epiworld_fast_int * end,
-        epiworld_fast_int * removed = nullptr
-        ) const;
-    ///@}
 
     bool operator==(const Virus<TSeq> & other) const;
     bool operator!=(const Virus<TSeq> & other) const {return !operator==(other);};

@@ -104,6 +104,30 @@ template<typename TSeq>
 inline Agent<TSeq>::~Agent() = default;
 
 template<typename TSeq>
+inline void Agent<TSeq>::add_tool(Model<TSeq> & model, const Tool<TSeq> & tool)
+{
+    add_tool(model, tool, -99, -99);
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::set_virus(Model<TSeq> & model, const Virus<TSeq> & virus)
+{
+    set_virus(model, virus, -99, -99);
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::rm_tool(Model<TSeq> & model, epiworld_fast_uint tool_idx)
+{
+    rm_tool(model, tool_idx, -99, -99);
+}
+
+template<typename TSeq>
+inline void Agent<TSeq>::rm_tool(Model<TSeq> & model, ToolPtr<TSeq> & tool)
+{
+    rm_tool(model, tool, -99, -99);
+}
+
+template<typename TSeq>
 inline void Agent<TSeq>::add_tool(
     Model<TSeq> & model,
     const Tool<TSeq> & tool,
@@ -161,10 +185,12 @@ inline void Agent<TSeq>::set_virus(
     }
 
     if (state_new == -99)
-        virus.get_state(&state_new, nullptr, nullptr);
+        throw std::logic_error(
+            "A virus is given to agents of a model with a natural history."
+        );
 
     if (queue == -99)
-        virus.get_queue(&queue, nullptr, nullptr);
+        queue = Queue<TSeq>::NoOne;
 
     VirusPtr<TSeq> virus_ptr = std::shared_ptr<Virus<TSeq>>(virus.clone_ptr());
 
@@ -228,10 +254,13 @@ inline void Agent<TSeq>::rm_virus(
         );
 
     if (state_new == -99)
-        virus->get_state(nullptr, &state_new, nullptr);
+        throw std::logic_error(
+            "Removing a virus needs the stage to move to: declare an external "
+            "transition and fire() it."
+        );
 
     if (queue == -99)
-        virus->get_queue(nullptr, &queue, nullptr);
+        queue = Queue<TSeq>::NoOne;
 
     model._add_event(
         this, virus, nullptr,

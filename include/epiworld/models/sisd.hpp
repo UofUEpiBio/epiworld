@@ -23,9 +23,9 @@ class ModelSISD : public Model<TSeq>
 
 public:
 
-    static const int SUSCEPTIBLE = 0;
-    static const int INFECTED    = 1;
-    static const int DECEASED    = 2;
+    static constexpr int SUSCEPTIBLE = 0;
+    static constexpr int INFECTED    = 1;
+    static constexpr int DECEASED    = 2;
 
     ModelSISD() = delete;
 

@@ -19,7 +19,7 @@ std::vector< double > attack(Model<> & model, const std::string & mode)
         60, 300, 2026,
         [&out](size_t, Model<> * m) -> void {
             std::vector< int > counts;
-            m->get_db().get_today_total(nullptr, &counts);
+            m->get_db().get_today_total(nullptr, nullptr, &counts);
             out.push_back(static_cast< double >(counts[1] + counts[2]));
         },
         true, false, 1
@@ -94,8 +94,8 @@ EPIWORLD_TEST_CASE("Network layers - several in one model", "[layer-network]") {
         with_empty->run(60, 123);
 
         std::vector< int > h1, h2;
-        single.get_db().get_hist_total(nullptr, nullptr, &h1);
-        with_empty->get_db().get_hist_total(nullptr, nullptr, &h2);
+        single.get_db().get_hist_total(nullptr, nullptr, nullptr, &h1);
+        with_empty->get_db().get_hist_total(nullptr, nullptr, nullptr, &h2);
         REQUIRE(h1 == h2);
 
         std::vector< int > d, src, tgt, v, se, se_layer;

@@ -29,7 +29,7 @@ Outcome outcome_of(Model<> & model)
 
     std::vector< int > date;
     std::vector< std::string > state;
-    model.get_db().get_hist_total(&date, &state, &o.hist);
+    model.get_db().get_hist_total(&date, nullptr, &state, &o.hist);
 
     o.states = model.get_agents_states();
     return o;
@@ -181,7 +181,6 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
         size_t offered = 0u;
         auto & v = model.get_virus(0u);
         model.assign_virus(0u, assign::agents({static_cast<size_t>(n - 1)}));
-        v.set_queue(Queue<int>::NoOne, Queue<int>::NoOne, Queue<int>::NoOne);
         v.set_mutation([&offered](Agent<> *, Virus<> &, Model<> *) -> bool {
             ++offered;
             return false;

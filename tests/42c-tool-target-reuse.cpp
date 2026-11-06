@@ -43,8 +43,8 @@ EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target
     second.run(30, 1231);
 
     std::vector< int > date, id, counts;
-    std::vector< std::string > state;
-    second.get_db().get_hist_virus(date, id, state, counts);
+    std::vector< std::string > status, state;
+    second.get_db().get_hist_virus(date, id, status, state, counts);
 
     // Infected counts of each virus on the first and the last day
     int a_first = -1, a_last = -1, b_first = -1, b_last = -1;

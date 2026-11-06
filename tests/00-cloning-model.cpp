@@ -6,12 +6,11 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
 
     epiworld::Model<> m(1000);
 
-    auto susceptible_state = m.add_state("Susceptible", default_update_susceptible<>);
-    auto recovered_state = m.add_state("Recovered");
-
     epiworld::Virus<> v("covid 19");
+    v.add_stage("Susceptible");
+    v.add_stage("Infected", stage::infectious);
+    v.infection(0, 1, 0.5);
     epiworld::Tool<> t("vax");
-    v.set_state(susceptible_state, recovered_state);
 
     m.seed(1333);
     m.add_layer(layer::network(

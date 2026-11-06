@@ -99,8 +99,8 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
     model_name.run(40, 55);
 
     std::vector< int > hist_id, hist_name;
-    model.get_db().get_hist_total(nullptr, nullptr, &hist_id);
-    model_name.get_db().get_hist_total(nullptr, nullptr, &hist_name);
+    model.get_db().get_hist_total(nullptr, nullptr, nullptr, &hist_id);
+    model_name.get_db().get_hist_total(nullptr, nullptr, nullptr, &hist_name);
     REQUIRE(hist_id == hist_name);
 
 }

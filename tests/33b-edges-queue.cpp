@@ -55,7 +55,7 @@ EPIWORLD_TEST_CASE("Edges - mid-run ties keep the queue honest", "[edges]") {
         model.run(60);
 
         std::vector< int > counts;
-        model.get_db().get_hist_total(nullptr, nullptr, &counts);
+        model.get_db().get_hist_total(nullptr, nullptr, nullptr, &counts);
         return counts;
 
     };
@@ -88,7 +88,7 @@ EPIWORLD_TEST_CASE("Edges - mid-run ties keep the queue honest", "[edges]") {
         model.run_multiple(40, 4, 555, make_save_run<int>(), true, false, 1);
 
         std::vector< int > counts;
-        model.get_db().get_hist_total(nullptr, nullptr, &counts);
+        model.get_db().get_hist_total(nullptr, nullptr, nullptr, &counts);
         return counts;
 
     };

@@ -560,6 +560,13 @@ for the multi-status models. NH-2 removes it, before any release. Each phase
 updates the runbook table in `contact-layers.md` (Section 11.6) and reruns
 the benchmark (Section 11.7 there).
 
+Status (2026-11-06): NH-1 and NH-2 are done on `nh-1-engine` (one PR into
+`v1-layers`). Of Section 10, NH-2 includes the Severe stage; the other policy
+items are still open. Left from Section 9: PEP still runs the day's events
+before it checks the efficacy, `get_transition_probability()` and
+`get_agents_states()` still return the engine's states, and `rule()` and the
+deadline calendar are not built (the deadlines are checked per agent).
+
 - **NH-1: the engine and the single-status models.**
   - Cells, the cell table, the natural history on the virus, the `Chart`
     vocabulary and value slots, the calendar, the derived queue, and the

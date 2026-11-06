@@ -6,14 +6,13 @@ int main()
   // Creating a model
   epiworld::Model<> model(1000);
 
-  model.add_state("Susceptible", epiworld::default_update_susceptible<>);
-  auto infected_state = model.add_state("Infected", epiworld::default_update_exposed<>);
-  auto removed_state = model.add_state("Removed");
-
-  // Creating a virus
+  // Creating a virus, with its natural history
   epiworld::Virus<> covid19("covid 19");
-  covid19.set_prob_infecting(0.8);
-  covid19.set_state(infected_state, removed_state, removed_state);
+  covid19.add_stage("Susceptible");
+  covid19.add_stage("Infected", epiworld::stage::infectious);
+  covid19.add_stage("Removed");
+  covid19.infection(0, 1, 0.8);
+  covid19.rate(1, 2, 0.5).effect(epiworld::Effect::recovery);
 
   // Creating a tool
   epiworld::Tool<> vax("vaccine");

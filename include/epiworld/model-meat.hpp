@@ -1147,46 +1147,14 @@ inline void Model<TSeq>::add_virus(
     )
 {
 
-    // Checking the state
-    epiworld_fast_int init_, post_, rm_;
-    v.get_state(&init_, &post_, &rm_);
-
-    // With a natural history, the stages say where a virus takes the agent,
-    // and the transitions name the parameters it reads
-    if (nh || v.nh_def)
-    {
-        if (!v.nh_def)
-            throw std::logic_error(
-                "The virus \"" + v.get_name() + "\" has no natural history, "
-                "but the model's viruses do (\"" + nh->get_name() + "\")."
-            );
-        if (!nh && (nstates != 0u))
-            throw std::logic_error(
-                "The virus \"" + v.get_name() + "\" has a natural history, "
-                "but the model has states (add_state()): its stages would be "
-                "the model's states."
-            );
-
-        if (
-            (init_ != -99) || (post_ != -99) || (rm_ != -99) ||
-            v.probability_of_infecting || v.probability_of_recovery ||
-            v.probability_of_death || v.incubation
-        )
-            throw std::logic_error(
-                "The virus \"" + v.get_name() + "\" sets states or "
-                "probabilities, but the model has a natural history: its "
-                "transitions read model parameters (a variant points to its "
-                "own with Virus::use_param())."
-            );
-    }
-    else if (init_ == -99)
+    // The stages say where a virus takes the agent, and the transitions name
+    // the parameters it reads
+    if (!v.nh_def)
         throw std::logic_error(
-            "The virus \"" + v.get_name() + "\" has no -init- state."
-            );
-    else if (post_ == -99)
-        throw std::logic_error(
-            "The virus \"" + v.get_name() + "\" has no -post- state."
-            );
+            "The virus \"" + v.get_name() + "\" has no natural history: "
+            "declare its stages and transitions (add_stage(), infection(), "
+            "rate(), after(), ...) before adding it."
+        );
 
     // The model keeps its own copy (of the derived class, if any); its id and
     // lineage are recorded on the copy
@@ -1378,9 +1346,8 @@ inline Model<TSeq> & Model<TSeq>::run(
 
     if (nstates == 0u)
         throw std::logic_error(
-            std::string("No states registered in this model. ") +
-            std::string("At least one state should be included. See the ") +
-            std::string("function -Model::add_state()-")
+            std::string("The model has no stages: add a virus with a ") +
+            std::string("natural history (Model::add_virus()).")
             );
 
     // Setting up the number of steps
@@ -1390,39 +1357,6 @@ inline Model<TSeq> & Model<TSeq>::run(
         this->seed(static_cast< size_t >(seed));
 
     last_seed = seed;
-
-    // Checking whether the proposed state in/out/removed
-    // are valid
-    epiworld_fast_int _init, _end, _removed;
-    int nstate_int = static_cast<int>(nstates);
-
-    // Function to validate the states of viruses
-    // and tools.
-    auto check_init_states = [nstate_int](int x) -> void {
-
-        if (((x != -99) && (x < 0)) || (x >= nstate_int))
-            throw std::range_error("States must be between 0 and " +
-                std::to_string(nstate_int - 1));
-    };
-
-    for (auto & v : viruses)
-    {
-        v->get_state(&_init, &_end, &_removed);
-
-        check_init_states(_init);
-        check_init_states(_end);
-        check_init_states(_removed);
-
-    }
-
-    for (auto & t : tools)
-    {
-        t->get_state(&_init, &_end);
-
-        check_init_states(_init);
-        check_init_states(_end);
-
-    }
 
     // From here on get_ndays() is the run's horizon (see is_running()). The
     // guard clears the flag however the run ends, exceptions included.
@@ -2008,133 +1942,10 @@ inline void Model<TSeq>::reset() {
 #include "model-meat-print.hpp"
 
 template<typename TSeq>
-inline epiworld_fast_int Model<TSeq>::state_of(std::string_view name) {
-    for (std::size_t i = 0; i < states_labels.size(); ++i) {
-        if (states_labels[i] == name) {
-            return static_cast<epiworld_fast_int>(i);
-        }
-    }
-
-    throw std::logic_error("The state " + std::string(name) + " was not found.");
-}
-
-template<typename TSeq>
-inline epiworld_fast_int Model<TSeq>::add_state(
-    std::string lab,
-    UpdateFun<TSeq> fun
-)
-{
-
-    if (nh)
-        throw std::logic_error(
-            "The model has a natural history: its stages are its states, and "
-            "no other state can be added."
-        );
-
-    // Checking it doesn't match
-    for (auto & s : states_labels)
-        if (s == lab)
-            throw std::logic_error("state \"" + s + "\" already registered.");
-
-    states_labels.push_back(lab);
-    state_fun.push_back(fun);
-
-    // The index has one slot per state; it is rebuilt when the next run starts.
-    state_index_ready = false;
-
-    return nstates++;
-}
-
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::set_state_function(
-    epiworld_fast_uint state,
-    UpdateFun<TSeq> fun
-)
-{
-
-    if (nh)
-        throw std::logic_error(
-            "The model has a natural history: its stages are updated by their "
-            "declared transitions."
-        );
-
-    if (state >= nstates)
-        throw std::range_error(
-            "The state " + std::to_string(state) + " is out of range. " +
-            "The model currently has " + std::to_string(nstates) + " states."
-        );
-
-    state_fun[state] = fun;
-
-    return *this;
-
-}
-
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::set_state_function(
-    std::string_view name,
-    UpdateFun<TSeq> fun
-)
-{
-
-    return set_state_function(
-        static_cast<epiworld_fast_uint>(state_of(name)),
-        fun
-    );
-
-}
-
-template<typename TSeq>
-inline const std::vector< std::string > &
-Model<TSeq>::get_states() const
-{
-    return states_labels;
-}
-
-template<typename TSeq>
 inline size_t Model<TSeq>::get_n_states() const
 {
     return nstates;
 }
-
-template<typename TSeq>
-inline const std::vector< UpdateFun<TSeq> > &
-Model<TSeq>::get_state_fun() const
-{
-    return state_fun;
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::print_state_codes() const
-{
-
-    // Horizontal line
-    std::string line = "";
-    for (epiworld_fast_uint i = 0u; i < 80u; ++i)
-        line += "_";
-
-    printf_epiworld("\n%s\nstates CODES\n\n", line.c_str());
-
-    epiworld_fast_uint nchar = 0u;
-    for (auto & p : states_labels)
-        if (p.length() > nchar)
-            nchar = p.length();
-
-    std::string fmt = " %2i = %-" + std::to_string(nchar + 1 + 4) + "s\n";
-    for (epiworld_fast_uint i = 0u; i < nstates; ++i)
-    {
-
-        printf_epiworld(
-            fmt.c_str(),
-            i,
-            (states_labels[i] + " (S)").c_str()
-        );
-
-    }
-
-}
-
-
 
 template<typename TSeq>
 inline epiworld_double Model<TSeq>::add_param(
@@ -2943,7 +2754,7 @@ inline void Model<TSeq>::draw(
 
     diagram.draw_from_data(
         diagram_type,
-        this->get_states(),
+        states_labels,
         this->get_db().get_transition_probability(false),
         fn_output,
         self

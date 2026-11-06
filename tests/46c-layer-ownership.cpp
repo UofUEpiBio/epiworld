@@ -15,7 +15,7 @@ EPIWORLD_TEST_CASE("Contact layers - ownership", "[layer-ownership]") {
 
     auto history = [](Model<> & m) -> std::vector< int > {
         std::vector< int > out;
-        m.get_db().get_hist_total(nullptr, nullptr, &out);
+        m.get_db().get_hist_total(nullptr, nullptr, nullptr, &out);
         return out;
     };
 

@@ -68,7 +68,7 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
         }
     }
     // Normalizing the average
-    auto states = model_1.get_states();
+    auto states = tests_state_labels(model_1);
     size_t n_states = states.size();
     for (size_t i = 0; i < n_states; ++i)
     {

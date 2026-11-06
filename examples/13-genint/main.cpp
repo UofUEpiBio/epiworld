@@ -27,7 +27,7 @@ std::vector< double > expected_gentime(
 
     std::vector< int > date, counts;
     std::vector< std::string > state;
-    model.get_db().get_hist_total(&date, &state, &counts);
+    model.get_db().get_hist_total(&date, nullptr, &state, &counts);
 
     std::vector< double > S(ndays, 0.0);
     for (size_t i = 0u; i < date.size(); ++i)

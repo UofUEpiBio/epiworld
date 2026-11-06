@@ -26,7 +26,7 @@ EPIWORLD_TEST_CASE("A model plus a mixing layer is the old mixing model", "[mixi
         model.verbose_off();
         model.run(20, 1912);
         std::vector< int > counts;
-        model.get_db().get_hist_total(nullptr, nullptr, &counts);
+        model.get_db().get_hist_total(nullptr, nullptr, nullptr, &counts);
         return counts;
     };
 

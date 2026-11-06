@@ -49,7 +49,7 @@ public:
      * @param surveillance_prob Double. Probability of testing an agent.
      * @param prob_transmission Double. Raw transmission probability.
      * @param prob_death Double. Raw probability of death for symptomatic individuals.
-     * @param prob_noreinfect Double. Probability of no re-infection.
+     * @param prob_noreinfect Ignored: recovered agents are not reinfected.
      * 
      * @details
      * This model features the following states:
@@ -110,7 +110,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     this->set_population_size(n);
 
-    std::vector< unsigned int > exposed_state = {
+    std::vector< int > exposed_state = {
         SYMPTOMATIC,
         SYMPTOMATIC_ISOLATED,
         ASYMPTOMATIC,
@@ -153,12 +153,12 @@ inline ModelSURV<TSeq>::ModelSURV(
             Agent<TSeq> * p = &pop[i];
             
             // If still exposed for the next term
-            if (IN(p->get_state(), exposed_state ))
+            if (IN(m->get_stage(*p), exposed_state ))
             {
 
                 // The ones already isolated stay so
                 ndetected += 1.0;
-                if (p->get_state() == ModelSURV<TSeq>::ASYMPTOMATIC)
+                if (m->get_stage(*p) == ModelSURV<TSeq>::ASYMPTOMATIC)
                 {
                     ndetected_asympt += 1.0;
                     m->fire(detected_asympt, *p);
@@ -172,7 +172,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
         // Writing the user data
         std::vector< int > totals;
-        m->get_db().get_today_total(nullptr,&totals);
+        m->get_db().get_today_total(nullptr, nullptr, &totals);
         m->add_user_data(
             {
                 static_cast<epiworld_double>(nsampled),
@@ -247,7 +247,6 @@ inline ModelSURV<TSeq>::ModelSURV(
 
 
     // Virus ------------------------------------------------------------------
-    covid.set_post_immunity("Prob. no reinfect");
     this->add_virus(covid, assign::count<TSeq>(prevalence));
 
     this->set_user_data({"nsampled", "ndetected", "ndetected_asympt", "nasymptomatic"});

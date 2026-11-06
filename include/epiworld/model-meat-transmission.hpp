@@ -6,10 +6,9 @@
  * @brief Transmission: from contacts to infections, and network transmission
  * by pushing infection odds.
  *
- * @details A susceptible agent `i` whose update function is
- * `default_update_susceptible` *pulls*: it scans its neighbors, collects the
- * per-contact probabilities `p_ij` of those carrying a virus (in the model's
- * infectious states), and `roulette()` draws "no infection" or a
+ * @details A susceptible agent `i` in a stage with a default infection
+ * *pulls*: it scans its neighbors, collects the per-contact probabilities
+ * `p_ij` of those carrying a virus (in an infectious stage), and `roulette()` draws "no infection" or a
  * single infector. That draw depends only on the odds `r_ij = p_ij / (1 - p_ij)`:
  *
  *     P(no infection) = 1 / (1 + R_i),   P(infected by j) = r_ij / (1 + R_i),
@@ -26,27 +25,6 @@
  * The docs page "Push and Pull Transmission" (docs/impl/transmission-sampling.md)
  * has the derivation.
  */
-
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::set_infectious_states(std::vector< int > states)
-{
-    infectious_states = std::move(states);
-
-    // After a reset (e.g., from a global event), from the next step on
-    if (state_index_ready)
-        state_masks_build();
-
-    return *this;
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::set_excluded_states(std::vector< int > states)
-{
-    excluded_states = std::move(states);
-
-    if (state_index_ready)
-        state_masks_build();
-}
 
 template<typename TSeq>
 inline void Model<TSeq>::state_masks_build()
@@ -120,7 +98,7 @@ inline size_t Model<TSeq>::add_exposures(
 
         epiworld_double p =
             (1.0 - agent->get_susceptibility_reduction(v, *this)) *
-            (nh ? nh_infection_prob(*agent, *v) : v->get_prob_infecting(this)) *
+            nh_infection_prob(*agent, *v) *
             (1.0 - contact.get_transmission_reduction(v, *this))
             ;
 
@@ -254,29 +232,6 @@ inline bool Model<TSeq>::transmission_prepare()
             }
         }
     }
-
-    // Recognizing the samplers needs std::function::target(), i.e., RTTI.
-    // Without it, every state keeps pulling.
-    #if defined(__cpp_rtti) || defined(__GXX_RTTI) || defined(_CPPRTTI)
-    if (!nh)
-    for (size_t t = 0u; t < ns; ++t)
-    {
-
-        const auto & fun = state_fun[t];
-        if (!fun)
-            continue;
-
-        using FunPtr = void(*)(Agent<TSeq>*, Model<TSeq>*);
-        const FunPtr * fp = fun.template target< FunPtr >();
-
-        if ((fp != nullptr) && (*fp == &default_update_susceptible<TSeq>))
-        {
-            push_pushable[t] = 1;
-            any = true;
-        }
-
-    }
-    #endif
 
     // The infectious states are the sources, if anyone is pushed to
     if (any)
@@ -472,7 +427,7 @@ inline void Model<TSeq>::transmission_push_impl()
                     // Exactly the expression the pull uses, in the same order.
                     epiworld_double p =
                         (1.0 - i.get_susceptibility_reduction(v, *this)) *
-                        (nh ? nh_infection_prob(i, *v) : v->get_prob_infecting(this)) *
+                        nh_infection_prob(i, *v) *
                         (1.0 - j.get_transmission_reduction(v, *this))
                         ;
 
@@ -597,7 +552,7 @@ inline void Model<TSeq>::transmission_update_others()
             const auto & p = population[id];
             if ((p.virus != nullptr) && (!use_queuing || (queue[id] > 0)))
                 throw std::logic_error(
-                    std::string("Using the -default_update_susceptible- on agents WITH viruses makes no sense! ") +
+                    std::string("A pushed-to stage has agents WITH viruses! ") +
                     std::string("Agent id ") + std::to_string(p.get_id()) +
                     std::string(" has a virus.")
                     );

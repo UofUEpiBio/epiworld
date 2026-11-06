@@ -58,7 +58,7 @@ EPIWORLD_TEST_CASE("Rewire degseq - mid-run rewiring keeps the queue honest", "[
 
         model.run(60, 123);
 
-        model.get_db().get_hist_total(&r.hist_date, &r.hist_state, &r.hist_counts);
+        model.get_db().get_hist_total(&r.hist_date, nullptr, &r.hist_state, &r.hist_counts);
         model.get_db().get_transmissions(
             r.date, r.source, r.target, r.virus, r.source_exposure_date, r.layer
         );

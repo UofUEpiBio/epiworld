@@ -122,6 +122,23 @@ private:
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
 
+    /**
+     * @brief The status and the stage of a state of the engine (the one place
+     * the pair is split; models without statuses have the status "Free").
+     */
+    void split_state(
+        epiworld_fast_uint state,
+        std::string & status,
+        std::string & stage
+    ) const;
+
+    /// `split_state()` over a vector of states.
+    void split_states(
+        const std::vector< epiworld_fast_uint > & states,
+        std::vector< std::string > * status,
+        std::vector< std::string > * stage
+    ) const;
+
 
 public:
 
@@ -159,27 +176,34 @@ public:
     /**
      * @name Get recorded information from the model
      *
-     * @param what std::string, The state, e.g., 0, 1, 2, ...
-     * @return In `get_today_total`, the current counts of `what`.
-     * @return In `get_today_virus`, the current counts of `what` for
+     * @details The counts are by status and stage: one row per pair (and
+     * day, and virus or tool, in the histories). Models without statuses
+     * report the status "Free". A total by stage or by status is a sum over
+     * the rows.
+     *
+     * @param what A stage's or a status's name.
+     * @return In `get_today_total(what)`, how many agents are in that stage
+     * or status now.
+     * @return In `get_today_total`, the current counts of each pair.
+     * @return In `get_today_virus`, the current counts of each pair for
      * each virus.
-     * @return In `get_hist_total`, the time series of `what`
-     * @return In `get_hist_virus`, the time series of what for each virus.
-     * @return In `get_hist_total_date` and `get_hist_virus_date` the
-     * corresponding date
+     * @return In `get_hist_total`, the time series of each pair.
+     * @return In `get_hist_virus` and `get_hist_tool`, the time series of
+     * each pair for each virus and tool.
      * @return In `get_active_cases`, the number of active cases (currently infected individuals)
      * for each virus at each point in time.
      */
     ///@{
     int get_today_total(const std::string & what) const;
-    int get_today_total(const epiworld_fast_uint & what) const;
     void get_today_total(
-        std::vector< std::string > * state = nullptr,
-        std::vector< int > * counts = nullptr
+        std::vector< std::string > * status,
+        std::vector< std::string > * stage,
+        std::vector< int > * counts
     ) const;
 
     void get_today_virus(
-        std::vector< std::string > & state,
+        std::vector< std::string > & status,
+        std::vector< std::string > & stage,
         std::vector< int > & id,
         std::vector< int > & counts
     ) const;
@@ -190,21 +214,24 @@ public:
 
     void get_hist_total(
         std::vector< int > * date,
-        std::vector< std::string > * state,
+        std::vector< std::string > * status,
+        std::vector< std::string > * stage,
         std::vector< int > * counts
     ) const;
 
     void get_hist_virus(
         std::vector< int > & date,
         std::vector< int > & id,
-        std::vector< std::string > & state,
+        std::vector< std::string > & status,
+        std::vector< std::string > & stage,
         std::vector< int > & counts
     ) const;
 
     void get_hist_tool(
         std::vector< int > & date,
         std::vector< int > & id,
-        std::vector< std::string > & state,
+        std::vector< std::string > & status,
+        std::vector< std::string > & stage,
         std::vector< int > & counts
     ) const;
 
@@ -222,8 +249,10 @@ public:
     ) const;
 
     void get_hist_transition_matrix(
-        std::vector< std::string > & state_from,
-        std::vector< std::string > & state_to,
+        std::vector< std::string > & status_from,
+        std::vector< std::string > & stage_from,
+        std::vector< std::string > & status_to,
+        std::vector< std::string > & stage_to,
         std::vector< int > & date,
         std::vector< int > & counts,
         bool skip_zeros

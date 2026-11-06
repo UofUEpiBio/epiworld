@@ -59,11 +59,9 @@ EPIWORLD_TEST_CASE(
         run_multiple(60, nsims, 1231, saver, true, true, 4).
         print(false);
 
-    // Looking at the final outbreak size
-    std::vector< size_t > not_infected_states = {
-        measles::ModelMeaslesMixing<>::SUSCEPTIBLE,
-        measles::ModelMeaslesMixing<>::QUARANTINED_SUSCEPTIBLE
-    };
+    // Looking at the final outbreak size: the never infected are susceptible,
+    // in any of the four statuses (the engine's state is stage * 4 + status)
+    std::vector< size_t > not_infected_states = {0u, 1u, 2u, 3u};
 
     auto stats_with_quarantine = test_compute_prob_outbreak_gt_k(
         final_distribution,

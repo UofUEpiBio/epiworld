@@ -33,8 +33,8 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         run(100, 1231);
 
     std::vector< int > h_0, h_1;
-    model_0.get_db().get_hist_total(nullptr, nullptr, &h_0);
-    model_1.get_db().get_hist_total(nullptr, nullptr, &h_1);
+    model_0.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
+    model_1.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_1);
 
     // Getting transition matrix
     auto tmat_0 = model_0.get_db().get_transition_probability(false);
@@ -86,7 +86,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         print(false);
 
     h_0.clear();
-    model_2.get_db().get_hist_total(nullptr, nullptr, &h_0);
+    model_2.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
 
     REQUIRE_FALSE(
         ((h_0[0u] != 4950) || (h_0[1u] != 70) || (h_0[2u] != 30) || (h_0[3u] != 4950))
@@ -105,7 +105,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         print(false);
 
     h_0.clear();
-    model_3.get_db().get_hist_total(nullptr, nullptr, &h_0);
+    model_3.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
 
     REQUIRE_FALSE(
         ((h_0[0u] != 4950) || (h_0[1u] != 100) || (h_0[2u] != 4950))
@@ -125,7 +125,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         print(false);
 
     h_0.clear();
-    model_4.get_db().get_hist_total(nullptr, nullptr, &h_0);
+    model_4.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
 
     REQUIRE_FALSE(
         ((h_0[0u] != 4950) || (h_0[1u] != 70) || (h_0[2u] != 30) || (h_0[3u] != 4950))
@@ -147,7 +147,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         print(false);
 
     h_0.clear();
-    model_5.get_db().get_hist_total(nullptr, nullptr, &h_0);
+    model_5.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
 
     REQUIRE_FALSE(
         (
@@ -174,7 +174,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         print(false);
 
     h_0.clear();
-    model_6.get_db().get_hist_total(nullptr, nullptr, &h_0);
+    model_6.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
 
     REQUIRE_FALSE(
         (
@@ -200,7 +200,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         print(false);
 
     h_0.clear();
-    model_7.get_db().get_hist_total(nullptr, nullptr, &h_0);
+    model_7.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
 
     REQUIRE_FALSE(
         (

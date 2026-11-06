@@ -31,7 +31,7 @@ Virus<> * plain_scan(Agent<> & p, Model<> & m)
     {
 
         auto & v = neighbor->get_virus();
-        if ((neighbor->get_state() == 1u) || (v == nullptr))
+        if ((m.get_stage(*neighbor) == 1) || (v == nullptr))
             continue;
 
         m.array_double_tmp[n] =
@@ -98,7 +98,7 @@ Run simulate(
     model.run(80, 77);
 
     Run r;
-    model.get_db().get_hist_total(nullptr, nullptr, &r.counts);
+    model.get_db().get_hist_total(nullptr, nullptr, nullptr, &r.counts);
     std::vector< int > virus, sexp, sexp_layer;
     model.get_db().get_transmissions(r.date, r.source, r.target, virus, sexp, sexp_layer);
     return r;
@@ -135,7 +135,11 @@ EPIWORLD_TEST_CASE("Transmission - heterogeneous network", "[transmission]") {
     // 3. The neighbor view checks its indices ---------------------------------
     {
         Model<> model(20);
-        model.add_state("Susceptible", default_update_susceptible<>);
+        Virus<> si("si");
+        si.add_stage("Susceptible");
+        si.add_stage("Infected", stage::infectious);
+        si.infection(0, 1, 0.5);
+        model.add_virus(si);
         model.add_layer(layer::network(
             "network", rgraph_smallworld(20, 4, 0.0, false, model)
         ));

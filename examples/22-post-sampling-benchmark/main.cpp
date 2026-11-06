@@ -189,7 +189,8 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
     model.seed(20260930);
     return bench::time_runs(
         model, o.days, o.reps,
-        {model.SUSCEPTIBLE, model.QUARANTINED_SUSCEPTIBLE}
+        {static_cast< size_t >(model.SUSCEPTIBLE * 4 + model.FREE),
+             static_cast< size_t >(model.SUSCEPTIBLE * 4 + model.QUARANTINED)}
     );
 }
 

@@ -101,7 +101,7 @@ EPIWORLD_TEST_CASE("Natural history - built and run end to end", "[natural-histo
         std::vector< int > tdate, tcount, sdate, scount;
         std::vector< std::string > tname, sname;
         model->get_db().get_hist_transitions(tdate, tname, tcount);
-        model->get_db().get_hist_total(&sdate, &sname, &scount);
+        model->get_db().get_hist_total(&sdate, nullptr, &sname, &scount);
 
         // Stage counts by day
         std::vector< std::vector< int > > count(ndays + 1, std::vector< int >(ns, 0));
@@ -205,7 +205,6 @@ EPIWORLD_TEST_CASE("Natural history - built and run end to end", "[natural-histo
     {
         auto model = make_model("pull");
         REQUIRE_THROWS(model->fire(0, model->get_agent(0)));   // an infection
-        REQUIRE_THROWS(model->add_state("Another"));
 
         // A strain: a copy that reads its own parameter is welcome; a virus
         // with other stages, or none, is not

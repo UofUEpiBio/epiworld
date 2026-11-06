@@ -98,8 +98,12 @@ private:
 
 public:
     Value() = default;
-    Value(epiworld_double x) : kind(Kind::number), number(x) {}
-    Value(int x) : Value(static_cast< epiworld_double >(x)) {}
+    /// A number (any arithmetic type, whatever `epiworld_double` is)
+    template<
+        typename T,
+        typename std::enable_if< std::is_arithmetic< T >::value, int >::type = 0
+    >
+    Value(T x) : kind(Kind::number), number(static_cast< epiworld_double >(x)) {}
     Value(const char * name) : kind(Kind::param), param(std::string(name)) {}
     Value(std::string name) : kind(Kind::param), param(std::move(name)) {}
     Value(ValueFun<TSeq> f) : kind(Kind::fun), fun(std::move(f)) {}

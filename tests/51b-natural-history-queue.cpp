@@ -70,7 +70,7 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
 
             std::vector< int > date, counts;
             std::vector< std::string > state;
-            model->get_db().get_hist_total(&date, &state, &counts);
+            model->get_db().get_hist_total(&date, nullptr, &state, &counts);
 
             for (size_t k = 0u; k < date.size(); ++k)
                 if (state[k] == "Protected")

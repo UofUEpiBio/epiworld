@@ -15,11 +15,11 @@ class ModelSEIRD : public Model<TSeq>
 {
   
 public:
-  static const int SUSCEPTIBLE = 0;
-  static const int EXPOSED     = 1;
-  static const int INFECTED    = 2;
-  static const int REMOVED     = 3;
-  static const int DECEASED    = 4;
+  static constexpr int SUSCEPTIBLE = 0;
+  static constexpr int EXPOSED     = 1;
+  static constexpr int INFECTED    = 2;
+  static constexpr int REMOVED     = 3;
+  static constexpr int DECEASED    = 4;
   
   ModelSEIRD() = delete;
 

@@ -11,8 +11,8 @@ using namespace epiworld;
 //     P(no infection)   = 1 / (1 + R),   P(infected by j) = r_j / (1 + R),
 //
 // with r_j = p_j / (1 - p_j), R = sum of r_j, and p_j the per-contact
-// probability after the tools of both agents. Carriers in an excluded state
-// never transmit, and contacts with p = 1 make infection certain, the infector
+// probability after the tools of both agents. Carriers in a stage that is not
+// infectious never transmit, and contacts with p = 1 make infection certain, the infector
 // drawn uniformly among them.
 //
 // Why a star: the formula above is about one susceptible agent exposed to
@@ -28,7 +28,7 @@ using namespace epiworld;
 
 namespace {
 
-constexpr epiworld_fast_uint E_ = 1u, I_ = 2u; // state 0 is Susceptible
+constexpr int E_ = 1, I_ = 2; // stage 0 is Susceptible
 
 // Star: agent 0 at the centre, agents 1..nleaves around it (the model has
 // nleaves + 1 agents).
@@ -45,24 +45,25 @@ void make_star(Model<> & model, int nleaves)
     ));
 }
 
-// Base model: only I transmits (E carries the virus but does not); E and I
-// never change.
-void add_states(Model<> & model)
-{
-    model.add_state("Susceptible", default_update_susceptible<>);
-    model.add_state("Exposed");
-    model.add_state("Infected");
-    model.set_infectious_states({I_});
-}
-
-Virus<> make_virus(
-    std::string name, epiworld_double p, epiworld_fast_int state
-)
+// The viruses: only I transmits (E carries the virus but does not); E and I
+// never change. Each virus has its own probability of transmission.
+Virus<> make_virus(std::string name, epiworld_double p)
 {
     Virus<> v(name);
-    v.set_state(state, I_, I_);
-    v.set_prob_infecting(p);
+    v.add_stage("Susceptible");
+    v.add_stage("Exposed", stage::carrier);
+    v.add_stage("Infected", stage::infectious);
+    v.infection(0, E_, p);
     return v;
+}
+
+// The agents `ids` (of `n`) start in `stage`
+Assign<> at(std::vector< size_t > ids, int stage, size_t n)
+{
+    std::vector< int > labels(n, -1);
+    for (auto i : ids)
+        labels[i] = stage;
+    return assign::labels<>(labels);
 }
 
 // Runs one-day replicates and counts who infected the centre (-1 = nobody).
@@ -117,7 +118,7 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
     //  leaf 1, 2: virus A (p = 0.2)
     //  leaf 3:    virus B (p = 0.6)
     //  leaf 4:    virus B, wearing a mask that halves transmission
-    //  leaf 5:    virus C (p = 0.9) but still Exposed: excluded, never infects
+    //  leaf 5:    virus C (p = 0.9) but still Exposed: never infects
     //  leaf 6:    susceptible, not a source
     //  centre:    vaccinated, susceptibility reduced by a quarter
     const double vax = 0.25, mask = 0.5;
@@ -140,11 +141,10 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
     {
 
         Model<> model(7);
-        add_states(model);
         make_star(model, 6);
-        model.add_virus(make_virus("A", 0.2, I_), assign::agents({1u, 2u}));
-        model.add_virus(make_virus("B", 0.6, I_), assign::agents({3u, 4u}));
-        model.add_virus(make_virus("C", 0.9, E_), assign::agents({5u}));
+        model.add_virus(make_virus("A", 0.2), at({1u, 2u}, I_, 7u));
+        model.add_virus(make_virus("B", 0.6), at({3u, 4u}, I_, 7u));
+        model.add_virus(make_virus("C", 0.9), at({5u}, E_, 7u));
 
         // When pushing, the vaccine reads a parameter and the mask is a
         // function: same reductions, so the same probabilities
@@ -190,10 +190,9 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
     {
 
         Model<> model(4);
-        add_states(model);
         make_star(model, 3);
-        model.add_virus(make_virus("sure", 1.0, I_), assign::agents({1u, 3u}));
-        model.add_virus(make_virus("maybe", 0.3, I_), assign::agents({2u}));
+        model.add_virus(make_virus("sure", 1.0), at({1u, 3u}, I_, 4u));
+        model.add_virus(make_virus("maybe", 0.3), at({2u}, I_, 4u));
 
         model.set_transmission_mode(mode);
         auto counts = count_infectors(model, nsims / 4, 77);
