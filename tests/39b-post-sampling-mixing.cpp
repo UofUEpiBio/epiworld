@@ -23,7 +23,7 @@ void count_deliveries(TModel & model, Delivered & d)
     d.per_agent.assign(model.size(), 0u);
 
     model.set_post_sampling(
-        [&d](Agent<> * p, const SampledContactsView & c, Model<> *) -> void {
+        [&d](Agent * p, const SampledContactsView & c, Model *) -> void {
 
             d.per_agent[p->get_id()] += c.size();
 
@@ -66,7 +66,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - mixing and tracing", "[post-samplin
             2.0, 20.0
         };
 
-        epimodels::ModelSEIRQuarantine<> model(
+        epimodels::ModelSEIRQuarantine model(
             "Flu", 2000, 0.01, 0.6, 2.0, 0.25,
             0.1, 5, 2, 4, 0.9, 1.0, 10, 1.0, 4
         );
@@ -102,7 +102,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - mixing and tracing", "[post-samplin
     {
 
         const size_t n = 2000u;
-        measles::ModelMeaslesMixing<> model(
+        measles::ModelMeaslesMixing model(
             n, 10.0 / n, 0.2, 0.9, 0.3, 7.0, 4.0, 5.0,
             0.2, 7.0, 3.0, 21, .8, .8, 4, 0.0, 1.0, 4u
         );

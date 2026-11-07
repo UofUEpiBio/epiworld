@@ -13,7 +13,7 @@ EPIWORLD_TEST_CASE(
     size_t n_seeds = 5;
     size_t nsims = 400;
 
-    epimodels::ModelSEIRQuarantine<> model(
+    epimodels::ModelSEIRQuarantine model(
         "Flu", // std::string vname,
         n, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
@@ -36,10 +36,10 @@ EPIWORLD_TEST_CASE(
     );
 
     // Copy the original virus
-    Virus<> v1 = model.get_virus(0);
+    Virus v1 = model.get_virus(0);
     model.rm_virus(0);
 
-    model.add_virus(v1, dist_virus<>(0));
+    model.add_virus(v1, dist_virus(0));
 
     // Creating three groups
 
@@ -89,7 +89,7 @@ EPIWORLD_TEST_CASE(
     // A cell is a (stage, status) pair: stage * 4 + status. The share of the
     // agents in a cell who are in a given stage the next day, whatever their
     // status then:
-    using MQ = epimodels::ModelSEIRQuarantine<>;
+    using MQ = epimodels::ModelSEIRQuarantine;
     auto C = [](int s, int k) { return static_cast< size_t >(s * 4 + k); };
     const size_t ns = model.get_n_states();
     auto to_stage = [&](size_t from, int s) {

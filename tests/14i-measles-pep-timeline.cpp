@@ -2,7 +2,7 @@
 #include "../include/measles/measles.hpp"
 
 using namespace epiworld;
-using MS = measles::ModelMeaslesSchool<>;
+using MS = measles::ModelMeaslesSchool;
 
 // This test isolates the *timeline* logic of the measles PEP intervention.
 //
@@ -55,9 +55,9 @@ MS make_school()
 
 // Susceptible agents are the PEP target here so that we only need to check
 // whether the PEP tool was administered.
-measles::InterventionMeaslesPEP<> make_pep()
+measles::InterventionMeaslesPEP make_pep()
 {
-    return measles::InterventionMeaslesPEP<>(
+    return measles::InterventionMeaslesPEP(
         "Post-exposure prophylaxis for measles",
         1.0,       // PEP MMR efficacy
         1.0,       // PEP IG efficacy

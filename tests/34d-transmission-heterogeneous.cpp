@@ -21,10 +21,10 @@ namespace {
 // The reference pull, as a custom infection sampler: walks every neighbor's
 // agent in the network layer (no carrier flags), skips the latent ones (stage
 // 1) and the ones without a virus, and draws at most one virus.
-Virus<> * plain_scan(Agent<> & p, Model<> & m)
+Virus * plain_scan(Agent & p, Model & m)
 {
 
-    static const Value<> p_contact("Transmission probability");
+    static const Value p_contact("Transmission probability");
 
     size_t n = 0u;
     for (auto * neighbor : tests_net(m).neighbors_view(p.get_id()))
@@ -69,12 +69,12 @@ Run simulate(
 {
 
     // ModelSEIR, declared here so the infection can take the plain sampler
-    Model<> model(3000u);
+    Model model(3000u);
     model.add_param(0.1, "Transmission probability");
     model.add_param(3.0, "Latent period");
     model.add_param(1.0 / 7.0, "Recovery rate");
 
-    Virus<> pathogen("virus");
+    Virus pathogen("virus");
     pathogen.add_stage("Susceptible");
     pathogen.add_stage("Exposed", stage::carrier);
     pathogen.add_stage("Infected", stage::infectious);
@@ -82,7 +82,7 @@ Run simulate(
     auto infection = pathogen.infection(0, 1, "Transmission probability");
     if (plain_scan_on)
         infection.sampler(plain_scan);
-    pathogen.after(1, 2, Duration<>::geometric("Latent period"));
+    pathogen.after(1, 2, Duration::geometric("Latent period"));
     pathogen.rate(2, 3, "Recovery rate").effect(Effect::recovery);
     model.add_virus(pathogen, assign::count(20));
 
@@ -134,8 +134,8 @@ EPIWORLD_TEST_CASE("Transmission - heterogeneous network", "[transmission]") {
 
     // 3. The neighbor view checks its indices ---------------------------------
     {
-        Model<> model(20);
-        Virus<> si("si");
+        Model model(20);
+        Virus si("si");
         si.add_stage("Susceptible");
         si.add_stage("Infected", stage::infectious);
         si.infection(0, 1, 0.5);

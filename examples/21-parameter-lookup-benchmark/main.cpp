@@ -81,7 +81,7 @@ static double ns_per_call(long calls, TFun fun)
 
 static void run_micro(const Options & o)
 {
-    Model<> model(0);
+    Model model(0);
     for (int i = 0; i < 18; ++i)
         model.add_param(0.01 * i, "Filler parameter " + std::to_string(i));
     model.add_param(0.1, "Transmission rate");
@@ -120,7 +120,7 @@ static void run_micro(const Options & o)
 
 // Scenario A ------------------------------------------------------------------
 
-static void build_seirh(Model<> & model, size_t n)
+static void build_seirh(Model & model, size_t n)
 {
     model.add_param(0.1, "Transmission rate");
     model.add_param(1.0 / 4.0, "Incubation rate");
@@ -128,7 +128,7 @@ static void build_seirh(Model<> & model, size_t n)
     model.add_param(1.0 / 7.0, "Recovery rate");
     model.add_param(1.0 / 7.0, "Hospital recovery rate");
 
-    Virus<> pathogen("Benchmark pathogen");
+    Virus pathogen("Benchmark pathogen");
     pathogen.add_stage("Susceptible");
     pathogen.add_stage("Exposed", stage::carrier);
     pathogen.add_stage("Infected", stage::infectious);
@@ -148,7 +148,7 @@ static void build_seirh(Model<> & model, size_t n)
 
 // Scenario M ------------------------------------------------------------------
 
-typedef measles::ModelMeaslesMixing<> ModelMeasles;
+typedef measles::ModelMeaslesMixing ModelMeasles;
 
 static ModelMeasles build_measles(size_t n)
 {
@@ -174,7 +174,7 @@ static ModelMeasles build_measles(size_t n)
     );
 
     // Everyone in one group, meeting 15 others a day
-    auto mixing = layer::mixing<>("mixing");
+    auto mixing = layer::mixing("mixing");
     mixing->set_groups(assign::labels(std::vector< size_t >(n, 0u)), 1u);
     mixing->set_contact_matrix({15.0});
     model.add_layer(mixing);
@@ -220,7 +220,7 @@ int main(int argc, char ** argv)
             bench::Timing res;
             if (scen == "A")
             {
-                Model<> model(n);
+                Model model(n);
                 model.seed(20260928);
                 build_seirh(model, n);
                 res = bench::time_runs(model, o.days, o.reps);

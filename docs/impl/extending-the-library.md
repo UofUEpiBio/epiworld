@@ -1,11 +1,10 @@
 ## Custom Agent Behaviors
-In epiworld, agents are the fundamental units of simulation. Each `Agent<TSeq>` represents an individual in the modeled population, and each agent’s state determines its behavior at a given time step. The system is designed so that the logic controlling what an agent does—how it becomes infected, recovers, or interacts with others—is completely user-definable. This flexibility makes it possible to implement models ranging from classical SIR structures to highly customized behavioral or biological mechanisms.
+In epiworld, agents are the fundamental units of simulation. Each `Agent` represents an individual in the modeled population, and each agent’s state determines its behavior at a given time step. The system is designed so that the logic controlling what an agent does—how it becomes infected, recovers, or interacts with others—is completely user-definable. This flexibility makes it possible to implement models ranging from classical SIR structures to highly customized behavioral or biological mechanisms.
 
-Custom agent behavior is defined through **state update functions**, which are registered using `Model<TSeq>::add_state()`. Each state (for example, _Susceptible_, _Infected_, _Recovered_) is associated with a specific function that implements the transition logic for agents currently in that state. These functions must match the signature:
+Custom agent behavior is defined through **state update functions**, which are registered using `Model::add_state()`. Each state (for example, _Susceptible_, _Infected_, _Recovered_) is associated with a specific function that implements the transition logic for agents currently in that state. These functions must match the signature:
 
 ```cpp
-template<typename TSeq>
-void custom_update(epiworld::Agent<TSeq>* agent, epiworld::Model<TSeq>* model);
+void custom_update(epiworld::Agent* agent, epiworld::Model* model);
 ```
 
 Within this function, the agent pointer can be used to inspect or modify the agent’s state and attributes. The model pointer gives access to global simulation parameters, random number generators, or the full population. This allows for complex interactions between an agent and its neighbors or environment.
@@ -13,8 +12,7 @@ Within this function, the agent pointer can be used to inspect or modify the age
 A basic example is creating a new “Isolated” state, where agents skip infection checks and have reduced contact activity:
 
 ```cpp
-template<typename TSeq>
-void update_isolated(Agent<TSeq>* agent, Model<TSeq>* model) {
+void update_isolated(Agent* agent, Model* model) {
     /* Skip infection spread, but possibly leave isolation. */
     if (model->runif() < 0.05)
         agent->change_status(model->get_state_id("Susceptible"));
@@ -24,7 +22,7 @@ void update_isolated(Agent<TSeq>* agent, Model<TSeq>* model) {
 You would then register this state:
 
 ```cpp
-model.add_state("Isolated", update_isolated<TSeq>);
+model.add_state("Isolated", update_isolated);
 ```
 
 Each day, every agent calls the function associated with its current state exactly once. The `Agent` class exposes methods such as:
@@ -42,18 +40,16 @@ Custom behaviors can also interact with _tools_ or _viruses_ to model policy or 
 -
 
 ```cpp
-template<typename TSeq>
-void custom_rewire(std::vector<epiworld::Agent<TSeq>>* agents, 
-                   epiworld::Model<TSeq>* model, 
+void custom_rewire(std::vector<epiworld::Agent>* agents, 
+                   epiworld::Model* model, 
                    epiworld_double proportion);
 ```
 
 Inside this function, users can delete, swap, or create links based on model conditions (e.g., infection status, behavioral changes, or policy interventions). For instance:
 
 ```cpp
-template<typename TSeq>
-void quarantine_rewire(std::vector<epiworld::Agent<TSeq>>* agents,
-                       epiworld::Model<TSeq>* model,
+void quarantine_rewire(std::vector<epiworld::Agent>* agents,
+                       epiworld::Model* model,
                        epiworld_double proportion) {
     for (auto &agent : *agents) {
         if (agent.get_status() == model->get_state_id("Infected")) {
@@ -66,7 +62,7 @@ void quarantine_rewire(std::vector<epiworld::Agent<TSeq>>* agents,
 You can then attach it to your model:
 
 ```cpp
-model.set_rewire_fun(quarantine_rewire<TSeq>);
+model.set_rewire_fun(quarantine_rewire);
 model.set_rewire_prop(0.1);
 ```
 
@@ -77,16 +73,15 @@ Because all of these mechanisms operate through the same `Model` abstraction, us
 ## Implementing New Global Events
 Global events represent actions that occur at the level of the entire simulation, rather than being tied to individual agents. They are executed either on specific dates or repeatedly at the end of every day, depending on how they are configured. The intent behind this system is to provide a clean and flexible way to modify the model state during runtime, such as changing parameters, adding or removing viruses, deploying tools, or otherwise altering the environment in which agents operate. This allows users to model interventions, seasonal effects, or policy implementations without having to modify agent-level logic directly.
 
-A global event is defined as a function matching the signature `void fun(Model<TSeq>*)`. Within this function, the user has access to the entire model object, and can therefore manipulate global variables, change parameters, modify the population, or trigger any built-in methods. For instance, a simple "lockdown" event might reduce the transmission rate parameter or rewire the network to lower contact density. To register such an event, the user calls `add_globalevent(fun, name, date)`, where `fun` is the function to execute, `name` is a descriptive label, and `date` determines when it will be triggered. If the date is a nonnegative integer, the event will be called at the end of that specific day; if it is negative (typically -1), it will be called after every simulation step.
+A global event is defined as a function matching the signature `void fun(Model*)`. Within this function, the user has access to the entire model object, and can therefore manipulate global variables, change parameters, modify the population, or trigger any built-in methods. For instance, a simple "lockdown" event might reduce the transmission rate parameter or rewire the network to lower contact density. To register such an event, the user calls `add_globalevent(fun, name, date)`, where `fun` is the function to execute, `name` is a descriptive label, and `date` determines when it will be triggered. If the date is a nonnegative integer, the event will be called at the end of that specific day; if it is negative (typically -1), it will be called after every simulation step.
 
 ```cpp
-template<typename TSeq>
-void lockdown_event(epiworld::Model<TSeq>* model) {
+void lockdown_event(epiworld::Model* model) {
     double tr = model->get_param("Transmission probability");
     model->set_param("Transmission probability", tr * 0.5);
 }
 
-model.add_globalevent(lockdown_event<TSeq>, "Lockdown Policy", 30);
+model.add_globalevent(lockdown_event, "Lockdown Policy", 30);
 ```
 
 Once registered, the event becomes part of the model’s internal schedule and will automatically execute at the designated time. The model also allows retrieval and management of global events through `get_globalevent()` and `rm_globalevent()` functions, which can be used to inspect or remove events dynamically.
@@ -99,9 +94,8 @@ model.rm_globalevent("Lockdown Policy");
 Global events can also interact with the random number generator, the database, and other components of the model. For example, an event could sample a subset of agents and assign them a new tool, or it could introduce a second virus strain midway through the simulation.
 
 ```cpp
-template<typename TSeq>
-void new_variant_event(epiworld::Model<TSeq>* model) {
-    epiworld::Virus<TSeq> variant("Variant B", 0.01, true);
+void new_variant_event(epiworld::Model* model) {
+    epiworld::Virus variant("Variant B", 0.01, true);
     variant.set_prob_infecting("Transmission probability");
     model->add_virus(variant);
 }
@@ -110,15 +104,14 @@ void new_variant_event(epiworld::Model<TSeq>* model) {
 Because global events execute in the same runtime context as the model itself, they can modify any aspect of it—including parameters, the population vector, the event queue, and even the set of available tools or viruses. This flexibility allows epiworld to support sophisticated intervention-driven or phased modeling workflows that go beyond static parameterization.
 
 ## Creating Custom Data Collection Strategies
-Data collection in epiworld is handled primarily through the `DataBase<TSeq>` component, which records simulation results such as infection counts, transmission histories, and per-agent or per-virus summaries. The built-in mechanisms already support a range of outputs—total histories, virus-specific and tool-specific information, transmission trees, and more—but users can also extend or replace these mechanisms to collect custom data according to their own needs. Custom data collection strategies are useful for recording specialized statistics, debugging model behavior, or integrating the simulation with external analysis workflows.
+Data collection in epiworld is handled primarily through the `DataBase` component, which records simulation results such as infection counts, transmission histories, and per-agent or per-virus summaries. The built-in mechanisms already support a range of outputs—total histories, virus-specific and tool-specific information, transmission trees, and more—but users can also extend or replace these mechanisms to collect custom data according to their own needs. Custom data collection strategies are useful for recording specialized statistics, debugging model behavior, or integrating the simulation with external analysis workflows.
 
-Each `Model<TSeq>` object owns a `DataBase<TSeq>` instance accessible via `get_db()`. By default, the model writes data to this database automatically as the simulation progresses. However, users can modify or extend this behavior by interacting directly with the database object or by defining custom recorders. The database keeps track of simulation-level quantities and agent-level states through standardized internal tables, which can be written to disk using `model.write_data()` after a run. The output can include files for total counts over time, transmission histories, transition matrices, and per-virus or per-tool data, depending on which options are enabled.
+Each `Model` object owns a `DataBase` instance accessible via `get_db()`. By default, the model writes data to this database automatically as the simulation progresses. However, users can modify or extend this behavior by interacting directly with the database object or by defining custom recorders. The database keeps track of simulation-level quantities and agent-level states through standardized internal tables, which can be written to disk using `model.write_data()` after a run. The output can include files for total counts over time, transmission histories, transition matrices, and per-virus or per-tool data, depending on which options are enabled.
 
-For models requiring custom tracking, users can either subclass `DataBase<TSeq>` or define their own collection logic via the `Model`'s hooks. A simple approach is to register a global event that records quantities of interest each day—for instance, the proportion of vaccinated agents, or the number of currently infected nodes with a particular attribute. The event function can append results to an external data structure or to the `user_data` table within the model. The `Model` class provides convenience methods such as `set_user_data()`, `add_user_data()`, and `get_user_data()` to store arbitrary numeric variables associated with each timestep. This system is lightweight but flexible enough for most purposes.
+For models requiring custom tracking, users can either subclass `DataBase` or define their own collection logic via the `Model`'s hooks. A simple approach is to register a global event that records quantities of interest each day—for instance, the proportion of vaccinated agents, or the number of currently infected nodes with a particular attribute. The event function can append results to an external data structure or to the `user_data` table within the model. The `Model` class provides convenience methods such as `set_user_data()`, `add_user_data()`, and `get_user_data()` to store arbitrary numeric variables associated with each timestep. This system is lightweight but flexible enough for most purposes.
 
 ```cpp
-template<typename TSeq>
-void record_daily_prevalence(epiworld::Model<TSeq>* model) {
+void record_daily_prevalence(epiworld::Model* model) {
     int infected = 0;
     for (auto &agent : model->get_agents()) {
         if (agent.get_status() == model->get_state_id("Infected"))
@@ -128,7 +121,7 @@ void record_daily_prevalence(epiworld::Model<TSeq>* model) {
 }
 
 model.set_user_data({"Prevalence"});
-model.add_globalevent(record_daily_prevalence<TSeq>, "Daily prevalence", -1);
+model.add_globalevent(record_daily_prevalence, "Daily prevalence", -1);
 ```
 
 For more advanced data collection, users can directly access the model’s internals through `get_agents()`, `get_layer()`, and `get_viruses()` to query agent states, infection statuses, or tool distributions at any point during the simulation. Because epiworld maintains all these objects in contiguous containers, iterating over them to compute aggregate statistics is efficient. Users can combine these features to implement real-time monitoring or adaptive experiments where results from one run inform modifications to subsequent runs.
@@ -136,7 +129,7 @@ For more advanced data collection, users can directly access the model’s inter
 The `make_save_run()` utility function offers another extension point. It returns a callable that can be used in conjunction with `run_multiple()` to define how output is written after each replicate. For example:
 
 ```cpp
-auto custom_saver = [](size_t i, epiworld::Model<>* model) {
+auto custom_saver = [](size_t i, epiworld::Model* model) {
     model->write_data(
         "virus_info.csv",
         "virus_hist.csv",
@@ -153,7 +146,7 @@ auto custom_saver = [](size_t i, epiworld::Model<>* model) {
 model.run_multiple(100, 5, 123, custom_saver);
 ```
 
-By providing a custom function of type `std::function<void(size_t, Model<TSeq>*)>`, users can collect or export data in any desired format—CSV, binary, or in-memory. This design encourages users to treat data collection as part of the modeling logic rather than as a post-processing step.
+By providing a custom function of type `std::function<void(size_t, Model*)>`, users can collect or export data in any desired format—CSV, binary, or in-memory. This design encourages users to treat data collection as part of the modeling logic rather than as a post-processing step.
 
 Overall, custom data collection in epiworld is best thought of as an open system rather than a closed reporting interface. The built-in database handles common epidemiological summaries automatically, but because the `Model` exposes its entire internal state, users can track virtually anything they need without modifying the core simulation engine, from degree distributions to conditional infection probabilities.
 

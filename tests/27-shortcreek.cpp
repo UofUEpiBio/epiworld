@@ -189,7 +189,7 @@ EPIWORLD_TEST_CASE("ModelMeaslesMixing with Short Creek data", "[ModelMeaslesMix
     for (auto & v : contact_matrix)
         v *= contact_rate;
 
-    measles::ModelMeaslesMixing<> measles_model(
+    measles::ModelMeaslesMixing measles_model(
         static_cast<epiworld_fast_uint>(N),     // n
         1.0 / static_cast<double>(N),           // prevalence
         transmission_rate,                       // transmission_rate
@@ -229,7 +229,7 @@ EPIWORLD_TEST_CASE("ModelMeaslesMixing with Short Creek data", "[ModelMeaslesMix
     for (const auto & g : short_creek)
         vacc_rates.push_back(g.vax);
 
-    measles_model.assign_tool(0, epiworld::assign::group_shares<>("mixing", vacc_rates));
+    measles_model.assign_tool(0, epiworld::assign::group_shares("mixing", vacc_rates));
 
     // -----------------------------------------------------------------
     // 7. Run 200 simulations for 200 days
@@ -242,7 +242,7 @@ EPIWORLD_TEST_CASE("ModelMeaslesMixing with Short Creek data", "[ModelMeaslesMix
         200u,  // ndays
         n_sims,  // nsims
         52,  // seed
-        epiworld::make_save_run<>(
+        epiworld::make_save_run(
             save_fmt.full_path.c_str(),    // file name format
             false,             // total_hist
             false,             // virus_info

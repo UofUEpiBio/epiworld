@@ -32,10 +32,8 @@
 
 class Nodes;
 
-template<typename TSeq>
 class NaturalHistory;
 
-template<typename TSeq>
 class TransitionRef;
 
 /// Flags of a stage (see `NaturalHistory::add_stage()`).
@@ -60,15 +58,12 @@ public:
     Nodes(std::vector< int > v) : ids(std::move(v)) {}
 };
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ValueFun = std::function< epiworld_double(Agent<TSeq> &, Model<TSeq> &) >;
+using ValueFun = std::function< epiworld_double(Agent &, Model &) >;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using DurationFun = std::function< int(Agent<TSeq> &, Model<TSeq> &) >;
+using DurationFun = std::function< int(Agent &, Model &) >;
 
 /// A custom infection sampler: the virus the agent catches, or `nullptr`.
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using InfectionSampler = std::function< Virus<TSeq> * (Agent<TSeq> &, Model<TSeq> &) >;
+using InfectionSampler = std::function< Virus * (Agent &, Model &) >;
 
 /**
  * @brief A number a transition uses: a constant, a model parameter, or a
@@ -83,7 +78,6 @@ using InfectionSampler = std::function< Virus<TSeq> * (Agent<TSeq> &, Model<TSeq
  * A parameter is read through the agent's virus, so a variant can point it to
  * another parameter (`Virus::use_param()`).
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Value {
 public:
     enum class Kind : uint8_t { none, number, param, inverse, complement, fun };
@@ -92,9 +86,9 @@ private:
     Kind kind = Kind::none;
     epiworld_double number = 0.0;
     ParamRef param = ParamRef("");
-    ValueFun<TSeq> fun = nullptr;
+    ValueFun fun = nullptr;
 
-    friend class NaturalHistory<TSeq>;
+    friend class NaturalHistory;
 
 public:
     Value() = default;
@@ -106,7 +100,7 @@ public:
     Value(T x) : kind(Kind::number), number(static_cast< epiworld_double >(x)) {}
     Value(const char * name) : kind(Kind::param), param(std::string(name)) {}
     Value(std::string name) : kind(Kind::param), param(std::move(name)) {}
-    Value(ValueFun<TSeq> f) : kind(Kind::fun), fun(std::move(f)) {}
+    Value(ValueFun f) : kind(Kind::fun), fun(std::move(f)) {}
 
     static Value inverse(std::string name);    ///< `1 / parameter`
     static Value complement(std::string name); ///< `1 - parameter`
@@ -118,14 +112,14 @@ public:
     const std::string & get_param_name() const { return param.name(); }
 
     /// The value for this agent (its virus may redirect the parameter).
-    epiworld_double eval(Agent<TSeq> & agent, Model<TSeq> & model) const;
+    epiworld_double eval(Agent & agent, Model & model) const;
 
     /// The same, with the parameter redirected by `virus` (e.g., the
     /// infector's, for a probability of infection).
     epiworld_double eval(
-        Agent<TSeq> & agent,
-        const Virus<TSeq> * virus,
-        Model<TSeq> & model
+        Agent & agent,
+        const Virus * virus,
+        Model & model
     ) const;
 };
 
@@ -142,28 +136,27 @@ public:
  * `since(s)` counts the duration from the day the agent entered stage `s`
  * (in the same infection), instead of the day it entered this stage.
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Duration {
 public:
     enum class Kind : uint8_t { none, fixed, geometric, lognormal, gamma, fun };
 
 private:
     Kind kind = Kind::none;
-    Value<TSeq> mean;
-    Value<TSeq> sd;
-    DurationFun<TSeq> fun = nullptr;
+    Value mean;
+    Value sd;
+    DurationFun fun = nullptr;
     int anchor = -1;
 
-    friend class NaturalHistory<TSeq>;
+    friend class NaturalHistory;
 
 public:
     Duration() = default;
-    Duration(DurationFun<TSeq> f) : kind(Kind::fun), fun(std::move(f)) {}
+    Duration(DurationFun f) : kind(Kind::fun), fun(std::move(f)) {}
 
-    static Duration fixed(Value<TSeq> days);
-    static Duration geometric(Value<TSeq> mean);
-    static Duration lognormal(Value<TSeq> mean, Value<TSeq> sd);
-    static Duration gamma(Value<TSeq> mean, Value<TSeq> sd);
+    static Duration fixed(Value days);
+    static Duration geometric(Value mean);
+    static Duration lognormal(Value mean, Value sd);
+    static Duration gamma(Value mean, Value sd);
 
     /// Counts from the day the agent entered stage `s` in this infection.
     Duration since(int s) const;
@@ -172,7 +165,7 @@ public:
     int get_anchor() const { return anchor; }
 
     /// Draws a number of days (at least one).
-    int draw(Agent<TSeq> & agent, Model<TSeq> & model) const;
+    int draw(Agent & agent, Model & model) const;
 };
 
 /// The kind of a transition (see `naturalhistory-bones.hpp`).
@@ -182,7 +175,6 @@ enum class TransitionKind : uint8_t { infection, rate, after, external };
  * @brief A declared transition: from a set of stages to a stage (or a branch
  * of stages), of one kind.
  */
-template<typename TSeq>
 struct Transition {
     std::string name;
     TransitionKind kind;
@@ -191,12 +183,12 @@ struct Transition {
 
     /// A branch: the target is drawn among these, with these probabilities.
     std::vector< int > branch_to;
-    std::vector< Value<TSeq> > branch_prob;
+    std::vector< Value > branch_prob;
 
-    Value<TSeq> value;          ///< infection (per contact) and rate
-    Duration<TSeq> duration;    ///< after
+    Value value;          ///< infection (per contact) and rate
+    Duration duration;    ///< after
     Effect effect = Effect::none;
-    InfectionSampler<TSeq> sampler = nullptr; ///< infection only (optional)
+    InfectionSampler sampler = nullptr; ///< infection only (optional)
 
     /// A status transition: only for agents in one of these stages (empty: any)
     std::vector< int > when;
@@ -205,28 +197,27 @@ struct Transition {
 /**
  * @brief Refines a transition just declared (chainable); converts to its id.
  */
-template<typename TSeq>
 class TransitionRef {
 private:
-    NaturalHistory<TSeq> * nh;
+    NaturalHistory * nh;
     int id;
 
 public:
-    TransitionRef(NaturalHistory<TSeq> * nh_, int id_) : nh(nh_), id(id_) {}
+    TransitionRef(NaturalHistory * nh_, int id_) : nh(nh_), id(id_) {}
 
     /// The transition's id for `Model::fire()` and reactions: a stage
     /// transition's own index, or, for a status transition, `-2 - index`.
-    operator int() const { return nh->status_chart ? (-2 - id) : id; }
+    operator int() const;
     int get_id() const { return static_cast< int >(*this); }
 
     TransitionRef & name(std::string n);     ///< Default: "From -> To"
     TransitionRef & effect(Effect e);        ///< The tool effect a rate takes
 
     /// The target is drawn among `targets`, with their probabilities.
-    TransitionRef & to(std::vector< std::pair< int, Value<TSeq> > > targets);
+    TransitionRef & to(std::vector< std::pair< int, Value > > targets);
 
     /// A custom infection sampler (infection transitions only; C++ only).
-    TransitionRef & sampler(InfectionSampler<TSeq> f);
+    TransitionRef & sampler(InfectionSampler f);
 
     /// A status transition: only for agents in these stages (read at the
     /// start of the day).
@@ -251,7 +242,7 @@ struct StageInfo {
  * is where agents start. Example (SIR):
  *
  * @code{.cpp}
- * Virus<> flu("Flu");
+ * Virus flu("Flu");
  * int S = flu.add_stage("Susceptible");
  * int I = flu.add_stage("Infected", stage::infectious);
  * int R = flu.add_stage("Recovered");
@@ -260,29 +251,28 @@ struct StageInfo {
  * model.add_virus(flu, assign::share(0.01));
  * @endcode
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class NaturalHistory {
 protected:
     std::string name;
     std::vector< std::string > stage_labels;
     std::vector< unsigned int > stage_flags;
     std::vector< epiworld_double > stage_contact;
-    std::vector< Transition<TSeq> > transitions;
+    std::vector< Transition > transitions;
 
     // Derived by finalize()
     std::vector< StageInfo > stages;
     bool finalized = false;
 
-    friend class TransitionRef<TSeq>;
-    friend class Model<TSeq>;
+    friend class TransitionRef;
+    friend class Model;
     bool status_chart = false; ///< See `Statuses`
 
-    int add_transition(Transition<TSeq> t);
+    int add_transition(Transition t);
     void check_stage(int s, const char * what) const;
 
     /// Checks the declarations and derives `stages`; turns numbers into model
     /// parameters, named after `owner` (the virus) and the transition.
-    void finalize(Model<TSeq> & model, const std::string & owner);
+    void finalize(Model & model, const std::string & owner);
 
 public:
     explicit NaturalHistory(std::string name_);
@@ -294,16 +284,16 @@ public:
     /// layer: they are not met and do not transmit.
     void set_contact(int s, epiworld_double weight);
 
-    TransitionRef<TSeq> infection(Nodes from, int to, Value<TSeq> per_contact);
-    TransitionRef<TSeq> rate(Nodes from, int to, Value<TSeq> daily_probability);
-    TransitionRef<TSeq> after(int from, int to, Duration<TSeq> d);
-    TransitionRef<TSeq> external(Nodes from, int to, std::string label);
+    TransitionRef infection(Nodes from, int to, Value per_contact);
+    TransitionRef rate(Nodes from, int to, Value daily_probability);
+    TransitionRef after(int from, int to, Duration d);
+    TransitionRef external(Nodes from, int to, std::string label);
 
     const std::string & get_name() const { return name; }
     size_t get_n_stages() const { return stage_labels.size(); }
     size_t get_n_transitions() const { return transitions.size(); }
     const std::vector< std::string > & get_stages() const { return stage_labels; }
-    const Transition<TSeq> & get_transition(int id) const { return transitions.at(id); }
+    const Transition & get_transition(int id) const { return transitions.at(id); }
 
     bool is_carrier(int s) const { return (stage_flags.at(s) & stage::carrier) != 0u; }
     bool is_infectious(int s) const { return (stage_flags.at(s) & 2u) != 0u; }
@@ -323,7 +313,7 @@ public:
      * flags, contact weights) and the same transitions (names, kinds,
      * sources and targets). Their values may differ.
      */
-    bool same_structure(const NaturalHistory<TSeq> & other) const;
+    bool same_structure(const NaturalHistory & other) const;
 
     /// What the engine derived about stage `s` (once added to a model).
     const StageInfo & get_stage_info(int s) const { return stages.at(s); }
@@ -340,15 +330,14 @@ public:
  * agents start. Set on a model with `Model::set_statuses()`; a model without
  * statuses has one, "Free".
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Statuses : public NaturalHistory<TSeq> {
+class Statuses : public NaturalHistory {
 public:
-    Statuses() : NaturalHistory<TSeq>("Statuses") { this->status_chart = true; }
+    Statuses() : NaturalHistory("Statuses") { this->status_chart = true; }
 
     /// Adds a status; returns its id.
     int add_status(std::string label) { return this->add_stage(std::move(label)); }
 
-    TransitionRef<TSeq> infection(Nodes, int, Value<TSeq>) = delete;
+    TransitionRef infection(Nodes, int, Value) = delete;
 };
 
 /**

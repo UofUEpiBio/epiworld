@@ -5,13 +5,13 @@ using namespace epiworld;
 // A virus added to a second model starts a lineage of that model
 EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target]") {
 
-    Virus<> virus_a = sir_virus("A");
-    Virus<> virus_b = sir_virus("B");
+    Virus virus_a = sir_virus("A");
+    Virus virus_b = sir_virus("B");
 
     // No recovery: infected agents stay infected
-    epimodels::ModelSIR<> first("C", 1000, 0.0, 0.5, 0.0);
+    epimodels::ModelSIR first("C", 1000, 0.0, 0.5, 0.0);
     add_random_mixing(first, 4.0);
-    epimodels::ModelSIR<> second("C", 1000, 0.0, 0.5, 0.0);
+    epimodels::ModelSIR second("C", 1000, 0.0, 0.5, 0.0);
     add_random_mixing(second, 4.0);
     first.verbose_off();
     second.verbose_off();
@@ -32,7 +32,7 @@ EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target
     REQUIRE(first.get_virus(2).get_lineage_id() == 2);
     REQUIRE(first.get_db().get_n_viruses() == 3u);
 
-    Tool<> tool("Vaccine against A");
+    Tool tool("Vaccine against A");
     tool.set_susceptibility_reduction(1.0);
     tool.add_target(second.get_virus(2));
     REQUIRE_FALSE(tool.targets(second.get_virus(1)));
@@ -69,7 +69,7 @@ EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target
     // A removed virus keeps its record: the others keep their ids, and a
     // virus added later gets a new one
     {
-        epimodels::ModelSIR<> model("C", 500, 0.0, 0.5, 0.0);
+        epimodels::ModelSIR model("C", 500, 0.0, 0.5, 0.0);
         add_random_mixing(model, 4.0);
         model.verbose_off();
         model.add_virus(virus_a, assign::share(0.02));

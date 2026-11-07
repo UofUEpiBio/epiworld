@@ -5,7 +5,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
 
     // Queuing doesn't matter and get results that are meaningful
-    epimodels::ModelSIR<> model_0(
+    epimodels::ModelSIR model_0(
         "a virus", 10000, 0.01, .9, .3
         );
 
@@ -18,7 +18,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         verbose_off().
         run(100, 1231);
 
-    epimodels::ModelSIR<> model_1(
+    epimodels::ModelSIR model_1(
         "a virus", 10000, 0.01, .9, .3
         );
 
@@ -67,7 +67,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         );
 
     // Trying out the SEIR model now -------------------------------------------
-    epimodels::ModelSEIR<> model_2(
+    epimodels::ModelSEIR model_2(
         "a virus", 10000, 0.01, .5, 7.0, .1
         );
 
@@ -93,7 +93,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         );
 
     // Trying SIRCONN ----------------------------------------------------------
-    epimodels::ModelSIR<> model_3(
+    epimodels::ModelSIR model_3(
         "a virus", 10000, 0.01, .5, .3
         );
     add_random_mixing(model_3, 2);
@@ -112,7 +112,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         );
 
     // Trying SEIRCONN ---------------------------------------------------------
-    epimodels::ModelSEIR<> model_4(
+    epimodels::ModelSEIR model_4(
         "a virus", 10000, 0.01, .5, 7, .1
     );
     add_random_mixing(model_4, 2);
@@ -132,7 +132,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         );
 
     // Trying SIRD -------------------------------------------------------------
-    epimodels::ModelSIRD<> model_5(
+    epimodels::ModelSIRD model_5(
         "a virus", 10000, 0.01, .9, .3, .1
     );
 
@@ -158,7 +158,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         );
 
     // Trying SEIRD -------------------------------------------------------------
-    epimodels::ModelSEIRD<> model_6(
+    epimodels::ModelSEIRD model_6(
         "a virus", 10000, 0.1, .9, 7, .3, .1
     );
 
@@ -187,7 +187,7 @@ EPIWORLD_TEST_CASE("SIR dist", "[SIR-dist]") {
         );
 
     // Trying SEIRDCONN --------------------------------------------------------
-    epimodels::ModelSEIRD<> model_7(
+    epimodels::ModelSEIRD model_7(
         "a virus", 10000, 0.1, .9, 7, .3, .1
     );
     add_random_mixing(model_7, 4);

@@ -6,8 +6,7 @@ using namespace epiworld;
 
 #include <cassert>
 
-template<typename TSeq>
-inline void ToolImmunoglobulin<TSeq>::_error_method(std::string_view method_name) const {
+inline void ToolImmunoglobulin::_error_method(std::string_view method_name) const {
     throw std::logic_error(
         std::string(
             "The method " + std::string(method_name) + " cannot be set for the "
@@ -16,10 +15,9 @@ inline void ToolImmunoglobulin<TSeq>::_error_method(std::string_view method_name
     );
 }
 
-template<typename TSeq>
-inline epiworld_double ToolImmunoglobulin<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> &,
-    Model<TSeq> * model
+inline epiworld_double ToolImmunoglobulin::get_susceptibility_reduction(
+    VirusPtr &,
+    Model * model
 )
 {
 
@@ -47,30 +45,26 @@ inline epiworld_double ToolImmunoglobulin<TSeq>::get_susceptibility_reduction(
 
 }
 
-template<typename TSeq>
-inline void ToolImmunoglobulin<TSeq>::set_susceptibility_reduction_fun(
-    ToolFun<TSeq>
+inline void ToolImmunoglobulin::set_susceptibility_reduction_fun(
+    ToolFun
 )
 {
     _error_method("set_susceptibility_reduction_fun");
 }
 
-template<typename TSeq>
-inline void ToolImmunoglobulin<TSeq>::set_susceptibility_reduction(std::string)
+inline void ToolImmunoglobulin::set_susceptibility_reduction(std::string)
 {
     _error_method("set_susceptibility_reduction(string)");
 }
 
-template<typename TSeq>
-inline void ToolImmunoglobulin<TSeq>::set_susceptibility_reduction(epiworld_double)
+inline void ToolImmunoglobulin::set_susceptibility_reduction(epiworld_double)
 {
 
     _error_method("set_susceptibility_reduction(epiworld_double)");
 
 }
 
-template<typename TSeq>
-inline epiworld_double ToolImmunoglobulin<TSeq>::_set_immunity(Model<TSeq> & model)
+inline epiworld_double ToolImmunoglobulin::_set_immunity(Model & model)
 {
 
     // Setting immunity
@@ -96,10 +90,9 @@ inline epiworld_double ToolImmunoglobulin<TSeq>::_set_immunity(Model<TSeq> & mod
     return _immune;
 }
 
-template<typename TSeq>
-inline std::unique_ptr<Tool<TSeq>> ToolImmunoglobulin<TSeq>::clone_ptr() const
+inline std::unique_ptr<Tool> ToolImmunoglobulin::clone_ptr() const
 {
-    auto ans =  std::make_unique<ToolImmunoglobulin<TSeq>>(*this);
+    auto ans =  std::make_unique<ToolImmunoglobulin>(*this);
     ans->_immune = -1;
     return ans;
 }

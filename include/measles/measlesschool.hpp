@@ -33,15 +33,14 @@ using namespace epiworld;
  *
  * @ingroup disease_specific
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelMeaslesSchool final :
-    public ModelMeasles<TSeq>,
-    public QuarantineTrigger<TSeq>
+    public ModelMeasles,
+    public QuarantineTrigger
 {
 
 private:
 
-    static void _quarantine_agents(Model<TSeq> * m);
+    static void _quarantine_agents(Model * m);
 
 public:
 
@@ -98,20 +97,19 @@ public:
     );
 
     void reset() override;
-    std::unique_ptr< Model<TSeq> > clone_ptr() override;
+    std::unique_ptr< Model > clone_ptr() override;
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 };
 
-template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
+inline void ModelMeaslesSchool::_quarantine_agents(Model * m) {
 
-    auto * model = model_cast<ModelMeaslesSchool<TSeq>,TSeq>(m);
-    constexpr int RASH = ModelMeasles<TSeq>::RASH;
-    constexpr int SEVERE = ModelMeasles<TSeq>::SEVERE;
-    constexpr int FREE = ModelMeasles<TSeq>::FREE;
+    auto * model = model_cast<ModelMeaslesSchool>(m);
+    constexpr int RASH = ModelMeasles::RASH;
+    constexpr int SEVERE = ModelMeasles::SEVERE;
+    constexpr int FREE = ModelMeasles::FREE;
 
     // Quarantine and isolation can be shut off if negative
     const bool quarantine_on = EPI_PAR(model, "Quarantine period") >= 0;
@@ -175,22 +173,19 @@ inline void ModelMeaslesSchool<TSeq>::_quarantine_agents(Model<TSeq> * m) {
 
 }
 
-template<typename TSeq>
-inline void ModelMeaslesSchool<TSeq>::reset() {
+inline void ModelMeaslesSchool::reset() {
 
-    Model<TSeq>::reset();
+    Model::reset();
     this->sampler.reset(*this);
 
 }
 
-template<typename TSeq>
-inline std::unique_ptr<Model<TSeq>> ModelMeaslesSchool<TSeq>::clone_ptr()
+inline std::unique_ptr<Model> ModelMeaslesSchool::clone_ptr()
 {
-    return std::make_unique<ModelMeaslesSchool<TSeq>>(*this);
+    return std::make_unique<ModelMeaslesSchool>(*this);
 }
 
-template<typename TSeq>
-inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
+inline ModelMeaslesSchool::ModelMeaslesSchool(
     epiworld_fast_uint n,
     epiworld_fast_uint n_latent,
     // Disease parameters
@@ -257,24 +252,24 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
     // Agents with rash do not transmit
     this->measles_build(
-        assign::count<TSeq>(n_latent),
-        Duration<TSeq>::fixed("Quarantine period"),
+        assign::count(n_latent),
+        Duration::fixed("Quarantine period"),
         "",
         false
     );
 
     // The vaccine
-    ToolVaccine<TSeq> vaccine("MMR");
+    ToolVaccine vaccine("MMR");
     vaccine.set_susceptibility_reduction(EPI_PAR(this, "Vax efficacy"));
-    this->add_tool(vaccine, assign::share<TSeq>(prop_vaccinated));
+    this->add_tool(vaccine, assign::share(prop_vaccinated));
 
     this->add_globalevent(this->_quarantine_agents, "Quarantine process");
 
     this->set_population_size(n);
 
     // The layer: everyone in one group, meeting "Contact rate" others a day
-    auto school = layer::mixing<TSeq>("school");
-    school->set_groups(assign::labels<TSeq>(std::vector< size_t >(n, 0u)), 1u);
+    auto school = layer::mixing("school");
+    school->set_groups(assign::labels(std::vector< size_t >(n, 0u)), 1u);
     school->set_contact_matrix({1.0});
     school->set_contact_rate("Contact rate");
     school->enable_tracing();
@@ -284,8 +279,7 @@ inline ModelMeaslesSchool<TSeq>::ModelMeaslesSchool(
 
 }
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelMeaslesSchool<TSeq>::model_info()
+inline ModelInfo ModelMeaslesSchool::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -345,8 +339,8 @@ inline ModelInfo<TSeq> ModelMeaslesSchool<TSeq>::model_info()
                 "Standard deviation of the (lognormal) rash period, in days; 0 "
                 "gives a fixed period.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelMeaslesSchool<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelMeaslesSchool >(
                 static_cast< uint_t >(a("n")),
                 static_cast< uint_t >(a("prevalence")), a("contact_rate"),
                 a("transmission_rate"), a("vax_efficacy"),

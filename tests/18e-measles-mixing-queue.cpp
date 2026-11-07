@@ -16,7 +16,7 @@ EPIWORLD_TEST_CASE(
     std::vector<double> contact_matrix = {20.0};
     size_t n = 5'000;
     
-    measles::ModelMeaslesMixing<> model_0(
+    measles::ModelMeaslesMixing model_0(
         n,        // Number of agents
         n_seeds / static_cast<double>(n), // Initial prevalence
         0.2,         // Transmission rate

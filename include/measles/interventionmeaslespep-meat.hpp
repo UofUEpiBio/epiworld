@@ -5,8 +5,7 @@ using namespace epiworld;
 
 #include "interventionmeaslespep-bones.hpp"
 
-template<typename TSeq>
-inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
+inline InterventionMeaslesPEP::InterventionMeaslesPEP(
     std::string name,
     epiworld_double mmr_efficacy,
     epiworld_double ig_efficacy,
@@ -47,9 +46,8 @@ inline InterventionMeaslesPEP<TSeq>::InterventionMeaslesPEP(
     this->_pep_ig_window = ig_window;
 }
 
-template<typename TSeq>
-inline void InterventionMeaslesPEP<TSeq>::_setup(
-    Model<TSeq> * model
+inline void InterventionMeaslesPEP::_setup(
+    Model * model
 ) {
 
     // Groups are optional, but if given there must be one entry per agent
@@ -112,7 +110,7 @@ inline void InterventionMeaslesPEP<TSeq>::_setup(
     if (!model->has_tool("PEP MMR"))
     {
         // Creating the PEP vaccine tool
-        ToolVaccine<TSeq> pep("PEP MMR");
+        ToolVaccine pep("PEP MMR");
         pep.set_susceptibility_reduction(model->par(this->_par_mmr_efficacy));
         model->add_tool(pep);
 
@@ -121,7 +119,7 @@ inline void InterventionMeaslesPEP<TSeq>::_setup(
     if (!model->has_tool("PEP IG"))
     {
         // Creating the PEP vaccine tool
-        ToolImmunoglobulin<TSeq> ig(
+        ToolImmunoglobulin ig(
             "PEP IG",
             this->_par_ig_efficacy,
             this->_par_half_life_mean,
@@ -133,11 +131,10 @@ inline void InterventionMeaslesPEP<TSeq>::_setup(
 
 };
 
-template<typename TSeq>
-inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
+inline void InterventionMeaslesPEP::operator()(Model * model, int) {
 
     // Checking dynamically
-    auto quarantine_trigger_ptr = dynamic_cast<QuarantineTrigger<TSeq> *>(model);
+    auto quarantine_trigger_ptr = dynamic_cast<QuarantineTrigger *>(model);
     if (quarantine_trigger_ptr == nullptr)
     {
         throw std::logic_error(
@@ -417,10 +414,9 @@ inline void InterventionMeaslesPEP<TSeq>::operator()(Model<TSeq> * model, int) {
 
 };
 
-template<typename TSeq>
-inline std::unique_ptr< GlobalEvent<TSeq> > InterventionMeaslesPEP<TSeq>::clone_ptr() const
+inline std::unique_ptr< GlobalEvent > InterventionMeaslesPEP::clone_ptr() const
 {
-    return std::make_unique< InterventionMeaslesPEP<TSeq>>(*this);
+    return std::make_unique< InterventionMeaslesPEP>(*this);
 }
 
 #endif

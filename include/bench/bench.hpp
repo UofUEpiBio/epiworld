@@ -44,7 +44,7 @@ inline void hash_ints(uint64_t & h, const std::vector< int > & x)
 }
 
 /** Hash of the daily counts and the transmissions of the last run. */
-inline uint64_t run_checksum(epiworld::Model<> & m)
+inline uint64_t run_checksum(epiworld::Model & m)
 {
     uint64_t h = 1469598103934665603ull;
     std::vector< int > counts;
@@ -78,7 +78,7 @@ struct Timing {
  * counter the model's callbacks keep.
  */
 inline Timing time_runs(
-    epiworld::Model<> & model,
+    epiworld::Model & model,
     int days,
     int reps,
     const std::vector< size_t > & uninfected_states = {0u},

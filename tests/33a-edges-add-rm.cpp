@@ -37,20 +37,20 @@ struct calls_rm_neighbor<
 > : std::true_type {};
 
 static_assert(
-    !calls_add_neighbor< Agent<> >::value,
+    !calls_add_neighbor< Agent >::value,
     "Agent::add_neighbor must stay non-public: it edits ties without telling "
     "the queue. Use Model::add_edge()."
 );
 
 static_assert(
-    !calls_rm_neighbor< Agent<> >::value,
+    !calls_rm_neighbor< Agent >::value,
     "Agent::rm_neighbor must stay non-public: it edits ties without telling "
     "the queue. Use Model::rm_edge()."
 );
 
 // Sorted (source, target) pairs of the model's contact network, as the public
 // API reports them.
-static std::vector< std::pair<int,int> > edges_of(Model<> & model)
+static std::vector< std::pair<int,int> > edges_of(Model & model)
 {
     std::vector< int > source, target;
     tests_net(model).get_edgelist(source, target);
@@ -94,7 +94,7 @@ EPIWORLD_TEST_CASE("Edges - add and remove ties", "[edges]") {
         target.push_back(static_cast<int>(i));
     }
 
-    epimodels::ModelSIR<> model("a virus", static_cast<int>(n), 0.05, 0.9, 0.3);
+    epimodels::ModelSIR model("a virus", static_cast<int>(n), 0.05, 0.9, 0.3);
     model.seed(4321);
     model.add_layer(layer::network(
         "network", AdjList(source, target, static_cast<int>(n), false)
@@ -126,7 +126,7 @@ EPIWORLD_TEST_CASE("Edges - add and remove ties", "[edges]") {
 
     // A default-constructed view is empty in the same way.
     {
-        NeighborsView<> view;
+        NeighborsView view;
         REQUIRE(view.size() == 0u);
         REQUIRE(view.empty());
         REQUIRE(view.begin() == view.end());

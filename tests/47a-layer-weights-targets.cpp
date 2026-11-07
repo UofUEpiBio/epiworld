@@ -11,17 +11,17 @@ namespace {
 
 // A model over `n` agents with default (all-layer) pulling; its stages come
 // from its viruses (make_virus())
-Model<> make_model(size_t n)
+Model make_model(size_t n)
 {
-    Model<> m(n);
+    Model m(n);
     m.verbose_off();
     return m;
 }
 
 // An SIR virus, with its own probabilities
-Virus<> make_virus(std::string name, double p_inf, double p_rec = 0.0)
+Virus make_virus(std::string name, double p_inf, double p_rec = 0.0)
 {
-    Virus<> v(name);
+    Virus v(name);
     v.add_stage("Susceptible");
     v.add_stage("Infected", stage::infectious);
     v.add_stage("Recovered");
@@ -34,7 +34,7 @@ struct Transmissions {
     std::vector< int > date, source, target, virus, exposure, layer;
 };
 
-Transmissions transmissions(Model<> & m)
+Transmissions transmissions(Model & m)
 {
     Transmissions t;
     m.get_db().get_transmissions(
@@ -68,9 +68,9 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
         auto infected_odds = [&](const char * param, double w) -> double {
 
-            Model<> m = make_model(n);
-            Virus<> v = make_virus("flu", p);
-            m.add_virus(v, assign::agents<>(evens));
+            Model m = make_model(n);
+            Virus v = make_virus("flu", p);
+            m.add_virus(v, assign::agents(evens));
             m.add_param(w, "Weight");
             auto net = layer::network("pairs", graph);
             if (param != nullptr)
@@ -111,12 +111,12 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
     // and the seeds belong to none.
     {
         const size_t n = 2000u;
-        Model<> m = make_model(n);
+        Model m = make_model(n);
 
-        Virus<> a = make_virus("flu A", 0.2, 0.1);
-        Virus<> b = make_virus("flu B", 0.2, 0.1);
-        m.add_virus(a, assign::share<>(0.01));
-        m.add_virus(b, assign::share<>(0.01));
+        Virus a = make_virus("flu A", 0.2, 0.1);
+        Virus b = make_virus("flu B", 0.2, 0.1);
+        m.add_virus(a, assign::share(0.01));
+        m.add_virus(b, assign::share(0.01));
         m.seed(77);
 
         auto net_a = layer::network("a", rgraph_smallworld(n, 6, 0.1, false, m));
@@ -150,7 +150,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
         REQUIRE(through[1][0] == 0u);
 
         // A virus the model does not have cannot be a target
-        Virus<> loose = make_virus("loose", 0.1);
+        Virus loose = make_virus("loose", 0.1);
         REQUIRE_THROWS_AS(net_a->add_virus_target(loose), std::logic_error);
     }
 
@@ -163,9 +163,9 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
         for (std::string mode : {"pull", "push"})
         {
 
-            Model<> m = make_model(n);
-            Virus<> v = make_virus("flu", 0.05, 0.1);
-            m.add_virus(v, assign::share<>(0.01));
+            Model m = make_model(n);
+            Virus v = make_virus("flu", 0.05, 0.1);
+            m.add_virus(v, assign::share(0.01));
             m.seed(5);
 
             m.add_layer(layer::network(
@@ -217,11 +217,11 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
         for (int scenario = 0; scenario < 3; ++scenario)
         {
 
-            Model<> m = make_model(n);
-            Virus<> v = make_virus("flu", 1.0);
-            m.add_virus(v, assign::agents<>({0u}));
+            Model m = make_model(n);
+            Virus v = make_virus("flu", 1.0);
+            m.add_virus(v, assign::agents({0u}));
             m.add_param(0.0, "Weight");
-            Virus<> other = make_virus("other", 1.0);
+            Virus other = make_virus("other", 1.0);
             m.add_virus(other);
 
             auto net = layer::network("star", star);
@@ -259,14 +259,14 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
         for (bool queuing : {true, false})
         {
 
-            Model<> m = make_model(n);
-            Virus<> v = make_virus("flu", 1.0);
-            m.add_virus(v, assign::agents<>({0u}));
+            Model m = make_model(n);
+            Virus v = make_virus("flu", 1.0);
+            m.add_virus(v, assign::agents({0u}));
             if (!queuing)
                 m.queuing_off();
 
             m.add_layer(layer::network(
-                "in", [n](Model<> &) -> AdjList {
+                "in", [n](Model &) -> AdjList {
                     std::vector< int > s, t;
                     for (size_t i = 1u; i < n; ++i)
                     {

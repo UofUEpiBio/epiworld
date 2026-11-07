@@ -15,17 +15,17 @@ EPIWORLD_TEST_CASE(
     for (size_t i = 900u; i < n; ++i)
         group[i] = 1u;
 
-    epimodels::ModelSIR<> model("a virus", n, 0.0, 0.0, 0.0);
+    epimodels::ModelSIR model("a virus", n, 0.0, 0.0, 0.0);
     add_random_mixing(model, 0.0);
 
-    auto set = layer::mixing<>("set");
+    auto set = layer::mixing("set");
     set->set_groups(assign::labels(group), 2u);
     set->set_contact_prob(0.0);
     model.add_layer(set);
 
-    model.assign_virus(0, assign::group_counts<>("set", {0.0, 30.0}));
-    model.add_tool(Tool<>("tool abs"), assign::group_counts<>("set", {0.0, 40.0}));
-    model.add_tool(Tool<>("tool prop"), assign::group_shares<>("set", {0.0, 0.5}));
+    model.assign_virus(0, assign::group_counts("set", {0.0, 30.0}));
+    model.add_tool(Tool("tool abs"), assign::group_counts("set", {0.0, 40.0}));
+    model.add_tool(Tool("tool prop"), assign::group_shares("set", {0.0, 0.5}));
 
     model.verbose_off();
     model.run(0, 123);
@@ -56,7 +56,7 @@ EPIWORLD_TEST_CASE(
     REQUIRE(n_virus == 30u);
 
     // More agents than are eligible fails
-    model.add_tool(Tool<>("too many"), assign::count<>(1001u));
+    model.add_tool(Tool("too many"), assign::count(1001u));
     REQUIRE_THROWS(model.run(0, 123));
 
 }

@@ -16,8 +16,7 @@
  * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
  * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIS : public Model<TSeq>
+class ModelSIS : public Model
 {
 
 public:
@@ -37,11 +36,10 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 };
 
-template<typename TSeq>
-inline ModelSIS<TSeq>::ModelSIS(
+inline ModelSIS::ModelSIS(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -57,18 +55,17 @@ inline ModelSIS<TSeq>::ModelSIS(
     this->add_param(transmission_prob, "Transmission probability");
     this->add_param(recovery_rate, "Recovery rate");
 
-    Virus<TSeq> virus(vname);
+    Virus virus(vname);
     virus.add_stage("Susceptible");
     virus.add_stage("Infected", stage::infectious);
     virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
     virus.rate(INFECTED, SUSCEPTIBLE, "Recovery rate").effect(Effect::recovery);
 
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share(prevalence));
 
 }
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelSIS<TSeq>::model_info()
+inline ModelInfo ModelSIS::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -84,8 +81,8 @@ inline ModelInfo<TSeq> ModelSIS<TSeq>::model_info()
             ParamInfo::probability("recovery_rate", "Recovery rate", 0.14,
                 "Daily probability that an infected agent recovers.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelSIS<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelSIS >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
                 a("transmission_prob"), a("recovery_rate")
             );

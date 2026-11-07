@@ -56,9 +56,9 @@ ModelSIR(
 
 **Example:**
 ```cpp
-epiworld::epimodels::ModelSIR<> model("Influenza", 2000, 0.01, 0.25, 0.1);
+epiworld::epimodels::ModelSIR model("Influenza", 2000, 0.01, 0.25, 0.1);
 model.add_layer(epiworld::layer::network(
-    "contacts", epiworld::graph::smallworld<>(8, 0.05)
+    "contacts", epiworld::graph::smallworld(8, 0.05)
 ));
 model.run(200);
 ```
@@ -122,14 +122,14 @@ Any of the models above takes its contacts from its layers. Three common setups:
 
 ```cpp
 model.add_layer(epiworld::layer::network(
-    "contacts", epiworld::graph::smallworld<>(10, 0.05)
+    "contacts", epiworld::graph::smallworld(10, 0.05)
 ));
 ```
 
 **Mixing by group, with a contact matrix.** Entry `(i, j)` of the column-major matrix is the expected number of contacts per day of an agent in group `i` with agents in group `j` (e.g., age groups):
 
 ```cpp
-auto mixing = epiworld::layer::mixing<>("community");
+auto mixing = epiworld::layer::mixing("community");
 mixing->set_groups(groups, 2u);          // A group per agent
 mixing->set_contact_matrix({8.0, 1.0, 1.0, 8.0});
 model.add_layer(mixing);
@@ -139,7 +139,7 @@ model.add_layer(mixing);
 
 ```cpp
 model.add_param(4.0, "Contact rate");
-auto mixing = epiworld::layer::mixing<>("random mixing");
+auto mixing = epiworld::layer::mixing("random mixing");
 mixing->set_groups(std::vector< size_t >(model.size(), 0u), 1u);
 mixing->set_contact_matrix({1.0});
 mixing->set_contact_rate("Contact rate");
@@ -188,7 +188,7 @@ The SIRLogit model uses logistic regression to determine infection and recovery 
 **Constructor:**
 ```cpp
 ModelSIRLogit(
-    ModelSIRLogit<TSeq> & model,
+    ModelSIRLogit & model,
     const std::string & vname,
     double * data,
     size_t ncols,
@@ -215,7 +215,7 @@ The SURV (Surveillance) model integrates vaccination, infection, immunity, and o
 **Constructor:**
 ```cpp
 ModelSURV(
-    ModelSURV<TSeq> & model,
+    ModelSURV & model,
     const std::string & vname,
     epiworld_fast_uint prevalence               = 50,
     epiworld_double efficacy_vax          = 0.9,

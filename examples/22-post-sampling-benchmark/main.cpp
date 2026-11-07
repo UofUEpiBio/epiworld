@@ -77,20 +77,20 @@ static std::vector< double > contact_matrix()
 }
 
 // A mixing layer over equal groups of agents (the last one takes the rest)
-static void add_mixing(Model<> & model, size_t n)
+static void add_mixing(Model & model, size_t n)
 {
     size_t size = n / N_GROUPS;
     std::vector< size_t > groups(n);
     for (size_t i = 0u; i < n; ++i)
         groups[i] = std::min(i / size, N_GROUPS - 1u);
 
-    auto mixing = layer::mixing<>("mixing");
+    auto mixing = layer::mixing("mixing");
     mixing->set_groups(assign::labels(groups), N_GROUPS);
     mixing->set_contact_matrix(contact_matrix());
     model.add_layer(mixing);
 }
 
-typedef measles::ModelMeaslesMixing<> ModelMeasles;
+typedef measles::ModelMeaslesMixing ModelMeasles;
 
 static ModelMeasles build_measles(size_t n)
 {
@@ -116,7 +116,7 @@ static ModelMeasles build_measles(size_t n)
     );
 
     // Everyone in one group, meeting 15 others a day
-    auto mixing = layer::mixing<>("mixing");
+    auto mixing = layer::mixing("mixing");
     mixing->set_groups(assign::labels(std::vector< size_t >(n, 0u)), 1u);
     mixing->set_contact_matrix({15.0});
     model.add_layer(mixing);
@@ -130,7 +130,7 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
 
     if (scen == "L" || scen == "U")
     {
-        epimodels::ModelSEIR<> model("Benchmark pathogen", n, prevalence, 0.05, 4.0, 0.2);
+        epimodels::ModelSEIR model("Benchmark pathogen", n, prevalence, 0.05, 4.0, 0.2);
         model.seed(20260930);
         model.add_layer(layer::network(
             "network", rgraph_smallworld(n, 10, 0.05, false, model)
@@ -141,7 +141,7 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
 
     if (scen == "S")
     {
-        epimodels::ModelSIR<> model(
+        epimodels::ModelSIR model(
             "Benchmark pathogen", static_cast< epiworld_fast_uint >(n),
             prevalence, 0.05, 0.2
         );
@@ -152,7 +152,7 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
 
     if (scen == "E")
     {
-        epimodels::ModelSEIR<> model(
+        epimodels::ModelSEIR model(
             "Benchmark pathogen", static_cast< epiworld_fast_uint >(n),
             prevalence, 0.05, 4.0, 0.2
         );
@@ -163,7 +163,7 @@ static bench::Timing run_scenario(const std::string & scen, size_t n, const Opti
 
     if (scen == "Q")
     {
-        epimodels::ModelSEIRQuarantine<> model(
+        epimodels::ModelSEIRQuarantine model(
             "Benchmark pathogen", static_cast< epiworld_fast_uint >(n),
             prevalence, 0.05, 4.0, 0.2,
             0.05, // Hospitalization rate

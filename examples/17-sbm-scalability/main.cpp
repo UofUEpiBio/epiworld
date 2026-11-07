@@ -34,7 +34,7 @@ int main() {
 
     // A lightweight SIR model – we only need its RNG, not its dynamics (nor
     // agents: the generators only draw graphs).
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "bench-virus", 0, 0.01, 0.3, 0.5
     );
     model.verbose_off();

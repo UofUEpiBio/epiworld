@@ -10,7 +10,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
         0.0, 0.0, 40.0
     };
 
-    epimodels::ModelSEIRQuarantine<> model(
+    epimodels::ModelSEIRQuarantine model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
@@ -29,13 +29,13 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     );
     // Three groups
     add_group_mixing(model, contact_matrix, blocks({0u, 3000u, 6000u, 10000u}));
-    auto & mixing = model.get_layer_as< layer::Mixing<> >("mixing");
+    auto & mixing = model.get_layer_as< layer::Mixing >("mixing");
 
     // Copy the original virus
-    Virus<> v1 = model.get_virus(0);
+    Virus v1 = model.get_virus(0);
     model.rm_virus(0);
 
-    model.add_virus(v1, dist_virus<>(0));
+    model.add_virus(v1, dist_virus(0));
 
 
     // Running and checking the results
@@ -45,9 +45,9 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     // Getting all agents
     int n_wrong = 0;
 
-    for (const Agent<> & a : model.get_agents())
+    for (const Agent & a : model.get_agents())
     {
-        if (model.get_stage(a) != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
+        if (model.get_stage(a) != epimodels::ModelSEIRQuarantine::SUSCEPTIBLE)
         {
             if (mixing.get_group(a.get_id()) == 0)
             {
@@ -84,14 +84,14 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     // Getting all agents
     n_wrong = 0;
 
-    for (const Agent<> & a : model.get_agents())
+    for (const Agent & a : model.get_agents())
     {
 
         if (a.get_id() == 0)
         {
             continue;
         }
-        else if (model.get_stage(a) != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
+        else if (model.get_stage(a) != epimodels::ModelSEIRQuarantine::SUSCEPTIBLE)
         {
             if (mixing.get_group(a.get_id()) == 1)
             {
@@ -117,7 +117,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
 
     // Everyone ends recovered or severe (in hospital), none of them free
     // and severe, quarantined or isolated
-    using MQ = epimodels::ModelSEIRQuarantine<>;
+    using MQ = epimodels::ModelSEIRQuarantine;
     int n_done = 0;
     for (const auto & a : model.get_agents())
     {
@@ -140,7 +140,7 @@ EPIWORLD_TEST_CASE("SEIRMixingQuarantine", "[SEIR-mixing-quarantine]") {
     for (size_t i = 0u; i < model.size(); ++i)
     {
         const size_t g = mixing.get_group(i);
-        ++sizes[(g == layer::Mixing<>::NO_GROUP) ? 3u : g];
+        ++sizes[(g == layer::Mixing::NO_GROUP) ? 3u : g];
     }
 
     REQUIRE(sizes == std::vector< size_t >({2000u, 2000u, 2000u, 4000u}));

@@ -5,7 +5,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Edgelist is preserved in run multiple", "[Edgelist]") {
 
     // Queuing doesn't matter and get results that are meaningful
-    epimodels::ModelSIR<> model_0(
+    epimodels::ModelSIR model_0(
         "a virus", 500, 0.01, .9, .3
         );
 

@@ -20,7 +20,7 @@ EPIWORLD_TEST_CASE("SBM between-group only", "[sbm-between]") {
 
     size_t n_blocks = block_sizes.size();
 
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "a virus", std::accumulate(block_sizes.begin(), block_sizes.end(), size_t(0)), 0.01, 0.5, 0.3
     );
     model.verbose_off();

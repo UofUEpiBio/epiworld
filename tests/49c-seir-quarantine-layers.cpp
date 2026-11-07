@@ -10,7 +10,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("SEIR quarantine traces every layer", "[seir-quarantine]") {
 
     const size_t n = 40u;
-    using Model_ = epimodels::ModelSEIRQuarantine<>;
+    using Model_ = epimodels::ModelSEIRQuarantine;
 
     Model_ model(
         "v", n, 0.0,
@@ -27,7 +27,7 @@ EPIWORLD_TEST_CASE("SEIR quarantine traces every layer", "[seir-quarantine]") {
         1.0,  // contact_tracing_prob
         4u    // contact_tracing_window
     );
-    model.assign_virus(0, assign::agents<>({0u}));
+    model.assign_virus(0, assign::agents({0u}));
 
     std::vector< int > source, target;
     for (size_t i = 0u; i < n; ++i)
@@ -43,7 +43,7 @@ EPIWORLD_TEST_CASE("SEIR quarantine traces every layer", "[seir-quarantine]") {
     for (size_t i = 0u; i < n; ++i)
         households[i] = i / 4u;
 
-    auto hh = layer::mixing<>("households");
+    auto hh = layer::mixing("households");
     hh->set_groups(assign::labels(households), n / 4u);
     hh->set_contact_prob(1.0);
     model.add_layer(hh);

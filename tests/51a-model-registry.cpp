@@ -10,7 +10,7 @@ using namespace epiworld;
 // stages as the model's own.
 EPIWORLD_TEST_CASE("Model registry - every model", "[registry]") {
 
-    ModelRegistry<> registry;
+    ModelRegistry registry;
     epimodels::register_models(registry);
     measles::register_models(registry);
 
@@ -61,13 +61,13 @@ EPIWORLD_TEST_CASE("Model registry - every model", "[registry]") {
         // layer, the school mixes on its own, and the rest take a network
         if (info.id.find("MeaslesMixing") == 0u)
         {
-            auto mix = layer::mixing<>("mixing");
-            mix->set_groups(assign::labels<>(std::vector< size_t >(model->size(), 0u)), 1u);
+            auto mix = layer::mixing("mixing");
+            mix->set_groups(assign::labels(std::vector< size_t >(model->size(), 0u)), 1u);
             mix->set_contact_matrix({10.0});
             model->add_layer(mix);
         }
         else if (info.id != "MeaslesSchool")
-            model->add_layer(layer::network("network", graph::smallworld<>(6, 0.1)));
+            model->add_layer(layer::network("network", graph::smallworld(6, 0.1)));
 
         REQUIRE_NOTHROW(model->run(20, 123));
     }
@@ -77,11 +77,11 @@ EPIWORLD_TEST_CASE("Model registry - every model", "[registry]") {
     auto from_registry = registry.make_model(
         "SEIR", {{"n", 2000}, {"transmission_prob", 0.2}}, "flu"
     );
-    epimodels::ModelSEIR<> direct("flu", 2000, 0.01, 0.2, 7.0, 0.14);
-    for (Model<> * m : {from_registry.get(), static_cast< Model<> * >(&direct)})
+    epimodels::ModelSEIR direct("flu", 2000, 0.01, 0.2, 7.0, 0.14);
+    for (Model * m : {from_registry.get(), static_cast< Model * >(&direct)})
     {
         m->verbose_off();
-        m->add_layer(layer::network("network", graph::smallworld<>(6, 0.1)));
+        m->add_layer(layer::network("network", graph::smallworld(6, 0.1)));
         m->run(60, 42);
     }
 
@@ -95,15 +95,15 @@ EPIWORLD_TEST_CASE("Model registry - every model", "[registry]") {
     // model's own virus, and it spreads
     auto model = registry.make_model("SEIR", {{"n", 2000}}, "flu");
     model->verbose_off();
-    model->add_layer(layer::network("network", graph::smallworld<>(6, 0.1)));
+    model->add_layer(layer::network("network", graph::smallworld(6, 0.1)));
 
-    Virus<> other = model->get_virus(0u);
+    Virus other = model->get_virus(0u);
     other.set_name("other");
-    model->add_virus(other, assign::count<>(20u));
+    model->add_virus(other, assign::count(20u));
 
     // Seeded at reset (a run of 0 days)
     model->run(0, 7);
-    const int exposed = epimodels::ModelSEIR<>::EXPOSED;
+    const int exposed = epimodels::ModelSEIR::EXPOSED;
     size_t seeded = 0u;
     for (const auto & a : model->get_agents())
         if ((a.get_virus() != nullptr) && (a.get_virus()->get_name() == "other"))

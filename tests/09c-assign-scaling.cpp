@@ -16,12 +16,12 @@ EPIWORLD_TEST_CASE(
     for (size_t i = 0u; i < k; ++i)
         set.push_back(2u * i);
 
-    auto time_it = [&](Assign<> who) -> double {
+    auto time_it = [&](Assign who) -> double {
 
-        epimodels::ModelSIR<> model("a virus", n, 0.0, 0.0, 0.0);
+        epimodels::ModelSIR model("a virus", n, 0.0, 0.0, 0.0);
         add_random_mixing(model, 0.0);
         model.assign_virus(0, who);
-        model.add_tool(Tool<>("tool"), who);
+        model.add_tool(Tool("tool"), who);
         model.verbose_off();
 
         auto start = std::chrono::steady_clock::now();
@@ -43,8 +43,8 @@ EPIWORLD_TEST_CASE(
 
     };
 
-    double t_random = time_it(assign::count<>(k));
-    double t_set = time_it(assign::agents<>(set));
+    double t_random = time_it(assign::count(k));
+    double t_set = time_it(assign::agents(set));
 
     #ifdef EPI_DEBUG
     std::cout << "Assigning " << k << " agents: randomly "

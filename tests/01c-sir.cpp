@@ -14,18 +14,18 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
      //
 
     // Saver function
-    auto saver_0 = epiworld::make_save_run<>(
+    auto saver_0 = epiworld::make_save_run(
         fn_0.full_path.c_str(),
         true, true, true, false, true, true, true, true, true, false, false
         );
 
-    auto saver_1 = epiworld::make_save_run<>(
+    auto saver_1 = epiworld::make_save_run(
         fn_1.full_path.c_str(),
         true, true, true, false, true, true, true, true, true, false, false
         );
 
     // Queuing doesn't matter and get results that are meaningful
-    epimodels::ModelSIR<> model_0(
+    epimodels::ModelSIR model_0(
         "a virus", 10000, 0.01, .9, .3
         );
 
@@ -36,7 +36,7 @@ EPIWORLD_TEST_CASE("SIR-omp", "[OMP-SIR]") {
     model_0.verbose_off();
     model_0.run_multiple(100, 100, 1231, saver_0, true, true, 1);
 
-    epimodels::ModelSIR<> model_1(
+    epimodels::ModelSIR model_1(
         "a virus", 10000, 0.01, .9, .3
         );
 

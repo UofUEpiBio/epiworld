@@ -1,29 +1,31 @@
 #ifndef EPIWORLD_NATURALHISTORY_MEAT_HPP
 #define EPIWORLD_NATURALHISTORY_MEAT_HPP
 
+inline TransitionRef::operator int() const
+{
+    return nh->status_chart ? (-2 - id) : id;
+}
+
 // Value -----------------------------------------------------------------------
 
-template<typename TSeq>
-inline Value<TSeq> Value<TSeq>::inverse(std::string name)
+inline Value Value::inverse(std::string name)
 {
-    Value<TSeq> v(std::move(name));
+    Value v(std::move(name));
     v.kind = Kind::inverse;
     return v;
 }
 
-template<typename TSeq>
-inline Value<TSeq> Value<TSeq>::complement(std::string name)
+inline Value Value::complement(std::string name)
 {
-    Value<TSeq> v(std::move(name));
+    Value v(std::move(name));
     v.kind = Kind::complement;
     return v;
 }
 
-template<typename TSeq>
-inline epiworld_double Value<TSeq>::eval(
-    Agent<TSeq> & agent,
-    const Virus<TSeq> * virus,
-    Model<TSeq> & model
+inline epiworld_double Value::eval(
+    Agent & agent,
+    const Virus * virus,
+    Model & model
 ) const
 {
 
@@ -54,10 +56,9 @@ inline epiworld_double Value<TSeq>::eval(
 
 }
 
-template<typename TSeq>
-inline epiworld_double Value<TSeq>::eval(
-    Agent<TSeq> & agent,
-    Model<TSeq> & model
+inline epiworld_double Value::eval(
+    Agent & agent,
+    Model & model
 ) const
 {
     const auto & v = agent.get_virus();
@@ -66,54 +67,48 @@ inline epiworld_double Value<TSeq>::eval(
 
 // Duration --------------------------------------------------------------------
 
-template<typename TSeq>
-inline Duration<TSeq> Duration<TSeq>::fixed(Value<TSeq> days)
+inline Duration Duration::fixed(Value days)
 {
-    Duration<TSeq> d;
+    Duration d;
     d.kind = Kind::fixed;
     d.mean = std::move(days);
     return d;
 }
 
-template<typename TSeq>
-inline Duration<TSeq> Duration<TSeq>::geometric(Value<TSeq> mean)
+inline Duration Duration::geometric(Value mean)
 {
-    Duration<TSeq> d;
+    Duration d;
     d.kind = Kind::geometric;
     d.mean = std::move(mean);
     return d;
 }
 
-template<typename TSeq>
-inline Duration<TSeq> Duration<TSeq>::lognormal(Value<TSeq> mean, Value<TSeq> sd)
+inline Duration Duration::lognormal(Value mean, Value sd)
 {
-    Duration<TSeq> d;
+    Duration d;
     d.kind = Kind::lognormal;
     d.mean = std::move(mean);
     d.sd = std::move(sd);
     return d;
 }
 
-template<typename TSeq>
-inline Duration<TSeq> Duration<TSeq>::gamma(Value<TSeq> mean, Value<TSeq> sd)
+inline Duration Duration::gamma(Value mean, Value sd)
 {
-    Duration<TSeq> d;
+    Duration d;
     d.kind = Kind::gamma;
     d.mean = std::move(mean);
     d.sd = std::move(sd);
     return d;
 }
 
-template<typename TSeq>
-inline Duration<TSeq> Duration<TSeq>::since(int s) const
+inline Duration Duration::since(int s) const
 {
-    Duration<TSeq> d(*this);
+    Duration d(*this);
     d.anchor = s;
     return d;
 }
 
-template<typename TSeq>
-inline int Duration<TSeq>::draw(Agent<TSeq> & agent, Model<TSeq> & model) const
+inline int Duration::draw(Agent & agent, Model & model) const
 {
 
     auto whole = [](epiworld_double days) -> int {
@@ -182,8 +177,7 @@ inline int Duration<TSeq>::draw(Agent<TSeq> & agent, Model<TSeq> & model) const
 
 // TransitionRef ---------------------------------------------------------------
 
-template<typename TSeq>
-inline TransitionRef<TSeq> & TransitionRef<TSeq>::name(std::string n)
+inline TransitionRef & TransitionRef::name(std::string n)
 {
     for (auto & t : nh->transitions)
         if ((t.name == n) && (&t != &nh->transitions[id]))
@@ -196,8 +190,7 @@ inline TransitionRef<TSeq> & TransitionRef<TSeq>::name(std::string n)
     return *this;
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> & TransitionRef<TSeq>::effect(Effect e)
+inline TransitionRef & TransitionRef::effect(Effect e)
 {
     auto & t = nh->transitions[id];
     if ((e != Effect::none) && (t.kind != TransitionKind::rate))
@@ -209,9 +202,8 @@ inline TransitionRef<TSeq> & TransitionRef<TSeq>::effect(Effect e)
     return *this;
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> & TransitionRef<TSeq>::to(
-    std::vector< std::pair< int, Value<TSeq> > > targets
+inline TransitionRef & TransitionRef::to(
+    std::vector< std::pair< int, Value > > targets
 )
 {
     auto & t = nh->transitions[id];
@@ -234,8 +226,7 @@ inline TransitionRef<TSeq> & TransitionRef<TSeq>::to(
     return *this;
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> & TransitionRef<TSeq>::sampler(InfectionSampler<TSeq> f)
+inline TransitionRef & TransitionRef::sampler(InfectionSampler f)
 {
     auto & t = nh->transitions[id];
     if (t.kind != TransitionKind::infection)
@@ -247,8 +238,7 @@ inline TransitionRef<TSeq> & TransitionRef<TSeq>::sampler(InfectionSampler<TSeq>
     return *this;
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> & TransitionRef<TSeq>::when(Nodes stages)
+inline TransitionRef & TransitionRef::when(Nodes stages)
 {
     auto & t = nh->transitions[id];
     if (!nh->status_chart)
@@ -262,12 +252,10 @@ inline TransitionRef<TSeq> & TransitionRef<TSeq>::when(Nodes stages)
 
 // NaturalHistory --------------------------------------------------------------
 
-template<typename TSeq>
-inline NaturalHistory<TSeq>::NaturalHistory(std::string name_) :
+inline NaturalHistory::NaturalHistory(std::string name_) :
     name(std::move(name_)) {}
 
-template<typename TSeq>
-inline void NaturalHistory<TSeq>::check_stage(int s, const char * what) const
+inline void NaturalHistory::check_stage(int s, const char * what) const
 {
     if ((s < 0) || (static_cast< size_t >(s) >= stage_labels.size()))
         throw std::range_error(
@@ -277,8 +265,7 @@ inline void NaturalHistory<TSeq>::check_stage(int s, const char * what) const
         );
 }
 
-template<typename TSeq>
-inline int NaturalHistory<TSeq>::add_stage(std::string label, unsigned int flags)
+inline int NaturalHistory::add_stage(std::string label, unsigned int flags)
 {
 
     for (auto & l : stage_labels)
@@ -303,8 +290,7 @@ inline int NaturalHistory<TSeq>::add_stage(std::string label, unsigned int flags
 
 }
 
-template<typename TSeq>
-inline void NaturalHistory<TSeq>::set_contact(int s, epiworld_double weight)
+inline void NaturalHistory::set_contact(int s, epiworld_double weight)
 {
     check_stage(s, "");
 
@@ -318,8 +304,7 @@ inline void NaturalHistory<TSeq>::set_contact(int s, epiworld_double weight)
     stage_contact[s] = weight;
 }
 
-template<typename TSeq>
-inline int NaturalHistory<TSeq>::add_transition(Transition<TSeq> t)
+inline int NaturalHistory::add_transition(Transition t)
 {
 
     if (t.from.empty())
@@ -348,63 +333,58 @@ inline int NaturalHistory<TSeq>::add_transition(Transition<TSeq> t)
 
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> NaturalHistory<TSeq>::infection(
-    Nodes from, int to, Value<TSeq> per_contact
+inline TransitionRef NaturalHistory::infection(
+    Nodes from, int to, Value per_contact
 )
 {
-    Transition<TSeq> t;
+    Transition t;
     t.kind = TransitionKind::infection;
     t.from = std::move(from.ids);
     t.to = to;
     t.value = std::move(per_contact);
-    return TransitionRef<TSeq>(this, add_transition(std::move(t)));
+    return TransitionRef(this, add_transition(std::move(t)));
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> NaturalHistory<TSeq>::rate(
-    Nodes from, int to, Value<TSeq> daily_probability
+inline TransitionRef NaturalHistory::rate(
+    Nodes from, int to, Value daily_probability
 )
 {
-    Transition<TSeq> t;
+    Transition t;
     t.kind = TransitionKind::rate;
     t.from = std::move(from.ids);
     t.to = to;
     t.value = std::move(daily_probability);
-    return TransitionRef<TSeq>(this, add_transition(std::move(t)));
+    return TransitionRef(this, add_transition(std::move(t)));
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> NaturalHistory<TSeq>::after(
-    int from, int to, Duration<TSeq> d
+inline TransitionRef NaturalHistory::after(
+    int from, int to, Duration d
 )
 {
-    if (d.get_kind() == Duration<TSeq>::Kind::none)
+    if (d.get_kind() == Duration::Kind::none)
         throw std::logic_error("A duration transition needs a duration.");
 
-    Transition<TSeq> t;
+    Transition t;
     t.kind = TransitionKind::after;
     t.from = {from};
     t.to = to;
     t.duration = std::move(d);
-    return TransitionRef<TSeq>(this, add_transition(std::move(t)));
+    return TransitionRef(this, add_transition(std::move(t)));
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> NaturalHistory<TSeq>::external(
+inline TransitionRef NaturalHistory::external(
     Nodes from, int to, std::string label
 )
 {
-    Transition<TSeq> t;
+    Transition t;
     t.kind = TransitionKind::external;
     t.from = std::move(from.ids);
     t.to = to;
     t.name = std::move(label);
-    return TransitionRef<TSeq>(this, add_transition(std::move(t)));
+    return TransitionRef(this, add_transition(std::move(t)));
 }
 
-template<typename TSeq>
-inline int NaturalHistory<TSeq>::stage_id(std::string_view label) const
+inline int NaturalHistory::stage_id(std::string_view label) const
 {
     for (size_t s = 0u; s < stage_labels.size(); ++s)
         if (stage_labels[s] == label)
@@ -416,8 +396,7 @@ inline int NaturalHistory<TSeq>::stage_id(std::string_view label) const
     );
 }
 
-template<typename TSeq>
-inline int NaturalHistory<TSeq>::transition_id(std::string_view label) const
+inline int NaturalHistory::transition_id(std::string_view label) const
 {
     for (size_t t = 0u; t < transitions.size(); ++t)
         if (transitions[t].name == label)
@@ -429,8 +408,7 @@ inline int NaturalHistory<TSeq>::transition_id(std::string_view label) const
     );
 }
 
-template<typename TSeq>
-inline bool NaturalHistory<TSeq>::is_source(int transition, int s) const
+inline bool NaturalHistory::is_source(int transition, int s) const
 {
     for (int f : transitions[transition].from)
         if (f == s)
@@ -438,9 +416,8 @@ inline bool NaturalHistory<TSeq>::is_source(int transition, int s) const
     return false;
 }
 
-template<typename TSeq>
-inline bool NaturalHistory<TSeq>::same_structure(
-    const NaturalHistory<TSeq> & o
+inline bool NaturalHistory::same_structure(
+    const NaturalHistory & o
 ) const
 {
 
@@ -469,9 +446,8 @@ inline bool NaturalHistory<TSeq>::same_structure(
 
 }
 
-template<typename TSeq>
-inline void NaturalHistory<TSeq>::finalize(
-    Model<TSeq> & model,
+inline void NaturalHistory::finalize(
+    Model & model,
     const std::string & owner
 )
 {
@@ -494,11 +470,11 @@ inline void NaturalHistory<TSeq>::finalize(
                 );
 
     // A number becomes a model parameter, named after the transition
-    auto as_param = [&model](Value<TSeq> & v, const std::string & pname) {
-        if (v.kind != Value<TSeq>::Kind::number)
+    auto as_param = [&model](Value & v, const std::string & pname) {
+        if (v.kind != Value::Kind::number)
             return;
         model.add_param(v.number, pname, true);
-        v = Value<TSeq>(pname);
+        v = Value(pname);
     };
 
     for (size_t id = 0u; id < transitions.size(); ++id)

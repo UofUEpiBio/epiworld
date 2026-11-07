@@ -18,7 +18,7 @@ EPIWORLD_TEST_CASE(
     double n_agents = 2000.0;
     size_t n_agents_sz = static_cast<size_t>(n_agents);
     
-    measles::ModelMeaslesMixing<> model_0(
+    measles::ModelMeaslesMixing model_0(
         n_agents_sz, // Number of agents
         n_seeds / n_agents, // Initial prevalence
         0.1,         // Transmission rate

@@ -26,11 +26,11 @@ Log pairs_of(ContactTracing & ct)
 EPIWORLD_TEST_CASE("Layer contact tracing", "[layer-tracing]") {
 
     // Two networks and a households layer (cliques); only two are traced
-    epimodels::ModelSIR<> model("Virus", 600, 0.02, 1.0, 0.3);
+    epimodels::ModelSIR model("Virus", 600, 0.02, 1.0, 0.3);
 
-    auto home = layer::network("home", graph::smallworld<>(4, 0.1));
-    auto work = layer::network("work", graph::smallworld<>(6, 0.3));
-    auto hh = layer::mixing<>("households");
+    auto home = layer::network("home", graph::smallworld(4, 0.1));
+    auto work = layer::network("work", graph::smallworld(6, 0.3));
+    auto hh = layer::mixing("households");
     std::vector< size_t > groups(600);
     for (size_t i = 0u; i < 600u; ++i)
         groups[i] = i / 4u;
@@ -104,8 +104,8 @@ EPIWORLD_TEST_CASE("Layer contact tracing", "[layer-tracing]") {
     // never changes, so both modes see the same carriers every day)
     auto run = [](TransmissionMode mode) {
 
-        epimodels::ModelSIR<> m("Virus", 400, 0.05, 0.0, 0.0);
-        auto net = layer::network("network", graph::smallworld<>(6, 0.1));
+        epimodels::ModelSIR m("Virus", 400, 0.05, 0.0, 0.0);
+        auto net = layer::network("network", graph::smallworld(6, 0.1));
         net->enable_tracing(1000u);
         m.add_layer(net);
         m.set_transmission_mode(mode);

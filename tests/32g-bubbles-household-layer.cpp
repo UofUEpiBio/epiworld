@@ -11,7 +11,7 @@ using namespace epiworld;
 // Under BubbleTies::Complete the bubble is a group of the household layer
 // (within-group mixing, q = 1): outside the policy window each household meets
 // in full, and while it is in force the whole bubble does.
-static void two_households(Model<> & model)
+static void two_households(Model & model)
 {
     model.add_layer(layer::network(
         "network", AdjList({0, 1, 3, 4, 2}, {1, 2, 4, 5, 3}, 6, false)
@@ -31,7 +31,7 @@ EPIWORLD_TEST_CASE("Bubbles - complete bubbles in the household layer", "[bubble
     const std::vector< size_t > hh = households(6u, 3u);
 
     // -- 1. The layer: one group per household, everyone meets ------------
-    Bubbles<> policy(hh, BubbleFlavor::Household, 2u, 0.0, 2, 5, 0);
+    Bubbles policy(hh, BubbleFlavor::Household, 2u, 0.0, 2, 5, 0);
     REQUIRE_THROWS_WITH(policy.make_layer(), Catch::Matchers::Contains("name"));
     policy.set_ties(BubbleTies::Complete, "household");
 
@@ -43,7 +43,7 @@ EPIWORLD_TEST_CASE("Bubbles - complete bubbles in the household layer", "[bubble
     // -- 2. Agents move into the bubble while the policy is in force -------
     // Window [2, 5): the moves made by the daily event take effect at the end
     // of the step, so the groups seen on day d are the ones of day d's draws.
-    epimodels::ModelSIR<> model("flu", 6, 0.0, 0.0, 0.0);
+    epimodels::ModelSIR model("flu", 6, 0.0, 0.0, 0.0);
     model.verbose_off();
     two_households(model);
     model.add_layer(layer);
@@ -51,8 +51,8 @@ EPIWORLD_TEST_CASE("Bubbles - complete bubbles in the household layer", "[bubble
 
     std::vector< std::vector< size_t > > seen;
     model.add_globalevent(
-        [&seen](Model<> * m) -> void {
-            auto & l = m->get_layer_as< layer::Mixing<> >("household");
+        [&seen](Model * m) -> void {
+            auto & l = m->get_layer_as< layer::Mixing >("household");
             std::vector< size_t > g(6u);
             for (size_t i = 0u; i < 6u; ++i)
                 g[i] = l.get_group(i);
@@ -69,7 +69,7 @@ EPIWORLD_TEST_CASE("Bubbles - complete bubbles in the household layer", "[bubble
         model.run(6, 20);
 
         // The two households are connected, so they bubble together
-        const auto & bid = Bubbles<>::get_from(model)->get_bubble_id();
+        const auto & bid = Bubbles::get_from(model)->get_bubble_id();
         REQUIRE(bid[0] == bid[5]);
         const size_t b = static_cast< size_t >(bid[0]);
 
@@ -89,14 +89,14 @@ EPIWORLD_TEST_CASE("Bubbles - complete bubbles in the household layer", "[bubble
         BubbleTies ties, double h, double b, size_t size, int ndays, int seed
     ) -> std::vector< bool > {
 
-        epimodels::ModelSIR<> m("flu", 6, 0.0, 1.0, 0.0);
+        epimodels::ModelSIR m("flu", 6, 0.0, 1.0, 0.0);
         m.verbose_off();
-        m.assign_virus(0, assign::agents<>({0u}));
+        m.assign_virus(0, assign::agents({0u}));
         m.add_param(0.0, "Network weight");
         two_households(m);
         m.get_layer("network").set_weight("Network weight");
 
-        Bubbles<> p(hh, BubbleFlavor::Household, size, 0.0, 0, -1, 0);
+        Bubbles p(hh, BubbleFlavor::Household, size, 0.0, 0, -1, 0);
         p.set_ties(BubbleTies::Complete, "household", b);
         m.add_layer(p.make_layer(h));
         p.set_ties(ties, "household", b);
@@ -157,11 +157,11 @@ EPIWORLD_TEST_CASE("Bubbles - complete bubbles in the household layer", "[bubble
         const size_t n = 300u;
         const auto hh300 = households(n, 3u);
 
-        epimodels::ModelSIR<> m("flu", n, 0.01, 0.2, 0.1);
+        epimodels::ModelSIR m("flu", n, 0.01, 0.2, 0.1);
         m.verbose_off();
-        m.add_layer(layer::network("network", graph::smallworld<>(6, 0.1)));
+        m.add_layer(layer::network("network", graph::smallworld(6, 0.1)));
 
-        Bubbles<> p(hh300, BubbleFlavor::Household, 2u, 0.0, 3, 20, 4);
+        Bubbles p(hh300, BubbleFlavor::Household, 2u, 0.0, 3, 20, 4);
         p.set_ties(BubbleTies::Complete, "household");
         m.add_layer(p.make_layer());
         m.add_globalevent(p);
@@ -169,10 +169,10 @@ EPIWORLD_TEST_CASE("Bubbles - complete bubbles in the household layer", "[bubble
         std::vector< int > previous;
         size_t checked = 0u, merged = 0u;
         m.add_globalevent(
-            [&](Model<> * mm) -> void {
+            [&](Model * mm) -> void {
 
-                auto & l = mm->get_layer_as< layer::Mixing<> >("household");
-                const auto * b = Bubbles<>::get_from(*mm);
+                auto & l = mm->get_layer_as< layer::Mixing >("household");
+                const auto * b = Bubbles::get_from(*mm);
                 const int day = static_cast< int >(mm->today());
 
                 const bool in_force = (day >= 3) && (day < 20);

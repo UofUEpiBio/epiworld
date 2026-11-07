@@ -3,8 +3,7 @@
 
 using namespace epiworld;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class InterventionMeaslesPEP final : public GlobalEvent<TSeq> {
+class InterventionMeaslesPEP final : public GlobalEvent {
 
 private:
 
@@ -71,7 +70,7 @@ private:
      * PEP.
      * @param model A pointer to the model.
      */
-    void _setup(Model<TSeq> * model);
+    void _setup(Model * model);
 
     // List of agents that will receive PEP
     // This is used to avoid iterating over the agents twice.
@@ -131,9 +130,9 @@ public:
      * identified case are considered, and each group is timed from its own
      * exposure.
      */
-    void operator()(Model<TSeq> * model, int day) override;
+    void operator()(Model * model, int day) override;
 
-    std::unique_ptr< GlobalEvent<TSeq> > clone_ptr() const override;
+    std::unique_ptr< GlobalEvent > clone_ptr() const override;
 
 };
 

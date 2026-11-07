@@ -14,7 +14,7 @@ EPIWORLD_TEST_CASE(
 
     const size_t n = 3000u;
     auto build = []() {
-        measles::ModelMeaslesMixing<> model(
+        measles::ModelMeaslesMixing model(
             n, 30.0 / n, 0.3, 1.0, 0.3, 7.0, 4.0, 5.0, 0.2, 7.0, 2.0, 21,
             .8, .8, 4, 0.5, 1.0, 4u
         );
@@ -37,8 +37,8 @@ EPIWORLD_TEST_CASE(
         model, {10.0, 2.0, 1.0, 2.0, 10.0, 2.0, 1.0, 2.0, 10.0},
         ranges(n, {{0u, 1000u}, {1000u, 2000u}, {2000u, n - 1u}})
     );
-    model.assign_tool(0, assign::group_shares<>("mixing", {0.2, 0.5, 0.8}));
-    auto & mixing = model.get_layer_as< layer::Mixing<> >("mixing");
+    model.assign_tool(0, assign::group_shares("mixing", {0.2, 0.5, 0.8}));
+    auto & mixing = model.get_layer_as< layer::Mixing >("mixing");
 
     model.run(60, 7);
 

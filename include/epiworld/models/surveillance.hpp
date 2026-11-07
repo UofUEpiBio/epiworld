@@ -7,8 +7,7 @@
  * @brief Template for a Surveillance model
  * @ingroup special_models
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSURV : public Model<TSeq> {
+class ModelSURV : public Model {
 
 public:
     // state
@@ -89,12 +88,11 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 
 };
 
-template<typename TSeq>
-inline ModelSURV<TSeq>::ModelSURV(
+inline ModelSURV::ModelSURV(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_fast_uint prevalence,
@@ -122,9 +120,9 @@ inline ModelSURV<TSeq>::ModelSURV(
         LATENT
     };
 
-    GlobalFun<TSeq> surveillance_program = 
+    GlobalFun surveillance_program = 
     [exposed_state](
-        Model<TSeq>* m
+        Model* m
         ) -> void
     {
 
@@ -154,7 +152,7 @@ inline ModelSURV<TSeq>::ModelSURV(
                 continue;
 
             sampled[i] = true;
-            Agent<TSeq> * p = &pop[i];
+            Agent * p = &pop[i];
             
             // If still exposed for the next term
             if (IN(m->get_stage(*p), exposed_state ))
@@ -162,7 +160,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
                 // The ones already isolated stay so
                 ndetected += 1.0;
-                if (m->get_stage(*p) == ModelSURV<TSeq>::ASYMPTOMATIC)
+                if (m->get_stage(*p) == ModelSURV::ASYMPTOMATIC)
                 {
                     ndetected_asympt += 1.0;
                     m->fire(detected_asympt, *p);
@@ -182,7 +180,7 @@ inline ModelSURV<TSeq>::ModelSURV(
                 static_cast<epiworld_double>(nsampled),
                 ndetected,
                 ndetected_asympt,
-                static_cast<epiworld_double>(totals[ModelSURV<TSeq>::ASYMPTOMATIC])
+                static_cast<epiworld_double>(totals[ModelSURV::ASYMPTOMATIC])
             }
             );
 
@@ -202,14 +200,14 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     // The latent and infectious periods are gamma with shape the parameter
     // and scale 1 (mean the parameter, variance the same)
-    auto gamma_days = [](const char * pname) -> DurationFun<TSeq> {
+    auto gamma_days = [](const char * pname) -> DurationFun {
         const std::string name(pname);
-        return [name](Agent<TSeq> &, Model<TSeq> & m) -> int {
+        return [name](Agent &, Model & m) -> int {
             return static_cast< int >(std::lround(m.rgamma(m.par(name), 1.0)));
         };
     };
 
-    Virus<TSeq> covid(vname);
+    Virus covid(vname);
     covid.add_stage("Susceptible");
     covid.add_stage("Latent", stage::carrier);
     covid.add_stage("Symptomatic", stage::infectious);
@@ -223,16 +221,16 @@ inline ModelSURV<TSeq>::ModelSURV(
     covid.infection(SUSCEPTIBLE, LATENT, "Prob of transmission");
 
     // After the latent period, symptoms or not
-    covid.after(LATENT, SYMPTOMATIC, Duration<TSeq>(gamma_days("Latent period")))
+    covid.after(LATENT, SYMPTOMATIC, Duration(gamma_days("Latent period")))
       .name("Latent -> Symptomatic or Asymptomatic")
       .to({
-        {SYMPTOMATIC, Value<TSeq>("Prob of symptoms")},
-        {ASYMPTOMATIC, Value<TSeq>::complement("Prob of symptoms")}
+        {SYMPTOMATIC, Value("Prob of symptoms")},
+        {ASYMPTOMATIC, Value::complement("Prob of symptoms")}
       });
 
     // The infectious period counts from the end of the latent one; isolation
     // keeps counting from there
-    const Duration<TSeq> infectious(gamma_days("Infect period"));
+    const Duration infectious(gamma_days("Infect period"));
     covid.after(SYMPTOMATIC, RECOVERED, infectious);
     covid.after(SYMPTOMATIC_ISOLATED, RECOVERED, infectious.since(SYMPTOMATIC));
     covid.after(ASYMPTOMATIC, RECOVERED, infectious);
@@ -251,25 +249,24 @@ inline ModelSURV<TSeq>::ModelSURV(
 
 
     // Virus ------------------------------------------------------------------
-    this->add_virus(covid, assign::count<TSeq>(prevalence));
+    this->add_virus(covid, assign::count(prevalence));
 
     this->set_user_data({"nsampled", "ndetected", "ndetected_asympt", "nasymptomatic"});
     this->add_globalevent(surveillance_program, "Surveilance program", -1);
    
     // Vaccine tool -----------------------------------------------------------
-    Tool<TSeq> vax("Vaccine");
+    Tool vax("Vaccine");
     vax.set_susceptibility_reduction("Vax efficacy");
     vax.set_transmission_reduction("Vax redux transmission");
 
-    this->add_tool(vax, assign::share<TSeq>(prop_vaccinated));
+    this->add_tool(vax, assign::share(prop_vaccinated));
 
     this->set_name("Surveillance");
 
 
 }
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelSURV<TSeq>::model_info()
+inline ModelInfo ModelSURV::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -308,8 +305,8 @@ inline ModelInfo<TSeq> ModelSURV<TSeq>::model_info()
             ParamInfo::probability("prob_noreinfect", "Prob. no reinfect", 0.9,
                 "Probability that a recovered agent is not reinfected.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelSURV<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelSURV >(
                 a.virus_name(), static_cast< uint_t >(a("n")),
                 static_cast< uint_t >(a("prevalence")), a("efficacy_vax"),
                 a("latent_period"), a("infect_period"), a("prob_symptoms"),

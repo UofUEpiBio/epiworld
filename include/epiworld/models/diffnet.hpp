@@ -10,7 +10,7 @@
  * @brief Template for a Network Diffusion Model
  * @ingroup special_models
  * 
- * @param model A Model<TSeq> object where to set up the SIR.
+ * @param model A Model object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param n Number of agents.
  * @param initial_prevalence epiworld_double Initial prevalence
@@ -18,8 +18,7 @@
  * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  * 
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelDiffNet : public Model<TSeq>
+class ModelDiffNet : public Model
 {
 private:
 public:
@@ -47,8 +46,7 @@ public:
     std::vector< double > params;
 };
 
-template<typename TSeq>
-inline ModelDiffNet<TSeq>::ModelDiffNet(
+inline ModelDiffNet::ModelDiffNet(
     const std::string & innovation_name,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -74,15 +72,15 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     // Adoption: for each innovation, a logit of the exposure (the share of
     // neighbors who adopted it, optionally normalized) plus the agent's
     // features and the baseline probability; one draw picks one, or none
-    InfectionSampler<TSeq> sampler = [](
-        Agent<TSeq> & agent, Model<TSeq> & m
-    ) -> Virus<TSeq> * {
+    InfectionSampler sampler = [](
+        Agent & agent, Model & m
+    ) -> Virus * {
 
         const size_t nviruses = m.get_n_viruses();
-        std::vector< Virus<TSeq>* > innovations(nviruses, nullptr);
+        std::vector< Virus* > innovations(nviruses, nullptr);
         std::vector< double > exposure(nviruses, 0.0);
 
-        ModelDiffNet<TSeq> * diffmodel = model_cast<ModelDiffNet<TSeq>,TSeq>(&m);
+        ModelDiffNet * diffmodel = model_cast<ModelDiffNet>(&m);
 
         size_t n_neighbors = 0u;
         // Every network layer, in the order the layers were added
@@ -125,24 +123,24 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
         }
 
-        const int which = roulette<TSeq>(exposure, &m);
+        const int which = roulette(exposure, &m);
         if (which < 0)
             return nullptr;
 
         // An innovation no neighbor has is adopted from the model's own
-        Virus<TSeq> * v = innovations[static_cast< size_t >(which)];
+        Virus * v = innovations[static_cast< size_t >(which)];
         return (v != nullptr) ? v : m.get_viruses()[static_cast< size_t >(which)].get();
 
     };
 
     this->set_agents_data(agents_data, data_ncols);
 
-    Virus<TSeq> virus(innovation_name);
+    Virus virus(innovation_name);
     virus.add_stage("Non adopters");
     virus.add_stage("Adopters", stage::infectious);
     virus.infection(NONADOPTER, ADOPTER, parname).sampler(sampler);
 
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share(prevalence));
 
     this->set_name(
         std::string("Diffusion of Innovations - ") + innovation_name);

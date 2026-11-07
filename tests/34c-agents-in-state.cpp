@@ -16,7 +16,7 @@ struct Tally {
     std::atomic< int > bad{0};
 };
 
-void check_index(Model<> * m, Tally & tally)
+void check_index(Model * m, Tally & tally)
 {
 
     std::vector< int > counts;
@@ -50,7 +50,7 @@ void check_index(Model<> * m, Tally & tally)
 
 }
 
-void rewire_some_ties(Model<> * m)
+void rewire_some_ties(Model * m)
 {
     int day = m->today();
     if ((day % 7) == 3)
@@ -70,7 +70,7 @@ EPIWORLD_TEST_CASE("Agents in state - the index follows the model", "[agents-in-
 
         Tally tally;
 
-        epimodels::ModelSEIR<> model("flu", 1000, 0.02, 0.3, 3.0, 0.2);
+        epimodels::ModelSEIR model("flu", 1000, 0.02, 0.3, 3.0, 0.2);
         model.seed(42);
         model.add_layer(layer::network(
             "network", rgraph_smallworld(1000, 6, 0.05, false, model)
@@ -83,7 +83,7 @@ EPIWORLD_TEST_CASE("Agents in state - the index follows the model", "[agents-in-
 
         model.add_globalevent(rewire_some_ties, "rewire some ties");
         model.add_globalevent(
-            [&tally](Model<> * m) -> void { check_index(m, tally); },
+            [&tally](Model * m) -> void { check_index(m, tally); },
             "check index"
         );
 

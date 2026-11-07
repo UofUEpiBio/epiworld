@@ -14,7 +14,7 @@ using Batches = std::vector< std::pair< size_t, std::vector< size_t > > >;
 
 // Batches of each day, in dispatch order, with the contacts sorted
 std::vector< Batches > collect(
-    epimodels::ModelSIR<> & model,
+    epimodels::ModelSIR & model,
     TransmissionMode mode,
     int ndays,
     TransmissionMode * used
@@ -26,7 +26,7 @@ std::vector< Batches > collect(
     model.set_transmission_mode(mode);
     model.verbose_off();
     model.set_post_sampling(
-        [&days](Agent<> * p, const SampledContactsView & c, Model<> * m) -> void {
+        [&days](Agent * p, const SampledContactsView & c, Model * m) -> void {
             std::vector< size_t > ids(c.begin(), c.end());
             std::sort(ids.begin(), ids.end());
             days[static_cast< size_t >(m->today() - 1)].emplace_back(
@@ -50,7 +50,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - push and pull agree", "[post-sampli
     {
 
         auto run = [](TransmissionMode mode, TransmissionMode * used) {
-            epimodels::ModelSIR<> model("Virus", 400, 0.05, 0.0, 0.0);
+            epimodels::ModelSIR model("Virus", 400, 0.05, 0.0, 0.0);
             model.add_layer(layer::network(
                 "network", rgraph_smallworld(400, 6, 0.1, false, model)
             ));
@@ -87,11 +87,11 @@ EPIWORLD_TEST_CASE("Post-sampling callback - push and pull agree", "[post-sampli
 
         auto run = [](TransmissionMode mode, TransmissionMode * used) {
 
-            epimodels::ModelSIR<> model("Virus", 12, 0.0, 1.0, 0.0);
+            epimodels::ModelSIR model("Virus", 12, 0.0, 1.0, 0.0);
 
-            Virus<> v = model.get_virus(0);
+            Virus v = model.get_virus(0);
             model.rm_virus(0);
-            model.add_virus(v, dist_virus<>(0));
+            model.add_virus(v, dist_virus(0));
 
             std::vector< int > source, target;
             for (int i = 0; i < 12; ++i)

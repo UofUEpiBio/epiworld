@@ -11,7 +11,6 @@
 #include "naturalhistory-bones.hpp"
 #include "agent-bones.hpp"
 #include "virus-bones.hpp"
-#include "viruses-bones.hpp"
 #include "tool-bones.hpp"
 #include "database-bones.hpp"
 #include "queue-bones.hpp"
@@ -20,13 +19,11 @@
 #include "postsampling-bones.hpp"
 #include "assign.hpp"
 
-template<typename TSeq>
 class AgentsSample;
 
 class AdjList;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
+inline std::function<void(size_t,Model*)> make_save_run(
     std::string fmt = "%03lu-episimulation.csv",
     bool total_hist = true,
     bool virus_info = false,
@@ -41,12 +38,6 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
     bool outbreak_size = false,
     bool hospitalizations = false
     );
-
-// template<typename TSeq>
-// class VirusPtr;
-
-// template<typename TSeq>
-// class ToolPtr;
 
 /**
  * @brief Read-only view of a contiguous run of agent ids.
@@ -75,25 +66,23 @@ public:
  * The model class provides the wrapper that puts together `Agent`, `Virus`, and
  * `Tools`.
  *
- * @tparam TSeq Type of sequence. In principle, users can build models in which
  * virus and human sequence is represented as numeric vectors (if needed.)
  */
-template<typename TSeq>
 class Model {
-    friend class Agent<TSeq>;
-    friend class AgentsSample<TSeq>;
-    friend class DataBase<TSeq>;
-    friend class Queue<TSeq>;
-    friend class layer::Network<TSeq>;
-    friend class layer::Mixing<TSeq>;
+    friend class Agent;
+    friend class AgentsSample;
+    friend class DataBase;
+    friend class Queue;
+    friend class layer::Network;
+    friend class layer::Mixing;
 
 protected:
 
     std::string name = ""; ///< Name of the model
 
-    DataBase<TSeq> db = DataBase<TSeq>(*this);
+    DataBase db = DataBase(*this);
 
-    std::vector< Agent<TSeq> > population = {};
+    std::vector< Agent > population = {};
 
     /**
      * @brief Creates the population: `n` agents, in the baseline state.
@@ -103,15 +92,15 @@ protected:
     void set_population_size(size_t n);
 
     /**
-     * @name Auxiliary variables for AgentsSample<TSeq> iterators
+     * @name Auxiliary variables for AgentsSample iterators
      *
-     * @details These variables+objects are used by the AgentsSample<TSeq>
+     * @details These variables+objects are used by the AgentsSample
      * class for building efficient iterators over agents. The idea is to
      * reduce the memory allocation, so only during the first call of
-     * AgentsSample<TSeq>::AgentsSample(Model<TSeq>) these vectors are allocated.
+     * AgentsSample::AgentsSample(Model) these vectors are allocated.
      */
     ///@{
-    std::vector< Agent<TSeq> * > sampled_population;
+    std::vector< Agent * > sampled_population;
     size_t sampled_population_n = 0u;
     std::vector< size_t > population_left;
     size_t population_left_n = 0u;
@@ -130,10 +119,10 @@ protected:
     size_t agents_data_ncols = 0u;
     ///@}
 
-    std::vector< VirusPtr<TSeq> > viruses = {};
-    std::vector< ToolPtr<TSeq> > tools = {};
-    std::vector< Assign<TSeq> > virus_assign = {}; ///< [virus] Who gets it at each reset
-    std::vector< Assign<TSeq> > tool_assign = {};  ///< [tool] Who gets it at each reset
+    std::vector< VirusPtr > viruses = {};
+    std::vector< ToolPtr > tools = {};
+    std::vector< Assign > virus_assign = {}; ///< [virus] Who gets it at each reset
+    std::vector< Assign > tool_assign = {};  ///< [tool] Who gets it at each reset
 
     std::shared_ptr< epi_xoshiro256ss > engine = std::make_shared< epi_xoshiro256ss >();
 
@@ -169,7 +158,7 @@ protected:
     epiworld_fast_uint ndays = 0;
     Progress pb;
 
-    std::vector< UpdateFun<TSeq> >    state_fun = {};                  ///< Functions to update states
+    std::vector< UpdateFun >    state_fun = {};                  ///< Functions to update states
     std::vector< std::string >        states_labels = {};              ///< Labels of the states
 
     epiworld_fast_uint nstates = 0u;
@@ -197,10 +186,10 @@ protected:
     void chrono_start();
     void chrono_end();
 
-    std::vector<GlobalEventPtr<TSeq>> globalevents;
+    std::vector<GlobalEventPtr> globalevents;
 
     /// Contact layers (see `add_layer()`), deep-copied with the model
-    std::vector< std::shared_ptr< ContactLayer<TSeq> > > layers;
+    std::vector< std::shared_ptr< ContactLayer > > layers;
 
     /**
      * @name Network layers
@@ -211,8 +200,8 @@ protected:
      * degree).
      */
     ///@{
-    std::vector< layer::Network<TSeq> * > network_layers;
-    std::vector< layer::Mixing<TSeq> * > group_layers; ///< Within-group mixing layers (the queue follows them)
+    std::vector< layer::Network * > network_layers;
+    std::vector< layer::Mixing * > group_layers; ///< Within-group mixing layers (the queue follows them)
     std::vector< size_t > layer_contacts; ///< Scratch of `sample_virus()`
     bool pull_only = false; ///< See `has_pull_only_layer()`
     bool queue_blind = false; ///< See `has_queue_blind_layer()`
@@ -220,19 +209,19 @@ protected:
 
     /// Adds the exposures of `contacts` to the arrays; returns their number.
     size_t add_exposures(
-        Agent<TSeq> * agent,
-        const ContactLayer<TSeq> * layer,
+        Agent * agent,
+        const ContactLayer * layer,
         const size_t * contacts,
         size_t n,
         size_t n_exposures
     );
 
     /// One draw over the first `n_exposures` exposures.
-    Virus<TSeq> * draw_exposure(size_t n_exposures);
+    Virus * draw_exposure(size_t n_exposures);
     void layers_attach(); ///< Points the layers at this model, lists the networks
     void layers_classify(); ///< Sets `pull_only`, `queue_blind` and `group_layers`
     void layers_detach(); ///< Leaves the layers without a model (they may outlive it)
-    void add_layer_ptr(std::shared_ptr< ContactLayer<TSeq> > layer);
+    void add_layer_ptr(std::shared_ptr< ContactLayer > layer);
     size_t network_degree(size_t id) const; ///< Ties of agent `id`, all networks
 
     /**
@@ -266,12 +255,12 @@ protected:
     );
     ///@}
 
-    Queue<TSeq> queue;
+    Queue queue;
     bool use_queuing   = true;
     size_t sim_id = 0u;
     void set_sim_id(size_t id);
 
-    PostSamplingFun<TSeq> post_sampling_fun = nullptr; ///< See set_post_sampling()
+    PostSamplingFun post_sampling_fun = nullptr; ///< See set_post_sampling()
     bool post_sampling_on = false;                     ///< post_sampling_fun is set
     PostSamplingScratch post_sampling_scratch;         ///< Never copied
     void post_sampling_dispatch();
@@ -308,7 +297,7 @@ protected:
     bool state_index_ready = false;
 
     void state_index_build();
-    void state_index_update(Agent<TSeq> * p, unsigned int state_old, bool had_virus);
+    void state_index_update(Agent * p, unsigned int state_old, bool had_virus);
     void state_index_move(size_t id, unsigned int state_old, unsigned int state_new);
     AgentIdsView state_index_members(size_t state) const;
     void state_index_degree(size_t id, int delta);
@@ -343,7 +332,7 @@ protected:
         size_t id;
         double odds;                // Sum of p / (1 - p) over the contacts
         unsigned int n_certain;     // Contacts with p >= 1
-        Virus<TSeq> * candidate;    // Infector's virus drawn so far
+        Virus * candidate;    // Infector's virus drawn so far
         int layer;                  // Layer of the candidate's contact
     };
 
@@ -371,12 +360,12 @@ protected:
      * it.
      */
     ///@{
-    std::shared_ptr< const NaturalHistory<TSeq> > nh = nullptr;
+    std::shared_ptr< const NaturalHistory > nh = nullptr;
     std::vector< int > nh_until;    ///< [agent] Day the stage's duration ends
     std::vector< int > nh_entered;  ///< [agent * stage] Day entered, this infection (-1: not)
     std::vector< int > nh_episode;  ///< [agent] Infections so far
     std::vector< char > nh_queue;   ///< [stage] Queue mode: 0 none, 1 self, 2 everyone
-    Assign<TSeq> nh_initial;        ///< See set_initial()
+    Assign nh_initial;        ///< See set_initial()
     int nh_pending = -1;            ///< Transition of the next event (see _add_event())
 
     /// Event: a seeded infection, and an initial placement (status transitions
@@ -385,7 +374,7 @@ protected:
     static constexpr int NH_INITIAL = std::numeric_limits< int >::min() + 1;
 
     /// The statuses (`nullptr`: one status, "Free")
-    std::shared_ptr< const Statuses<TSeq> > st = nullptr;
+    std::shared_ptr< const Statuses > st = nullptr;
     std::vector< int > nh_status_until; ///< [agent] Day the status's duration ends
     std::vector< int > nh_status_since; ///< [agent] Day the status was entered
     std::vector< int > nh_status_sod;   ///< [agent] Status at the start of the day it last changed
@@ -393,7 +382,7 @@ protected:
     struct Reaction {
         Trigger on;
         int transition;                          ///< Fired, or (-1) ...
-        std::function< void(Agent<TSeq> &, Model<TSeq> &) > fun; ///< ... called
+        std::function< void(Agent &, Model &) > fun; ///< ... called
     };
     std::vector< Reaction > nh_reactions;
 
@@ -413,32 +402,32 @@ protected:
             static_cast< int >(nh->get_n_transitions()) + nh_status_tr(t) : t;
     }
     void nh_build_states();
-    void nh_react(Agent<TSeq> & p, int transition, int stage_old);
+    void nh_react(Agent & p, int transition, int stage_old);
     bool nh_removed(int stage) const;
 
-    void nh_install(std::shared_ptr< NaturalHistory<TSeq> > def);
+    void nh_install(std::shared_ptr< NaturalHistory > def);
     void nh_reset();
-    void nh_step(Agent<TSeq> & p);
+    void nh_step(Agent & p);
 
     /// The natural history whose values apply to `p`: its virus's, or (no
     /// virus) the model's
-    const NaturalHistory<TSeq> & nh_of(const Agent<TSeq> & p) const
+    const NaturalHistory & nh_of(const Agent & p) const
     {
         const auto & v = p.get_virus();
         return (v && v->nh_def) ? *v->nh_def : *nh;
     }
-    void nh_propose(int transition, Agent<TSeq> & p, Virus<TSeq> * virus = nullptr);
-    void nh_enter(Agent<TSeq> & p, unsigned int state_old, int transition);
-    void nh_queue_move(Agent<TSeq> & p, unsigned int state_old);
+    void nh_propose(int transition, Agent & p, Virus * virus = nullptr);
+    void nh_enter(Agent & p, unsigned int state_old, int transition);
+    void nh_queue_move(Agent & p, unsigned int state_old);
     void nh_initial_place();
-    epiworld_double nh_infection_prob(Agent<TSeq> & target, const Virus<TSeq> & v);
+    epiworld_double nh_infection_prob(Agent & target, const Virus & v);
     ///@}
 
     /**
      * @brief Variables used to keep track of the events
      * to be made regarding viruses.
      */
-    std::vector< Event<TSeq> > events = {};
+    std::vector< Event > events = {};
     epiworld_fast_uint nactions = 0u;
 
     /**
@@ -452,9 +441,9 @@ protected:
       * @param action_ Action to execute when processing the event
      */
     void _add_event(
-        Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
+        Agent * agent_,
+        VirusPtr virus_,
+        ToolPtr tool_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
         EventAction action_,
@@ -468,11 +457,11 @@ protected:
      * event action (add/remove virus or tool, or change state).
      */
     ///@{
-    void _event_add_virus(Event<TSeq> & a);
-    void _event_add_tool(Event<TSeq> & a);
-    void _event_rm_virus(Event<TSeq> & a);
-    void _event_rm_tool(Event<TSeq> & a);
-    void _event_change_state(Event<TSeq> & a);
+    void _event_add_virus(Event & a);
+    void _event_add_tool(Event & a);
+    void _event_rm_virus(Event & a);
+    void _event_rm_tool(Event & a);
+    void _event_change_state(Event & a);
     ///@}
 
     /**
@@ -485,16 +474,16 @@ protected:
      *
      */
     virtual epiworld_double susceptibility_reduction_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
+        Agent * agent, VirusPtr & virus
     );
     virtual epiworld_double transmission_reduction_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
+        Agent * agent, VirusPtr & virus
     );
     virtual epiworld_double recovery_enhancer_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
+        Agent * agent, VirusPtr & virus
     );
     virtual epiworld_double death_reduction_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
+        Agent * agent, VirusPtr & virus
     );
 
     /**
@@ -502,7 +491,7 @@ protected:
      *
      * @param copy
      */
-    virtual std::unique_ptr<Model<TSeq>> clone_ptr();
+    virtual std::unique_ptr<Model> clone_ptr();
 
     /// For the models built on this class, which set their population.
     Model();
@@ -520,8 +509,8 @@ public:
     ///@{
     std::vector< epiworld_double > array_double_tmp =
         std::vector< epiworld_double >(1024u * 2u);
-    std::vector< Virus<TSeq> * > array_virus_tmp =
-        std::vector< Virus<TSeq> * >(1024u);
+    std::vector< Virus * > array_virus_tmp =
+        std::vector< Virus * >(1024u);
     std::vector< int > array_layer_tmp =
         std::vector< int >(1024u); ///< Layer of each exposure
 
@@ -531,14 +520,14 @@ public:
 
     /// A model with `n` agents.
     explicit Model(size_t n);
-    Model(const Model<TSeq> & m);
-    Model(Model<TSeq> && m);
-    Model<TSeq> & operator=(const Model<TSeq> & m);
+    Model(const Model & m);
+    Model(Model && m);
+    Model & operator=(const Model & m);
 
     virtual ~Model() { layers_detach(); };
 
-    DataBase<TSeq> & get_db();
-    const DataBase<TSeq> & get_db() const;
+    DataBase & get_db();
+    const DataBase & get_db() const;
     epiworld_double operator()(std::string_view pname) const;
 
     size_t size() const;
@@ -656,16 +645,16 @@ public:
      * Mutations during a run add variants after them, which the next run
      * (or the next `add_virus()`) drops.
      */
-    void add_virus(const Virus<TSeq> & v, Assign<TSeq> a = Assign<TSeq>());
+    void add_virus(const Virus & v, Assign a = Assign());
 
     /// Adds a tool, and who gets it at the start of each run (default: no one).
-    void add_tool(const Tool<TSeq> & t, Assign<TSeq> a = Assign<TSeq>());
+    void add_tool(const Tool & t, Assign a = Assign());
 
     /// Replaces who gets virus `id` (e.g., the virus of a built-in model).
-    void assign_virus(size_t id, Assign<TSeq> a);
+    void assign_virus(size_t id, Assign a);
 
     /// Replaces who gets tool `id`.
-    void assign_tool(size_t id, Assign<TSeq> a);
+    void assign_tool(size_t id, Assign a);
 
     void rm_virus(size_t virus_pos);
     void rm_tool(size_t tool_pos);
@@ -675,15 +664,12 @@ public:
      * @name Accessing population of the model
      */
     ///@{
-    std::vector< Agent<TSeq> > & get_agents(); ///< Returns a reference to the vector of agents.
+    std::vector< Agent > & get_agents(); ///< Returns a reference to the vector of agents.
 
-    Agent<TSeq> & get_agent(size_t i);
+    Agent & get_agent(size_t i);
 
     std::vector< epiworld_fast_uint > get_agents_states() const; ///< Returns a vector with the states of the agents.
 
-    std::vector< Viruses_const<TSeq> > get_agents_viruses() const; ///< Returns a const vector with the viruses of the agents.
-
-    std::vector< Viruses<TSeq> > get_agents_viruses(); ///< Returns a vector with the viruses of the agents.
 
 
 
@@ -700,15 +686,15 @@ public:
     void update_state();
     void mutate_virus();
     virtual void next();
-    virtual Model<TSeq> & run(
+    virtual Model & run(
         epiworld_fast_uint ndays,
         int seed = -1
     ); ///< Runs the simulation (after initialization)
-    Model<TSeq> & run_multiple( ///< Multiple runs of the simulation
+    Model & run_multiple( ///< Multiple runs of the simulation
         epiworld_fast_uint ndays,
         epiworld_fast_uint nexperiments,
         int seed_ = -1,
-        std::function<void(size_t,Model<TSeq>*)> fun = make_save_run<TSeq>(),
+        std::function<void(size_t,Model*)> fun = make_save_run(),
         bool reset = true,
         bool verbose = true,
         int nthreads = 1
@@ -733,8 +719,8 @@ public:
     size_t get_sim_id() const;
     void set_ndays(epiworld_fast_uint ndays);
     bool get_verbose() const;
-    Model<TSeq> & verbose_off();
-    Model<TSeq> & verbose_on();
+    Model & verbose_off();
+    Model & verbose_on();
     int today() const; ///< The current time of the model
 
 
@@ -788,7 +774,7 @@ public:
      *
      */
     virtual void reset();
-    const Model<TSeq> & print(bool lite = false) const;
+    const Model & print(bool lite = false) const;
 
     /**
      * @brief The number of the engine's states: one per pair of stage (of the
@@ -805,7 +791,7 @@ public:
     ///@{
 
     /// The natural history of the model's viruses (`nullptr` if none has one).
-    const NaturalHistory<TSeq> * get_natural_history() const { return nh.get(); }
+    const NaturalHistory * get_natural_history() const { return nh.get(); }
 
     /**
      * @brief Fires a declared transition on an agent, applied at the end of
@@ -814,7 +800,7 @@ public:
      * of the transition's sources. An infection is not fired: seed instead.
      * @return Whether the agent was in a source when fired.
      */
-    bool fire(int transition, Agent<TSeq> & agent);
+    bool fire(int transition, Agent & agent);
 
     /**
      * @brief Places agents left without a virus in stages at the start of
@@ -823,7 +809,7 @@ public:
      * are those left without a virus, in the first stage. Replaces what was
      * set before.
      */
-    void set_initial(Assign<TSeq> a);
+    void set_initial(Assign a);
 
     /// Day agent `id` entered `stage` in its current (or last) infection (-1: not).
     int get_stage_entered(size_t id, int stage) const;
@@ -835,17 +821,17 @@ public:
     int get_episode(size_t id) const;
 
     /// The stage and the status of an agent.
-    int get_stage(const Agent<TSeq> & agent) const;
-    int get_status(const Agent<TSeq> & agent) const;
+    int get_stage(const Agent & agent) const;
+    int get_status(const Agent & agent) const;
 
     /**
      * @brief Sets the model's statuses (see `Statuses`): where agents are,
      * and the transitions between them. Between runs only.
      */
-    void set_statuses(Statuses<TSeq> s);
+    void set_statuses(Statuses s);
 
     /// The statuses (`nullptr` if the model has one, "Free").
-    const Statuses<TSeq> * get_statuses() const { return st.get(); }
+    const Statuses * get_statuses() const { return st.get(); }
 
     /**
      * @brief When `on` happens to an agent, fire `transition` on it (or call
@@ -856,7 +842,7 @@ public:
      * reads the one at the start of the day).
      */
     void react(Trigger on, int transition);
-    void react(Trigger on, std::function< void(Agent<TSeq> &, Model<TSeq> &) > fun);
+    void react(Trigger on, std::function< void(Agent &, Model &) > fun);
 
     /// A transition's id (stage or status), by name.
     int transition_id(std::string_view name) const;
@@ -911,11 +897,11 @@ public:
      * virus, no layer recorded).
      * @return The virus transmitted, or `nullptr` if none is.
      */
-    Virus<TSeq> * sample_virus(
-        Agent<TSeq> * agent,
+    Virus * sample_virus(
+        Agent * agent,
         const size_t * contacts,
         size_t n,
-        const ContactLayer<TSeq> * layer = nullptr
+        const ContactLayer * layer = nullptr
     );
 
     /**
@@ -940,7 +926,7 @@ public:
      * (networks only) gives the same distribution.
      * @throws std::logic_error if `agent` carries a virus.
      */
-    Virus<TSeq> * sample_virus(Agent<TSeq> * agent);
+    Virus * sample_virus(Agent * agent);
 
     /**
      * @name Network transmission mode
@@ -975,11 +961,11 @@ public:
      * @throws std::range_error for a negative or infinite `kappa`.
      */
     ///@{
-    Model<TSeq> & set_transmission_mode(
+    Model & set_transmission_mode(
         TransmissionMode mode,
         double kappa = EPI_DEFAULT_TRANSMISSION_KAPPA
     );
-    Model<TSeq> & set_transmission_mode(
+    Model & set_transmission_mode(
         std::string_view mode,
         double kappa = EPI_DEFAULT_TRANSMISSION_KAPPA
     );
@@ -1050,7 +1036,7 @@ public:
     epiworld_double add_param(
         epiworld_double initial_val, std::string pname, bool overwrite = false
     );
-    Model<TSeq> & read_params(std::string fn, bool overwrite = false);
+    Model & read_params(std::string fn, bool overwrite = false);
     epiworld_double get_param(std::string_view pname) const;
     bool has_param(std::string_view pname) const;
     void set_param(std::string_view pname, epiworld_double val);
@@ -1079,7 +1065,7 @@ public:
     void set_user_data(std::vector< std::string > names);
     void add_user_data(epiworld_fast_uint j, epiworld_double x);
     void add_user_data(std::vector< epiworld_double > x);
-    UserData<TSeq> & get_user_data();
+    UserData & get_user_data();
     ///@}
 
     /**
@@ -1094,17 +1080,17 @@ public:
      * at the end of the indicated date.
      */
     void add_globalevent(
-        std::function<void(Model<TSeq>*)> fun,
+        std::function<void(Model*)> fun,
         std::string name = "A global action",
         int date = -99
         );
 
     void add_globalevent(
-        GlobalEvent<TSeq> & action
+        GlobalEvent & action
     );
 
-    GlobalEvent<TSeq> & get_globalevent(std::string name); ///< Retrieve a global action by name
-    GlobalEvent<TSeq> & get_globalevent(size_t i); ///< Retrieve a global action by index
+    GlobalEvent & get_globalevent(std::string name); ///< Retrieve a global action by name
+    GlobalEvent & get_globalevent(size_t i); ///< Retrieve a global action by index
     bool has_globalevent(std::string_view name) const; ///< Whether a global action by that name exists
     size_t get_n_globalevents() const; ///< Number of global actions registered
 
@@ -1142,8 +1128,8 @@ public:
     size_t get_n_layers() const; ///< Number of contact layers
     bool has_layer(std::string_view name) const; ///< Whether a layer by that name exists
     size_t get_layer_id(std::string_view name) const; ///< Id of a layer by name (throws if absent)
-    ContactLayer<TSeq> & get_layer(size_t id); ///< Retrieve a layer by id
-    ContactLayer<TSeq> & get_layer(std::string_view name); ///< Retrieve a layer by name
+    ContactLayer & get_layer(size_t id); ///< Retrieve a layer by id
+    ContactLayer & get_layer(std::string_view name); ///< Retrieve a layer by name
 
     /// Retrieve a layer as its own type (unchecked cast; ids are cheaper than names)
     template<typename TLayer>
@@ -1162,7 +1148,7 @@ public:
     void update_layers();
 
     /// The network layers of the model, in the order they were added.
-    const std::vector< layer::Network<TSeq> * > & get_network_layers() const
+    const std::vector< layer::Network * > & get_network_layers() const
     {
         return network_layers;
     }
@@ -1180,9 +1166,9 @@ public:
      */
     ////@{
     void queuing_on(); ///< Activates the queuing system (default.)
-    Model<TSeq> & queuing_off(); ///< Deactivates the queuing system.
+    Model & queuing_off(); ///< Deactivates the queuing system.
     bool is_queuing_on() const; ///< Query if the queuing system is on.
-    Queue<TSeq> & get_queue(); ///< Retrieve the `Queue` object.
+    Queue & get_queue(); ///< Retrieve the `Queue` object.
     ///@}
 
     /**
@@ -1199,8 +1185,8 @@ public:
      * not use it: a layer keeps its own log (`ContactLayer::enable_tracing()`).
      */
     ///@{
-    Model<TSeq> & set_post_sampling(PostSamplingFun<TSeq> fun); ///< Install a callback (an empty function clears it).
-    Model<TSeq> & clear_post_sampling(); ///< Remove the callback.
+    Model & set_post_sampling(PostSamplingFun fun); ///< Install a callback (an empty function clears it).
+    Model & clear_post_sampling(); ///< Remove the callback.
     bool has_post_sampling() const { return post_sampling_on; } ///< Is a callback installed?
 
     /// Reports that `infectious_id` was in contact with `contacted_id`. Samplers
@@ -1213,12 +1199,12 @@ public:
     );
     ///@}
 
-    const std::vector< VirusPtr<TSeq> > & get_viruses() const;
-    const std::vector< ToolPtr<TSeq> > & get_tools() const;
-    Virus<TSeq> & get_virus(size_t id);
-    Virus<TSeq> & get_virus(std::string_view name);
-    Tool<TSeq> & get_tool(size_t id);
-    Tool<TSeq> & get_tool(std::string_view name);
+    const std::vector< VirusPtr > & get_viruses() const;
+    const std::vector< ToolPtr > & get_tools() const;
+    Virus & get_virus(size_t id);
+    Virus & get_virus(std::string_view name);
+    Tool & get_tool(size_t id);
+    Tool & get_tool(std::string_view name);
 
     bool has_virus(std::string_view name) const;
     bool has_tool(std::string_view name) const;
@@ -1246,8 +1232,8 @@ public:
     void set_name(std::string name);
     std::string get_name() const;
 
-    bool operator==(const Model<TSeq> & other) const;
-    bool operator!=(const Model<TSeq> & other) const {return !operator==(other);};
+    bool operator==(const Model & other) const;
+    bool operator!=(const Model & other) const {return !operator==(other);};
 
     /**
      * @brief Executes the stored action
@@ -1284,7 +1270,7 @@ public:
      * - If the agent has no tools, a single record with tool_id = -1 and
      *   weight = 1.0
      */
-    void record_hospitalization(Agent<TSeq> & agent);
+    void record_hospitalization(Agent & agent);
 
     /**
      * @brief Get the full time series of hospitalization data.

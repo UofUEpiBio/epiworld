@@ -14,13 +14,13 @@ EPIWORLD_TEST_CASE("Exposed agents do not transmit", "[seir-exposed]") {
     for (const std::string mode : {"pull", "push"}) {
         for (const bool with_death : {false, true}) {
 
-            std::unique_ptr< Model<> > model;
+            std::unique_ptr< Model > model;
             if (with_death)
-                model = std::make_unique< epimodels::ModelSEIRD<> >(
+                model = std::make_unique< epimodels::ModelSEIRD >(
                     "virus", n, 0.01, 1.0, 1e9, 0.1, 0.01
                 );
             else
-                model = std::make_unique< epimodels::ModelSEIR<> >(
+                model = std::make_unique< epimodels::ModelSEIR >(
                     "virus", n, 0.01, 1.0, 1e9, 0.1
                 );
 

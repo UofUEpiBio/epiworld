@@ -13,10 +13,10 @@ namespace {
 
 using Mates = std::map< size_t, std::pair< int, int > >; // last day, days
 
-Mates mates(const layer::Mixing<> & l, size_t agent, int d1, int d2)
+Mates mates(const layer::Mixing & l, size_t agent, int d1, int d2)
 {
     // One buffer for every query, as a tracing loop would keep
-    static std::vector< layer::Mixing<>::Groupmate > buffer;
+    static std::vector< layer::Mixing::Groupmate > buffer;
     l.groupmates_of(agent, d1, d2, buffer);
 
     Mates out;
@@ -25,7 +25,7 @@ Mates mates(const layer::Mixing<> & l, size_t agent, int d1, int d2)
     return out;
 }
 
-std::vector< layer::Mixing<>::Groupmate > unused;
+std::vector< layer::Mixing::Groupmate > unused;
 
 }
 
@@ -34,29 +34,29 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
     // -- moves ----------------------------------------------------------------
     // Two households of three; agent 2 moves to the second on day 3 and
     // back on day 6, and agent 4 leaves the layer on day 5.
-    epimodels::ModelSIR<> sir("flu", 6u, 0.0, 0.5, 0.1);
+    epimodels::ModelSIR sir("flu", 6u, 0.0, 0.5, 0.1);
     sir.verbose_off();
 
-    auto hh = layer::mixing<>("households");
+    auto hh = layer::mixing("households");
     hh->set_groups(assign::labels({0, 0, 0, 1, 1, 1}), 2u);
     hh->set_contact_prob(1.0);
     hh->enable_tracing();
     sir.add_layer(hh);
 
-    using L = layer::Mixing<>;
-    sir.add_globalevent([](Model<> * m) {
+    using L = layer::Mixing;
+    sir.add_globalevent([](Model * m) {
         m->get_layer_as< L >("households").set_group(2u, 1u);
     }, "move", 3);
-    sir.add_globalevent([](Model<> * m) {
+    sir.add_globalevent([](Model * m) {
         m->get_layer_as< L >("households").set_group(4u, L::NO_GROUP);
     }, "leave", 5);
-    sir.add_globalevent([](Model<> * m) {
+    sir.add_globalevent([](Model * m) {
         m->get_layer_as< L >("households").set_group(2u, 0u);
     }, "back", 6);
 
     // Agent 0 is moved four times on day 3 (as separate events could do),
     // ending where it started: no move at all
-    sir.add_globalevent([](Model<> * m) {
+    sir.add_globalevent([](Model * m) {
         auto & l = m->get_layer_as< L >("households");
         l.set_group(0u, 1u);
         l.set_group(0u, 0u);
@@ -90,14 +90,14 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
 
     // Moves of one agent in one step count once (review of #333): agent 1
     // leaves agent 0 on day 3 after three moves
-    epimodels::ModelSIR<> trio("flu", 3u, 0.0, 0.5, 0.1);
+    epimodels::ModelSIR trio("flu", 3u, 0.0, 0.5, 0.1);
     trio.verbose_off();
-    auto th = layer::mixing<>("households");
+    auto th = layer::mixing("households");
     th->set_groups(assign::labels({0, 0, 1}), 2u);
     th->set_contact_prob(1.0);
     th->enable_tracing();
     trio.add_layer(th);
-    trio.add_globalevent([](Model<> * m) {
+    trio.add_globalevent([](Model * m) {
         auto & l = m->get_layer_as< L >("households");
         l.set_group(1u, 1u);
         l.set_group(1u, 0u);
@@ -118,7 +118,7 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
     REQUIRE_THROWS(hh->groupmates_of(0u, 0, 2, unused));
     hh->enable_tracing();
 
-    auto everyone = layer::mixing<>("everyone");
+    auto everyone = layer::mixing("everyone");
     everyone->set_groups(assign::labels(std::vector< size_t >(6u, 0u)), 1u);
     everyone->set_contact_matrix({1.0});
     everyone->enable_tracing();
@@ -131,7 +131,7 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
     // hospitalized are absent.
     const size_t n = 400u;
     const int ndays = 40;
-    using Q = epimodels::ModelSEIRQuarantine<>;
+    using Q = epimodels::ModelSEIRQuarantine;
 
     Q model(
         "v", n, 0.05,
@@ -152,7 +152,7 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
     for (size_t i = 0u; i < n; ++i)
         groups[i] = i / 4u;
 
-    auto homes = layer::mixing<>("households");
+    auto homes = layer::mixing("households");
     homes->set_groups(assign::labels(groups), n / 4u);
     homes->set_contact_prob(1.0);
     model.add_layer(homes);
@@ -160,7 +160,7 @@ EPIWORLD_TEST_CASE("Mixing layer - group history", "[layer-mixing-history]") {
     // Presence on day d + 1, from the states at the end of day d (the
     // model's own quarantine process runs first)
     std::vector< std::vector< bool > > present(ndays + 2, std::vector< bool >(n, true));
-    model.add_globalevent([&present](Model<> * m) {
+    model.add_globalevent([&present](Model * m) {
         for (const auto & a : m->get_agents())
         {
             present[m->today() + 1][a.get_id()] = (m->get_status(a) == Q::FREE);

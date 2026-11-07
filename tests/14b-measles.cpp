@@ -8,7 +8,7 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
     
     // Queuing doesn't matter and get results that are meaningful
     int n_seeds = 5;
-    measles::ModelMeaslesSchool<> model_0(
+    measles::ModelMeaslesSchool model_0(
         1000,    // Number of agents
         n_seeds, // Number of initial cases
         2.0,     // Contact rate

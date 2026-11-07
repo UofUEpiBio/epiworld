@@ -10,7 +10,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
         0.0, 0.0, 40.0
     };
 
-    epimodels::ModelSEIR<> model(
+    epimodels::ModelSEIR model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
         0.01,  // epiworld_double prevalence,
@@ -20,13 +20,13 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     );
     // Three groups
     add_group_mixing(model, contact_matrix, blocks({0u, 3000u, 6000u, 10000u}));
-    auto & mixing = model.get_layer_as< layer::Mixing<> >("mixing");
+    auto & mixing = model.get_layer_as< layer::Mixing >("mixing");
 
     // Copy the original virus
-    Virus<> v1 = model.get_virus(0);
+    Virus v1 = model.get_virus(0);
     model.rm_virus(0);
 
-    model.add_virus(v1, dist_virus<>(0));
+    model.add_virus(v1, dist_virus(0));
 
 
     // Running and checking the results
@@ -120,7 +120,7 @@ EPIWORLD_TEST_CASE("SEIRMixing", "[SEIR-mixing]") {
     for (size_t i = 0u; i < model.size(); ++i)
     {
         const size_t g = mixing.get_group(i);
-        ++sizes[(g == layer::Mixing<>::NO_GROUP) ? 3u : g];
+        ++sizes[(g == layer::Mixing::NO_GROUP) ? 3u : g];
     }
 
     REQUIRE(sizes == std::vector< size_t >({2000u, 2000u, 2000u, 4000u}));

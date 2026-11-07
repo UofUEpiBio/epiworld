@@ -21,7 +21,7 @@ EPIWORLD_TEST_CASE("SBM large block n_possible", "[sbm-large]") {
         m_gh, 0.0
     };
 
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "a virus", std::accumulate(block_sizes.begin(), block_sizes.end(), size_t(0)), 0.001, 0.3, 0.5
     );
     model.verbose_off();

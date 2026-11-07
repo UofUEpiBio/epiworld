@@ -18,7 +18,7 @@ int main()
 {
     constexpr epiworld_fast_uint n_agents = 5000u;
 
-    Model<int> model(n_agents);
+    Model model(n_agents);
 
     // Model parameters
     model.add_param(0.3, "Transmission rate");
@@ -27,7 +27,7 @@ int main()
     model.add_param(0.01, "I->D transition rate");
 
     // The virus and its stages
-    Virus<int> virus("A flu");
+    Virus virus("A flu");
     const int S = virus.add_stage("Susceptible");
     const int E = virus.add_stage("Exposed", stage::carrier);
     const int I = virus.add_stage("Infected", stage::infectious);

@@ -12,7 +12,7 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
         0.0, 0.0, 40.0
     };
 
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "Flu", // std::string vname,
         10000, // epiworld_fast_uint n,
         0.01,// epiworld_double prevalence,
@@ -21,13 +21,13 @@ EPIWORLD_TEST_CASE("SIRMixing", "[SIR-mixing]") {
     );
     // Three groups
     add_group_mixing(model, contact_matrix, blocks({0u, 3000u, 6000u, 10000u}));
-    auto & mixing = model.get_layer_as< layer::Mixing<> >("mixing");
+    auto & mixing = model.get_layer_as< layer::Mixing >("mixing");
 
     // Copy the original virus
-    Virus<> v1 = model.get_virus(0);
+    Virus v1 = model.get_virus(0);
     model.rm_virus(0);
 
-    model.add_virus(v1, dist_virus<>(0));
+    model.add_virus(v1, dist_virus(0));
 
 
     // Running and checking the results

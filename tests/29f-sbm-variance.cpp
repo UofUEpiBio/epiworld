@@ -29,7 +29,7 @@ EPIWORLD_TEST_CASE("SBM edge count variance", "[sbm-variance]") {
     size_t n_reps = 500u;
     std::vector< double > edge_counts(n_reps, 0.0);
 
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "a virus", std::accumulate(block_sizes.begin(), block_sizes.end(), size_t(0)), 0.01, 0.5, 0.3
     );
     model.verbose_off();

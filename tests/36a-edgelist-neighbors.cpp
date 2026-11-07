@@ -18,7 +18,7 @@ using namespace epiworld;
 // list, plus the errors an invalid list raises.
 
 // Neighbor ids of agent i, in the layer's order.
-static std::vector< size_t > nbrs(Model<> & model, size_t i)
+static std::vector< size_t > nbrs(Model & model, size_t i)
 {
     std::vector< size_t > res;
     for (auto * p : tests_net(model).neighbors_view(i))
@@ -71,7 +71,7 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
 
         AdjList graph(source, target, static_cast< int >(n), directed);
 
-        epimodels::ModelSIR<> model("a virus", static_cast< int >(n), 0.1, 0.5, 0.3);
+        epimodels::ModelSIR model("a virus", static_cast< int >(n), 0.1, 0.5, 0.3);
         model.verbose_off();
         model.add_layer(layer::network("network", graph));
 
@@ -168,7 +168,7 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
 
     for (bool directed : {false, true})
     {
-        Model<> model(nbig);
+        Model model(nbig);
         model.add_layer(layer::network(
             "network", AdjList(bs, bt, nbig, directed)
         ));
@@ -198,18 +198,18 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
         std::length_error
     );
 
-    Model<> model(3);
+    Model model(3);
     model.add_param(0.5, "Transmission probability");
     model.add_param(0.1, "Recovery rate");
-    model.add_virus(sir_virus<int>("v"));
+    model.add_virus(sir_virus("v"));
     model.add_layer(layer::network(
         "network", AdjList({0, 1}, {1, 2}, 3, false)
     ));
 
-    Model<> wrong_size(4);
+    Model wrong_size(4);
     wrong_size.add_param(0.5, "Transmission probability");
     wrong_size.add_param(0.1, "Recovery rate");
-    wrong_size.add_virus(sir_virus<int>("v"));
+    wrong_size.add_virus(sir_virus("v"));
     wrong_size.add_layer(layer::network(
         "network", AdjList({0, 1}, {1, 2}, 3, false)
     ));
@@ -220,7 +220,7 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
     REQUIRE(nbrs(model, 1u) == std::vector< size_t >({0u, 2u}));
 
     // An empty list gives isolates.
-    Model<> empty(4);
+    Model empty(4);
     empty.add_layer(layer::network(
         "network", AdjList(std::vector< int >{}, std::vector< int >{}, 4, false)
     ));

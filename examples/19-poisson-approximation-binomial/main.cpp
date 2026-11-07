@@ -92,8 +92,8 @@ int main()
     constexpr size_t ndraws = 100000u;
     constexpr int max_k = 40;
 
-    Model<int> binom_rng(0);
-    Model<int> poiss_rng(0);
+    Model binom_rng(0);
+    Model poiss_rng(0);
 
     binom_rng.seed(20260423u);
     poiss_rng.seed(20260424u);

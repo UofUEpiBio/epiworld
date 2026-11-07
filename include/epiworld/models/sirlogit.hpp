@@ -31,11 +31,9 @@
  * where \f$\beta_i\f$ are the coefficients for the features \f$x_i\f$ of the agents,
  * and \f$n\f$ is the number of features.
  * 
- * @param TSeq Type of the sequence (e.g. std::vector, std::deque)
  
 */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIRLogit : public Model<TSeq>
+class ModelSIRLogit : public Model
 {
 public:
     static constexpr int SUSCEPTIBLE = 0;
@@ -68,7 +66,7 @@ public:
         epiworld_double prevalence
     );
 
-    std::unique_ptr< Model<TSeq> > clone_ptr() override;
+    std::unique_ptr< Model > clone_ptr() override;
 
     void reset() override;
     
@@ -79,28 +77,26 @@ public:
 
 };
 
-template<typename TSeq>
-inline std::unique_ptr<Model<TSeq>> ModelSIRLogit<TSeq>::clone_ptr()
+inline std::unique_ptr<Model> ModelSIRLogit::clone_ptr()
 {
     
-    return std::make_unique<ModelSIRLogit<TSeq>>(*this);
+    return std::make_unique<ModelSIRLogit>(*this);
 
 }
 
-template<typename TSeq>
-inline void ModelSIRLogit<TSeq>::reset()
+inline void ModelSIRLogit::reset()
 {
 
     /* Checking specified columns in the model */
     for (const auto & c : coef_infect_cols)
     {
-        if (c >= Model<TSeq>::agents_data_ncols)
+        if (c >= Model::agents_data_ncols)
             throw std::range_error("Columns specified in coef_infect_cols out of range.");
     }
 
     for (const auto & c : coef_recover_cols)
     {
-        if (c >= Model<TSeq>::agents_data_ncols)
+        if (c >= Model::agents_data_ncols)
             throw std::range_error("Columns specified in coef_recover_cols out of range.");
     }
 
@@ -115,7 +111,7 @@ inline void ModelSIRLogit<TSeq>::reset()
             "The number of coefficients (recovery) doesn't match the number of features. It must be as many features of the agents."
             );
     
-    Model<TSeq>::reset();
+    Model::reset();
 
     return;
 
@@ -124,15 +120,14 @@ inline void ModelSIRLogit<TSeq>::reset()
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
  * 
- * @param model A Model<TSeq> object where to set up the SIR.
+ * @param model A Model object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
  * @param contact_rate Average number of contacts (interactions) per step.
  * @param prob_transmission Probability of transmission
  * @param prob_recovery Probability of recovery
  */
-template<typename TSeq>
-inline ModelSIRLogit<TSeq>::ModelSIRLogit(
+inline ModelSIRLogit::ModelSIRLogit(
     const std::string & vname,
     epiworld_fast_uint n,
     double * data,
@@ -171,13 +166,13 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     // Infection: each infectious neighbor is an exposure with probability
     // plogis(baseline + p * coef_exposure), where the baseline comes from the
     // agent's features and p is the usual per-contact probability
-    const Value<TSeq> p_contact("Transmission probability");
-    InfectionSampler<TSeq> sampler = [p_contact](
-        Agent<TSeq> & p, Model<TSeq> & m
-        ) -> Virus<TSeq> *
+    const Value p_contact("Transmission probability");
+    InfectionSampler sampler = [p_contact](
+        Agent & p, Model & m
+        ) -> Virus *
         {
 
-            ModelSIRLogit<TSeq> * _m = model_cast<ModelSIRLogit<TSeq>,TSeq>(&m);
+            ModelSIRLogit * _m = model_cast<ModelSIRLogit>(&m);
 
             const double coef_exposure = _m->coefs_infect[0u];
 
@@ -219,10 +214,10 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
         };
 
     // Recovery: plogis of the agent's features
-    ValueFun<TSeq> p_recover = [](Agent<TSeq> & p, Model<TSeq> & m) -> epiworld_double
+    ValueFun p_recover = [](Agent & p, Model & m) -> epiworld_double
     {
 
-        ModelSIRLogit<TSeq> * _m = model_cast<ModelSIRLogit<TSeq>,TSeq>(&m);
+        ModelSIRLogit * _m = model_cast<ModelSIRLogit>(&m);
 
         double prob = 0.0;
         for (size_t i = 0u; i < _m->coefs_recover.size(); ++i)
@@ -232,14 +227,14 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
     };
 
-    Virus<TSeq> virus(vname);
+    Virus virus(vname);
     virus.add_stage("Susceptible");
     virus.add_stage("Infected", stage::infectious);
     virus.add_stage("Recovered");
     virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability").sampler(sampler);
     virus.rate(INFECTED, RECOVERED, p_recover);
 
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share(prevalence));
 
     this->set_name("Susceptible-Infected-Removed (SIR) (logit)");
 

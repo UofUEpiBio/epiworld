@@ -1,4 +1,4 @@
-Although composition can be used to extend and create new models, a common practice in `epiworld` is to create new models via inheritance. As the reader will see in later sections, all the included models in `epiworld` have been built by inheriting from the main `Model<>` class.
+Although composition can be used to extend and create new models, a common practice in `epiworld` is to create new models via inheritance. As the reader will see in later sections, all the included models in `epiworld` have been built by inheriting from the main `Model` class.
 
 This section highlights some important considerations when using the inheritance approach.
 
@@ -10,7 +10,7 @@ Under the LIFO system, if an agent receives multiple updates in the same step - 
 
 ## Execution workflow: main calls
 
-The `Model<>::run()` method shows how events are accumulated in the model. The following modified code snippet illustrates this clearly:
+The `Model::run()` method shows how events are accumulated in the model. The following modified code snippet illustrates this clearly:
 
 ```cpp
 // Resets the entire system: the layers, then the viruses
@@ -45,7 +45,7 @@ for (int niter = 0; niter < get_ndays(); ++niter)
 }
 ```
 
-The key aspect to notice is that both `Model<TSeq>::update_state()` and `Model<TSeq>::run_globalevents()` call `Model<TSeq>::run_events()`. This means that, after each function is called, the events that change agents' tools, viruses, and states are dispatched.
+The key aspect to notice is that both `Model::update_state()` and `Model::run_globalevents()` call `Model::run_events()`. This means that, after each function is called, the events that change agents' tools, viruses, and states are dispatched.
 
 In practice, this provides users with a way to modify the state of the model instance on the fly. For example, starting with version 0.15.0.0 of epiworld, the `ModelMeaslesSchool` model includes the class `InterventionMeaslesPEP` (which derives from `GlobalEvent`) that implements an intervention to move quarantined agents out of quarantine if the post-exposure prophylaxis tool is distributed and effective.
 
@@ -54,8 +54,7 @@ In practice, this provides users with a way to modify the state of the model ins
 The SIS (Susceptible-Infected-Susceptible) model is one of the simplest models included in epiworld. With only two states, the class implementation of the SIS model takes less than 100 lines of code. Here is the main component:
 
 ```cpp
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIS : public Model<TSeq>
+class ModelSIS : public Model
 {
 
 public:
@@ -73,8 +72,7 @@ public:
 
 };
 
-template<typename TSeq>
-inline ModelSIS<TSeq>::ModelSIS(
+inline ModelSIS::ModelSIS(
     const std::string & vname,
     epiworld_double prevalence,
     epiworld_double transmission_prob,
@@ -85,15 +83,15 @@ inline ModelSIS<TSeq>::ModelSIS(
     this->set_name("Susceptible-Infected-Susceptible (SIS)");
 
     // Adding statuses
-    this->add_state("Susceptible", default_update_susceptible<TSeq>);
-    this->add_state("Infected", default_update_exposed<TSeq>);
+    this->add_state("Susceptible", default_update_susceptible);
+    this->add_state("Infected", default_update_exposed);
 
     // Setting up parameters
     this->add_param(transmission_prob, "Transmission probability");
     this->add_param(recovery_rate, "Recovery rate");
 
     // Preparing the virus
-    Virus<TSeq> virus(vname, prevalence, true);
+    Virus virus(vname, prevalence, true);
     virus.set_state(INFECTED, SUSCEPTIBLE, SUSCEPTIBLE);
     
     virus.set_prob_infecting("Transmission probability");
@@ -105,7 +103,7 @@ inline ModelSIS<TSeq>::ModelSIS(
 }
 ```
 
-The benefit of this approach is that users can directly use `ModelSIS<>` to create a simple system where a virus has already been added:
+The benefit of this approach is that users can directly use `ModelSIS` to create a simple system where a virus has already been added:
 
 ```cpp
 #include "epiworld.hpp"
@@ -115,7 +113,7 @@ using namespace epiworld;
 int main() {
 
     // Creating the model
-    epimodels::ModelSIS<> flumodel("Flu", 0.001, 0.1, 0.14);
+    epimodels::ModelSIS flumodel("Flu", 0.001, 0.1, 0.14);
 
     // Adding the population
     flumodel.agents_smallworld(10000, 20, false, 0.01);

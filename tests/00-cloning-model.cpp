@@ -4,13 +4,13 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("Cloning", "[clone]") {
 
-    epiworld::Model<> m(1000);
+    epiworld::Model m(1000);
 
-    epiworld::Virus<> v("covid 19");
+    epiworld::Virus v("covid 19");
     v.add_stage("Susceptible");
     v.add_stage("Infected", stage::infectious);
     v.infection(0, 1, 0.5);
-    epiworld::Tool<> t("vax");
+    epiworld::Tool t("vax");
 
     m.seed(1333);
     m.add_layer(layer::network(
@@ -21,7 +21,7 @@ EPIWORLD_TEST_CASE("Cloning", "[clone]") {
     m.add_tool(t, assign::share(.5));
 
     // Cloning
-    epiworld::Model<> m2(m);
+    epiworld::Model m2(m);
 
     // Printing the addresses
     std::cout <<

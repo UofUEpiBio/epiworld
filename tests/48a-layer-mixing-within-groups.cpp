@@ -25,20 +25,20 @@ std::vector< size_t > households()
 }
 
 // SIR model; S = 0, I = 1, R = 2
-std::unique_ptr< epimodels::ModelSIR<> > make(
-    std::function< void(layer::Mixing<> &) > contacts,
+std::unique_ptr< epimodels::ModelSIR > make(
+    std::function< void(layer::Mixing &) > contacts,
     double prevalence = 0.02,
     double transmission = 0.2,
     double recovery = 0.1
 )
 {
 
-    auto model = std::make_unique< epimodels::ModelSIR<> >(
+    auto model = std::make_unique< epimodels::ModelSIR >(
         "flu", n, prevalence, transmission, recovery
     );
     model->verbose_off();
 
-    auto hh = layer::mixing<>("households");
+    auto hh = layer::mixing("households");
     hh->set_groups(assign::labels(households()), n_groups);
     contacts(*hh);
     model->add_layer(hh);
@@ -47,10 +47,10 @@ std::unique_ptr< epimodels::ModelSIR<> > make(
 
 }
 
-void half(layer::Mixing<> & l) { l.set_contact_prob(0.5); }
+void half(layer::Mixing & l) { l.set_contact_prob(0.5); }
 
 // The same contacts as a matrix: 4.5 contacts a day with the 9 housemates
-void matrix(layer::Mixing<> & l)
+void matrix(layer::Mixing & l)
 {
     std::vector< double > cm(n_groups * n_groups, 0.0);
     for (size_t g = 0u; g < n_groups; ++g)
@@ -59,7 +59,7 @@ void matrix(layer::Mixing<> & l)
 }
 
 // Final states, by agent
-std::vector< int > states(Model<> & m)
+std::vector< int > states(Model & m)
 {
     std::vector< int > out;
     for (const auto & a : m.get_agents())
@@ -74,8 +74,8 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     // -- the queue sees the groups -----------------------------------------
     // Agents move to the next household on day 5 (an edit during the run),
     // so the queue must also follow the moves.
-    auto move = [](Model<> * m) -> void {
-        auto & l = m->get_layer_as< layer::Mixing<> >("households");
+    auto move = [](Model * m) -> void {
+        auto & l = m->get_layer_as< layer::Mixing >("households");
         for (size_t i = 0u; i < n; i += 7u)
             l.set_group(i, (l.get_group(i) + 1u) % n_groups);
     };
@@ -113,21 +113,21 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
 
         // An SIR whose infected agents never recover; the carrier's daily
         // recovery rate is where it moves (an update made mid-step)
-        Model<> tiny(3);
-        Virus<> flu("flu");
+        Model tiny(3);
+        Virus flu("flu");
         flu.add_stage("Susceptible");
         flu.add_stage("Infected", stage::infectious);
         flu.add_stage("Recovered");
         flu.infection(0, 1, 1.0);
-        flu.rate(1, 2, ValueFun<>([](Agent<> & a, Model<> & m) -> double {
+        flu.rate(1, 2, ValueFun([](Agent & a, Model & m) -> double {
             if (a.get_id() == 0)
-                m.get_layer_as< layer::Mixing<> >("hh").set_group(0, 1);
+                m.get_layer_as< layer::Mixing >("hh").set_group(0, 1);
             return 0.0;
         }));
         tiny.verbose_off();
-        tiny.add_virus(flu, assign::agents<>({0}));
+        tiny.add_virus(flu, assign::agents({0}));
 
-        auto hh = layer::mixing<>("hh");
+        auto hh = layer::mixing("hh");
         hh->set_groups(assign::labels({0, 0, 1}), 2);
         hh->set_contact_prob(1.0);
         tiny.add_layer(hh);
@@ -146,7 +146,7 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     auto check = make(half);
     check->add_globalevent(move, "move", 5);
     check->run(10, 1);
-    auto & hh = check->get_layer_as< layer::Mixing<> >("households");
+    auto & hh = check->get_layer_as< layer::Mixing >("households");
     REQUIRE(hh.get_group(7u) == 1u);
     check->rm_globalevent("move");
     check->run(1, 1);
@@ -165,9 +165,9 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     // One carrier (agent 0), transmission and contact for sure: after a day,
     // its 9 housemates are infected, and nobody else
     auto clique = make(
-        [](layer::Mixing<> & l) { l.set_contact_prob(1.0); }, 0.0, 1.0, 0.0
+        [](layer::Mixing & l) { l.set_contact_prob(1.0); }, 0.0, 1.0, 0.0
     );
-    clique->assign_virus(0, assign::agents<>({0}));
+    clique->assign_virus(0, assign::agents({0}));
     clique->run(1, 3);
 
     std::vector< int > expected(n, 0);
@@ -177,15 +177,15 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
     // -- q < 1: each housemate is met with probability q --------------------
     // Same setup with q = 0.3: the carrier infects Binomial(9, 0.3) housemates
     auto pairs = make(
-        [](layer::Mixing<> & l) { l.set_contact_prob(0.3); }, 0.0, 1.0, 0.0
+        [](layer::Mixing & l) { l.set_contact_prob(0.3); }, 0.0, 1.0, 0.0
     );
-    pairs->assign_virus(0, assign::agents<>({0}));
+    pairs->assign_virus(0, assign::agents({0}));
 
     std::vector< double > infected;
     bool outside = false;
     pairs->run_multiple(
         1, 400, 2026,
-        [&](size_t, Model<> * m) -> void {
+        [&](size_t, Model * m) -> void {
             auto s = states(*m);
             infected.push_back(std::accumulate(s.begin() + 1, s.begin() + 10, 0.0));
             outside = outside || (std::accumulate(s.begin() + 10, s.end(), 0) > 0);
@@ -204,7 +204,7 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
 
     // -- contact probabilities are edited like the contact matrix -----------
     auto edit = make(half);
-    auto & layer = edit->get_layer_as< layer::Mixing<> >("households");
+    auto & layer = edit->get_layer_as< layer::Mixing >("households");
 
     // Between runs: the new baseline, one per group or one for all
     std::vector< double > q(n_groups, 0.1);
@@ -215,8 +215,8 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
 
     // During a run: that run only
     edit->add_globalevent(
-        [](Model<> * m) -> void {
-            m->get_layer_as< layer::Mixing<> >("households").set_contact_prob(0.0);
+        [](Model * m) -> void {
+            m->get_layer_as< layer::Mixing >("households").set_contact_prob(0.0);
         },
         "lockdown"
     );
@@ -228,8 +228,8 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
 
     // A matrix replaces the probabilities between runs, but not during one
     edit->add_globalevent(
-        [](Model<> * m) -> void {
-            m->get_layer_as< layer::Mixing<> >("households")
+        [](Model * m) -> void {
+            m->get_layer_as< layer::Mixing >("households")
                 .set_contact_matrix({1.0});
         },
         "switch"
@@ -238,8 +238,8 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
 
     // Probabilities need the grouping (the queue reads it before the first
     // step)
-    epimodels::ModelSIR<> bare("flu", n, 0.02, 0.2, 0.1);
-    auto nogroups = layer::mixing<>("households");
+    epimodels::ModelSIR bare("flu", n, 0.02, 0.2, 0.1);
+    auto nogroups = layer::mixing("households");
     nogroups->set_contact_prob(0.5);
     bare.add_layer(nogroups);
     bare.verbose_off();
@@ -247,7 +247,7 @@ EPIWORLD_TEST_CASE("Mixing layer - within groups", "[layer-mixing-within]") {
 
     // One probability per group, or one for all, each in [0, 1]
     auto wrong = make(half);
-    wrong->get_layer_as< layer::Mixing<> >("households")
+    wrong->get_layer_as< layer::Mixing >("households")
         .set_contact_prob({0.1, 0.2});
     REQUIRE_THROWS_AS(wrong->run(1, 1), std::length_error);
     REQUIRE_THROWS_AS(layer.set_contact_prob(1.5), std::range_error);

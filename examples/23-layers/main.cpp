@@ -6,7 +6,7 @@ int main() {
 
     const size_t n = 20000u;
 
-    epimodels::ModelSEIR<> model(
+    epimodels::ModelSEIR model(
         "a virus", // Name of the virus
         n,         // Number of agents
         0.001,     // Initial prevalence
@@ -21,19 +21,19 @@ int main() {
     for (size_t i = 0u; i < n; ++i)
         household[i] = i / 4u;
 
-    auto home = layer::mixing<>("household");
+    auto home = layer::mixing("household");
     home->set_groups(assign::labels(household), n / 4u);
     home->set_contact_prob({0.5});
     model.add_layer(home);
 
     // Workplaces: the same ten or so coworkers every day (a small world,
     // redrawn at every run)
-    model.add_layer(layer::network("work", graph::smallworld<>(10, 0.05)));
+    model.add_layer(layer::network("work", graph::smallworld(10, 0.05)));
 
     // Public spaces: three age groups (a quarter children, half adults, a
     // quarter older adults), drawn at random; entry (g, h) is the share of the
     // daily public contacts of someone in g made with people in h
-    auto public_spaces = layer::mixing<>("public");
+    auto public_spaces = layer::mixing("public");
     public_spaces->set_groups(assign::shares({{0, 0.25}, {1, 0.5}, {2, 0.25}}), 3u);
     public_spaces->set_contact_matrix({
         0.6, 0.3, 0.1,

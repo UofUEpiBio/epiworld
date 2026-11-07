@@ -11,7 +11,7 @@ using namespace epiworld;
  */
 EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
 
-    epimodels::ModelSIR<> model("a virus", 2000, 0.01, 0.9, 0.25);
+    epimodels::ModelSIR model("a virus", 2000, 0.01, 0.9, 0.25);
     model.seed(2231);
     model.add_layer(layer::network(
         "network", rgraph_smallworld(2000, 6, 0.1, false, model)
@@ -37,12 +37,12 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
     REQUIRE(model.params().size() == 3u);
 
     // Positions are valid in copies
-    Model<> copy(model);
+    Model copy(model);
     REQUIRE_THAT(copy.par_at(beta), Catch::Matchers::WithinAbs(0.1, 1e-6));
     REQUIRE(copy.get_param_layout_id() == model.get_param_layout_id());
 
     // Equality compares parameters by name, not by position
-    Model<> order_1(0), order_2(0);
+    Model order_1(0), order_2(0);
     order_1.add_param(0.1, "a");
     order_1.add_param(0.2, "b");
     order_2.add_param(0.2, "b");
@@ -62,7 +62,7 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
     // leaves no transmissions after that day
     const int stop_day = 10;
     model.add_globalevent(
-        [beta](Model<> * m) -> void { m->set_param_at(beta, 0.0); },
+        [beta](Model * m) -> void { m->set_param_at(beta, 0.0); },
         "stop transmission",
         stop_day
     );
@@ -84,7 +84,7 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
     REQUIRE(after == 0);
 
     // The same run with the change made by name gives the same history
-    epimodels::ModelSIR<> model_name("a virus", 2000, 0.01, 0.1, 0.3);
+    epimodels::ModelSIR model_name("a virus", 2000, 0.01, 0.1, 0.3);
     model_name.seed(2231);
     model_name.add_layer(layer::network(
         "network", rgraph_smallworld(2000, 6, 0.1, false, model_name)
@@ -92,7 +92,7 @@ EPIWORLD_TEST_CASE("Parameters by position", "[parameters][ParamId]") {
     model_name.verbose_off();
     model_name.add_param(0.5, "Another parameter");
     model_name.add_globalevent(
-        [](Model<> * m) -> void { m->set_param("Transmission probability", 0.0); },
+        [](Model * m) -> void { m->set_param("Transmission probability", 0.0); },
         "stop transmission",
         stop_day
     );

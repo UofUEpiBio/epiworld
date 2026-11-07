@@ -178,7 +178,7 @@ EPIWORLD_TEST_CASE("ContactTracing::get_contacts()", "[contact-tracing-get-conta
     // verify that get_contacts() returns exactly the same (agent, contact_id,
     // day) triples as the low-level get_contact() API.
     // -----------------------------------------------------------------------
-    epimodels::ModelSIR<> model("MyVirus", 200, 0.05, 1.0, 0.3);
+    epimodels::ModelSIR model("MyVirus", 200, 0.05, 1.0, 0.3);
     auto & net = model.add_layer(layer::network(
         "network", rgraph_smallworld(200, 5, 0.01, false, model)
     ));

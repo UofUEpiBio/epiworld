@@ -10,7 +10,7 @@ using Catch::Matchers::Contains;
 // argument, a default outside its limits, no builder.
 EPIWORLD_TEST_CASE("Model registry - errors", "[registry]") {
 
-    ModelRegistry<> registry;
+    ModelRegistry registry;
     epimodels::register_models(registry);
     measles::register_models(registry);
 

@@ -17,7 +17,7 @@ EPIWORLD_TEST_CASE(
 
     size_t n = 20u;
 
-    measles::ModelMeaslesMixing<> model(
+    measles::ModelMeaslesMixing model(
         n,           // Number of agents
         1.0 / 20.0,  // Initial prevalence: one case
         1.0,         // Transmission rate

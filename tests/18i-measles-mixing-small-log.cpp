@@ -13,21 +13,21 @@ EPIWORLD_TEST_CASE(
 
     const size_t n = 100u;
 
-    measles::ModelMeaslesMixing<> mixing(
+    measles::ModelMeaslesMixing mixing(
         n, 0.1, 0.3, 1.0, 0.3, 7.0, 4.0, 5.0, 0.2, 7.0, 2.0, 21,
         .8, .8, 4, 0.0, 1.0, 4u
     );
     add_group_mixing(mixing, {50.0}, blocks({0u, n}));
     mixing.get_layer("mixing").enable_tracing(1u);
 
-    measles::ModelMeaslesMixingRiskQuarantine<> risk(
+    measles::ModelMeaslesMixingRiskQuarantine risk(
         n, 0.1, 0.3, 0.9, 7.0, 4.0, 5.0, 0.2, 7.0, 3.0, 21, 14, 7,
         .8, .8, 4, 0.0, 0.5, 1.0, 4u
     );
     add_group_mixing(risk, {50.0}, blocks({0u, n}));
     risk.get_layer("mixing").enable_tracing(1u);
 
-    for (Model<> * m : std::vector< Model<> * >{&mixing, &risk})
+    for (Model * m : std::vector< Model * >{&mixing, &risk})
     {
         m->verbose_off();
         REQUIRE_NOTHROW(m->run(30, 42));
@@ -35,13 +35,13 @@ EPIWORLD_TEST_CASE(
     }
 
     // A count beyond the group (or beyond size_t) takes the whole group
-    mixing.assign_virus(0, assign::group_counts<>("mixing", {1e20}));
+    mixing.assign_virus(0, assign::group_counts("mixing", {1e20}));
     mixing.run(0, 1);
     REQUIRE(mixing.get_db().get_today_total_stage("Susceptible") == 0);
 
     // Not a whole number of agents
     for (double bad : {std::numeric_limits< double >::infinity(), 1.5})
-        REQUIRE_THROWS(assign::group_counts<>("mixing", {bad}));
-    REQUIRE_THROWS(assign::group_shares<>("mixing", {std::nan("")}));
+        REQUIRE_THROWS(assign::group_counts("mixing", {bad}));
+    REQUIRE_THROWS(assign::group_shares("mixing", {std::nan("")}));
 
 }

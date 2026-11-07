@@ -8,18 +8,18 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Agent::mutate_virus()", "[mutation]") {
 
     // No transmission and no recovery: the seeded agents stay infected
-    epimodels::ModelSIR<> model("a virus", 50, 0.1, 0.0, 0.0);
+    epimodels::ModelSIR model("a virus", 50, 0.1, 0.0, 0.0);
     add_random_mixing(model, 2.0);
     model.verbose_off();
 
     model.get_virus(0).set_mutation(
-        [](Agent<> *, Virus<> &, Model<> *) -> bool { return true; });
+        [](Agent *, Virus &, Model *) -> bool { return true; });
 
     model.run(0, 123);
     REQUIRE(model.get_n_viruses() == 1u);
 
-    Agent<> * infected = nullptr;
-    Agent<> * susceptible = nullptr;
+    Agent * infected = nullptr;
+    Agent * susceptible = nullptr;
     for (auto & a : model.get_agents())
     {
         if (a.get_virus() != nullptr)

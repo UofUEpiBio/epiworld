@@ -8,8 +8,7 @@
 #include "misc.hpp"
 #include "database-bones.hpp"
 
-template<typename TSeq>
-inline void DataBase<TSeq>::reset()
+inline void DataBase::reset()
 {
 
     // Initializing the counts
@@ -86,8 +85,7 @@ inline void DataBase<TSeq>::reset()
 
 }
 
-template<typename TSeq>
-inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
+inline DataBase::DataBase(const DataBase & db) :
     m_hospitalizations(db.m_hospitalizations),
     n_founders(db.n_founders),
     virus_name(db.virus_name),
@@ -135,18 +133,16 @@ inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
     user_data(nullptr)
 {}
 
-// DataBase<TSeq> & DataBase<TSeq>::operator=(const DataBase<TSeq> & m)
+// DataBase & DataBase::operator=(const DataBase & m)
 // {
 
 // }
 
-template<typename TSeq>
-inline Model<TSeq> * DataBase<TSeq>::get_model() {
+inline Model * DataBase::get_model() {
     return model;
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::record() 
+inline void DataBase::record() 
 {
 
     ////////////////////////////////////////////////////////////////////////////
@@ -349,8 +345,7 @@ inline void DataBase<TSeq>::record()
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::drop_variants()
+inline void DataBase::drop_variants()
 {
 
     const size_t n = n_founders;
@@ -365,8 +360,7 @@ inline void DataBase<TSeq>::drop_variants()
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v, bool founder)
+inline void DataBase::record_virus(Virus & v, bool founder)
 {
 
     if (founder)
@@ -408,8 +402,7 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v, bool founder)
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
+inline void DataBase::record_tool(Tool & t)
 {
 
     t.set_id(static_cast< int >(tool_name.size()));
@@ -420,14 +413,12 @@ inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
 
 }
 
-template<typename TSeq>
-inline size_t DataBase<TSeq>::size() const
+inline size_t DataBase::size() const
 {
     return virus_name.size();
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::update_state(
+inline void DataBase::update_state(
         epiworld_fast_uint prev_state,
         epiworld_fast_uint new_state,
         bool undo
@@ -470,8 +461,7 @@ inline void DataBase<TSeq>::update_state(
     return;
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::update_virus(
+inline void DataBase::update_virus(
         epiworld_fast_uint virus_id,
         epiworld_fast_uint prev_state,
         epiworld_fast_uint new_state,
@@ -500,8 +490,7 @@ inline void DataBase<TSeq>::update_virus(
     
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::update_tool(
+inline void DataBase::update_tool(
         epiworld_fast_uint tool_id,
         epiworld_fast_uint prev_state,
         epiworld_fast_uint new_state,
@@ -523,8 +512,7 @@ inline void DataBase<TSeq>::update_tool(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::record_transition(
+inline void DataBase::record_transition(
     epiworld_fast_uint from,
     epiworld_fast_uint to,
     bool undo
@@ -550,8 +538,7 @@ inline void DataBase<TSeq>::record_transition(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::split_state(
+inline void DataBase::split_state(
     epiworld_fast_uint state,
     std::string & status,
     std::string & stage
@@ -573,8 +560,7 @@ inline void DataBase<TSeq>::split_state(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::split_states(
+inline void DataBase::split_states(
     const std::vector< epiworld_fast_uint > & states,
     std::vector< std::string > * status,
     std::vector< std::string > * stage
@@ -598,8 +584,7 @@ inline void DataBase<TSeq>::split_states(
 
 }
 
-template<typename TSeq>
-inline int DataBase<TSeq>::today_total_of(
+inline int DataBase::today_total_of(
     const std::string & name,
     bool by_stage
 ) const
@@ -628,24 +613,21 @@ inline int DataBase<TSeq>::today_total_of(
 
 }
 
-template<typename TSeq>
-inline int DataBase<TSeq>::get_today_total_stage(
+inline int DataBase::get_today_total_stage(
     const std::string & stage
 ) const
 {
     return today_total_of(stage, true);
 }
 
-template<typename TSeq>
-inline int DataBase<TSeq>::get_today_total_status(
+inline int DataBase::get_today_total_status(
     const std::string & status
 ) const
 {
     return today_total_of(status, false);
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_today_total(
+inline void DataBase::get_today_total(
     std::vector< std::string > * status,
     std::vector< std::string > * stage,
     std::vector< int > * counts
@@ -663,8 +645,7 @@ inline void DataBase<TSeq>::get_today_total(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_today_virus(
+inline void DataBase::get_today_virus(
     std::vector< std::string > & status,
     std::vector< std::string > & stage,
     std::vector< int > & id,
@@ -693,8 +674,7 @@ inline void DataBase<TSeq>::get_today_virus(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_hist_total(
+inline void DataBase::get_hist_total(
     std::vector< int > * date,
     std::vector< std::string > * status,
     std::vector< std::string > * stage,
@@ -712,8 +692,7 @@ inline void DataBase<TSeq>::get_hist_total(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_hist_virus(
+inline void DataBase::get_hist_virus(
     std::vector< int > & date,
     std::vector< int > & id,
     std::vector< std::string > & status,
@@ -728,8 +707,7 @@ inline void DataBase<TSeq>::get_hist_virus(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_hist_tool(
+inline void DataBase::get_hist_tool(
     std::vector< int > & date,
     std::vector< int > & id,
     std::vector< std::string > & status,
@@ -744,8 +722,7 @@ inline void DataBase<TSeq>::get_hist_tool(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_today_transition_matrix(
+inline void DataBase::get_today_transition_matrix(
     std::vector< int > & counts
 ) const
 {
@@ -756,8 +733,7 @@ inline void DataBase<TSeq>::get_today_transition_matrix(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_hist_transition_matrix(
+inline void DataBase::get_hist_transition_matrix(
     std::vector< std::string > & status_from,
     std::vector< std::string > & stage_from,
     std::vector< std::string > & status_to,
@@ -823,8 +799,7 @@ inline void DataBase<TSeq>::get_hist_transition_matrix(
 }
 
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_active_cases(
+inline void DataBase::get_active_cases(
     std::vector<int> & date,
     std::vector<int> & virus_id,
     std::vector<int> & count
@@ -856,8 +831,7 @@ inline void DataBase<TSeq>::get_active_cases(
     
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_outbreak_size(
+inline void DataBase::get_outbreak_size(
     std::vector<int> & date,
     std::vector<int> & virus_id,
     std::vector<int> & outbreak_size
@@ -901,8 +875,7 @@ inline void DataBase<TSeq>::get_outbreak_size(
     
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_transmissions(
+inline void DataBase::get_transmissions(
     std::vector<int> & date,
     std::vector<int> & source,
     std::vector<int> & target,
@@ -932,8 +905,7 @@ inline void DataBase<TSeq>::get_transmissions(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_transmissions(
+inline void DataBase::get_transmissions(
     int * date,
     int * source,
     int * target,
@@ -959,8 +931,7 @@ inline void DataBase<TSeq>::get_transmissions(
 
 }
 
-template<typename TSeq>
-inline RunOutputs DataBase<TSeq>::get_run_outputs(
+inline RunOutputs DataBase::get_run_outputs(
     const std::vector< std::string > & whats
 ) const
 {
@@ -1168,8 +1139,7 @@ inline RunOutputs DataBase<TSeq>::get_run_outputs(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::write_data(
+inline void DataBase::write_data(
     std::string fn_virus_info,
     std::string fn_virus_hist,
     std::string fn_tool_info,
@@ -1206,8 +1176,7 @@ inline void DataBase<TSeq>::write_data(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::record_transmission(
+inline void DataBase::record_transmission(
     int i,
     int j,
     int virus,
@@ -1224,30 +1193,26 @@ inline void DataBase<TSeq>::record_transmission(
 
 }
 
-template<typename TSeq>
-inline size_t DataBase<TSeq>::get_n_viruses() const
+inline size_t DataBase::get_n_viruses() const
 {
     return virus_name.size();
 }
 
-template<typename TSeq>
-inline size_t DataBase<TSeq>::get_n_tools() const
+inline size_t DataBase::get_n_tools() const
 {
     return tool_name.size();
 }
 
 
-template<typename TSeq>
-inline void DataBase<TSeq>::set_user_data(
+inline void DataBase::set_user_data(
     std::vector< std::string > names
 )
 {
-    user_data = UserData<TSeq>(names);
+    user_data = UserData(names);
     user_data.model = model;
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::add_user_data(
+inline void DataBase::add_user_data(
     std::vector< epiworld_double > x
 )
 {
@@ -1256,8 +1221,7 @@ inline void DataBase<TSeq>::add_user_data(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::add_user_data(
+inline void DataBase::add_user_data(
     epiworld_fast_uint k,
     epiworld_double x
 )
@@ -1267,14 +1231,12 @@ inline void DataBase<TSeq>::add_user_data(
 
 }
 
-template<typename TSeq>
-inline UserData<TSeq> & DataBase<TSeq>::get_user_data()
+inline UserData & DataBase::get_user_data()
 {
     return user_data;
 }
 
-template<typename TSeq>
-inline MapVec_type<int,int> DataBase<TSeq>::get_reproductive_number()
+inline MapVec_type<int,int> DataBase::get_reproductive_number()
 const {
 
     // Checking size
@@ -1311,8 +1273,7 @@ const {
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_reproductive_number(
+inline void DataBase::get_reproductive_number(
     std::string fn
 ) const {
 
@@ -1320,8 +1281,7 @@ inline void DataBase<TSeq>::get_reproductive_number(
 
 }
 
-template<typename TSeq>
-inline std::vector< epiworld_double > DataBase<TSeq>::get_transition_probability(
+inline std::vector< epiworld_double > DataBase::get_transition_probability(
     bool print,
     bool normalize
 ) const {
@@ -1433,8 +1393,7 @@ inline std::vector< epiworld_double > DataBase<TSeq>::get_transition_probability
         EPI_DEBUG_FAIL_AT_TRUE(a[__i] != b[__i], c) \
     }
 
-template<typename TSeq>
-inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
+inline bool DataBase::operator==(const DataBase & other) const
 {
     VECT_MATCH(
         virus_name,
@@ -1640,8 +1599,7 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_generation_time(
+inline void DataBase::get_generation_time(
     std::vector< int > & agent_id,
     std::vector< int > & virus_id,
     std::vector< int > & time,
@@ -1692,8 +1650,7 @@ inline void DataBase<TSeq>::get_generation_time(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_generation_time(
+inline void DataBase::get_generation_time(
     std::string fn
 ) const
 {
@@ -1702,14 +1659,12 @@ inline void DataBase<TSeq>::get_generation_time(
 
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::record_hospitalization(Agent<TSeq> & agent)
+inline void DataBase::record_hospitalization(Agent & agent)
 {
     m_hospitalizations.record(agent, *model);
 }
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_hospitalizations(
+inline void DataBase::get_hospitalizations(
     std::vector<int> & date,
     std::vector<int> & virus_id,
     std::vector<int> & tool_id,
@@ -1725,8 +1680,7 @@ inline void DataBase<TSeq>::get_hospitalizations(
 
 #undef VECT_MATCH
 
-template<typename TSeq>
-inline void DataBase<TSeq>::get_hist_transitions(
+inline void DataBase::get_hist_transitions(
     std::vector< int > & date,
     std::vector< std::string > & transition,
     std::vector< int > & counts
@@ -1751,6 +1705,14 @@ inline void DataBase<TSeq>::get_hist_transitions(
             model->st->get_transition(t - n_stage).name;
     }
 
+}
+
+inline void SaverMemory::operator()(size_t sim_id, Model * model) const
+{
+    auto out = model->get_db().get_run_outputs(state->whats);
+    if (sim_id >= state->runs.size())
+        state->runs.resize(sim_id + 1u);
+    state->runs[sim_id] = std::move(out);
 }
 
 #endif

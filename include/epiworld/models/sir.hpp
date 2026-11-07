@@ -10,15 +10,14 @@
  * 
  * @ingroup basic_compartmental
  * 
- * @param model A Model<TSeq> object where to set up the SIR.
+ * @param model A Model object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param n Number of agents.
  * @param initial_prevalence epiworld_double Initial prevalence
  * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
  * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIR : public Model<TSeq>
+class ModelSIR : public Model
 {
 public:
 
@@ -40,11 +39,10 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 };
 
-template<typename TSeq>
-inline ModelSIR<TSeq>::ModelSIR(
+inline ModelSIR::ModelSIR(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -58,22 +56,21 @@ inline ModelSIR<TSeq>::ModelSIR(
     this->add_param(recovery_rate, "Recovery rate");
     this->add_param(transmission_prob, "Transmission probability");
 
-    Virus<TSeq> virus(vname);
+    Virus virus(vname);
     virus.add_stage("Susceptible");
     virus.add_stage("Infected", stage::infectious);
     virus.add_stage("Recovered");
     virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
     virus.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
 
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered (SIR)");
    
 }
 
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelSIR<TSeq>::model_info()
+inline ModelInfo ModelSIR::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -89,8 +86,8 @@ inline ModelInfo<TSeq> ModelSIR<TSeq>::model_info()
             ParamInfo::probability("recovery_rate", "Recovery rate", 0.14,
                 "Daily probability that an infected agent recovers.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelSIR<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelSIR >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
                 a("transmission_prob"), a("recovery_rate")
             );

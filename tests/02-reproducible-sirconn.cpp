@@ -8,7 +8,7 @@ EPIWORLD_TEST_CASE("SIRCONN parallel", "[SIRCONN parallel]") {
     auto fn_1 = epi_temp_file("01c-sir-1", "%li");
 
     // Adding multi-file write
-    auto sav_0 = make_save_run<>(
+    auto sav_0 = make_save_run(
         fn_0.full_path.c_str(), // std::string fmt,
         true,  // bool total_hist,
         false, // bool variant_info,
@@ -22,7 +22,7 @@ EPIWORLD_TEST_CASE("SIRCONN parallel", "[SIRCONN parallel]") {
         true   // bool outbreak_size
     );
 
-    auto sav_1 = make_save_run<>(
+    auto sav_1 = make_save_run(
         fn_1.full_path.c_str(), // std::string fmt,
         true,  // bool total_hist,
         false, // bool variant_info,
@@ -37,14 +37,14 @@ EPIWORLD_TEST_CASE("SIRCONN parallel", "[SIRCONN parallel]") {
     );
 
     // Queuing doesn't matter and get results that are meaningful
-    epimodels::ModelSIR<> model_0("a virus", 1000, 0.01, .3, .3);
+    epimodels::ModelSIR model_0("a virus", 1000, 0.01, .3, .3);
     add_random_mixing(model_0, 2);
     model_0.seed(112);
     model_0.verbose_off();
     model_0.print(true); // print before run
     model_0.run_multiple(100, 4, 1231, sav_0, true, true, 1);
 
-    epimodels::ModelSIR<> model_1("a virus", 1000, 0.01, .3, .3);
+    epimodels::ModelSIR model_1("a virus", 1000, 0.01, .3, .3);
     add_random_mixing(model_1, 2);
     model_1.seed(112);
     model_1.verbose_off();
