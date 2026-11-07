@@ -5,12 +5,14 @@
 
 /**
  * @file seirquarantine.hpp
- * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model
+ * @brief A Susceptible-Exposed-Infected-Removed (SEIR) model
  *        with quarantine, isolation, and contact tracing
  */
 
 /**
  * @brief SEIR model with quarantine, isolation, and contact tracing
+ *
+ * ![Model Diagram](../assets/img/seirquarantine.png)
  *
  * @details An SEIR model whose contacts come from its layers, of any kind
  * (see `Model::add_layer()`): networks, mixing by group, or both. Each agent

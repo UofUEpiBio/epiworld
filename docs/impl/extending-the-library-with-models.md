@@ -1,70 +1,38 @@
-Although composition can be used to extend and create new models, a common practice in `epiworld` is to create new models via inheritance. As the reader will see in later sections, all the included models in `epiworld` have been built by inheriting from the main `Model` class.
+A model is a `Model` with a population, parameters, and a virus whose natural history says how the disease progresses: its stages and the transitions between them. A model can be built in a function, or as a class that inherits from `Model` and declares everything in its constructor; all the models included in `epiworld` are classes of the second kind.
 
-This section highlights some important considerations when using the inheritance approach.
+## Declaring a natural history
 
-## Execution workflow: Events
+The stages and transitions are declared on the virus (see `NaturalHistory`). The first stage is where agents start; a stage flagged `stage::carrier` carries the virus, and one flagged `stage::infectious` also transmits it. The transitions are of four kinds:
 
-The `epiworld` library is a discrete-time ABM that updates agents' states daily. As such, the framework implements what we call an "events" system that is triggered multiple times at the end of every step. Events essentially accumulate all changes that agents experience during the day, including adding tools, setting or removing viruses, and changing state. The events system is implemented using a LIFO (last-in, first-out) schedule, so the last update is the one that takes effect.
+| Declaration | Moves an agent |
+|---|---|
+| `infection(from, to, per_contact)` | after a contact with an infectious agent, with that probability per contact |
+| `rate(from, to, daily)` | with that daily probability (several rates out of a stage compete) |
+| `after(from, to, duration)` | when a duration, drawn on entering the stage, ends: `Duration::fixed()`, `geometric()`, `lognormal()`, `gamma()`, or a function; `.since(s)` counts from the entry into stage `s` |
+| `external(from, to, name)` | when code fires it (`Model::fire()`), e.g., from a global event or a reaction |
 
-Under the LIFO system, if an agent receives multiple updates in the same step - moving from state A to B, then to C, and finally to D - the last change takes effect and is reflected in the model's accounting. That is, instead of registering transitions A->B, B->C, and C->D, we record A->D.
+A value is a number, the name of a model parameter, `Value::inverse(name)` (`1 / parameter`), `Value::complement(name)` (`1 - parameter`), or a function of the agent and the model. A number becomes a model parameter named after the virus and the transition, so every value can be read and changed with `set_param()`. A transition can be named (`.name()`), can take a tool effect (`.effect(Effect::recovery)`), can branch to several targets with probabilities, and an infection can use its own sampler (`.sampler()`).
 
-## Execution workflow: main calls
+Agents can also have a status, such as free, quarantined or isolated (`Statuses`, set with `Model::set_statuses()`), with transitions of their own (`rate()`, `after()`, `external()`); a status transition can be restricted to agents in some stages (`.when()`). Reactions (`Model::react()`) respond to agents entering a stage or a status, for example by quarantining their contacts.
 
-The `Model::run()` method shows how events are accumulated in the model. The following modified code snippet illustrates this clearly:
+## Example: the ModelSIS class
 
-```cpp
-// Resets the entire system: the layers, then the viruses
-// and tools
-reset();
-
-// The next function records the current state
-// of the model in the database and advances
-// the day (step)
-next();
-
-for (int niter = 0; niter < get_ndays(); ++niter)
-{
-
-    // We can execute these components in whatever
-    // order the user needs.
-    this->update_state();     /// <<< run_events() >>>
-
-    // We start with the Global events
-    this->run_globalevents(); /// <<< run_events() >>>
-
-    // In this case we are applying degree sequence
-    // rewiring to change the network just a bit.
-    this->rewire();
-
-    // Writes the database and advances the day (step)
-    this->next();
-
-    // Mutation must happen at the very end of all
-    this->mutate_virus();
-
-}
-```
-
-The key aspect to notice is that both `Model::update_state()` and `Model::run_globalevents()` call `Model::run_events()`. This means that, after each function is called, the events that change agents' tools, viruses, and states are dispatched.
-
-In practice, this provides users with a way to modify the state of the model instance on the fly. For example, starting with version 0.15.0.0 of epiworld, the `ModelMeaslesSchool` model includes the class `InterventionMeaslesPEP` (which derives from `GlobalEvent`) that implements an intervention to move quarantined agents out of quarantine if the post-exposure prophylaxis tool is distributed and effective.
-
-## Example: The ModelSIS class
-
-The SIS (Susceptible-Infected-Susceptible) model is one of the simplest models included in epiworld. With only two states, the class implementation of the SIS model takes less than 100 lines of code. Here is the main component:
+The SIS (Susceptible-Infected-Susceptible) model is one of the simplest models included in epiworld:
 
 ```cpp
 class ModelSIS : public Model
 {
 
 public:
-    static const int SUSCEPTIBLE = 0;
-    static const int INFECTED    = 1;
 
-    ModelSIS() {};
+    static constexpr int SUSCEPTIBLE = 0;
+    static constexpr int INFECTED    = 1;
+
+    ModelSIS() = delete;
 
     ModelSIS(
         const std::string & vname,
+        epiworld_fast_uint n,
         epiworld_double prevalence,
         epiworld_double transmission_prob,
         epiworld_double recovery_rate
@@ -74,36 +42,32 @@ public:
 
 inline ModelSIS::ModelSIS(
     const std::string & vname,
+    epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double transmission_prob,
     epiworld_double recovery_rate
     )
 {
 
+    this->set_population_size(n);
+
     this->set_name("Susceptible-Infected-Susceptible (SIS)");
 
-    // Adding statuses
-    this->add_state("Susceptible", default_update_susceptible);
-    this->add_state("Infected", default_update_exposed);
-
-    // Setting up parameters
     this->add_param(transmission_prob, "Transmission probability");
     this->add_param(recovery_rate, "Recovery rate");
 
-    // Preparing the virus
-    Virus virus(vname, prevalence, true);
-    virus.set_state(INFECTED, SUSCEPTIBLE, SUSCEPTIBLE);
-    
-    virus.set_prob_infecting("Transmission probability");
-    virus.set_prob_recovery("Recovery rate");
-    virus.set_prob_death(0.0);
-    
-    this->add_virus(virus);
+    Virus virus(vname);
+    virus.add_stage("Susceptible");
+    virus.add_stage("Infected", stage::infectious);
+    virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
+    virus.rate(INFECTED, SUSCEPTIBLE, "Recovery rate").effect(Effect::recovery);
+
+    this->add_virus(virus, assign::share(prevalence));
 
 }
 ```
 
-The benefit of this approach is that users can directly use `ModelSIS` to create a simple system where a virus has already been added:
+`add_virus()` gives the model the virus's stages, and `assign::share(prevalence)` places the virus on that share of the agents at the start of each run (see `assign.hpp` for the other forms). Users then add the contacts and run:
 
 ```cpp
 #include "epiworld.hpp"
@@ -112,20 +76,58 @@ using namespace epiworld;
 
 int main() {
 
-    // Creating the model
-    epimodels::ModelSIS flumodel("Flu", 0.001, 0.1, 0.14);
+    epimodels::ModelSIS flumodel("Flu", 10000, 0.001, 0.1, 0.14);
 
-    // Adding the population
-    flumodel.agents_smallworld(10000, 20, false, 0.01);
+    flumodel.add_layer(layer::network(
+        "contacts", graph::smallworld(20, 0.01)
+    ));
 
-    ...
+    flumodel.run(100, 123);
+    flumodel.print();
+
 }
 ```
+
+`flumodel.draw_natural_history()` returns the model's diagram, drawn from the declarations (a mermaid flowchart). The diagrams of the included models (`include/epiworld/models/<model>.mmd`) are drawn this way by `make diagrams`.
+
+## Execution workflow: main calls
+
+The `Model::run()` method calls, for each day:
+
+```cpp
+// Resets the entire system: the layers, then the viruses
+// and tools
+reset();
+
+// Records the baseline (day 0) and advances to day 1
+next();
+
+for (int niter = 0; niter < get_ndays(); ++niter)
+{
+
+    // The natural history, the statuses, then the reactions
+    this->update_state();     /// <<< events_run() >>>
+
+    // The global events
+    this->run_globalevents(); /// <<< events_run() >>>
+
+    // Updates the layers (e.g., rewiring), records the day in the
+    // database, and advances the day (step)
+    this->next();
+
+    // Mutation happens at the very end
+    this->mutate_virus();
+
+}
+```
+
+## Execution workflow: events
+
+Changes to agents during a day (adding or removing tools and viruses, moving to another stage or status) are queued as events, which `Model::events_run()` applies after `update_state()` and after `run_globalevents()`. Events are applied in the order they were queued. An event from a declared transition applies only if the agent is still in one of the transition's sources, so if an agent's first event of the pass moved it, a later event from its old stage is skipped. A global event can therefore change the model on the fly: for example, `InterventionMeaslesPEP` (a `GlobalEvent` in the measles models) fires the transitions that take agents out of quarantine when post-exposure prophylaxis is given and effective.
 
 ## See Also
 
 - [Library Architecture](library-architecture.md) — the `Agent`/`Model` class hierarchy that new models inherit from.
 - [Extending the Library](extending-the-library.md) — defining custom agent behaviors, network structures, and global events.
-- [Core Simulation Models](core-simulation-models.md) — the full catalog of pre-built model templates.
-- [Events and Multi-Event Handling](events-and-multi-event-handling.md) — the LIFO event queue system used during model execution.
-
+- [Core Simulation Models](core-simulation-models.md) — the full catalog of pre-built models.
+- [Events and Multi-Event Handling](events-and-multi-event-handling.md) — the event queue used during model execution.

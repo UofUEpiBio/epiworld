@@ -1,11 +1,12 @@
+%% Drawn from the model's declarations by `make diagrams`; do not edit.
 flowchart LR
-
-    %% Disease progression states
-    subgraph Main[Disease Progression]
+    subgraph stages["Stages: Disease"]
         direction LR
-        S[Susceptible]
-        I[Infected]
+        s0["Susceptible"]
+        s1["Infected"]:::infectious
+        s0 -->|"infection: Transmission probability"| s1
+        s1 -->|"rate: Recovery rate"| s0
     end
-
-    S --> I
-    I --> S
+    classDef infectious fill:#f8d7da,stroke:#b02a37
+    classDef carrier fill:#fff3cd,stroke:#997404
+    classDef away fill:#e2e3e5,stroke:#6c757d

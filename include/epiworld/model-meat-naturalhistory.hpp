@@ -646,4 +646,41 @@ inline epiworld_double Model::nh_infection_prob(
     return h.transitions[tr].value.eval(target, &v, *this);
 }
 
+inline std::string Model::draw_natural_history() const
+{
+
+    if (!nh)
+        throw std::logic_error(
+            "The model has no natural history to draw (add a virus first)."
+        );
+
+    std::string out = "flowchart LR\n";
+
+    auto subgraph = [&out](
+        const std::string & id,
+        const std::string & title,
+        const std::string & body
+    ) {
+        out += "    subgraph " + id + "[\"" + title + "\"]\n";
+        out += "        direction LR\n";
+        std::istringstream lines(body);
+        std::string line;
+        while (std::getline(lines, line))
+            out += "    " + line + "\n";
+        out += "    end\n";
+    };
+
+    subgraph("stages", "Stages: " + nh->get_name(), nh->draw_mermaid("s"));
+    if (st)
+        subgraph("statuses", "Statuses", st->draw_mermaid("q", nh.get()));
+
+    out +=
+        "    classDef infectious fill:#f8d7da,stroke:#b02a37\n"
+        "    classDef carrier fill:#fff3cd,stroke:#997404\n"
+        "    classDef away fill:#e2e3e5,stroke:#6c757d\n";
+
+    return out;
+
+}
+
 #endif

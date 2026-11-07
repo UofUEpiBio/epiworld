@@ -8,7 +8,7 @@ The queue operates on the principle of dynamic activation. Agents are added to t
 However, it is worth noting that the performance gains depend on the sparsity of the network and the frequency of state transitions. In densely connected networks or scenarios with high state transition rates, the overhead of managing the queue may offset the benefits. In such cases, alternative queuing strategies or optimizations may be required.
 
 ## Implementation
-The `Queue` class is implemented as a template and encapsulates several key data members and methods that govern its behavior.
+The `Queue` class encapsulates several key data members and methods that govern its behavior.
 
 ### Members
 - `std::vector<epiworld_fast_int> active`: tracks the activation status of agents and their neighbors. Each element corresponds to an agent, with the value indicating the number of times the agent has been activated.
@@ -78,5 +78,5 @@ A mixing layer with a contact probability per pair (`layer::Mixing::set_contact_
 
 - [Library Architecture](library-architecture.md) — overview of the `Model` class that the `Queue` integrates with.
 - [Performance Optimization](performance-optimization.md) — broader strategies for improving simulation throughput.
-- [Extending the Library](extending-the-library.md) — custom agent state update functions that interact with the queue.
+- [Extending the Library](extending-the-library.md) — custom behaviors, declared as transitions, which decide which agents the queue visits.
 - [Push and Pull Transmission](transmission-sampling.md) — how transmission is sampled in network models.

@@ -51,4 +51,35 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
 
     REQUIRE_THROWS(diagram.draw_from_file(epiworld::DiagramType::Mermaid, "non_existant_file.txt"));
 
+    // Drawn from the declarations (no run): the stages, with their classes,
+    // and one edge per transition, labeled with its kind and value
+    {
+        epimodels::ModelSEIR seir("flu", 100, 0.01, 0.5, 4.0, 0.2);
+        const std::string d = seir.draw_natural_history();
+        auto has = [&d](const std::string & x) { return d.find(x) != std::string::npos; };
+        REQUIRE(has("flowchart LR\n"));
+        REQUIRE(has("s1[\"Exposed\"]:::carrier"));
+        REQUIRE(has("s2[\"Infected\"]:::infectious"));
+        REQUIRE(has("s0 -->|\"infection: Transmission probability\"| s1"));
+        REQUIRE(has("s1 ==>|\"after: geometric(Latent period)\"| s2"));
+        REQUIRE(has("s2 -->|\"rate: Recovery rate\"| s3"));
+        REQUIRE_FALSE(has("subgraph statuses"));
+
+        // Statuses: their own subgraph; a restriction names the virus's stages
+        Statuses st;
+        st.add_status("Free");
+        st.add_status("Isolated");
+        st.rate(0, 1, 0.5).name("Detected").when({2});
+        st.after(1, 0, Duration::fixed(7).since(2)).name("Released");
+        seir.set_statuses(st);
+        const std::string q = seir.draw_natural_history();
+        REQUIRE(q.find("subgraph statuses[\"Statuses\"]") != std::string::npos);
+        REQUIRE(q.find("q0 -->|\"Detected<br>rate: ") != std::string::npos);
+        REQUIRE(q.find("<br>when: Infected\"| q1") != std::string::npos);
+        REQUIRE(q.find("q1 ==>|\"Released<br>after: fixed(") != std::string::npos);
+        REQUIRE(q.find("), since Infected\"| q0") != std::string::npos);
+
+        REQUIRE_THROWS(Model(10).draw_natural_history());
+    }
+
 }

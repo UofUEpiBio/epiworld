@@ -4,7 +4,7 @@
 #include "../model-bones.hpp"
 
 /**
- * @brief Template for a Susceptible-Infected-Removed (SIR) model
+ * @brief A Susceptible-Infected-Removed (SIR) model
  * 
  * ![Model Diagram](../assets/img/sirlogit.png)
  * 
@@ -118,7 +118,7 @@ inline void ModelSIRLogit::reset()
 }
 
 /**
- * @brief Template for a Susceptible-Infected-Removed (SIR) model
+ * @brief A Susceptible-Infected-Removed (SIR) model
  * 
  * @param model A Model object where to set up the SIR.
  * @param vname std::string Name of the virus
