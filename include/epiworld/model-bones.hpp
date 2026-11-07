@@ -123,6 +123,7 @@ protected:
     std::vector< ToolPtr > tools = {};
     std::vector< Assign > virus_assign = {}; ///< [virus] Who gets it at each reset
     std::vector< Assign > tool_assign = {};  ///< [tool] Who gets it at each reset
+    AssignBuffers assign_buffers;            ///< The draws' work space; never copied
 
     std::shared_ptr< epi_xoshiro256ss > engine = std::make_shared< epi_xoshiro256ss >();
 
@@ -362,8 +363,16 @@ protected:
     ///@{
     std::shared_ptr< const NaturalHistory > nh = nullptr;
     std::vector< int > nh_until;    ///< [agent] Day the stage's duration ends
-    std::vector< int > nh_entered;  ///< [agent * stage] Day entered, this infection (-1: not)
-    std::vector< int > nh_episode;  ///< [agent] Infections so far
+    std::vector< int > nh_row;      ///< [agent] Its record in nh_rows (-1: none yet)
+    /**
+     * Per agent that has left the first stage (`nh_row`), `1 + stages` ints:
+     * its infections so far, then the day it entered each stage in this
+     * infection (-1: not). An agent without a record has been in the first
+     * stage since day 0, with no infection; the records are made as agents
+     * move, so a run touches memory for the agents that do.
+     */
+    std::vector< int > nh_rows;
+    int * nh_record(size_t id);     ///< The agent's record, made on first use
     std::vector< char > nh_queue;   ///< [stage] Queue mode: 0 none, 1 self, 2 everyone
     Assign nh_initial;        ///< See set_initial()
     int nh_pending = -1;            ///< Transition of the next event (see _add_event())
@@ -375,9 +384,8 @@ protected:
 
     /// The statuses (`nullptr`: one status, "Free")
     std::shared_ptr< const Statuses > st = nullptr;
-    std::vector< int > nh_status_until; ///< [agent] Day the status's duration ends
-    std::vector< int > nh_status_since; ///< [agent] Day the status was entered
-    std::vector< int > nh_status_sod;   ///< [agent] Status at the start of the day it last changed
+    std::vector< int > nh_status_until; ///< [agent] Day the status's duration ends (with statuses)
+    std::vector< int > nh_status_sod;   ///< [agent] Status at the start of the day it last changed (with statuses)
 
     struct Reaction {
         Trigger on;

@@ -1697,7 +1697,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-07).
 | `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`), #228 merged | #43 merged (`main` -> `v1-layers`: epiworldpy#34) | #29 merged (`main` -> `v1-layers`: epiworldjs#26, #28) | #71 merged (`main` -> `v1-layers`: measles#69) |
 | Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged (+ #230: the peer row is an approximation) | #43 merged (with 3d-3a, #351; first `Bubbles` binding: `epiworldpy.Bubbles`, `make_layer()`, `add_globalevent()`) | #29 merged (with 3d-3a, #351; re-vendor only) | #71 merged (with 3d-3a, #351 and measles#69; re-vendor only) |
 | Registry (#312) | #356 merged (its `InfectionStates` removed by #363: a user's virus is a strain of the model's) | | | | |
-| Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 merged (replaces #358-#360, closed); NH-1 and NH-2: #363 merged; NH-3 (branch `nh-3-docs`: docs and diagrams drawn from the declarations): #366; the benchmark runners and rerun: UofUEpiBio/epiworld-benchmark#35 (simulation time regressed in three rows, profiled to the reset; fix before Phase 4); NH-4 not started | to port (NH-4) | to port (NH-4) | to port (NH-4) | to port (NH-4) |
+| Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 merged (replaces #358-#360, closed); NH-1 and NH-2: #363 merged; NH-3 (branch `nh-3-docs`: docs and diagrams drawn from the declarations): #366; the benchmark runners and rerun: UofUEpiBio/epiworld-benchmark#35 (simulation time regressed in three rows, profiled to the reset); the reset fix (branch `reset-no-realloc`: placements in reused buffers, natural-history records made as agents move): #RESETPR, then another rerun; NH-4 not started | to port (NH-4) | to port (NH-4) | to port (NH-4) | to port (NH-4) |
 | Variants by id (V-1) and no `TSeq` template (V-2) (after #363, before NH-3) | V-1: #364 merged; V-2: #365 merged | with NH-4 | with NH-4 | with NH-4 | with NH-4 |
 | Phases 4, 5, 6 | not started | | | | |
 
@@ -1720,9 +1720,9 @@ regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 0.91 because the 0.x run happened to be faster (the 1.0 run was faster too).
 
 **Next** (as of the date above): NH-3 (#366, docs and diagrams) and the
-benchmark rerun (UofUEpiBio/epiworld-benchmark#35) wait for review; a fix for
-the reset cost the rerun found (an epiworld PR, then another rerun), before
-Phase 4; then NH-4 (the wrapper ports, which also
+benchmark rerun (UofUEpiBio/epiworld-benchmark#35) wait for review; the fix for
+the reset cost the rerun found (#RESETPR, stacked on #366) waits for review,
+then another rerun pinned to it, before Phase 4; then NH-4 (the wrapper ports, which also
 port the registry, the variants by id and the plain classes; then the
 epiworldRShiny port); then Phase 4.
 

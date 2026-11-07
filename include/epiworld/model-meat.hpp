@@ -374,7 +374,7 @@ inline void Model::events_run()
             }
 
             // The status it had at the start of the day
-            if (a.agent->state_last_changed != today())
+            if (st && (a.agent->state_last_changed != today()))
                 nh_status_sod[static_cast< size_t >(a.agent->id)] = k;
 
         }
@@ -472,7 +472,6 @@ inline void Model::events_run()
 
                 const size_t id = static_cast< size_t >(p->id);
                 const int k = nh_status_of(p->state);
-                nh_status_since[id] = today();
                 const int after = st->stages[static_cast< size_t >(k)].after;
                 if (after >= 0)
                 {
@@ -480,8 +479,7 @@ inline void Model::events_run()
                     int base = today();
                     if (d.get_anchor() >= 0)
                     {
-                        const int e = nh_entered[id * nh->get_n_stages() +
-                            static_cast< size_t >(d.get_anchor())];
+                        const int e = get_stage_entered(id, d.get_anchor());
                         if (e >= 0)
                             base = e;
                     }
@@ -692,13 +690,12 @@ inline Model::Model(const Model & model) :
     transmission_kappa(model.transmission_kappa),
     nh(model.nh),
     nh_until(model.nh_until),
-    nh_entered(model.nh_entered),
-    nh_episode(model.nh_episode),
+    nh_row(model.nh_row),
+    nh_rows(model.nh_rows),
     nh_queue(model.nh_queue),
     nh_initial(model.nh_initial),
     st(model.st),
     nh_status_until(model.nh_status_until),
-    nh_status_since(model.nh_status_since),
     nh_status_sod(model.nh_status_sod),
     nh_reactions(model.nh_reactions)
 {
@@ -804,13 +801,12 @@ inline Model::Model(Model && model) :
     transmission_kappa(model.transmission_kappa),
     nh(std::move(model.nh)),
     nh_until(std::move(model.nh_until)),
-    nh_entered(std::move(model.nh_entered)),
-    nh_episode(std::move(model.nh_episode)),
+    nh_row(std::move(model.nh_row)),
+    nh_rows(std::move(model.nh_rows)),
     nh_queue(std::move(model.nh_queue)),
     nh_initial(std::move(model.nh_initial)),
     st(std::move(model.st)),
     nh_status_until(std::move(model.nh_status_until)),
-    nh_status_since(std::move(model.nh_status_since)),
     nh_status_sod(std::move(model.nh_status_sod)),
     nh_reactions(std::move(model.nh_reactions))
 {
@@ -909,13 +905,12 @@ inline Model & Model::operator=(const Model & m)
 
     nh = m.nh;
     nh_until = m.nh_until;
-    nh_entered = m.nh_entered;
-    nh_episode = m.nh_episode;
+    nh_row = m.nh_row;
+    nh_rows = m.nh_rows;
     nh_queue = m.nh_queue;
     nh_initial = m.nh_initial;
     st = m.st;
     nh_status_until = m.nh_status_until;
-    nh_status_since = m.nh_status_since;
     nh_status_sod = m.nh_status_sod;
     nh_reactions = m.nh_reactions;
 
@@ -1002,26 +997,41 @@ inline void Model::dist_virus()
 {
 
     // Who can get a virus: no virus, and (with a natural history) a stage
-    // that can be infected
-    std::vector< char > eligible(population.size());
+    // that can be infected. By state first, so the pass over the agents is a
+    // lookup.
+    std::vector< char > infectable(
+        nh ? nh->get_n_stages() * nh_nstatus() : 1u, 1
+    );
+    if (nh)
+        for (size_t c = 0u; c < infectable.size(); ++c)
+            infectable[c] = nh->stages[
+                static_cast< size_t >(nh_stage_of(static_cast< unsigned int >(c)))
+            ].infection >= 0;
 
+    auto & buf = assign_buffers;
     for (size_t k = 0u; k < viruses.size(); ++k)
     {
 
-        for (auto & p : population)
-            eligible[static_cast< size_t >(p.id)] =
-                (p.virus == nullptr) &&
-                (!nh || (nh->stages[static_cast< size_t >(nh_stage_of(p.state))].infection >= 0));
+        if (!virus_assign[k].is_set())
+            continue;
 
-        const std::vector< int > labels = virus_assign[k].draw(*this, eligible);
+        buf.eligible.resize(population.size());
+        if (nh)
+            for (auto & p : population)
+                buf.eligible[static_cast< size_t >(p.id)] =
+                    (p.virus == nullptr) & infectable[p.state];
+        else
+            for (auto & p : population)
+                buf.eligible[static_cast< size_t >(p.id)] = (p.virus == nullptr);
+
+        virus_assign[k].draw(*this, buf);
         const Virus & v = *viruses[k];
 
-        for (size_t i = 0u; i < labels.size(); ++i)
+        for (const auto & x : buf.out)
         {
 
-            const int label = labels[i];
-            if (label == -1)
-                continue;
+            const size_t i  = x.first;
+            const int label = x.second;
 
             if (label == assign::ANY)
             {
@@ -1053,16 +1063,19 @@ inline void Model::dist_virus()
 inline void Model::dist_tools()
 {
 
-    // Everyone can get a tool
-    const std::vector< char > eligible(population.size(), 1);
-
+    auto & buf = assign_buffers;
     for (size_t k = 0u; k < tools.size(); ++k)
     {
 
-        const std::vector< int > labels = tool_assign[k].draw(*this, eligible);
-        for (size_t i = 0u; i < labels.size(); ++i)
-            if (labels[i] != -1)
-                population[i].add_tool(*this, *tools[k]);
+        if (!tool_assign[k].is_set())
+            continue;
+
+        // Everyone can get a tool
+        buf.eligible.assign(population.size(), 1);
+
+        tool_assign[k].draw(*this, buf);
+        for (const auto & x : buf.out)
+            population[x.first].add_tool(*this, *tools[k]);
 
         // Apply the events
         events_run();

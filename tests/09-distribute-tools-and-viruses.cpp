@@ -110,6 +110,21 @@ EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
     REQUIRE(a.get_n_tools() == 0u);
     REQUIRE(b.get_n_tools() == 0u);
 
+    // Given agents out of order and repeated: each gets the tool once
+    epimodels::ModelSIR model_2(
+        "a virus", 1000u, 0.01, 1.0, 1.0/1000.0
+    );
+    add_random_mixing(model_2, 4.0);
+    model_2.add_tool(tool, assign::agents({7u, 3u, 7u, 500u, 3u}));
+    model_2.run(0, 131);
+
+    std::vector< size_t > n_tools(model_2.size());
+    for (size_t i = 0; i < model_2.size(); i++)
+        n_tools[i] = model_2.get_agent(i).get_n_tools();
+
+    std::vector< size_t > expected(model_2.size(), 0u);
+    expected[3u] = expected[7u] = expected[500u] = 1u;
+    REQUIRE(n_tools == expected);
 
 
 }

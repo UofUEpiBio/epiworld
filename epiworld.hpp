@@ -5991,15 +5991,37 @@ namespace assign {
 using AssignFun = std::function< int(Agent &, Model &) >;
 
 /**
+ * @brief The work space of a draw. The model keeps one and reuses it at every
+ * reset, so placing agents allocates nothing once its vectors have grown.
+ * @details Copying it gives an empty one.
+ */
+struct AssignBuffers {
+
+    /// In: one entry per agent, whether it can be given a label. A draw may
+    /// clear entries (of the agents it labels).
+    std::vector< char > eligible;
+
+    /// Out: the agents given a label, with their label, in ascending id order.
+    std::vector< std::pair< size_t, int > > out;
+
+    /// The forms' work space (agent ids; the draws index it with 32 bits).
+    std::vector< uint32_t > pool;
+
+    AssignBuffers() = default;
+    AssignBuffers(const AssignBuffers &) {}
+    AssignBuffers & operator=(const AssignBuffers &) { return *this; }
+
+};
+
+/**
  * @brief Gives each eligible agent a label, or none (see `assign.hpp`).
  * @details Default-constructed, it gives no one anything.
  */
 class Assign {
 public:
-    /// The labels of the agents (-1: none), given who is eligible.
-    using DrawFun = std::function<
-        std::vector< int >(Model &, const std::vector< char > &)
-    >;
+    /// Appends the agents given a label, with their label, to `buf.out`,
+    /// given who is eligible (`buf.eligible`).
+    using DrawFun = std::function< void(Model &, AssignBuffers &) >;
 
 private:
     DrawFun fun = nullptr;
@@ -6019,12 +6041,14 @@ public:
     bool is_set() const { return static_cast< bool >(fun); }
 
     /**
-     * @brief The labels of the agents of `model` (-1: none).
-     * @param eligible One entry per agent: whether it can be given a label.
+     * @brief Draws the labels of the agents of `model`.
+     * @param buf `buf.eligible` has one entry per agent: whether it can be
+     * given a label (the draw may clear entries). On return, `buf.out` has the
+     * agents given a label, with their label, in ascending id order.
      * @throws std::logic_error if the form names an agent that is not
      * eligible.
      */
-    std::vector< int > draw(Model & model, const std::vector< char > & eligible) const;
+    void draw(Model & model, AssignBuffers & buf) const;
 };
 
 #endif
@@ -6142,6 +6166,7 @@ protected:
     std::vector< ToolPtr > tools = {};
     std::vector< Assign > virus_assign = {}; ///< [virus] Who gets it at each reset
     std::vector< Assign > tool_assign = {};  ///< [tool] Who gets it at each reset
+    AssignBuffers assign_buffers;            ///< The draws' work space; never copied
 
     std::shared_ptr< epi_xoshiro256ss > engine = std::make_shared< epi_xoshiro256ss >();
 
@@ -6381,8 +6406,16 @@ protected:
     ///@{
     std::shared_ptr< const NaturalHistory > nh = nullptr;
     std::vector< int > nh_until;    ///< [agent] Day the stage's duration ends
-    std::vector< int > nh_entered;  ///< [agent * stage] Day entered, this infection (-1: not)
-    std::vector< int > nh_episode;  ///< [agent] Infections so far
+    std::vector< int > nh_row;      ///< [agent] Its record in nh_rows (-1: none yet)
+    /**
+     * Per agent that has left the first stage (`nh_row`), `1 + stages` ints:
+     * its infections so far, then the day it entered each stage in this
+     * infection (-1: not). An agent without a record has been in the first
+     * stage since day 0, with no infection; the records are made as agents
+     * move, so a run touches memory for the agents that do.
+     */
+    std::vector< int > nh_rows;
+    int * nh_record(size_t id);     ///< The agent's record, made on first use
     std::vector< char > nh_queue;   ///< [stage] Queue mode: 0 none, 1 self, 2 everyone
     Assign nh_initial;        ///< See set_initial()
     int nh_pending = -1;            ///< Transition of the next event (see _add_event())
@@ -6394,9 +6427,8 @@ protected:
 
     /// The statuses (`nullptr`: one status, "Free")
     std::shared_ptr< const Statuses > st = nullptr;
-    std::vector< int > nh_status_until; ///< [agent] Day the status's duration ends
-    std::vector< int > nh_status_since; ///< [agent] Day the status was entered
-    std::vector< int > nh_status_sod;   ///< [agent] Status at the start of the day it last changed
+    std::vector< int > nh_status_until; ///< [agent] Day the status's duration ends (with statuses)
+    std::vector< int > nh_status_sod;   ///< [agent] Status at the start of the day it last changed (with statuses)
 
     struct Reaction {
         Trigger on;
@@ -9934,22 +9966,15 @@ inline void Mixing::set_groups(Assign a, size_t n_groups_)
 
     // A label is a group, or none
     const std::string lname = this->get_name();
-    auto to_groups = [lname, n_groups_](const std::vector< int > & labels) {
-        std::vector< size_t > g(labels.size(), NO_GROUP);
-        for (size_t i = 0u; i < labels.size(); ++i)
-        {
-            if (labels[i] == -1)
-                continue;
-            if ((labels[i] < 0) || (static_cast< size_t >(labels[i]) >= n_groups_))
-                throw std::range_error(
-                    "Mixing layer '" + lname + "': the label " +
-                    std::to_string(labels[i]) + " is not a group (" +
-                    std::to_string(n_groups_) + " groups; a grouping gives "
-                    "each agent a group, e.g., assign::counts({{0, n}, ...}))."
-                );
-            g[i] = static_cast< size_t >(labels[i]);
-        }
-        return g;
+    auto group_of = [lname, n_groups_](int label) {
+        if ((label < 0) || (static_cast< size_t >(label) >= n_groups_))
+            throw std::range_error(
+                "Mixing layer '" + lname + "': the label " +
+                std::to_string(label) + " is not a group (" +
+                std::to_string(n_groups_) + " groups; a grouping gives "
+                "each agent a group, e.g., assign::counts({{0, n}, ...}))."
+            );
+        return static_cast< size_t >(label);
     };
 
     n_groups        = n_groups_;
@@ -9958,7 +9983,10 @@ inline void Mixing::set_groups(Assign a, size_t n_groups_)
 
     if (const auto * fixed = a.get_fixed())
     {
-        groups_baseline = to_groups(*fixed);
+        groups_baseline.assign(fixed->size(), NO_GROUP);
+        for (size_t i = 0u; i < fixed->size(); ++i)
+            if ((*fixed)[i] != -1)
+                groups_baseline[i] = group_of((*fixed)[i]);
         groups          = groups_baseline;
         grouping        = {0u, nullptr};
         rebuild_members();
@@ -9968,9 +9996,14 @@ inline void Mixing::set_groups(Assign a, size_t n_groups_)
         // Drawn at every reset; everyone can be in a group
         grouping = {
             n_groups_,
-            [a, to_groups](Model & model) -> std::vector< size_t > {
-                const std::vector< char > everyone(model.size(), 1);
-                return to_groups(a.draw(model, everyone));
+            [a, group_of](Model & model) -> std::vector< size_t > {
+                auto & buf = model.assign_buffers;
+                buf.eligible.assign(model.size(), 1);
+                a.draw(model, buf);
+                std::vector< size_t > g(model.size(), NO_GROUP);
+                for (const auto & x : buf.out)
+                    g[x.first] = group_of(x.second);
+                return g;
             }
         };
         groups_baseline.clear();
@@ -11681,14 +11714,23 @@ inline typename layer::Network::Rewiring rewire_degseq(std::string param)
 
 // The forms of `Assign` (see assign.hpp)
 
-inline std::vector< int > Assign::draw(
-    Model & model,
-    const std::vector< char > & eligible
-) const
+inline void Assign::draw(Model & model, AssignBuffers & buf) const
 {
+
+    buf.out.clear();
     if (!fun)
-        return std::vector< int >(model.size(), -1);
-    return fun(model, eligible);
+        return;
+
+    fun(model, buf);
+
+    const auto by_agent = [](
+        const std::pair< size_t, int > & a,
+        const std::pair< size_t, int > & b
+    ) { return a.first < b.first; };
+
+    if (!std::is_sorted(buf.out.begin(), buf.out.end(), by_agent))
+        std::sort(buf.out.begin(), buf.out.end(), by_agent);
+
 }
 
 namespace assign {
@@ -11715,28 +11757,32 @@ namespace detail {
 
     /**
      * Label by label, in order, draws `count` agents at random from the
-     * eligible ones not yet labelled (taken in ascending id order). A count
-     * above what is left is an error.
+     * eligible ones not yet labelled (taken in ascending id order); a
+     * labelled agent is no longer eligible. A count above what is left is an
+     * error.
      */
-    inline std::vector< int > draw_counts(
+    inline void draw_counts(
         Model & model,
-        const std::vector< char > & eligible,
+        AssignBuffers & buf,
         const std::vector< std::pair< int, size_t > > & counts
     )
     {
 
-        std::vector< int > labels(model.size(), -1);
-        std::vector< size_t > idx;
+        auto & eligible = buf.eligible;
+        auto & idx      = buf.pool;
 
         for (const auto & c : counts)
         {
 
-            idx.clear();
-            for (size_t i = 0u; i < labels.size(); ++i)
-                if (eligible[i] && (labels[i] == -1))
-                    idx.push_back(i);
+            // The eligible ids, in order (written without branching)
+            idx.resize(eligible.size());
+            size_t n_left = 0u;
+            for (size_t i = 0u; i < eligible.size(); ++i)
+            {
+                idx[n_left] = static_cast< uint32_t >(i);
+                n_left += (eligible[i] != 0);
+            }
 
-            size_t n_left = idx.size();
             if (c.second > n_left)
                 throw std::range_error(
                     "Cannot assign " + std::to_string(c.second) + " agents: "
@@ -11748,13 +11794,12 @@ namespace detail {
                 const size_t loc = model.runif_index(
                     static_cast< uint32_t >(n_left--)
                 );
-                labels[idx[loc]] = c.first;
+                buf.out.emplace_back(idx[loc], c.first);
+                eligible[idx[loc]] = 0;
                 std::swap(idx[loc], idx[n_left]);
             }
 
         }
-
-        return labels;
 
     }
 
@@ -11799,26 +11844,25 @@ namespace detail {
     }
 
     /// In each group, draws `want[g]` of its eligible members (capped).
-    inline std::vector< int > draw_groups(
+    inline void draw_groups(
         Model & model,
-        const std::vector< char > & eligible,
+        AssignBuffers & buf,
         const std::string & layer,
         const std::vector< epiworld_double > & values,
         bool as_share
     )
     {
 
-        std::vector< int > labels(model.size(), -1);
         const auto members = groups_of(model, layer, values.size());
 
-        std::vector< size_t > idx;
+        auto & idx = buf.pool;
         for (size_t g = 0u; g < values.size(); ++g)
         {
 
             idx.clear();
             for (size_t i : members[g])
-                if (eligible[i])
-                    idx.push_back(i);
+                if (buf.eligible[i])
+                    idx.push_back(static_cast< uint32_t >(i));
 
             size_t n = idx.size();
             const epiworld_double want = as_share ?
@@ -11830,13 +11874,11 @@ namespace detail {
             for (size_t k = 0u; k < n_draw; ++k)
             {
                 const size_t loc = model.runif_index(static_cast< uint32_t >(n--));
-                labels[idx[loc]] = ANY;
+                buf.out.emplace_back(idx[loc], ANY);
                 std::swap(idx[loc], idx[n]);
             }
 
         }
-
-        return labels;
 
     }
 
@@ -11846,19 +11888,19 @@ namespace detail {
 inline Assign share(epiworld_double p)
 {
     detail::check_share(p, "share");
-    return Assign([p](Model & m, const std::vector< char > & e) {
+    return Assign([p](Model & m, AssignBuffers & b) {
         const size_t n = static_cast< size_t >(std::floor(
-            p * static_cast< epiworld_double >(detail::n_eligible(e))
+            p * static_cast< epiworld_double >(detail::n_eligible(b.eligible))
         ));
-        return detail::draw_counts(m, e, {{ANY, n}});
+        detail::draw_counts(m, b, {{ANY, n}});
     });
 }
 
 /// `n` eligible agents, at random.
 inline Assign count(size_t n)
 {
-    return Assign([n](Model & m, const std::vector< char > & e) {
-        return detail::draw_counts(m, e, {{ANY, n}});
+    return Assign([n](Model & m, AssignBuffers & b) {
+        detail::draw_counts(m, b, {{ANY, n}});
     });
 }
 
@@ -11877,22 +11919,22 @@ inline Assign shares(std::vector< std::pair< int, epiworld_double > > s)
     if (total > 1.0 + 1e-9)
         throw std::range_error("assign::shares(): the shares add up to more than 1.");
 
-    return Assign([s](Model & m, const std::vector< char > & e) {
+    return Assign([s](Model & m, AssignBuffers & b) {
         const epiworld_double n = static_cast< epiworld_double >(
-            detail::n_eligible(e)
+            detail::n_eligible(b.eligible)
         );
         std::vector< std::pair< int, size_t > > c;
         for (auto & x : s)
             c.emplace_back(x.first, static_cast< size_t >(std::floor(x.second * n)));
-        return detail::draw_counts(m, e, c);
+        detail::draw_counts(m, b, c);
     });
 }
 
 /// Several labels: label `l` goes to `n` agents, drawn in order.
 inline Assign counts(std::vector< std::pair< int, size_t > > c)
 {
-    return Assign([c](Model & m, const std::vector< char > & e) {
-        return detail::draw_counts(m, e, c);
+    return Assign([c](Model & m, AssignBuffers & b) {
+        detail::draw_counts(m, b, c);
     });
 }
 
@@ -11907,8 +11949,8 @@ inline Assign group_shares(std::string layer, std::vector< epiworld_double > p)
     for (auto x : p)
         detail::check_share(x, "group_shares");
 
-    return Assign([layer, p](Model & m, const std::vector< char > & e) {
-        return detail::draw_groups(m, e, layer, p, true);
+    return Assign([layer, p](Model & m, AssignBuffers & b) {
+        detail::draw_groups(m, b, layer, p, true);
     });
 }
 
@@ -11921,17 +11963,18 @@ inline Assign group_counts(std::string layer, std::vector< epiworld_double > n)
     for (auto x : n)
         detail::check_count(x, "group_counts");
 
-    return Assign([layer, n](Model & m, const std::vector< char > & e) {
-        return detail::draw_groups(m, e, layer, n, false);
+    return Assign([layer, n](Model & m, AssignBuffers & b) {
+        detail::draw_groups(m, b, layer, n, false);
     });
 }
 
 /// The given agents (each must be eligible).
 inline Assign agents(std::vector< size_t > ids)
 {
+    std::sort(ids.begin(), ids.end());
+    ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
     auto ids_ptr = std::make_shared< const std::vector< size_t > >(std::move(ids));
-    return Assign([ids_ptr](Model & m, const std::vector< char > & e) {
-        std::vector< int > labels(m.size(), -1);
+    return Assign([ids_ptr](Model & m, AssignBuffers & b) {
         for (size_t i : *ids_ptr)
         {
             if (i >= m.size())
@@ -11939,14 +11982,13 @@ inline Assign agents(std::vector< size_t > ids)
                     "assign::agents(): agent " + std::to_string(i) +
                     " is out of range."
                 );
-            if (!e[i])
+            if (!b.eligible[i])
                 throw std::logic_error(
                     "assign::agents(): agent " + std::to_string(i) +
                     " cannot be given this (it is not eligible)."
                 );
-            labels[i] = ANY;
+            b.out.emplace_back(i, ANY);
         }
-        return labels;
     });
 }
 
@@ -11954,19 +11996,23 @@ inline Assign agents(std::vector< size_t > ids)
 inline Assign labels(std::vector< int > v)
 {
     auto v_ptr = std::make_shared< const std::vector< int > >(std::move(v));
-    return Assign([v_ptr](Model & m, const std::vector< char > & e) {
+    return Assign([v_ptr](Model & m, AssignBuffers & b) {
         if (v_ptr->size() != m.size())
             throw std::range_error(
                 "assign::labels(): " + std::to_string(v_ptr->size()) +
                 " labels for " + std::to_string(m.size()) + " agents."
             );
         for (size_t i = 0u; i < v_ptr->size(); ++i)
-            if (((*v_ptr)[i] != -1) && !e[i])
+        {
+            if ((*v_ptr)[i] == -1)
+                continue;
+            if (!b.eligible[i])
                 throw std::logic_error(
                     "assign::labels(): agent " + std::to_string(i) +
                     " cannot be given this (it is not eligible)."
                 );
-        return *v_ptr;
+            b.out.emplace_back(i, (*v_ptr)[i]);
+        }
     }, v_ptr);
 }
 
@@ -11995,13 +12041,16 @@ inline Assign labels(const std::vector< T > & v)
 /// `fun(agent, model)` for each eligible agent (-1: none).
 inline Assign by(AssignFun fun)
 {
-    return Assign([fun](Model & m, const std::vector< char > & e) {
-        std::vector< int > labels(m.size(), -1);
+    return Assign([fun](Model & m, AssignBuffers & b) {
         auto & pop = m.get_agents();
         for (size_t i = 0u; i < pop.size(); ++i)
-            if (e[i])
-                labels[i] = fun(pop[i], m);
-        return labels;
+        {
+            if (!b.eligible[i])
+                continue;
+            const int label = fun(pop[i], m);
+            if (label != -1)
+                b.out.emplace_back(i, label);
+        }
     });
 }
 
@@ -15666,7 +15715,7 @@ inline void Model::events_run()
             }
 
             // The status it had at the start of the day
-            if (a.agent->state_last_changed != today())
+            if (st && (a.agent->state_last_changed != today()))
                 nh_status_sod[static_cast< size_t >(a.agent->id)] = k;
 
         }
@@ -15764,7 +15813,6 @@ inline void Model::events_run()
 
                 const size_t id = static_cast< size_t >(p->id);
                 const int k = nh_status_of(p->state);
-                nh_status_since[id] = today();
                 const int after = st->stages[static_cast< size_t >(k)].after;
                 if (after >= 0)
                 {
@@ -15772,8 +15820,7 @@ inline void Model::events_run()
                     int base = today();
                     if (d.get_anchor() >= 0)
                     {
-                        const int e = nh_entered[id * nh->get_n_stages() +
-                            static_cast< size_t >(d.get_anchor())];
+                        const int e = get_stage_entered(id, d.get_anchor());
                         if (e >= 0)
                             base = e;
                     }
@@ -15984,13 +16031,12 @@ inline Model::Model(const Model & model) :
     transmission_kappa(model.transmission_kappa),
     nh(model.nh),
     nh_until(model.nh_until),
-    nh_entered(model.nh_entered),
-    nh_episode(model.nh_episode),
+    nh_row(model.nh_row),
+    nh_rows(model.nh_rows),
     nh_queue(model.nh_queue),
     nh_initial(model.nh_initial),
     st(model.st),
     nh_status_until(model.nh_status_until),
-    nh_status_since(model.nh_status_since),
     nh_status_sod(model.nh_status_sod),
     nh_reactions(model.nh_reactions)
 {
@@ -16096,13 +16142,12 @@ inline Model::Model(Model && model) :
     transmission_kappa(model.transmission_kappa),
     nh(std::move(model.nh)),
     nh_until(std::move(model.nh_until)),
-    nh_entered(std::move(model.nh_entered)),
-    nh_episode(std::move(model.nh_episode)),
+    nh_row(std::move(model.nh_row)),
+    nh_rows(std::move(model.nh_rows)),
     nh_queue(std::move(model.nh_queue)),
     nh_initial(std::move(model.nh_initial)),
     st(std::move(model.st)),
     nh_status_until(std::move(model.nh_status_until)),
-    nh_status_since(std::move(model.nh_status_since)),
     nh_status_sod(std::move(model.nh_status_sod)),
     nh_reactions(std::move(model.nh_reactions))
 {
@@ -16201,13 +16246,12 @@ inline Model & Model::operator=(const Model & m)
 
     nh = m.nh;
     nh_until = m.nh_until;
-    nh_entered = m.nh_entered;
-    nh_episode = m.nh_episode;
+    nh_row = m.nh_row;
+    nh_rows = m.nh_rows;
     nh_queue = m.nh_queue;
     nh_initial = m.nh_initial;
     st = m.st;
     nh_status_until = m.nh_status_until;
-    nh_status_since = m.nh_status_since;
     nh_status_sod = m.nh_status_sod;
     nh_reactions = m.nh_reactions;
 
@@ -16294,26 +16338,41 @@ inline void Model::dist_virus()
 {
 
     // Who can get a virus: no virus, and (with a natural history) a stage
-    // that can be infected
-    std::vector< char > eligible(population.size());
+    // that can be infected. By state first, so the pass over the agents is a
+    // lookup.
+    std::vector< char > infectable(
+        nh ? nh->get_n_stages() * nh_nstatus() : 1u, 1
+    );
+    if (nh)
+        for (size_t c = 0u; c < infectable.size(); ++c)
+            infectable[c] = nh->stages[
+                static_cast< size_t >(nh_stage_of(static_cast< unsigned int >(c)))
+            ].infection >= 0;
 
+    auto & buf = assign_buffers;
     for (size_t k = 0u; k < viruses.size(); ++k)
     {
 
-        for (auto & p : population)
-            eligible[static_cast< size_t >(p.id)] =
-                (p.virus == nullptr) &&
-                (!nh || (nh->stages[static_cast< size_t >(nh_stage_of(p.state))].infection >= 0));
+        if (!virus_assign[k].is_set())
+            continue;
 
-        const std::vector< int > labels = virus_assign[k].draw(*this, eligible);
+        buf.eligible.resize(population.size());
+        if (nh)
+            for (auto & p : population)
+                buf.eligible[static_cast< size_t >(p.id)] =
+                    (p.virus == nullptr) & infectable[p.state];
+        else
+            for (auto & p : population)
+                buf.eligible[static_cast< size_t >(p.id)] = (p.virus == nullptr);
+
+        virus_assign[k].draw(*this, buf);
         const Virus & v = *viruses[k];
 
-        for (size_t i = 0u; i < labels.size(); ++i)
+        for (const auto & x : buf.out)
         {
 
-            const int label = labels[i];
-            if (label == -1)
-                continue;
+            const size_t i  = x.first;
+            const int label = x.second;
 
             if (label == assign::ANY)
             {
@@ -16345,16 +16404,19 @@ inline void Model::dist_virus()
 inline void Model::dist_tools()
 {
 
-    // Everyone can get a tool
-    const std::vector< char > eligible(population.size(), 1);
-
+    auto & buf = assign_buffers;
     for (size_t k = 0u; k < tools.size(); ++k)
     {
 
-        const std::vector< int > labels = tool_assign[k].draw(*this, eligible);
-        for (size_t i = 0u; i < labels.size(); ++i)
-            if (labels[i] != -1)
-                population[i].add_tool(*this, *tools[k]);
+        if (!tool_assign[k].is_set())
+            continue;
+
+        // Everyone can get a tool
+        buf.eligible.assign(population.size(), 1);
+
+        tool_assign[k].draw(*this, buf);
+        for (const auto & x : buf.out)
+            population[x.first].add_tool(*this, *tools[k]);
 
         // Apply the events
         events_run();
@@ -21720,7 +21782,11 @@ inline int Model::get_stage_entered(size_t id, int stage) const
     if (!nh)
         throw std::logic_error("The model has no natural history.");
     nh->check_stage(stage, "");
-    return nh_entered.at(id * nh->get_n_stages() + static_cast< size_t >(stage));
+    const int row = nh_row.at(id);
+    if (row < 0)
+        return (stage == 0) ? 0 : -1;
+    return nh_rows[static_cast< size_t >(row) * (1u + nh->get_n_stages()) +
+        1u + static_cast< size_t >(stage)];
 }
 
 inline int Model::get_stage_until(size_t id) const
@@ -21734,7 +21800,27 @@ inline int Model::get_episode(size_t id) const
 {
     if (!nh)
         throw std::logic_error("The model has no natural history.");
-    return nh_episode.at(id);
+    const int row = nh_row.at(id);
+    if (row < 0)
+        return 0;
+    return nh_rows[static_cast< size_t >(row) * (1u + nh->get_n_stages())];
+}
+
+inline int * Model::nh_record(size_t id)
+{
+
+    const size_t width = 1u + nh->get_n_stages();
+    if (nh_row[id] < 0)
+    {
+        // No infection yet, in the first stage since day 0
+        nh_row[id] = static_cast< int >(nh_rows.size() / width);
+        nh_rows.resize(nh_rows.size() + width, -1);
+        nh_rows[nh_rows.size() - width]      = 0;
+        nh_rows[nh_rows.size() - width + 1u] = 0;
+    }
+
+    return nh_rows.data() + static_cast< size_t >(nh_row[id]) * width;
+
 }
 
 inline bool Model::nh_removed(int stage) const
@@ -21826,29 +21912,27 @@ inline void Model::set_initial(Assign a)
 inline void Model::nh_reset()
 {
 
-    const size_t n  = population.size();
-    const size_t ns = nh->get_n_stages();
+    const size_t n = population.size();
 
     nh_until.assign(n, INT_MAX);
-    nh_entered.assign(n * ns, -1);
-    nh_episode.assign(n, 0);
-    nh_status_until.assign(n, INT_MAX);
-    nh_status_since.assign(n, 0);
-    nh_status_sod.assign(n, 0);
+    nh_row.assign(n, -1);
+    nh_rows.clear();
+    nh_status_until.assign(st ? n : 0u, INT_MAX);
+    nh_status_sod.assign(st ? n : 0u, 0);
     nh_pending = -1;
 
     // Everyone starts in the first stage and the first status, on day 0
     const int after = nh->stages[0u].after;
     const int s_after = st ? st->stages[0u].after : -1;
-    for (auto & p : population)
-    {
-        const size_t id = static_cast< size_t >(p.id);
-        nh_entered[id * ns] = 0;
-        if (after >= 0)
-            nh_until[id] = nh->transitions[after].duration.draw(p, *this);
-        if (s_after >= 0)
-            nh_status_until[id] = st->transitions[s_after].duration.draw(p, *this);
-    }
+    if ((after >= 0) || (s_after >= 0))
+        for (auto & p : population)
+        {
+            const size_t id = static_cast< size_t >(p.id);
+            if (after >= 0)
+                nh_until[id] = nh->transitions[after].duration.draw(p, *this);
+            if (s_after >= 0)
+                nh_status_until[id] = st->transitions[s_after].duration.draw(p, *this);
+        }
 
     if (use_queuing && (nh_queue[0u] == 1))
         for (size_t id = 0u; id < n; ++id)
@@ -22029,10 +22113,11 @@ inline void Model::nh_enter(
         (transition == NH_SEED) ||
         (!nh->is_carrier(static_cast< int >(stage_old)) && nh->is_carrier(s));
 
-    int * entered = nh_entered.data() + id * ns;
+    int * record  = nh_record(id);
+    int * entered = record + 1;
     if (infected)
     {
-        ++nh_episode[id];
+        ++record[0];
         std::fill(entered, entered + ns, -1);
     }
 
@@ -22065,7 +22150,7 @@ inline void Model::nh_react(Agent & p, int transition, int stage_old)
     const int s = nh_stage_of(p.state);
 
     // The status at the start of the day (the agent changed today)
-    const int status_sod = nh_status_sod[id];
+    const int status_sod = st ? nh_status_sod[id] : 0;
 
     for (const auto & r : nh_reactions)
     {
@@ -22122,19 +22207,19 @@ inline void Model::nh_initial_place()
         return;
 
     // The agents left without the virus, in the first stage
-    std::vector< char > eligible(population.size());
+    auto & buf = assign_buffers;
+    buf.eligible.resize(population.size());
     for (auto & p : population)
-        eligible[static_cast< size_t >(p.id)] =
+        buf.eligible[static_cast< size_t >(p.id)] =
             (p.virus == nullptr) && (nh_stage_of(p.state) == 0);
 
-    const std::vector< int > labels = nh_initial.draw(*this, eligible);
+    nh_initial.draw(*this, buf);
 
-    for (size_t i = 0u; i < labels.size(); ++i)
+    for (const auto & x : buf.out)
     {
 
-        const int s = labels[i];
-        if (s == -1)
-            continue;
+        const size_t i = x.first;
+        const int s    = x.second;
 
         if (
             (s < 0) || (static_cast< size_t >(s) >= nh->get_n_stages()) ||
