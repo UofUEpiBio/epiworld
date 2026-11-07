@@ -27,8 +27,9 @@ private:
 
     HospitalizationsTracker<TSeq> m_hospitalizations; ///< Tracker for hospitalization events
 
-    // Variants, by id: the model's viruses first (founders), then the
-    // run's mutations
+    // Variants, by id: the viruses added to the model first (founders, kept
+    // even if removed, so ids stay put), then the run's mutations
+    size_t n_founders = 0u;
     std::vector< std::string > virus_name;
     std::vector< int > virus_origin_date;
     std::vector< int > virus_parent_id;
@@ -162,7 +163,7 @@ public:
     void record_virus(Virus<TSeq> & v, bool founder = false);
     void record_tool(Tool<TSeq> & t); ///< Gives the tool the next id.
     void reset();
-    void drop_variants(); ///< Keeps the model's viruses, dropping the run's variants.
+    void drop_variants(); ///< Keeps the founders' records, dropping the run's variants.
     Model<TSeq> * get_model();
     void record();
 

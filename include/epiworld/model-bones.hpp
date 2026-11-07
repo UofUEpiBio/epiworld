@@ -652,8 +652,9 @@ public:
      *
      * Each call records a new variant, the founder of a lineage, whose id is
      * the number of viruses added before it (adding the same virus twice
-     * records two). Mutations during a run add variants after them, which
-     * the next run (or the next `add_virus()`) drops.
+     * records two; a removed virus keeps its record, so ids do not move).
+     * Mutations during a run add variants after them, which the next run
+     * (or the next `add_virus()`) drops.
      */
     void add_virus(const Virus<TSeq> & v, Assign<TSeq> a = Assign<TSeq>());
 

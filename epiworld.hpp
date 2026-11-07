@@ -4351,8 +4351,9 @@ private:
 
     HospitalizationsTracker<TSeq> m_hospitalizations; ///< Tracker for hospitalization events
 
-    // Variants, by id: the model's viruses first (founders), then the
-    // run's mutations
+    // Variants, by id: the viruses added to the model first (founders, kept
+    // even if removed, so ids stay put), then the run's mutations
+    size_t n_founders = 0u;
     std::vector< std::string > virus_name;
     std::vector< int > virus_origin_date;
     std::vector< int > virus_parent_id;
@@ -4486,7 +4487,7 @@ public:
     void record_virus(Virus<TSeq> & v, bool founder = false);
     void record_tool(Tool<TSeq> & t); ///< Gives the tool the next id.
     void reset();
-    void drop_variants(); ///< Keeps the model's viruses, dropping the run's variants.
+    void drop_variants(); ///< Keeps the founders' records, dropping the run's variants.
     Model<TSeq> * get_model();
     void record();
 
@@ -4846,7 +4847,7 @@ inline void DataBase<TSeq>::reset()
     for (size_t s = 0u; s < model->nstates; ++s)
         transition_matrix[s + s * model->nstates] = today_total[s];
 
-    // The last run's variants go; the model's viruses keep their ids
+    // The last run's variants go; the founders keep their ids
     drop_variants();
 
     hist_virus_date.clear();
@@ -4900,6 +4901,7 @@ inline void DataBase<TSeq>::reset()
 template<typename TSeq>
 inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
     m_hospitalizations(db.m_hospitalizations),
+    n_founders(db.n_founders),
     virus_name(db.virus_name),
     virus_origin_date(db.virus_origin_date),
     virus_parent_id(db.virus_parent_id),
@@ -5163,7 +5165,7 @@ template<typename TSeq>
 inline void DataBase<TSeq>::drop_variants()
 {
 
-    const size_t n = model->viruses.size();
+    const size_t n = n_founders;
     if (virus_name.size() <= n)
         return;
 
@@ -5180,7 +5182,10 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v, bool founder)
 {
 
     if (founder)
+    {
         drop_variants();
+        ++n_founders;
+    }
     else if (v.get_id() < 0)
         throw std::logic_error(
             "The virus \"" + v.get_name() + "\" mutated but is not on record."
@@ -11600,8 +11605,9 @@ public:
      *
      * Each call records a new variant, the founder of a lineage, whose id is
      * the number of viruses added before it (adding the same virus twice
-     * records two). Mutations during a run add variants after them, which
-     * the next run (or the next `add_virus()`) drops.
+     * records two; a removed virus keeps its record, so ids do not move).
+     * Mutations during a run add variants after them, which the next run
+     * (or the next `add_virus()`) drops.
      */
     void add_virus(const Virus<TSeq> & v, Assign<TSeq> a = Assign<TSeq>());
 

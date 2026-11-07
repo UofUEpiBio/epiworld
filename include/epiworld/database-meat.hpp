@@ -35,7 +35,7 @@ inline void DataBase<TSeq>::reset()
     for (size_t s = 0u; s < model->nstates; ++s)
         transition_matrix[s + s * model->nstates] = today_total[s];
 
-    // The last run's variants go; the model's viruses keep their ids
+    // The last run's variants go; the founders keep their ids
     drop_variants();
 
     hist_virus_date.clear();
@@ -89,6 +89,7 @@ inline void DataBase<TSeq>::reset()
 template<typename TSeq>
 inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
     m_hospitalizations(db.m_hospitalizations),
+    n_founders(db.n_founders),
     virus_name(db.virus_name),
     virus_origin_date(db.virus_origin_date),
     virus_parent_id(db.virus_parent_id),
@@ -352,7 +353,7 @@ template<typename TSeq>
 inline void DataBase<TSeq>::drop_variants()
 {
 
-    const size_t n = model->viruses.size();
+    const size_t n = n_founders;
     if (virus_name.size() <= n)
         return;
 
@@ -369,7 +370,10 @@ inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v, bool founder)
 {
 
     if (founder)
+    {
         drop_variants();
+        ++n_founders;
+    }
     else if (v.get_id() < 0)
         throw std::logic_error(
             "The virus \"" + v.get_name() + "\" mutated but is not on record."
