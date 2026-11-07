@@ -32,7 +32,7 @@ Modes simulate(const std::string & mode, double kappa = -1.0)
 
     const size_t n = 20000u;
 
-    epimodels::ModelSEIR<> model("virus", n, 100.0 / static_cast< double >(n), 0.1, 3.0, 1.0 / 7.0);
+    epimodels::ModelSEIR model("virus", n, 100.0 / static_cast< double >(n), 0.1, 3.0, 1.0 / 7.0);
     model.seed(8);
     tests_heterogeneous_network(model, n);
 
@@ -46,7 +46,7 @@ Modes simulate(const std::string & mode, double kappa = -1.0)
     Modes out;
     std::string * trace = &out.trace;
     model.add_globalevent(
-        [trace](Model<> * m) -> void {
+        [trace](Model * m) -> void {
             trace->push_back(
                 m->get_last_transmission_mode() == TransmissionMode::push ? 'P' : 'L'
             );

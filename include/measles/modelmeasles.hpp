@@ -50,15 +50,13 @@ using namespace epiworld;
  * The lognormal durations are rounded to whole days, with a minimum of one; a
  * standard deviation of zero gives a fixed duration.
  *
- * @tparam TSeq Type for genetic sequences.
  * @ingroup disease_specific
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeasles : public Model<TSeq>
+class ModelMeasles : public Model
 {
 protected:
 
-    SamplerMixing<TSeq> sampler;
+    SamplerMixing sampler;
 
     std::vector< bool > quarantine_willingness; ///< Drawn at reset (some models)
     std::vector< bool > isolation_willingness;  ///< Drawn at reset (some models)
@@ -73,8 +71,8 @@ protected:
      * isolated) at the daily rate 1 / "Days undetected" ("Detected").
      */
     void measles_build(
-        Assign<TSeq> seed,
-        Duration<TSeq> quarantine_period,
+        Assign seed,
+        Duration quarantine_period,
         std::string reduction_param,
         bool detected
     );
@@ -83,7 +81,7 @@ protected:
     void draw_willingness();
 
     /// The infection of a free susceptible agent by its sampled contacts.
-    Virus<TSeq> * infect(Agent<TSeq> & p);
+    Virus * infect(Agent & p);
 
     /// Checks the standard deviations of the stage durations.
     static void check_stage_sds(
@@ -131,22 +129,21 @@ public:
     void next() override
     {
         sampler.update(*this);
-        Model<TSeq>::next();
+        Model::next();
     }
 
 };
 
-template<typename TSeq>
-inline void ModelMeasles<TSeq>::measles_build(
-    Assign<TSeq> seed,
-    Duration<TSeq> quarantine_period,
+inline void ModelMeasles::measles_build(
+    Assign seed,
+    Duration quarantine_period,
     std::string reduction_param,
     bool detected
 )
 {
 
     // The disease
-    Virus<TSeq> virus("Measles");
+    Virus virus("Measles");
     virus.add_stage("Susceptible");
     virus.add_stage("Latent", stage::carrier);
     virus.add_stage("Prodromal", stage::infectious);
@@ -155,8 +152,8 @@ inline void ModelMeasles<TSeq>::measles_build(
     virus.add_stage("Recovered");
 
     virus.infection(SUSCEPTIBLE, LATENT, "Transmission rate").sampler(
-        [](Agent<TSeq> & p, Model<TSeq> & m) -> Virus<TSeq> * {
-            auto * mm = dynamic_cast< ModelMeasles<TSeq> * >(&m);
+        [](Agent & p, Model & m) -> Virus * {
+            auto * mm = dynamic_cast< ModelMeasles * >(&m);
             if (mm == nullptr)
                 throw std::logic_error(
                     "The measles virus samples its contacts with a measles "
@@ -165,24 +162,24 @@ inline void ModelMeasles<TSeq>::measles_build(
             return mm->infect(p);
         }
     );
-    virus.after(LATENT, PRODROMAL, Duration<TSeq>::lognormal(
+    virus.after(LATENT, PRODROMAL, Duration::lognormal(
         "Incubation period", "Incubation period sd"
     ));
-    virus.after(PRODROMAL, RASH, Duration<TSeq>::lognormal(
+    virus.after(PRODROMAL, RASH, Duration::lognormal(
         "Prodromal period", "Prodromal period sd"
     ));
     virus.rate(RASH, SEVERE, "Hospitalization rate");
-    virus.after(RASH, RECOVERED, Duration<TSeq>::lognormal(
+    virus.after(RASH, RECOVERED, Duration::lognormal(
         "Rash period", "Rash period sd"
     ));
     const int out_severe = virus.rate(
-        SEVERE, RECOVERED, Value<TSeq>::inverse("Hospitalization period")
+        SEVERE, RECOVERED, Value::inverse("Hospitalization period")
     );
     virus.external({LATENT, PRODROMAL}, RECOVERED, "PEP cleared");
     this->add_virus(virus, std::move(seed));
 
     // Where agents are
-    Statuses<TSeq> s;
+    Statuses s;
     s.add_status("Free");
     s.add_status("Quarantined");
     s.add_status("Isolated");
@@ -196,8 +193,8 @@ inline void ModelMeasles<TSeq>::measles_build(
         .name("Quarantine ends");
     s.external(FREE, ISOLATED, "Isolated");
     if (detected)
-        s.rate(FREE, ISOLATED, ValueFun<TSeq>(
-            [](Agent<TSeq> &, Model<TSeq> & m) -> epiworld_double {
+        s.rate(FREE, ISOLATED, ValueFun(
+            [](Agent &, Model & m) -> epiworld_double {
                 if (m.par("Isolation period") < 0)
                     return 0.0;
                 const epiworld_double days = m.par("Days undetected");
@@ -209,7 +206,7 @@ inline void ModelMeasles<TSeq>::measles_build(
     );
     s.after(
         ISOLATED, FREE,
-        Duration<TSeq>::fixed("Isolation period").since(RASH)
+        Duration::fixed("Isolation period").since(RASH)
     ).name("Isolation ends");
     const int admit = s.external(
         {FREE, QUARANTINED, ISOLATED}, HOSPITALIZED, "Admitted"
@@ -223,7 +220,7 @@ inline void ModelMeasles<TSeq>::measles_build(
     this->react(Trigger::entered(SEVERE), admit);
     this->react(
         Trigger::entered(SEVERE),
-        [](Agent<TSeq> & p, Model<TSeq> & m) { m.record_hospitalization(p); }
+        [](Agent & p, Model & m) { m.record_hospitalization(p); }
     );
     this->react(Trigger::fired(out_severe), discharge);
 
@@ -237,8 +234,7 @@ inline void ModelMeasles<TSeq>::measles_build(
 
 }
 
-template<typename TSeq>
-inline void ModelMeasles<TSeq>::draw_willingness()
+inline void ModelMeasles::draw_willingness()
 {
     quarantine_willingness.assign(this->size(), false);
     isolation_willingness.assign(this->size(), false);
@@ -251,8 +247,7 @@ inline void ModelMeasles<TSeq>::draw_willingness()
     }
 }
 
-template<typename TSeq>
-inline Virus<TSeq> * ModelMeasles<TSeq>::infect(Agent<TSeq> & p)
+inline Virus * ModelMeasles::infect(Agent & p)
 {
 
     // An immune agent cannot be infected: no contacts drawn
@@ -272,8 +267,7 @@ inline Virus<TSeq> * ModelMeasles<TSeq>::infect(Agent<TSeq> & p)
 
 }
 
-template<typename TSeq>
-inline void ModelMeasles<TSeq>::check_stage_sds(
+inline void ModelMeasles::check_stage_sds(
     epiworld_double incubation_period_sd,
     epiworld_double prodromal_period_sd,
     epiworld_double rash_period_sd,

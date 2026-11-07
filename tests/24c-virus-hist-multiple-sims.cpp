@@ -12,7 +12,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple]") {
 
     // Create a simple SIR model
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "test virus", 1000, 0.01, 0.9, 0.3
     );
 
@@ -29,7 +29,7 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
     // Create a saver function that writes virus history
     auto fn = epi_temp_file("24c-virus-hist-multiple-sims", "run_multiple_test-%i");
     const char* test_prefix = fn.full_path.c_str();
-    auto saver = make_save_run<>(
+    auto saver = make_save_run(
         test_prefix,
         false,  // total_hist
         false,  // virus_info

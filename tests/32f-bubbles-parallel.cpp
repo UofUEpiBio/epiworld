@@ -26,13 +26,13 @@ EPIWORLD_TEST_CASE("Bubbles - replicates are independent", "[bubbles]") {
 
     auto run_with = [&](int nthreads) -> Results {
 
-        epimodels::ModelSEIR<> model("flu", n, 0.1, 0.2, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR model("flu", n, 0.1, 0.2, 4.5, 1.0/8.0);
         model.seed(2024);
         model.add_layer(layer::network(
             "network", rgraph_smallworld(n, 8, 0.10, false, model)
         ));
 
-        Bubbles<> bubbles(hh, BubbleFlavor::Household, group, 0.0, 0, -1, 0);
+        Bubbles bubbles(hh, BubbleFlavor::Household, group, 0.0, 0, -1, 0);
         model.add_globalevent(bubbles);
         model.verbose_off();
 
@@ -41,7 +41,7 @@ EPIWORLD_TEST_CASE("Bubbles - replicates are independent", "[bubbles]") {
 
         model.run_multiple(
             60, nsims, 1231,
-            [&res](size_t run_id, Model<> * m) -> void {
+            [&res](size_t run_id, Model * m) -> void {
 
                 // Outbreak size: everyone who left the susceptible state.
                 int infected = 0;
@@ -55,7 +55,7 @@ EPIWORLD_TEST_CASE("Bubbles - replicates are independent", "[bubbles]") {
                 // partition. Reading the partition off the model is the point:
                 // each copy owns its own.
                 const auto & bid =
-                    Bubbles<>::get_from(*m)->get_bubble_id();
+                    Bubbles::get_from(*m)->get_bubble_id();
 
                 std::vector<int> date, source, target, virus, sexp, sexp_layer;
                 m->get_db().get_transmissions(

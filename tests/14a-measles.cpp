@@ -11,7 +11,7 @@ EPIWORLD_TEST_CASE(
     
     // Queuing doesn't matter and get results that are meaningful
     int n_seeds = 1;
-    measles::ModelMeaslesSchool<> model_0(
+    measles::ModelMeaslesSchool model_0(
         500,    // Number of agents
         n_seeds, // Number of initial cases
         2.0,     // Contact rate

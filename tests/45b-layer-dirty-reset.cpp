@@ -14,12 +14,12 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
     };
     const std::vector< double > closed = {0.0, 0.0, 0.0, 0.0};
 
-    epimodels::ModelSIR<> model("Flu", n, 0.0, 0.5, 0.1);
+    epimodels::ModelSIR model("Flu", n, 0.0, 0.5, 0.1);
     add_group_mixing(model, cm, blocks({0u, 300u, 600u}));
 
-    Virus<> v = model.get_virus(0);
+    Virus v = model.get_virus(0);
     model.rm_virus(0);
-    model.add_virus(v, dist_virus<>(0));
+    model.add_virus(v, dist_virus(0));
 
     model.verbose_off();
 
@@ -36,14 +36,14 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     size_t susceptible_end = 0u;
     for (auto & a : model.get_agents())
-        if (model.get_stage(a) == epimodels::ModelSIR<>::SUSCEPTIBLE)
+        if (model.get_stage(a) == epimodels::ModelSIR::SUSCEPTIBLE)
             ++susceptible_end;
     REQUIRE(susceptible_end < n / 2u);
 
     // The same run with the matrix closed on day 1, for this run only
     model.add_globalevent(
-        [&closed](Model<> * m) -> void {
-            m->get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(closed);
+        [&closed](Model * m) -> void {
+            m->get_layer_as< layer::Mixing >("mixing").set_contact_matrix(closed);
         },
         "close"
     );
@@ -54,7 +54,7 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     size_t susceptible_edit = 0u;
     for (auto & a : model.get_agents())
-        if (model.get_stage(a) == epimodels::ModelSIR<>::SUSCEPTIBLE)
+        if (model.get_stage(a) == epimodels::ModelSIR::SUSCEPTIBLE)
             ++susceptible_edit;
     // (the matrix closes after day 1, so only that day's contacts got through)
     REQUIRE(susceptible_edit > n - 40u);
@@ -66,13 +66,13 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
     REQUIRE_FALSE(model.get_layer("mixing").is_dirty());
 
     // An edit between runs becomes the new baseline: nothing spreads, run after run
-    model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(closed);
+    model.get_layer_as< layer::Mixing >("mixing").set_contact_matrix(closed);
     model.run(30, 77);
     const auto closed_counts = counts();
 
     size_t susceptible_closed = 0u;
     for (auto & a : model.get_agents())
-        if (model.get_stage(a) == epimodels::ModelSIR<>::SUSCEPTIBLE)
+        if (model.get_stage(a) == epimodels::ModelSIR::SUSCEPTIBLE)
             ++susceptible_closed;
     REQUIRE(susceptible_closed == n - 1u);
 
@@ -81,12 +81,12 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
 
     // A copy made during a run is not in a run: an edit on it, after the
     // source's run, sets its baseline. Adding a layer during the run fails.
-    model.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(cm);
-    std::unique_ptr< epimodels::ModelSIR<> > copy;
+    model.get_layer_as< layer::Mixing >("mixing").set_contact_matrix(cm);
+    std::unique_ptr< epimodels::ModelSIR > copy;
     model.add_globalevent(
-        [&copy](Model<> * m) -> void {
-            copy = std::make_unique< epimodels::ModelSIR<> >(
-                *model_cast< epimodels::ModelSIR<>, int >(m)
+        [&copy](Model * m) -> void {
+            copy = std::make_unique< epimodels::ModelSIR >(
+                *model_cast< epimodels::ModelSIR >(m)
             );
             REQUIRE_THROWS_AS(
                 m->add_layer(layer::mixing("late")),
@@ -101,13 +101,13 @@ EPIWORLD_TEST_CASE("Contact layer edits and the dirty flag", "[layer-dirty]") {
     REQUIRE_FALSE(copy->is_running());
 
     copy->rm_globalevent("copy");
-    copy->get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(closed);
+    copy->get_layer_as< layer::Mixing >("mixing").set_contact_matrix(closed);
     REQUIRE_FALSE(copy->get_layer("mixing").is_dirty());
 
     copy->run(30, 77);
     size_t susceptible_copy = 0u;
     for (auto & a : copy->get_agents())
-        if (model.get_stage(a) == epimodels::ModelSIR<>::SUSCEPTIBLE)
+        if (model.get_stage(a) == epimodels::ModelSIR::SUSCEPTIBLE)
             ++susceptible_copy;
     REQUIRE(susceptible_copy == n - 1u);
 

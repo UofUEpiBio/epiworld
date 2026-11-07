@@ -7,7 +7,7 @@ int main() {
 
     int total_replicates = 100;
 
-    epimodels::ModelSIR<> sir(
+    epimodels::ModelSIR sir(
         "a virus", // Name of the virus
         1000,
         0.01,      // Initial prevalence

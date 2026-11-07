@@ -5,7 +5,7 @@ using namespace epiworld;
 // Rewires a fixed set of ties on a fixed schedule. Deterministic on purpose: it
 // draws no random numbers, so both runs below do exactly the same surgery and
 // any difference between them has to come from the queue.
-static void rewire_some_ties(Model<> * m)
+static void rewire_some_ties(Model * m)
 {
 
     int day = m->today();
@@ -41,7 +41,7 @@ EPIWORLD_TEST_CASE("Edges - mid-run ties keep the queue honest", "[edges]") {
 
     auto build = [&](bool queuing) -> std::vector< int > {
 
-        epimodels::ModelSIR<> model("a virus", n, 0.02, 0.9, 0.3);
+        epimodels::ModelSIR model("a virus", n, 0.02, 0.9, 0.3);
         model.seed(3131);
         model.add_layer(layer::network(
             "network", rgraph_smallworld(n, 6, 0.02, false, model)
@@ -74,7 +74,7 @@ EPIWORLD_TEST_CASE("Edges - mid-run ties keep the queue honest", "[edges]") {
     // queue included.
     auto build_multi = [&](bool queuing) -> std::vector< int > {
 
-        epimodels::ModelSIR<> model("a virus", n, 0.02, 0.9, 0.3);
+        epimodels::ModelSIR model("a virus", n, 0.02, 0.9, 0.3);
         model.seed(717);
         model.add_layer(layer::network(
             "network", rgraph_smallworld(n, 6, 0.02, false, model)
@@ -85,7 +85,7 @@ EPIWORLD_TEST_CASE("Edges - mid-run ties keep the queue honest", "[edges]") {
 
         model.add_globalevent(rewire_some_ties, "rewire some ties");
         model.verbose_off();
-        model.run_multiple(40, 4, 555, make_save_run<int>(), true, false, 1);
+        model.run_multiple(40, 4, 555, make_save_run(), true, false, 1);
 
         std::vector< int > counts;
         model.get_db().get_hist_total(nullptr, nullptr, nullptr, &counts);

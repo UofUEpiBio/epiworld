@@ -11,7 +11,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
          0.0, 20.0
     };
 
-    epimodels::ModelSEIRQuarantine<> model(
+    epimodels::ModelSEIRQuarantine model(
         "Flu",      // vname
         std::accumulate(block_sizes.begin(), block_sizes.end(), size_t(0)),
         0.01,       // prevalence
@@ -30,9 +30,9 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     );
 
     // Replace virus to infect only agent 0 (in block 0)
-    Virus<> v1 = model.get_virus(0);
+    Virus v1 = model.get_virus(0);
     model.rm_virus(0);
-    model.add_virus(v1, dist_virus<>(0));
+    model.add_virus(v1, dist_virus(0));
 
     // Set up the SBM network (disconnected blocks)
     model.add_layer(layer::network(
@@ -48,7 +48,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     for (size_t i = 500; i < 1000; ++i)
     {
         const auto & a = model.get_agent(i);
-        if (model.get_stage(a) != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
+        if (model.get_stage(a) != epimodels::ModelSEIRQuarantine::SUSCEPTIBLE)
         {
             n_wrong++;
         }
@@ -62,7 +62,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     for (size_t i = 0; i < 500; ++i)
     {
         const auto & a = model.get_agent(i);
-        if (model.get_stage(a) != epimodels::ModelSEIRQuarantine<>::SUSCEPTIBLE)
+        if (model.get_stage(a) != epimodels::ModelSEIRQuarantine::SUSCEPTIBLE)
         {
             n_affected_block0++;
         }
@@ -78,7 +78,7 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
         10.0, 10.0
     };
 
-    epimodels::ModelSEIRQuarantine<> model2(
+    epimodels::ModelSEIRQuarantine model2(
         "Flu",      // vname
         std::accumulate(block_sizes.begin(), block_sizes.end(), size_t(0)),
         0.01,       // prevalence
@@ -97,9 +97,9 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     );
 
     // Replace virus to infect only agent 0
-    Virus<> v2 = model2.get_virus(0);
+    Virus v2 = model2.get_virus(0);
     model2.rm_virus(0);
-    model2.add_virus(v2, dist_virus<>(0));
+    model2.add_virus(v2, dist_virus(0));
 
     model2.add_layer(layer::network(
         "network", rgraph_sbm(block_sizes, full_mixing, true, model2)
@@ -117,8 +117,8 @@ EPIWORLD_TEST_CASE("SEIRNetworkQuarantine", "[SEIR-network-quarantine]") {
     {
         const int s = model2.get_stage(a);
         if (
-            (s == epimodels::ModelSEIRQuarantine<>::RECOVERED) ||
-            (s == epimodels::ModelSEIRQuarantine<>::SEVERE)
+            (s == epimodels::ModelSEIRQuarantine::RECOVERED) ||
+            (s == epimodels::ModelSEIRQuarantine::SEVERE)
         )
             ++total_final;
     }

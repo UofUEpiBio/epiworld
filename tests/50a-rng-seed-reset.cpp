@@ -14,7 +14,7 @@ EPIWORLD_TEST_CASE(
 ) {
 
     size_t n = 1000u;
-    epimodels::ModelSIR<> model("flu", n, 0.01, 0.5, 0.2);
+    epimodels::ModelSIR model("flu", n, 0.01, 0.5, 0.2);
     model.add_layer(layer::network(
         "network", rgraph_smallworld(n, 5, 0.01, false, model)
     ));
@@ -22,7 +22,7 @@ EPIWORLD_TEST_CASE(
 
     std::vector< double > draws;
     model.add_globalevent(
-        [&draws](Model<> * m) -> void { draws.push_back(m->rnorm()); },
+        [&draws](Model * m) -> void { draws.push_back(m->rnorm()); },
         "One normal draw",
         1
     );

@@ -11,7 +11,7 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network at p rate
     const double tolerance = 0.05; // Acceptable deviation from expected rewiring rate
 
     // Create a baseline model (p=0, no rewiring)
-    epimodels::ModelSEIR<> baseline_model(
+    epimodels::ModelSEIR baseline_model(
         "a virus", n_agents, 0.01, 0.5, 7.0, 0.3
     );
     
@@ -53,7 +53,7 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network at p rate
         std::vector<int> degree_rewired(n_agents, 0);
 
         // Create a model with p=0.3
-        epimodels::ModelSEIR<> rewired_model(
+        epimodels::ModelSEIR rewired_model(
             "a virus", n_agents, 0.01, 0.5, 7.0, 0.3
         );
         

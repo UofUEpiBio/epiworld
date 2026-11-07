@@ -90,14 +90,13 @@ public:
  * name and, if need be, its own parameters (`Virus::use_param()`), so it has
  * the same stages.
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 struct ModelInfo {
     std::string id;                   ///< e.g. "SEIR", for make_model()
     std::string label;                ///< e.g. "Susceptible-Exposed-Infected-Recovered"
     std::string description;          ///< One paragraph
     std::string virus_name;           ///< Default virus name; empty if the model names its own
     std::vector< ParamInfo > params;  ///< Constructor arguments, in order
-    std::function< std::unique_ptr< Model<TSeq> >(const ModelArgs &) > build;
+    std::function< std::unique_ptr< Model >(const ModelArgs &) > build;
 };
 
 /**
@@ -113,21 +112,20 @@ struct ModelInfo {
  * the models it lists; a model's entry is its static `model_info()`.
  *
  * ```cpp
- * ModelRegistry<> registry;
+ * ModelRegistry registry;
  * epimodels::register_models(registry);            // the core models
  * measles::register_models(registry);              // and, optionally, measles'
  *
  * auto model = registry.make_model(
  *     "SEIR", {{"n", 5000}, {"transmission_prob", 0.1}}, "flu"
  * );                                               // the rest take defaults
- * model->add_layer(layer::network("contacts", graph::smallworld<>(10, 0.1)));
+ * model->add_layer(layer::network("contacts", graph::smallworld(10, 0.1)));
  * model->run(100, 123);
  * ```
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelRegistry {
 private:
-    std::vector< ModelInfo<TSeq> > models;
+    std::vector< ModelInfo > models;
 
 public:
     /**
@@ -136,13 +134,13 @@ public:
      * argument is repeated, a default is outside its limits, or there is no
      * builder.
      */
-    ModelRegistry<TSeq> & add(ModelInfo<TSeq> info);
+    ModelRegistry & add(ModelInfo info);
 
     /// Every model, in the order they were added.
-    const std::vector< ModelInfo<TSeq> > & list_models() const noexcept;
+    const std::vector< ModelInfo > & list_models() const noexcept;
 
     /// @throws std::invalid_argument naming the known ids.
-    const ModelInfo<TSeq> & get_model_info(const std::string & id) const;
+    const ModelInfo & get_model_info(const std::string & id) const;
 
     /**
      * @brief Builds a model from its id and the values of its arguments.
@@ -155,7 +153,7 @@ public:
      * outside its limits or not whole when it must be, or a virus name for a
      * model that names its own virus.
      */
-    std::unique_ptr< Model<TSeq> > make_model(
+    std::unique_ptr< Model > make_model(
         const std::string & id,
         const std::map< std::string, double > & values = {},
         const std::string & virus_name = ""

@@ -6,7 +6,7 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network", "[rewir
 
     // Create two SEIR models with smallworld networks
     // Model 1: p=0 (no rewiring, pure ring lattice)
-    epimodels::ModelSEIR<> model_0(
+    epimodels::ModelSEIR model_0(
         "a virus", 100, 0.01, 0.5, 7.0, 0.3
     );
     
@@ -17,7 +17,7 @@ EPIWORLD_TEST_CASE("Rewire degseq preserves degree and changes network", "[rewir
     model_0.verbose_off();
     
     // Model 2: p=0.5 (50% rewiring)
-    epimodels::ModelSEIR<> model_1(
+    epimodels::ModelSEIR model_1(
         "a virus", 100, 0.01, 0.5, 7.0, 0.3
     );
     

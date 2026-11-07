@@ -18,7 +18,7 @@ EPIWORLD_TEST_CASE("Competing rates of a natural history", "[state-update-transi
     // Keep the sample large enough for stable estimates, but avoid an
     // unnecessarily expensive test in CI.
     constexpr epiworld_fast_uint N_AGENTS = 2000u;
-    Model<int> model(N_AGENTS);
+    Model model(N_AGENTS);
 
     epiworld_double ei_rate = 0.3;
     epiworld_double ir_rate = 0.5;
@@ -30,7 +30,7 @@ EPIWORLD_TEST_CASE("Competing rates of a natural history", "[state-update-transi
 
     // Nobody meets anybody (no layers): agents only move along the rates.
     // The engine's states are the stages, Susceptible first.
-    Virus<int> v("v");
+    Virus v("v");
     v.add_stage("Susceptible");
     const epiworld_fast_uint STATE_EXPOSED   = v.add_stage("Exposed", stage::carrier);
     const epiworld_fast_uint STATE_INFECTED  = v.add_stage("Infected", stage::infectious);

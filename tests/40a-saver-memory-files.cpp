@@ -22,12 +22,12 @@ static std::vector< std::string > split_csv_line(const std::string & line)
 
 EPIWORLD_TEST_CASE("SaverMemory matches the saved files", "[saver-memory]") {
 
-    epimodels::ModelSEIR<> model("a virus", 500, 0.1, 0.3, 4.0, 0.2);
+    epimodels::ModelSEIR model("a virus", 500, 0.1, 0.3, 4.0, 0.2);
     add_random_mixing(model, 3.0);
 
-    Tool<> tool("a tool");
+    Tool tool("a tool");
     tool.set_susceptibility_reduction(.5);
-    model.add_tool(tool, assign::count<>(0.3));
+    model.add_tool(tool, assign::count(0.3));
     model.verbose_off();
 
     const auto & whats = run_output_names();
@@ -40,7 +40,7 @@ EPIWORLD_TEST_CASE("SaverMemory matches the saved files", "[saver-memory]") {
     auto fn = epi_temp_file("40a-saver-memory-files", "%03lu");
     model.run_multiple(
         30, nsims, 123,
-        make_save_run<>(
+        make_save_run(
             fn.full_path, true, true, true, true, true, true, true, true,
             true, true, true, true
         ),

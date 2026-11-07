@@ -25,20 +25,20 @@ namespace {
 constexpr int S = 0, I = 1, T = 2, P = 3;
 constexpr size_t N = 1000u;
 
-std::shared_ptr< Model<> > make_model_a(const std::string & mode, const AdjList & net)
+std::shared_ptr< Model > make_model_a(const std::string & mode, const AdjList & net)
 {
 
-    Virus<> v("v");
+    Virus v("v");
     v.add_stage("Susceptible");
     v.add_stage("Infected", stage::infectious);
     v.add_stage("Temporarily immune");
     v.add_stage("Protected");
     v.infection(S, I, 0.3);
     v.rate(I, T, 0.25).effect(Effect::recovery);
-    v.after(T, S, Duration<>::fixed(4));
-    v.after(P, S, Duration<>::fixed(5));
+    v.after(T, S, Duration::fixed(4));
+    v.after(P, S, Duration::fixed(5));
 
-    auto model = std::make_shared< Model<> >(N);
+    auto model = std::make_shared< Model >(N);
     model->add_virus(v, assign::count(10));
     model->set_initial(assign::shares({{P, 0.5}}));
     model->add_layer(layer::network("net", net));
@@ -53,7 +53,7 @@ std::shared_ptr< Model<> > make_model_a(const std::string & mode, const AdjList 
 EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[natural-history]") {
 
     // A fixed network, drawn once
-    Model<> scratch(N);
+    Model scratch(N);
     scratch.seed(31);
     const AdjList net = rgraph_smallworld(N, 4, 0.05, false, scratch);
 
@@ -110,7 +110,7 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
         // 3. The mean final counts of many runs
         auto model = make_model_a(modes[m], net);
         std::vector< double > final_i;
-        auto saver = [&final_i](size_t, Model<> * mod) -> void {
+        auto saver = [&final_i](size_t, Model * mod) -> void {
             final_i.push_back(mod->get_db().get_today_total_stage("Infected"));
         };
         model->run_multiple(40, 200, 2024, saver, true, false);
@@ -126,11 +126,11 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
 
     // Model B: a variant reads its own parameter
     {
-        epimodels::ModelSIR<> model("v", N, 0.0, 0.5, 0.01);
+        epimodels::ModelSIR model("v", N, 0.0, 0.5, 0.01);
         model.add_param(1.0, "Recovery rate (fast)");
 
         // A strain: a copy of the model's virus, reading its own parameter
-        Virus<> fast = model.get_virus(0);
+        Virus fast = model.get_virus(0);
         fast.set_name("fast");
         fast.use_param("Recovery rate", "Recovery rate (fast)");
         model.add_virus(fast, assign::count(20));
@@ -159,12 +159,12 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
     // a variant and recover the next day; the database records each
     // mutation as a variant, a child of the original.
     {
-        epimodels::ModelSIR<> model("v", N, 0.0, 0.5, 0.0);
+        epimodels::ModelSIR model("v", N, 0.0, 0.5, 0.0);
         model.add_param(1.0, "Recovery rate (fast)");
         model.assign_virus(0, assign::count(10));
 
         model.get_virus(0).set_mutation(
-            [](Agent<> *, Virus<> & v, Model<> * m) -> bool {
+            [](Agent *, Virus & v, Model * m) -> bool {
                 if ((m->today() < 5) || (v.get_id() != 0))
                     return false;
                 v.use_param("Recovery rate", "Recovery rate (fast)");
@@ -204,12 +204,12 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
     // Guards: a virus in a model keeps its natural history, and a variant
     // must read parameters the model has
     {
-        epimodels::ModelSIR<> model("v", N, 0.01, 0.5, 0.1);
+        epimodels::ModelSIR model("v", N, 0.01, 0.5, 0.1);
         REQUIRE_THROWS(model.get_virus(0).add_stage("Another"));
         REQUIRE_THROWS(model.get_virus(0).rate(1, 0, 0.1));
 
         model.get_virus(0).set_mutation(
-            [](Agent<> *, Virus<> & v, Model<> *) -> bool {
+            [](Agent *, Virus & v, Model *) -> bool {
                 if (v.get_id() != 0)
                     return false;
                 v.use_param("Recovery rate", "No such parameter");

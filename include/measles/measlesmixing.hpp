@@ -34,8 +34,8 @@ using namespace epiworld;
  * in group `j`), e.g.,
  *
  * ```cpp
- * auto mix = layer::mixing<>("mixing");
- * mix->set_groups(assign::counts<>({{0, 300}, {1, 700}}), 2);
+ * auto mix = layer::mixing("mixing");
+ * mix->set_groups(assign::counts({{0, 300}, {1, 700}}), 2);
  * mix->set_contact_matrix({10.0, 2.0, 2.0, 5.0});
  * model.add_layer(mix);
  * ```
@@ -52,17 +52,15 @@ using namespace epiworld;
  * <a href="../impl/quarantine-isolation-and-contact-tracing.md">Quarantine, Isolation, and Contact Tracing</a>,
  * <a href="../impl/sampling-contacts.md">Sampling Contacts</a>
  *
- * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
  * @ingroup disease_specific
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelMeaslesMixing final : public ModelMeasles<TSeq>
+class ModelMeaslesMixing final : public ModelMeasles
 {
 private:
 
     std::vector< size_t > agent_quarantine_triggered; ///< Whether the quarantine process has started
 
-    static void _quarantine_process(Model<TSeq> * m);
+    static void _quarantine_process(Model * m);
 
 public:
 
@@ -134,7 +132,7 @@ public:
     );
 
     void reset() override;
-    std::unique_ptr< Model<TSeq> > clone_ptr() override;
+    std::unique_ptr< Model > clone_ptr() override;
 
     /**
      * @brief Get the quarantine trigger status for all agents
@@ -147,15 +145,14 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 
 };
 
-template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::reset()
+inline void ModelMeaslesMixing::reset()
 {
 
-    Model<TSeq>::reset();
+    Model::reset();
 
     // The quarantine process reads the contacts in the layer's log
     auto & mixing = measles_mixing_layer(*this);
@@ -168,20 +165,18 @@ inline void ModelMeaslesMixing<TSeq>::reset()
 
 }
 
-template<typename TSeq>
-inline std::unique_ptr<Model<TSeq>> ModelMeaslesMixing<TSeq>::clone_ptr()
+inline std::unique_ptr<Model> ModelMeaslesMixing::clone_ptr()
 {
-    return std::make_unique<ModelMeaslesMixing<TSeq>>(*this);
+    return std::make_unique<ModelMeaslesMixing>(*this);
 }
 
-template<typename TSeq>
-inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
+inline void ModelMeaslesMixing::_quarantine_process(Model * m) {
 
-    auto * model = model_cast<ModelMeaslesMixing<TSeq>,TSeq>(m);
+    auto * model = model_cast<ModelMeaslesMixing>(m);
     const int isolated = m->transition_id("Isolated");
     const int quarantined = m->transition_id("Quarantined");
-    constexpr int RASH = ModelMeasles<TSeq>::RASH;
-    constexpr int FREE = ModelMeasles<TSeq>::FREE;
+    constexpr int RASH = ModelMeasles::RASH;
+    constexpr int FREE = ModelMeasles::FREE;
 
     // Contact tracing from the detected agents
     auto & ct = measles_mixing_layer(*m).get_tracing();
@@ -237,8 +232,7 @@ inline void ModelMeaslesMixing<TSeq>::_quarantine_process(Model<TSeq> * m) {
 
 }
 
-template<typename TSeq>
-inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
+inline ModelMeaslesMixing::ModelMeaslesMixing(
     epiworld_fast_uint n,
     epiworld_double prevalence,
     epiworld_double transmission_rate,
@@ -311,8 +305,8 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     this->add_param(rash_period_sd, "Rash period sd");
 
     this->measles_build(
-        assign::share<TSeq>(prevalence),
-        Duration<TSeq>::fixed("Quarantine period"),
+        assign::share(prevalence),
+        Duration::fixed("Quarantine period"),
         "Rash reduction contact rate",
         true
     );
@@ -320,8 +314,8 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     // A detection starts the contact tracing (once per agent)
     this->react(
         Trigger::fired(this->transition_id("Detected")),
-        [](Agent<TSeq> & p, Model<TSeq> & m) {
-            auto & mm = dynamic_cast< ModelMeaslesMixing<TSeq> & >(m);
+        [](Agent & p, Model & m) {
+            auto & mm = dynamic_cast< ModelMeaslesMixing & >(m);
             auto & state = mm.agent_quarantine_triggered[static_cast< size_t >(p.get_id())];
             if (state == QUARANTINE_PROCESS_INACTIVE)
                 state = QUARANTINE_PROCESS_ACTIVE;
@@ -329,9 +323,9 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
     );
 
     // The vaccine
-    ToolVaccine<TSeq> vaccine("MMR");
+    ToolVaccine vaccine("MMR");
     vaccine.set_susceptibility_reduction(this->get_param("Vax efficacy"));
-    this->add_tool(vaccine, assign::share<TSeq>(prop_vaccinated));
+    this->add_tool(vaccine, assign::share(prop_vaccinated));
 
     this->add_globalevent(_quarantine_process, "Quarantine process");
 
@@ -341,8 +335,7 @@ inline ModelMeaslesMixing<TSeq>::ModelMeaslesMixing(
 
 }
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelMeaslesMixing<TSeq>::model_info()
+inline ModelInfo ModelMeaslesMixing::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -412,8 +405,8 @@ inline ModelInfo<TSeq> ModelMeaslesMixing<TSeq>::model_info()
                 "Standard deviation of the (lognormal) rash period, in days; 0 "
                 "gives a fixed period.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelMeaslesMixing<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelMeaslesMixing >(
                 static_cast< uint_t >(a("n")), a("prevalence"),
                 a("transmission_rate"), a("vax_efficacy"),
                 a("vax_reduction_recovery_rate"), a("incubation_period"),

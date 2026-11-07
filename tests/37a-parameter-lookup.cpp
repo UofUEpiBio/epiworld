@@ -12,7 +12,7 @@ using namespace epiworld;
  */
 EPIWORLD_TEST_CASE("Parameter lookup by name", "[parameters]") {
 
-    epimodels::ModelSIR<> model("a virus", 100, 0.01, 0.5, 0.25);
+    epimodels::ModelSIR model("a virus", 100, 0.01, 0.5, 0.25);
 
     const std::string long_name = "Transmission probability"; // 24 characters
     const std::string_view long_view = long_name;
@@ -23,7 +23,7 @@ EPIWORLD_TEST_CASE("Parameter lookup by name", "[parameters]") {
     REQUIRE_THAT(model.get_param(long_view), Catch::Matchers::WithinAbs(0.5, 1e-6));
     REQUIRE_THAT(model("Recovery rate"), Catch::Matchers::WithinAbs(0.25, 1e-6));
 
-    const Model<> & cmodel = model;
+    const Model & cmodel = model;
     REQUIRE_THAT(cmodel.get_param("Recovery rate"), Catch::Matchers::WithinAbs(0.25, 1e-6));
     REQUIRE_THAT(cmodel("Recovery rate"), Catch::Matchers::WithinAbs(0.25, 1e-6));
 
@@ -56,8 +56,8 @@ EPIWORLD_TEST_CASE("Parameter lookup by name", "[parameters]") {
     );
 
     // Results are the same whichever way the parameters were set
-    epimodels::ModelSIR<> model_a("a virus", 2000, 0.01, 0.1, 0.25);
-    epimodels::ModelSIR<> model_b("a virus", 2000, 0.01, 0.9, 0.9);
+    epimodels::ModelSIR model_a("a virus", 2000, 0.01, 0.1, 0.25);
+    epimodels::ModelSIR model_b("a virus", 2000, 0.01, 0.9, 0.9);
     model_b.set_param(long_view, 0.1);
     model_b.set_param("Recovery rate", 0.25);
 

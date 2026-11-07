@@ -25,7 +25,7 @@ EPIWORLD_TEST_CASE(
     // Create the model
     int n_seeds = 5;
     int simulation_days = 30;
-    measles::ModelMeaslesSchool<> model(
+    measles::ModelMeaslesSchool model(
         200,    // Number of agents
         n_seeds, // Number of initial cases
         5.0,     // Contact rate
@@ -49,7 +49,7 @@ EPIWORLD_TEST_CASE(
     
     // Create a GlobalEvent to track hospitalizations
     auto track_hospitalizations = [&global_event_tracking, &previous_states](
-        epiworld::Model<>* m
+        epiworld::Model* m
     ) -> void {
         
         int current_day = m->today();
@@ -62,8 +62,8 @@ EPIWORLD_TEST_CASE(
             unsigned int prev_state = previous_states[i];
             
             // Check if agent became Hospitalized
-            bool now_hospitalized = (static_cast< int >(current_state) == measles::ModelMeaslesSchool<>::HOSPITALIZED);
-            bool was_hospitalized = (static_cast< int >(prev_state) == measles::ModelMeaslesSchool<>::HOSPITALIZED);
+            bool now_hospitalized = (static_cast< int >(current_state) == measles::ModelMeaslesSchool::HOSPITALIZED);
+            bool was_hospitalized = (static_cast< int >(prev_state) == measles::ModelMeaslesSchool::HOSPITALIZED);
             
             if (now_hospitalized && !was_hospitalized)
             {

@@ -6,7 +6,7 @@
 
 using namespace epiworld;
 
-using MSQ = measles::ModelMeaslesMixingRiskQuarantine<>;
+using MSQ = measles::ModelMeaslesMixingRiskQuarantine;
 
 EPIWORLD_TEST_CASE(
     "Measles model with risk-based quarantine",
@@ -23,7 +23,7 @@ EPIWORLD_TEST_CASE(
     // Simple contact matrix (single group, all mixing)
     std::vector<double> contact_matrix = {c_rate};
     
-    measles::ModelMeaslesMixingRiskQuarantine<> model(
+    measles::ModelMeaslesMixingRiskQuarantine model(
         n,           // Number of agents
         0.005,       // Initial prevalence
         p_infect,    // Transmission rate
@@ -55,7 +55,7 @@ EPIWORLD_TEST_CASE(
 
     // Virus will be distributed to 5 random agents, in each
     // replicate of the model
-    model.assign_virus(0, assign::count<>(5));
+    model.assign_virus(0, assign::count(5));
     
     std::vector< std::vector< epiworld_double > > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * 5, -1.0);

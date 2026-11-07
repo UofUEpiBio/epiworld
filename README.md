@@ -52,7 +52,7 @@ int main()
 
     // epiworld already comes with a couple
     // of models, like the SIR
-    epimodels::ModelSIR<> hello(
+    epimodels::ModelSIR hello(
         "COVID-19", // Name of the virus
         100000,     // Number of agents
         0.01,       // Initial prevalence
@@ -133,13 +133,13 @@ using namespace epiworld;
 int main()
 {
 
-    Model<> model(100000);
+    Model model(100000);
 
     // Designing a virus and its natural history: three stages,
     // Susceptible, Infected and Recovered. A contact with an infected agent
     // transmits with probability 0.1, and infected agents recover with daily
     // probability 0.3. 100 individuals have the virus from the beginning.
-    Virus<> virus("covid 19");
+    Virus virus("covid 19");
     virus.add_stage("Susceptible");
     virus.add_stage("Infected", stage::infectious);
     virus.add_stage("Recovered");

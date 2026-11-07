@@ -21,13 +21,12 @@ using namespace epiworld;
  * @ingroup tools
  * 
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ToolImmunoglobulin: public Tool<TSeq> {
+class ToolImmunoglobulin: public Tool {
 private:
 
     int _immune = -1;
     std::string _par_efficacy;
-    epiworld_double _set_immunity(Model<TSeq> & model);
+    epiworld_double _set_immunity(Model & model);
 
     // This half-life
     std::string _par_half_life_mean;
@@ -45,22 +44,22 @@ public:
         std::string par_efficacy,
         std::string par_half_life_mean,
         std::string par_half_life_sd
-    ) : Tool<TSeq>(name) {
+    ) : Tool(name) {
         this->_par_efficacy = par_efficacy;
         this->_par_half_life_mean = par_half_life_mean;
         this->_par_half_life_sd = par_half_life_sd;
     };
 
     virtual epiworld_double get_susceptibility_reduction(
-        VirusPtr<TSeq> & v,
-        Model<TSeq> * model
+        VirusPtr & v,
+        Model * model
     ) override;
     
-    virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun) override;
+    virtual void set_susceptibility_reduction_fun(ToolFun fun) override;
     virtual void set_susceptibility_reduction(std::string param) override;
     virtual void set_susceptibility_reduction(epiworld_double prob) override;
 
-    std::unique_ptr<Tool<TSeq>> clone_ptr() const override;
+    std::unique_ptr<Tool> clone_ptr() const override;
 
 };
 

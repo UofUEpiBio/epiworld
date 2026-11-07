@@ -7,7 +7,7 @@ EPIWORLD_TEST_CASE("run_multiple runs every replicate in a smaller team", "[run-
 
     const size_t nreps = 10u;
 
-    epimodels::ModelSIR<> model("a virus", 200, 0.01, 0.5, 0.3);
+    epimodels::ModelSIR model("a virus", 200, 0.01, 0.5, 0.3);
     model.add_layer(layer::network(
         "network", rgraph_smallworld(200, 4, 0.1, false, model)
     ));
@@ -20,7 +20,7 @@ EPIWORLD_TEST_CASE("run_multiple runs every replicate in a smaller team", "[run-
     // Same, counting the callbacks per run id (they never run concurrently)
     std::vector< int > calls(nreps, 0);
     SaverMemory saver;
-    auto fun = [&calls, saver](size_t run_id, Model<> * m) {
+    auto fun = [&calls, saver](size_t run_id, Model * m) {
         ++calls[run_id];
         saver(run_id, m);
     };

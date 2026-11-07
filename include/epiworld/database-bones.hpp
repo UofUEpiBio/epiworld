@@ -1,13 +1,10 @@
 #ifndef EPIWORLD_DATABASE_BONES_HPP
 #define EPIWORLD_DATABASE_BONES_HPP
 
-template<typename TSeq>
 class Model;
 
-template<typename TSeq>
 class Virus;
 
-template<typename TSeq>
 class UserData;
 
 /**
@@ -17,15 +14,13 @@ class UserData;
  * <a href="../impl/data-collection-and-analysis.md">Data Collection and Analysis</a>,
  * <a href="../impl/generation-interval-and-reproductive-number.md">Generation Interval and Reproductive Number Calculation</a>
  *
- * @tparam TSeq
  */
-template<typename TSeq>
 class DataBase {
-    friend class Model<TSeq>;
+    friend class Model;
 private:
-    Model<TSeq> * model;
+    Model * model;
 
-    HospitalizationsTracker<TSeq> m_hospitalizations; ///< Tracker for hospitalization events
+    HospitalizationsTracker m_hospitalizations; ///< Tracker for hospitalization events
 
     // Variants, by id: the viruses added to the model first (founders, kept
     // even if removed, so ids stay put), then the run's mutations
@@ -94,7 +89,7 @@ private:
     void record_declared_transition(int id) { ++transition_today[static_cast< size_t >(id)]; }
     ///@}
 
-    UserData<TSeq> user_data;
+    UserData user_data;
 
     void update_state(
         epiworld_fast_uint prev_state,
@@ -147,9 +142,9 @@ public:
     #endif
 
     DataBase() = delete;
-    DataBase(Model<TSeq> & m) : model(&m), m_hospitalizations(), user_data(m) {};
-    DataBase(const DataBase<TSeq> & db);
-    // DataBase<TSeq> & operator=(const DataBase<TSeq> & m);
+    DataBase(Model & m) : model(&m), m_hospitalizations(), user_data(m) {};
+    DataBase(const DataBase & db);
+    // DataBase & operator=(const DataBase & m);
 
     /**
      * @brief Records a new variant, giving the virus its id
@@ -160,11 +155,11 @@ public:
      * Otherwise `v` has mutated: the new variant is a child of the id it had,
      * and its agent's counts move from the parent to it.
      */
-    void record_virus(Virus<TSeq> & v, bool founder = false);
-    void record_tool(Tool<TSeq> & t); ///< Gives the tool the next id.
+    void record_virus(Virus & v, bool founder = false);
+    void record_tool(Tool & t); ///< Gives the tool the next id.
     void reset();
     void drop_variants(); ///< Keeps the founders' records, dropping the run's variants.
-    Model<TSeq> * get_model();
+    Model * get_model();
     void record();
 
     const std::vector< int > & get_nexposed() const;
@@ -344,7 +339,7 @@ public:
     void set_user_data(std::vector< std::string > names);
     void add_user_data(std::vector< epiworld_double > x);
     void add_user_data(epiworld_fast_uint j, epiworld_double x);
-    UserData<TSeq> & get_user_data();
+    UserData & get_user_data();
 
 
     /**
@@ -392,8 +387,8 @@ public:
         bool normalize = true
     ) const;
 
-    bool operator==(const DataBase<TSeq> & other) const;
-    bool operator!=(const DataBase<TSeq> & other) const {return !operator==(other);};
+    bool operator==(const DataBase & other) const;
+    bool operator!=(const DataBase & other) const {return !operator==(other);};
 
     /**
      * Calculates the generating time
@@ -430,7 +425,7 @@ public:
      * - If the agent has no tools, a single record with tool_id = -1 and
      *   weight = 1.0
      */
-    void record_hospitalization(Agent<TSeq> & agent);
+    void record_hospitalization(Agent & agent);
 
     /**
      * @brief Get the full time series of hospitalization data.

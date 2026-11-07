@@ -36,12 +36,11 @@ inline bool moreless(T a, T b, T eps = static_cast<T>(1))
  * others a day at random (what the connected models, e.g. ModelSIRCONN, did).
  * Adds the parameter to the model.
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline void add_random_mixing(epiworld::Model<TSeq> & model, double contact_rate)
+inline void add_random_mixing(epiworld::Model & model, double contact_rate)
 {
     model.add_param(contact_rate, "Contact rate");
-    auto mix = epiworld::layer::mixing<TSeq>("random mixing");
-    mix->set_groups(epiworld::assign::labels<TSeq>(std::vector< size_t >(model.size(), 0u)), 1u);
+    auto mix = epiworld::layer::mixing("random mixing");
+    mix->set_groups(epiworld::assign::labels(std::vector< size_t >(model.size(), 0u)), 1u);
     mix->set_contact_matrix({1.0});
     mix->set_contact_rate("Contact rate");
     model.add_layer(mix);
@@ -69,7 +68,7 @@ inline std::vector< size_t > ranges(
     const std::vector< std::pair< size_t, size_t > > & from_to
 )
 {
-    std::vector< size_t > groups(n, epiworld::layer::Mixing<>::NO_GROUP);
+    std::vector< size_t > groups(n, epiworld::layer::Mixing::NO_GROUP);
     for (size_t g = 0u; g < from_to.size(); ++g)
         for (size_t i = from_to[g].first; i < from_to[g].second; ++i)
             groups[i] = g;
@@ -81,19 +80,19 @@ inline std::vector< size_t > ranges(
  * the groups, fixed (a vector) or an `Assign` (what ModelSIRMixing and ModelSEIRMixing did
  * in epiworld 0.x).
  */
-template<typename TSeq, typename G>
+template<typename G>
 inline void add_group_mixing(
-    epiworld::Model<TSeq> & model,
+    epiworld::Model & model,
     std::vector< double > contact_matrix,
     G groups
 )
 {
-    auto mix = epiworld::layer::mixing<TSeq>("mixing");
+    auto mix = epiworld::layer::mixing("mixing");
     const size_t n_groups = static_cast< size_t >(std::lround(
         std::sqrt(static_cast< double >(contact_matrix.size()))
     ));
     if constexpr (std::is_same_v< G, std::vector< size_t > >)
-        mix->set_groups(epiworld::assign::labels<TSeq>(groups), n_groups);
+        mix->set_groups(epiworld::assign::labels(groups), n_groups);
     else
         mix->set_groups(std::move(groups), n_groups);
     mix->set_contact_matrix(std::move(contact_matrix));
@@ -201,10 +200,9 @@ inline EpiTempFile epi_temp_file(
  * A virus with ModelSIR's natural history (it reads "Transmission probability"
  * and "Recovery rate"), in no model yet: another strain for an SIR model.
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline epiworld::Virus<TSeq> sir_virus(std::string name)
+inline epiworld::Virus sir_virus(std::string name)
 {
-    epiworld::Virus<TSeq> v(std::move(name));
+    epiworld::Virus v(std::move(name));
     v.add_stage("Susceptible");
     v.add_stage("Infected", epiworld::stage::infectious);
     v.add_stage("Recovered");
@@ -222,10 +220,9 @@ inline std::vector< size_t > first_agents(size_t n)
 }
 
 /// Agent `i` gets it (see `assign::agents()`).
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline epiworld::Assign<TSeq> dist_virus(int i)
+inline epiworld::Assign dist_virus(int i)
 {
-    return epiworld::assign::agents<TSeq>({static_cast< size_t >(i)});
+    return epiworld::assign::agents({static_cast< size_t >(i)});
 }
 
 /**
@@ -238,7 +235,7 @@ inline epiworld::Assign<TSeq> dist_virus(int i)
  * @return A function that takes an index and a model pointer, saving the
  * transition probabilities and R0 values for that model instance.
  */
-inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
+inline std::function<void(size_t, epiworld::Model*)> tests_create_saver(
     std::vector<std::vector<epiworld_double>>& transitions,
     std::vector<epiworld_double>& R0s,
     int n_seeds,
@@ -249,7 +246,7 @@ inline std::function<void(size_t, epiworld::Model<>*)> tests_create_saver(
     return [
         &transitions, &R0s, n_seeds, final_distribution,
         outbreak_sizes, hospitalizations
-    ](size_t n, epiworld::Model<>* m) -> void {
+    ](size_t n, epiworld::Model* m) -> void {
         // Saving the transition probabilities
         transitions[n] = m->get_db().get_transition_probability(false, false);
 
@@ -520,9 +517,8 @@ inline std::vector<epiworld_double> tests_calculate_avg_transitions(
  * Labels of the engine's states, in order: "Status / Stage" pairs (just the
  * stage without statuses), state = stage * n_statuses + status.
  */
-template<typename TSeq>
 inline std::vector< std::string > tests_state_labels(
-    const epiworld::Model<TSeq> & model
+    const epiworld::Model & model
 ) {
     std::vector< std::string > out;
     const auto * nh = model.get_natural_history();
@@ -580,9 +576,9 @@ void inline tests_print_avg_transitions(
 }
 
 /// The network layer "network" of `model` (the one the tests add).
-inline epiworld::layer::Network<> & tests_net(epiworld::Model<> & model)
+inline epiworld::layer::Network & tests_net(epiworld::Model & model)
 {
-    return model.get_layer_as< epiworld::layer::Network<> >("network");
+    return model.get_layer_as< epiworld::layer::Network >("network");
 }
 
 /**
@@ -591,7 +587,7 @@ inline epiworld::layer::Network<> & tests_net(epiworld::Model<> & model)
  * collapsed activity-based population, with hubs in the second layer. Added
  * as the network layer "network" of `model`, which must have `n` agents.
  */
-inline void tests_heterogeneous_network(epiworld::Model<> & model, size_t n)
+inline void tests_heterogeneous_network(epiworld::Model & model, size_t n)
 {
 
     std::mt19937_64 rng(2026);

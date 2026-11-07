@@ -5,7 +5,7 @@ int main()
 {
 
     // Setting up model --------------------------------------------------------
-    epiworld::Model<> model(200);
+    epiworld::Model model(200);
 
 
     model.set_user_data({"agent_id", "virus_id"});
@@ -19,7 +19,7 @@ int main()
 
     // Setting up virus --------------------------------------------------------
     // Infected agents recover at the rate their tools give them
-    epiworld::Virus<> v("covid");
+    epiworld::Virus v("covid");
     v.add_stage("Susceptible");
     v.add_stage("Exposed", epiworld::stage::infectious);
     v.add_stage("Removed");
@@ -27,7 +27,7 @@ int main()
     const int recovery = v.rate(1, 2, 0.0).effect(epiworld::Effect::recovery);
 
     // Setting up tool ---------------------------------------------------------
-    epiworld::Tool<> is("immune system");
+    epiworld::Tool is("immune system");
     is.set_susceptibility_reduction(.3);
     is.set_death_reduction(.9);
     is.set_recovery_enhancer("recovery");
@@ -39,7 +39,7 @@ int main()
     // Removed has no infection)
     model.react(
         epiworld::Trigger::fired(recovery),
-        [](epiworld::Agent<> & p, epiworld::Model<> & m) {
+        [](epiworld::Agent & p, epiworld::Model & m) {
             m.add_user_data({
                 static_cast< epiworld_double >(p.get_id()),
                 static_cast< epiworld_double >(0) // the only virus

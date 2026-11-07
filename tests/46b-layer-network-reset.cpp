@@ -11,10 +11,10 @@ using namespace epiworld;
 
 namespace {
 
-std::vector< std::pair< int, int > > ties(Model<> & model, const char * name)
+std::vector< std::pair< int, int > > ties(Model & model, const char * name)
 {
     std::vector< int > s, t;
-    model.get_layer_as< layer::Network<> >(name).get_edgelist(s, t);
+    model.get_layer_as< layer::Network >(name).get_edgelist(s, t);
     std::vector< std::pair< int, int > > out;
     for (size_t k = 0u; k < s.size(); ++k)
         out.emplace_back(s[k], t[k]);
@@ -29,7 +29,7 @@ EPIWORLD_TEST_CASE("Network layers - redrawn and fixed", "[layer-network]") {
 
     // -- redrawn ---------------------------------------------------------------
     {
-        epimodels::ModelSIR<> model("flu", n, 0.02, 0.2, 0.2);
+        epimodels::ModelSIR model("flu", n, 0.02, 0.2, 0.2);
         model.verbose_off();
         auto & net = model.add_layer(layer::network(
             "contacts", graph::smallworld(4, 0.2)
@@ -60,7 +60,7 @@ EPIWORLD_TEST_CASE("Network layers - redrawn and fixed", "[layer-network]") {
         std::vector< std::vector< std::pair< int, int > > > drawn;
         model.run_multiple(
             5, 4, 77,
-            [&drawn](size_t, Model<> * m) -> void {
+            [&drawn](size_t, Model * m) -> void {
                 drawn.push_back(ties(*m, "contacts"));
             },
             true, false, 1
@@ -72,7 +72,7 @@ EPIWORLD_TEST_CASE("Network layers - redrawn and fixed", "[layer-network]") {
 
     // -- fixed -----------------------------------------------------------------
     {
-        epimodels::ModelSIR<> model("flu", n, 0.02, 0.2, 0.2);
+        epimodels::ModelSIR model("flu", n, 0.02, 0.2, 0.2);
         model.verbose_off();
         auto & net = model.add_layer(layer::network(
             "contacts", rgraph_smallworld(n, 4, 0.0, false, model)
@@ -81,8 +81,8 @@ EPIWORLD_TEST_CASE("Network layers - redrawn and fixed", "[layer-network]") {
         REQUIRE_FALSE(net.has_edge(0u, 250u));
 
         // An edit during a run lasts for that run only
-        model.add_globalevent([](Model<> * m) -> void {
-            m->get_layer_as< layer::Network<> >("contacts").add_edge(0u, 250u);
+        model.add_globalevent([](Model * m) -> void {
+            m->get_layer_as< layer::Network >("contacts").add_edge(0u, 250u);
         }, "tie", 2);
         model.run(5, 3);
         REQUIRE(net.has_edge(0u, 250u));
@@ -111,7 +111,7 @@ EPIWORLD_TEST_CASE("Network layers - redrawn and fixed", "[layer-network]") {
         REQUIRE(ties(model, "contacts").size() == baseline.size() + 1u);
 
         // A graph of the wrong size is refused when the model runs
-        epimodels::ModelSIR<> wrong("flu", n + 1u, 0.02, 0.2, 0.2);
+        epimodels::ModelSIR wrong("flu", n + 1u, 0.02, 0.2, 0.2);
         wrong.verbose_off();
         wrong.add_layer(layer::network(
             "contacts", rgraph_smallworld(n, 4, 0.0, false, wrong)

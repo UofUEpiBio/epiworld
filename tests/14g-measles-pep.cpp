@@ -2,7 +2,7 @@
 #include "../include/measles/measles.hpp"
 
 using namespace epiworld;
-using MS = measles::ModelMeaslesSchool<>;
+using MS = measles::ModelMeaslesSchool;
 
 namespace {
 
@@ -34,7 +34,7 @@ MS make_measles_model(int n_seeds, bool with_pep)
 
     if (with_pep)
     {
-        measles::InterventionMeaslesPEP<> pep(
+        measles::InterventionMeaslesPEP pep(
             "Post-exposure prophylaxis for measles",
             1.0,       // PEP MMR efficacy
             1.0,       // PEP IG efficacy
@@ -66,7 +66,7 @@ PepSummary run_experiment(bool with_pep, size_t nsims)
     std::vector<double> recipients(nsims, 0.0);
     std::vector<double> outbreak_sizes(nsims, 0.0);
 
-    auto saver = [&recipients, &outbreak_sizes](size_t n, Model<> * model_ptr) {
+    auto saver = [&recipients, &outbreak_sizes](size_t n, Model * model_ptr) {
         for (auto & agent : model_ptr->get_agents())
         {
             if (agent.has_tool("PEP MMR") || agent.has_tool("PEP IG"))

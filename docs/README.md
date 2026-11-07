@@ -74,7 +74,7 @@ int main() {
 
     // epiworld already comes with a couple
     // of models, like the SIR
-    epimodels::ModelSIR<> hello(
+    epimodels::ModelSIR hello(
         "COVID-19", // Name of the virus
         10'000,     // Number of agents
         0.01,       // Initial prevalence

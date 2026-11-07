@@ -10,12 +10,12 @@ EPIWORLD_TEST_CASE("Contacts change during a run", "[contact-rate]") {
 
     auto last_exposure = [](bool lockdown) {
 
-        epimodels::ModelSIR<> model("v", 2000, 0.01, 0.1, 1.0 / 14.0);
+        epimodels::ModelSIR model("v", 2000, 0.01, 0.1, 1.0 / 14.0);
         add_random_mixing(model, 5.0);
 
         if (lockdown)
             model.add_globalevent(
-                epimodels::globalevent_set_param<int>("Contact rate", 0.0),
+                epimodels::globalevent_set_param("Contact rate", 0.0),
                 "lockdown", 10
             );
 

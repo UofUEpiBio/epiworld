@@ -3,8 +3,7 @@
 
 #include "config.hpp"
 
-template<typename TSeq>
-inline Virus<TSeq>::Virus()
+inline Virus::Virus()
 {
 
     #ifdef EPI_DEBUG_VIRUS
@@ -13,8 +12,7 @@ inline Virus<TSeq>::Virus()
 
 }
 
-template<typename TSeq>
-inline Virus<TSeq>::Virus(
+inline Virus::Virus(
     std::string name
     ) {
 
@@ -26,33 +24,25 @@ inline Virus<TSeq>::Virus(
 }
 
 #ifdef EPI_DEBUG_VIRUS
-template<typename TSeq>
-std::atomic<int> Virus<TSeq>::counter_construct = 0;
+inline std::atomic<int> Virus::counter_construct = 0;
 
-template<typename TSeq>
-std::atomic<int> Virus<TSeq>::counter_copy_construct = 0;
+inline std::atomic<int> Virus::counter_copy_construct = 0;
 
-template<typename TSeq>
-std::atomic<int> Virus<TSeq>::counter_move_construct = 0;
+inline std::atomic<int> Virus::counter_move_construct = 0;
 
-template<typename TSeq>
-std::atomic<int> Virus<TSeq>::counter_copy_assign = 0;
+inline std::atomic<int> Virus::counter_copy_assign = 0;
 
-template<typename TSeq>
-std::atomic<int> Virus<TSeq>::counter_move_assign = 0;
+inline std::atomic<int> Virus::counter_move_assign = 0;
 
-template<typename TSeq>
-std::atomic<int> Virus<TSeq>::counter_destruct = 0;
+inline std::atomic<int> Virus::counter_destruct = 0;
 
-template<typename TSeq>
-inline Virus<TSeq>::~Virus()
+inline Virus::~Virus()
 {
     counter_destruct++;
 }
 
 // Copy constructor
-template<typename TSeq>
-inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
+inline Virus::Virus(const Virus& other)
     : agent(other.agent),
       virus_name(other.virus_name),
       date(other.date),
@@ -66,8 +56,7 @@ inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
 }
 
 // Move constructor
-template<typename TSeq>
-inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
+inline Virus::Virus(Virus&& other) noexcept
     : agent(other.agent),
       virus_name(std::move(other.virus_name)),
       date(other.date),
@@ -82,8 +71,7 @@ inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
 }
 
 // Copy assignment
-template<typename TSeq>
-inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
+inline Virus& Virus::operator=(const Virus& other)
 {
     if (this != &other) {
         agent = other.agent;
@@ -100,8 +88,7 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
 }
 
 // Move assignment
-template<typename TSeq>
-inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
+inline Virus& Virus::operator=(Virus&& other) noexcept
 {
     if (this != &other) {
         agent = other.agent;
@@ -119,9 +106,8 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
 }
 #endif
 
-template<typename TSeq>
-inline void Virus<TSeq>::mutate(
-    Model<TSeq> * model
+inline void Virus::mutate(
+    Model * model
 ) {
 
     if (mutation)
@@ -135,30 +121,26 @@ inline void Virus<TSeq>::mutate(
     
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_mutation(
-    MutFun<TSeq> fun
+inline void Virus::set_mutation(
+    MutFun fun
 ) {
-    mutation = MutFun<TSeq>(fun);
+    mutation = MutFun(fun);
 }
 
 
-template<typename TSeq>
-inline Agent<TSeq> * Virus<TSeq>::get_agent()
+inline Agent * Virus::get_agent()
 {
 
     return agent;
 
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_agent(Agent<TSeq> * p)
+inline void Virus::set_agent(Agent * p)
 {
     agent = p;
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_id(int idx)
+inline void Virus::set_id(int idx)
 {
 
     id = idx;
@@ -166,22 +148,19 @@ inline void Virus<TSeq>::set_id(int idx)
 
 }
 
-template<typename TSeq>
-inline int Virus<TSeq>::get_id() const
+inline int Virus::get_id() const
 {
     
     return id;
 
 }
 
-template<typename TSeq>
-inline int Virus<TSeq>::get_lineage_id() const
+inline int Virus::get_lineage_id() const
 {
     return lineage_id;
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_date(int d) 
+inline void Virus::set_date(int d) 
 {
 
     date = d;
@@ -189,32 +168,28 @@ inline void Virus<TSeq>::set_date(int d)
 
 }
 
-template<typename TSeq>
-inline int Virus<TSeq>::get_date() const
+inline int Virus::get_date() const
 {
     
     return date;
     
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_name(std::string name)
+inline void Virus::set_name(std::string name)
 {
 
     virus_name = name;
 
 }
 
-template<typename TSeq>
-inline std::string Virus<TSeq>::get_name() const
+inline std::string Virus::get_name() const
 {
 
     return virus_name;
 
 }
 
-template<typename TSeq>
-inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
+inline bool Virus::operator==(const Virus & other) const
 {
     
     EPI_DEBUG_FAIL_AT_TRUE(
@@ -232,8 +207,7 @@ inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
 
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::print() const
+inline void Virus::print() const
 {
 
     printf_epiworld("Virus         : %s\n", virus_name.c_str());
@@ -241,15 +215,13 @@ inline void Virus<TSeq>::print() const
 
 }
 
-template<typename TSeq>
-inline std::unique_ptr<Virus<TSeq>> Virus<TSeq>::clone_ptr() const
+inline std::unique_ptr<Virus> Virus::clone_ptr() const
 {
-    auto cloned = std::make_unique<Virus<TSeq>>(*this);
+    auto cloned = std::make_unique<Virus>(*this);
     return cloned;
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::use_param(std::string param, std::string replacement)
+inline void Virus::use_param(std::string param, std::string replacement)
 {
     for (auto & r : param_redirects)
         if (r.first.name() == param)
@@ -263,10 +235,9 @@ inline void Virus<TSeq>::use_param(std::string param, std::string replacement)
     );
 }
 
-template<typename TSeq>
-inline ParamId Virus<TSeq>::param_redirect(
+inline ParamId Virus::param_redirect(
     ParamId id,
-    const Model<TSeq> & model
+    const Model & model
 ) const
 {
     for (const auto & r : param_redirects)
@@ -276,8 +247,7 @@ inline ParamId Virus<TSeq>::param_redirect(
     return id;
 }
 
-template<typename TSeq>
-inline NaturalHistory<TSeq> & Virus<TSeq>::nh_edit()
+inline NaturalHistory & Virus::nh_edit()
 {
     // A virus in a model (its copy there, or an agent's) keeps the model's
     // stages and transitions; a strain changes parameters instead
@@ -290,57 +260,50 @@ inline NaturalHistory<TSeq> & Virus<TSeq>::nh_edit()
 
     // Copies share the natural history until one of them is edited
     if (!nh_def)
-        nh_def = std::make_shared< NaturalHistory<TSeq> >(virus_name);
+        nh_def = std::make_shared< NaturalHistory >(virus_name);
     else if (nh_def.use_count() > 1)
-        nh_def = std::make_shared< NaturalHistory<TSeq> >(*nh_def);
+        nh_def = std::make_shared< NaturalHistory >(*nh_def);
 
     return *nh_def;
 }
 
-template<typename TSeq>
-inline int Virus<TSeq>::add_stage(std::string label, unsigned int flags)
+inline int Virus::add_stage(std::string label, unsigned int flags)
 {
     return nh_edit().add_stage(std::move(label), flags);
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_contact(int s, epiworld_double weight)
+inline void Virus::set_contact(int s, epiworld_double weight)
 {
     nh_edit().set_contact(s, weight);
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> Virus<TSeq>::infection(
-    Nodes from, int to, Value<TSeq> per_contact
+inline TransitionRef Virus::infection(
+    Nodes from, int to, Value per_contact
 )
 {
     return nh_edit().infection(std::move(from), to, std::move(per_contact));
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> Virus<TSeq>::rate(
-    Nodes from, int to, Value<TSeq> daily_probability
+inline TransitionRef Virus::rate(
+    Nodes from, int to, Value daily_probability
 )
 {
     return nh_edit().rate(std::move(from), to, std::move(daily_probability));
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> Virus<TSeq>::after(int from, int to, Duration<TSeq> d)
+inline TransitionRef Virus::after(int from, int to, Duration d)
 {
     return nh_edit().after(from, to, std::move(d));
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> Virus<TSeq>::external(
+inline TransitionRef Virus::external(
     Nodes from, int to, std::string label
 )
 {
     return nh_edit().external(std::move(from), to, std::move(label));
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::check_params(const Model<TSeq> & model) const
+inline void Virus::check_params(const Model & model) const
 {
     for (const auto & r : param_redirects)
         if (!model.has_param(r.second.name()))

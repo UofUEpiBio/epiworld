@@ -9,7 +9,7 @@ using namespace epiworld;
 // both ends of a tie) refuses the layer.
 
 // The model's ties as the public API reports them, sorted.
-static std::vector< std::pair<int,int> > ties_of(Model<> & model)
+static std::vector< std::pair<int,int> > ties_of(Model & model)
 {
     std::vector< int > source, target;
     tests_net(model).get_edgelist(source, target);
@@ -23,7 +23,7 @@ static std::vector< std::pair<int,int> > ties_of(Model<> & model)
 }
 
 // In- and out-degree of every agent, from the ties the model reports.
-static std::pair< std::vector<int>, std::vector<int> > degrees_of(Model<> & model)
+static std::pair< std::vector<int>, std::vector<int> > degrees_of(Model & model)
 {
     std::vector< int > indeg(model.size(), 0), outdeg(model.size(), 0);
     for (const auto & t : ties_of(model))
@@ -47,7 +47,7 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
     };
 
     // -- directed ------------------------------------------------------------
-    epimodels::ModelSIR<> model("a virus", n, 0.1, 0.5, 0.3);
+    epimodels::ModelSIR model("a virus", n, 0.1, 0.5, 0.3);
     model.verbose_off();
     model.add_layer(layer::network(
         "network", AdjList(source, target, n, true)
@@ -79,7 +79,7 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
 
     // -- the same ties, undirected -------------------------------------------
     // Every tie is reported once, with the reciprocated pair merged into one.
-    epimodels::ModelSIR<> model_u("a virus", n, 0.1, 0.5, 0.3);
+    epimodels::ModelSIR model_u("a virus", n, 0.1, 0.5, 0.3);
     model_u.verbose_off();
     model_u.add_layer(layer::network(
         "network", AdjList(source, target, n, false)
@@ -96,7 +96,7 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
 
     // -- generated networks: the layer holds exactly the AdjList's ties -------
     {
-        epimodels::ModelSIR<> m("a virus", 300u, 0.1, 0.5, 0.3);
+        epimodels::ModelSIR m("a virus", 300u, 0.1, 0.5, 0.3);
         m.seed(77);
         AdjList al = rgraph_bernoulli(300u, 0.02, true, m);
         m.add_layer(layer::network("network", al));
@@ -116,7 +116,7 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
     // An undirected Bernoulli graph: symmetric, no self-ties, and about
     // p * n * (n - 1) / 2 ties (sd ~ 30 here)
     {
-        epimodels::ModelSIR<> m("a virus", 300u, 0.1, 0.5, 0.3);
+        epimodels::ModelSIR m("a virus", 300u, 0.1, 0.5, 0.3);
         m.seed(77);
         m.add_layer(layer::network(
             "network", rgraph_bernoulli(300u, 0.02, false, m)
@@ -141,7 +141,7 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
     // A directed small world is a ring of k out-ties per agent (plus rewiring),
     // not 2k ties at both ends.
     {
-        epimodels::ModelSIR<> m("a virus", 200u, 0.1, 0.5, 0.3);
+        epimodels::ModelSIR m("a virus", 200u, 0.1, 0.5, 0.3);
         m.seed(78);
         m.add_layer(layer::network(
             "network", rgraph_smallworld(200u, 4u, 0.0, true, m)
@@ -159,7 +159,7 @@ EPIWORLD_TEST_CASE("Directed networks - ties are kept as given", "[directed]") {
 
     // -- rewiring keeps ties one-way and both degree sequences ----------------
     {
-        epimodels::ModelSIR<> m("a virus", 300u, 0.05, 0.5, 0.3);
+        epimodels::ModelSIR m("a virus", 300u, 0.05, 0.5, 0.3);
         m.seed(79);
         m.verbose_off();
         m.add_layer(layer::network(

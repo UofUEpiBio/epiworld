@@ -5,7 +5,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
 
     // Creating a model
-    Model<> model(40);
+    Model model(40);
 
     // Adding the tool and virus. Transmission is certain, recovery takes one
     // day (the tool makes it certain), nobody dies (the tool prevents it), and
@@ -15,30 +15,30 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
     model.add_param(1.0, "Immunity");
     model.add_param(1.0, "Death reduction");
 
-    Virus<> virus("covid 19");
+    Virus virus("covid 19");
     const size_t susceptible_state = virus.add_stage("Susceptible");
     const size_t exposed_state = virus.add_stage("Exposed", stage::infectious);
     const size_t removed_state = virus.add_stage("Removed");
-    virus.infection(0, 1, ValueFun<>(
-        [](Agent<> &, Model<> & m) { return m.par("Infectiousness"); }
+    virus.infection(0, 1, ValueFun(
+        [](Agent &, Model & m) { return m.par("Infectiousness"); }
     ));
     const int recovery = virus.rate(1, 0, 0.0).effect(Effect::recovery);
     virus.rate(1, 2, 0.01).effect(Effect::death);
     model.add_virus(virus, assign::count(10));
 
     // The recovered get a tool that blocks infection (a reaction)
-    epiworld::Tool<> immunity("immunity");
+    epiworld::Tool immunity("immunity");
     immunity.set_susceptibility_reduction("Immunity");
     model.add_tool(immunity, assign::count(0));
     model.react(
         Trigger::fired(recovery),
-        [](Agent<> & p, Model<> & m) { p.add_tool(m, m.get_tool("immunity")); }
+        [](Agent & p, Model & m) { p.add_tool(m, m.get_tool("immunity")); }
     );
 
-    epiworld::Tool<> tool("vaccine");
+    epiworld::Tool tool("vaccine");
     tool.set_death_reduction("Death reduction");
     tool.set_recovery_enhancer_fun(
-        [](Tool<> &, Agent<> *, VirusPtr<> &, Model<> *) { return 1.0; }
+        [](Tool &, Agent *, VirusPtr &, Model *) { return 1.0; }
     );
     model.add_tool(tool, assign::share(1.0));
 
@@ -109,7 +109,7 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
     for (const auto & agent : model.get_agents())
         REQUIRE(agent.get_n_tools() == 2u);
 
-    AgentsSample<> agents(model, .05 * 40);
+    AgentsSample agents(model, .05 * 40);
 
     printf_epiworld("Total sampled: %lu\n", agents.size());
     for (auto & a: agents)

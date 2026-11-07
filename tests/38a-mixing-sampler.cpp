@@ -7,7 +7,7 @@ using namespace epiworld;
 // column-major, entry (i, j) = contacts of group i with group j.
 namespace {
 
-class SamplerModel : public Model<>
+class SamplerModel : public Model
 {
 public:
 
@@ -21,12 +21,12 @@ public:
         add_layer(std::move(layer));
 
         // Any sampled contact is infectious: it transmits for sure
-        Virus<> v("Virus");
+        Virus v("Virus");
         v.add_stage("Susceptible");
         v.add_stage("Infected", stage::infectious);
         v.infection(0, 1, 1.0).sampler(
-            [](Agent<> & p, Model<> & m) -> Virus<> * {
-                auto & mixing = m.get_layer_as< layer::Mixing<> >(0u);
+            [](Agent & p, Model & m) -> Virus * {
+                auto & mixing = m.get_layer_as< layer::Mixing >(0u);
                 std::vector< size_t > contacts;
                 mixing.sample(p.get_id(), m, nullptr, contacts);
                 if (contacts.empty())
@@ -41,7 +41,7 @@ public:
 
     }
 
-    std::unique_ptr< Model<> > clone_ptr() override
+    std::unique_ptr< Model > clone_ptr() override
     {
         return std::make_unique< SamplerModel >(*this);
     }
@@ -62,7 +62,7 @@ EPIWORLD_TEST_CASE("Mixing sampler: group-specific transmission", "[mixing-sampl
 
     SamplerModel model(300, cm);
 
-    model.assign_virus(0, dist_virus<>(0));
+    model.assign_virus(0, dist_virus(0));
 
     model.run(30, 331);
 
@@ -70,7 +70,7 @@ EPIWORLD_TEST_CASE("Mixing sampler: group-specific transmission", "[mixing-sampl
     for (auto & a : model.get_agents())
     {
         if (model.get_stage(a) == 1)
-            inf[model.get_layer_as< layer::Mixing<> >(0u).get_group(a.get_id())]++;
+            inf[model.get_layer_as< layer::Mixing >(0u).get_group(a.get_id())]++;
     }
 
     // Infection travels 0 -> 0 and 0 -> 1, never into group 2
@@ -79,7 +79,7 @@ EPIWORLD_TEST_CASE("Mixing sampler: group-specific transmission", "[mixing-sampl
     REQUIRE(inf[2] == 0u);
 
     // The infectious agent is its own pool member but is never sampled
-    REQUIRE(model.get_layer_as< layer::Mixing<> >(0u).get_n_infectious(2u) == 0u);
-    REQUIRE(model.get_layer_as< layer::Mixing<> >(0u).get_n_infectious(0u) == inf[0]);
+    REQUIRE(model.get_layer_as< layer::Mixing >(0u).get_n_infectious(2u) == 0u);
+    REQUIRE(model.get_layer_as< layer::Mixing >(0u).get_n_infectious(0u) == inf[0]);
 
 }

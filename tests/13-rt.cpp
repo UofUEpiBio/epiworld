@@ -12,7 +12,7 @@ EPIWORLD_TEST_CASE("Rt", "[Rt]") {
     double crate = R0 * rrate / trate;
 
     // Creating a simple ModelSIR model
-    epimodels::ModelSIR<> model_0(
+    epimodels::ModelSIR model_0(
         "a virus", n, static_cast<double>(n_seeds)/n, trate, rrate
     );
     add_random_mixing(model_0, crate);

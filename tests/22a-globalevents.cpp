@@ -19,7 +19,7 @@ EPIWORLD_TEST_CASE("GlobalEvents - Event timing", "[globalevents][timing]") {
     std::vector<int> specific_event_days;
 
     // Create a simple SIR model
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "virus", 1000, 0.01, 0.5, 0.3
     );
 
@@ -31,7 +31,7 @@ EPIWORLD_TEST_CASE("GlobalEvents - Event timing", "[globalevents][timing]") {
 
     // Add a global event that runs every day (day = -1)
     model.add_globalevent(
-        [&daily_event_days](Model<>* m) -> void {
+        [&daily_event_days](Model* m) -> void {
             daily_event_days.push_back(m->today());
         },
         "Daily event",
@@ -41,7 +41,7 @@ EPIWORLD_TEST_CASE("GlobalEvents - Event timing", "[globalevents][timing]") {
     // Add a global event that runs on specific days (10, 20, 30)
     for (int day : {10, 20, 30}) {
         model.add_globalevent(
-            [&specific_event_days](Model<>* m) -> void {
+            [&specific_event_days](Model* m) -> void {
                 specific_event_days.push_back(m->today());
             },
             "Specific day event " + std::to_string(day),

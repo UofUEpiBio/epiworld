@@ -2,7 +2,7 @@
 #include "../include/measles/measles.hpp"
 
 using namespace epiworld;
-using MS = measles::ModelMeaslesSchool<>;
+using MS = measles::ModelMeaslesSchool;
 
 // The exposed group offered PEP is, by default, the whole population: when
 // a case is identified, everyone is assumed to have been exposed. That is
@@ -63,9 +63,9 @@ MS make_school()
 
 // Susceptible agents are the PEP target here so that we only need to check
 // whether the PEP tool was administered.
-measles::InterventionMeaslesPEP<> make_pep(std::vector< int > groups = {})
+measles::InterventionMeaslesPEP make_pep(std::vector< int > groups = {})
 {
-    return measles::InterventionMeaslesPEP<>(
+    return measles::InterventionMeaslesPEP(
         "Post-exposure prophylaxis for measles",
         1.0,       // PEP MMR efficacy
         1.0,       // PEP IG efficacy

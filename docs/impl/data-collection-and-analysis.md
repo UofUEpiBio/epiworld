@@ -13,10 +13,10 @@ In addition to automatic recording, the `DataBase` class provides methods for ma
 #include "epiworld/model-bones.hpp"
 
 int main() {
-    Model<int> model(100); // Create a model with 100 agents
-    DataBase<int> db(model); // Initialize the database
+    Model model(100); // Create a model with 100 agents
+    DataBase db(model); // Initialize the database
 
-    Virus<int> virus("ExampleVirus");
+    Virus virus("ExampleVirus");
     db.record_virus(virus); // Record a new virus
 
     db.record_transmission(1, 2, 0, 5); // Record a transmission event

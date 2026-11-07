@@ -45,15 +45,14 @@ namespace measles {
      * @details Each model's entry is its `model_info()`, with the defaults of
      * the measles R package. They name their own virus ("Measles").
      */
-    template<typename TSeq = EPI_DEFAULT_TSEQ>
-    inline epiworld::ModelRegistry<TSeq> & register_models(
-        epiworld::ModelRegistry<TSeq> & registry
+    inline epiworld::ModelRegistry & register_models(
+        epiworld::ModelRegistry & registry
     )
     {
         return registry
-            .add(ModelMeaslesMixing<TSeq>::model_info())
-            .add(ModelMeaslesMixingRiskQuarantine<TSeq>::model_info())
-            .add(ModelMeaslesSchool<TSeq>::model_info());
+            .add(ModelMeaslesMixing::model_info())
+            .add(ModelMeaslesMixingRiskQuarantine::model_info())
+            .add(ModelMeaslesSchool::model_info());
     }
 }
 

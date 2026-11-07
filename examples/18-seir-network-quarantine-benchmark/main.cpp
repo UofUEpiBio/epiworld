@@ -71,7 +71,7 @@ int main() {
     double avg_outbreak_size_mixing = 0.0;
     double avg_outbreak_size_network = 0.0;
 
-    auto get_os = [](const Model<> & m) -> double {
+    auto get_os = [](const Model & m) -> double {
 
         std::vector< int > date, virus_id, size;
 
@@ -83,7 +83,7 @@ int main() {
 
     // Mixing layer: groups of consecutive agents
     {
-        epimodels::ModelSEIRQuarantine<> model_mix(
+        epimodels::ModelSEIRQuarantine model_mix(
             "Flu",
             static_cast<epiworld_fast_uint>(n_total),
             prevalence,
@@ -103,7 +103,7 @@ int main() {
         for (size_t i = 0; i < n_total; ++i)
             groups[i] = i / group_size;
 
-        auto mixing = layer::mixing<>("mixing");
+        auto mixing = layer::mixing("mixing");
         mixing->set_groups(assign::labels(groups), n_groups);
         mixing->set_contact_matrix(contact_matrix);
         model_mix.add_layer(mixing);
@@ -136,7 +136,7 @@ int main() {
     // Network layer: a stochastic block model with the same mixing
     // -------------------------------------------------------------------
     {
-        epimodels::ModelSEIRQuarantine<> model_net(
+        epimodels::ModelSEIRQuarantine model_net(
             "Flu",
             n_groups * group_size,
             prevalence,

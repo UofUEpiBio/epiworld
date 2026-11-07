@@ -29,11 +29,11 @@ struct Outcomes {
 
 // Final size, peak prevalence (all but the first and last state), and
 // infections in the first ten days, over many replicates.
-Outcomes simulate(Model<> & model, int ndays, int nsims)
+Outcomes simulate(Model & model, int ndays, int nsims)
 {
 
     Outcomes out;
-    auto saver = [&out](size_t, Model<> * m) -> void {
+    auto saver = [&out](size_t, Model * m) -> void {
 
         const size_t ns = m->get_n_states();
 
@@ -78,7 +78,7 @@ void check_same(const Moments & a, const Moments & b, const std::string & what)
 
 // A custom SEIRH: exposed and hospitalized agents keep the virus but do not
 // transmit (the epiworld-benchmark model).
-void build_seirh(Model<> & model)
+void build_seirh(Model & model)
 {
     model.add_param(0.06, "Transmission rate");
     model.add_param(0.25, "Incubation rate");
@@ -86,7 +86,7 @@ void build_seirh(Model<> & model)
     model.add_param(0.15, "Recovery rate");
     model.add_param(0.15, "Hospital recovery rate");
 
-    Virus<> v("pathogen");
+    Virus v("pathogen");
     v.add_stage("Susceptible");
     v.add_stage("Exposed", stage::carrier);
     v.add_stage("Infected", stage::infectious);
@@ -101,7 +101,7 @@ void build_seirh(Model<> & model)
 }
 
 // Adds and removes a fixed set of ties on a schedule (no random numbers)
-void rewire_some_ties(Model<> * m)
+void rewire_some_ties(Model * m)
 {
     int day = m->today();
     if ((day % 10) == 5)
@@ -120,7 +120,7 @@ struct Run {
     }
 };
 
-Run record(Model<> & m)
+Run record(Model & m)
 {
     Run r;
     m.get_db().get_hist_total(nullptr, nullptr, nullptr, &r.counts);
@@ -140,7 +140,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
         std::map< std::string, Outcomes > seir, seirh;
         for (auto mode : {"pull", "push", "auto"})
         {
-            epimodels::ModelSEIR<> m_seir("flu", 1500, 0.01, 0.04, 4.0, 1.0 / 7.0);
+            epimodels::ModelSEIR m_seir("flu", 1500, 0.01, 0.04, 4.0, 1.0 / 7.0);
             m_seir.seed(11);
             m_seir.add_layer(layer::network(
                 "network", rgraph_smallworld(1500, 8, 0.1, false, m_seir)
@@ -148,7 +148,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
             m_seir.set_transmission_mode(mode);
             seir[mode] = simulate(m_seir, 60, nsims);
 
-            Model<> m_seirh(1500);
+            Model m_seirh(1500);
             build_seirh(m_seirh);
             m_seirh.seed(11);
             m_seirh.add_layer(layer::network(
@@ -182,7 +182,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
         std::vector< Run > runs;
         for (bool queuing : {true, false})
         {
-            epimodels::ModelSIR<> model("flu", 2000, 0.02, 0.9, 0.3);
+            epimodels::ModelSIR model("flu", 2000, 0.02, 0.9, 0.3);
             model.seed(3131);
             model.add_layer(layer::network(
                 "network", rgraph_smallworld(2000, 6, 0.02, false, model)
@@ -204,14 +204,14 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
     // 3. Custom samplers pull ------------------------------------------------
     {
         auto sir = [](bool wrapped) {
-            Model<> m(1000);
-            Virus<> v("flu");
+            Model m(1000);
+            Virus v("flu");
             v.add_stage("Susceptible");
             v.add_stage("Infected", stage::infectious);
             v.add_stage("Recovered");
             auto infection = v.infection(0, 1, 0.3);
             if (wrapped)
-                infection.sampler([](Agent<> & p, Model<> & mm) -> Virus<> * {
+                infection.sampler([](Agent & p, Model & mm) -> Virus * {
                     return mm.sample_virus(&p);
                 });
             v.rate(1, 2, 0.2).effect(Effect::recovery);
@@ -224,24 +224,24 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
             return m;
         };
 
-        Model<> plain_pull = sir(false);
+        Model plain_pull = sir(false);
         plain_pull.set_transmission_mode("pull").run(40, 7);
 
-        Model<> wrapped_push = sir(true);
+        Model wrapped_push = sir(true);
         wrapped_push.set_transmission_mode("push").run(40, 7);
         REQUIRE(wrapped_push.get_last_transmission_mode() == TransmissionMode::pull);
         REQUIRE(record(wrapped_push).date.size() > 50u);
         REQUIRE(record(wrapped_push) == record(plain_pull));
 
         // ... while the plain function does get pushed
-        Model<> plain_push = sir(false);
+        Model plain_push = sir(false);
         plain_push.set_transmission_mode("push").run(40, 7);
         REQUIRE(plain_push.get_last_transmission_mode() == TransmissionMode::push);
     }
 
     // 4. "auto" switches in a dense, high-prevalence epidemic -------------------
     {
-        epimodels::ModelSIR<> model("flu", 2000, 0.01, 0.05, 0.2);
+        epimodels::ModelSIR model("flu", 2000, 0.01, 0.05, 0.2);
         model.seed(5);
         model.add_layer(layer::network(
             "network", rgraph_smallworld(2000, 50, 0.1, false, model)
@@ -249,7 +249,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
         model.verbose_off();
 
         int n_push = 0, n_pull = 0;
-        model.add_globalevent([&n_push, &n_pull](Model<> * m) -> void {
+        model.add_globalevent([&n_push, &n_pull](Model * m) -> void {
             if (m->get_last_transmission_mode() == TransmissionMode::push)
                 ++n_push;
             else
@@ -264,7 +264,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
 
     // 5. The mode API ----------------------------------------------------------
     {
-        Model<> m(0);
+        Model m(0);
         REQUIRE(m.get_transmission_mode() == TransmissionMode::automatic);
         m.set_transmission_mode("push");
         REQUIRE(m.get_transmission_mode() == TransmissionMode::push);
@@ -278,7 +278,7 @@ EPIWORLD_TEST_CASE("Transmission - modes agree on whole models", "[transmission]
         REQUIRE(m.get_transmission_kappa() == EPI_DEFAULT_TRANSMISSION_KAPPA);
 
         // Copies keep the mode (run_multiple runs copies on other threads)
-        Model<> copy(m);
+        Model copy(m);
         REQUIRE(copy.get_transmission_mode() == TransmissionMode::pull);
     }
 

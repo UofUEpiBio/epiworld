@@ -10,12 +10,12 @@ int main()
     constexpr int initial_cases = n_agents / 200;
 
     // Creating a model
-    epiworld::Model<int> model(n_agents);
+    epiworld::Model model(n_agents);
 
     // The virus and its natural history: infected agents recover or die
     // (competing daily rates); the recovered are immune (Recovered has no
     // infection)
-    epiworld::Virus<int> virus("covid 19");
+    epiworld::Virus virus("covid 19");
     virus.add_stage("Susceptible");
     virus.add_stage("Infected", stage::infectious);
     virus.add_stage("Recovered");
@@ -24,9 +24,9 @@ int main()
     virus.infection(0, 1, 0.5);
     virus.rate(1, 2, 0.5).effect(Effect::recovery);
     virus.rate(1, 3, 0.01).effect(Effect::death);
-    model.add_virus(virus, assign::count<int>(initial_cases));
+    model.add_virus(virus, assign::count(initial_cases));
 
-    epiworld::Tool<int> tool("vaccine");
+    epiworld::Tool tool("vaccine");
     model.add_tool(tool, assign::share(.5));
 
     // Generating a random pop

@@ -18,7 +18,7 @@ EPIWORLD_TEST_CASE(
     double prodromal = 4.0;
     double rash = 3.0, rash_sd = 1.0;
 
-    measles::ModelMeaslesSchool<> model(
+    measles::ModelMeaslesSchool model(
         n,           // Number of agents
         n,           // Number of initial (latent) cases: everyone
         2.0,         // Contact rate

@@ -25,15 +25,15 @@ EPIWORLD_TEST_CASE("Bubbles - household layer rules", "[bubbles]") {
 
     auto make = [&](BubbleTies ties) {
 
-        auto m = std::make_unique< epimodels::ModelSIR<> >(
+        auto m = std::make_unique< epimodels::ModelSIR >(
             "flu", n, 0.0, 0.2, 0.1
         );
         m->verbose_off();
-        m->add_layer(layer::network("network", graph::smallworld<>(6, 0.1)));
+        m->add_layer(layer::network("network", graph::smallworld(6, 0.1)));
 
-        Bubbles<> home(hh, BubbleFlavor::Household, 3u, 0.0, 2, 30, 5,
+        Bubbles home(hh, BubbleFlavor::Household, 3u, 0.0, 2, 30, 5,
             "Home bubble", 2u, "Home factor", ties, "household");
-        Bubbles<> school(room, BubbleFlavor::Peer, 2u, 0.0, 4, -1, 3,
+        Bubbles school(room, BubbleFlavor::Peer, 2u, 0.0, 4, -1, 3,
             "School bubble", 3u, "School factor", ties, "school");
 
         if (ties == BubbleTies::Complete)
@@ -57,9 +57,9 @@ EPIWORLD_TEST_CASE("Bubbles - household layer rules", "[bubbles]") {
         auto m = make(ties);
         std::vector< std::vector< int > > res;
         m->add_globalevent(
-            [&res](Model<> * mm) -> void {
+            [&res](Model * mm) -> void {
                 for (const char * name : {"Home bubble", "School bubble"})
-                    res.push_back(Bubbles<>::get_from(*mm, name)->get_bubble_id());
+                    res.push_back(Bubbles::get_from(*mm, name)->get_bubble_id());
             },
             "record the partitions"
         );
@@ -74,13 +74,13 @@ EPIWORLD_TEST_CASE("Bubbles - household layer rules", "[bubbles]") {
     // No household layer, or a network layer by that name: neither will do
     for (bool network_named_household : {false, true})
     {
-        epimodels::ModelSIR<> m("flu", n, 0.01, 0.2, 0.1);
+        epimodels::ModelSIR m("flu", n, 0.01, 0.2, 0.1);
         m.verbose_off();
-        m.add_layer(layer::network("network", graph::smallworld<>(6, 0.1)));
+        m.add_layer(layer::network("network", graph::smallworld(6, 0.1)));
         if (network_named_household)
-            m.add_layer(layer::network("household", graph::smallworld<>(2, 0.0)));
+            m.add_layer(layer::network("household", graph::smallworld(2, 0.0)));
 
-        Bubbles<> p(hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0,
+        Bubbles p(hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0,
             "Social bubble", 2u, "Bubble transmission factor",
             BubbleTies::Complete, "household");
         m.add_globalevent(p);
@@ -92,20 +92,20 @@ EPIWORLD_TEST_CASE("Bubbles - household layer rules", "[bubbles]") {
     // fewer groups, or as many but with other members
     for (size_t n_groups : {50u, 100u})
     {
-        epimodels::ModelSIR<> m("flu", n, 0.01, 0.2, 0.1);
+        epimodels::ModelSIR m("flu", n, 0.01, 0.2, 0.1);
         m.verbose_off();
-        m.add_layer(layer::network("network", graph::smallworld<>(6, 0.1)));
+        m.add_layer(layer::network("network", graph::smallworld(6, 0.1)));
 
         std::vector< size_t > other(n);
         for (size_t i = 0u; i < n; ++i)
             other[i] = i % n_groups;
 
-        auto wrong = layer::mixing<>("household");
+        auto wrong = layer::mixing("household");
         wrong->set_groups(assign::labels(other), n_groups);
         wrong->set_contact_prob(1.0);
         m.add_layer(wrong);
 
-        Bubbles<> p(hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0,
+        Bubbles p(hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0,
             "Social bubble", 2u, "Bubble transmission factor",
             BubbleTies::Complete, "household");
         m.add_globalevent(p);
@@ -114,12 +114,12 @@ EPIWORLD_TEST_CASE("Bubbles - household layer rules", "[bubbles]") {
     }
 
     {
-        epimodels::ModelSIR<> m("flu", n, 0.01, 0.2, 0.1);
+        epimodels::ModelSIR m("flu", n, 0.01, 0.2, 0.1);
         m.verbose_off();
-        m.add_layer(layer::network("network", graph::smallworld<>(6, 0.1)));
-        Bubbles<> a(hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0,
+        m.add_layer(layer::network("network", graph::smallworld(6, 0.1)));
+        Bubbles a(hh, BubbleFlavor::Household, 2u, 0.0, 0, -1, 0,
             "Bubble A", 2u, "Factor A", BubbleTies::Complete, "household");
-        Bubbles<> b(hh, BubbleFlavor::Household, 3u, 0.0, 0, -1, 0,
+        Bubbles b(hh, BubbleFlavor::Household, 3u, 0.0, 0, -1, 0,
             "Bubble B", 2u, "Factor B", BubbleTies::Complete, "household");
         m.add_layer(a.make_layer());
         m.add_globalevent(a);

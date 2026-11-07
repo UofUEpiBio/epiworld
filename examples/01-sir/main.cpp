@@ -6,7 +6,7 @@ using namespace epiworld;
 int main() {
     constexpr epiworld_fast_uint n_agents = 5000u;
 
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "a virus", // Name of the virus
         n_agents,
         0.01,      // Initial prevalence

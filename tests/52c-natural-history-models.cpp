@@ -28,13 +28,13 @@ void add_net(TModel & model, const AdjList & net)
 
 EPIWORLD_TEST_CASE("Natural history - surveillance and diffnet and logit models", "[natural-history]") {
 
-    Model<> scratch(N);
+    Model scratch(N);
     scratch.seed(5);
     const AdjList net = rgraph_smallworld(N, 6, 0.05, false, scratch);
 
     // ModelSURV -------------------------------------------------------------
     {
-        using M = epimodels::ModelSURV<>;
+        using M = epimodels::ModelSURV;
         M model(
             "covid", N, 30u, 0.9, 3.0, 6.0, 0.6, 0.25, 0.5, 0.5,
             0.05, 0.5, 0.01, 0.9
@@ -79,7 +79,7 @@ EPIWORLD_TEST_CASE("Natural history - surveillance and diffnet and logit models"
 
     // ModelDiffNet ----------------------------------------------------------
     {
-        epimodels::ModelDiffNet<> model("idea", N, 0.02, 0.02);
+        epimodels::ModelDiffNet model("idea", N, 0.02, 0.02);
         add_net(model, net);
         model.run(40, 2);
 
@@ -100,7 +100,7 @@ EPIWORLD_TEST_CASE("Natural history - surveillance and diffnet and logit models"
     // ModelSIRLogit ---------------------------------------------------------
     {
         std::vector< double > data(N * 2u, 1.0);
-        epimodels::ModelSIRLogit<> model(
+        epimodels::ModelSIRLogit model(
             "v", N, data.data(), 2u,
             {2.0, 0.0, 0.0},  // infection: exposure coefficient, then features
             {20.0, 20.0},     // recovery: plogis(40), about 1

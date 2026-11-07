@@ -125,18 +125,17 @@ namespace epimodels {
      * @details Each model's entry is its `model_info()`. `ModelSIRLogit` and
      * `ModelDiffNet` take data arrays and are built directly.
      */
-    template<typename TSeq = EPI_DEFAULT_TSEQ>
-    inline ModelRegistry<TSeq> & register_models(ModelRegistry<TSeq> & registry)
+    inline ModelRegistry & register_models(ModelRegistry & registry)
     {
         return registry
-            .add(ModelSIS<TSeq>::model_info())
-            .add(ModelSIR<TSeq>::model_info())
-            .add(ModelSEIR<TSeq>::model_info())
-            .add(ModelSISD<TSeq>::model_info())
-            .add(ModelSIRD<TSeq>::model_info())
-            .add(ModelSEIRD<TSeq>::model_info())
-            .add(ModelSEIRQuarantine<TSeq>::model_info())
-            .add(ModelSURV<TSeq>::model_info());
+            .add(ModelSIS::model_info())
+            .add(ModelSIR::model_info())
+            .add(ModelSEIR::model_info())
+            .add(ModelSISD::model_info())
+            .add(ModelSIRD::model_info())
+            .add(ModelSEIRD::model_info())
+            .add(ModelSEIRQuarantine::model_info())
+            .add(ModelSURV::model_info());
     }
 }
 

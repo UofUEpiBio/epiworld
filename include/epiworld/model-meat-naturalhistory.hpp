@@ -15,8 +15,7 @@
 
 // Installing ------------------------------------------------------------------
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_install(std::shared_ptr< NaturalHistory<TSeq> > def)
+inline void Model::nh_install(std::shared_ptr< NaturalHistory > def)
 {
 
     if (nstates != 0u)
@@ -55,8 +54,7 @@ inline void Model<TSeq>::nh_install(std::shared_ptr< NaturalHistory<TSeq> > def)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_statuses(Statuses<TSeq> s)
+inline void Model::set_statuses(Statuses s)
 {
 
     if (running)
@@ -66,15 +64,14 @@ inline void Model<TSeq>::set_statuses(Statuses<TSeq> s)
         throw std::logic_error("The statuses have no status.");
 
     s.finalize(*this, "Statuses");
-    st = std::make_shared< const Statuses<TSeq> >(std::move(s));
+    st = std::make_shared< const Statuses >(std::move(s));
 
     if (nh)
         nh_build_states();
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_build_states()
+inline void Model::nh_build_states()
 {
 
     const int ns = static_cast< int >(nh->get_n_stages());
@@ -103,7 +100,7 @@ inline void Model<TSeq>::nh_build_states()
         }
 
     // Every cell with a drawn exit (of its stage or its status) is updated
-    UpdateFun<TSeq> update = [](Agent<TSeq> * p, Model<TSeq> * m) -> void {
+    UpdateFun update = [](Agent * p, Model * m) -> void {
         m->nh_step(*p);
     };
 
@@ -158,24 +155,21 @@ inline void Model<TSeq>::nh_build_states()
 
 // Accessors -------------------------------------------------------------------
 
-template<typename TSeq>
-inline int Model<TSeq>::get_stage(const Agent<TSeq> & agent) const
+inline int Model::get_stage(const Agent & agent) const
 {
     if (!nh)
         throw std::logic_error("The model has no natural history.");
     return nh_stage_of(agent.state);
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::get_status(const Agent<TSeq> & agent) const
+inline int Model::get_status(const Agent & agent) const
 {
     if (!nh)
         throw std::logic_error("The model has no natural history.");
     return nh_status_of(agent.state);
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::transition_id(std::string_view name) const
+inline int Model::transition_id(std::string_view name) const
 {
 
     if (!nh)
@@ -194,8 +188,7 @@ inline int Model<TSeq>::transition_id(std::string_view name) const
 
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::get_stage_entered(size_t id, int stage) const
+inline int Model::get_stage_entered(size_t id, int stage) const
 {
     if (!nh)
         throw std::logic_error("The model has no natural history.");
@@ -203,24 +196,21 @@ inline int Model<TSeq>::get_stage_entered(size_t id, int stage) const
     return nh_entered.at(id * nh->get_n_stages() + static_cast< size_t >(stage));
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::get_stage_until(size_t id) const
+inline int Model::get_stage_until(size_t id) const
 {
     if (!nh)
         throw std::logic_error("The model has no natural history.");
     return nh_until.at(id);
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::get_episode(size_t id) const
+inline int Model::get_episode(size_t id) const
 {
     if (!nh)
         throw std::logic_error("The model has no natural history.");
     return nh_episode.at(id);
 }
 
-template<typename TSeq>
-inline bool Model<TSeq>::nh_removed(int stage) const
+inline bool Model::nh_removed(int stage) const
 {
     // A stage that takes agents out of every layer and has no exit
     if (nh->get_contact(stage) > 0.0)
@@ -233,8 +223,7 @@ inline bool Model<TSeq>::nh_removed(int stage) const
 
 // Moving agents from code ------------------------------------------------------
 
-template<typename TSeq>
-inline bool Model<TSeq>::fire(int transition, Agent<TSeq> & agent)
+inline bool Model::fire(int transition, Agent & agent)
 {
 
     if (!nh)
@@ -278,18 +267,16 @@ inline bool Model<TSeq>::fire(int transition, Agent<TSeq> & agent)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::react(Trigger on, int transition)
+inline void Model::react(Trigger on, int transition)
 {
     if (!nh)
         throw std::logic_error("react() needs a natural history.");
     nh_reactions.push_back({std::move(on), transition, nullptr});
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::react(
+inline void Model::react(
     Trigger on,
-    std::function< void(Agent<TSeq> &, Model<TSeq> &) > fun
+    std::function< void(Agent &, Model &) > fun
 )
 {
     if (!nh)
@@ -297,8 +284,7 @@ inline void Model<TSeq>::react(
     nh_reactions.push_back({std::move(on), -1, std::move(fun)});
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_initial(Assign<TSeq> a)
+inline void Model::set_initial(Assign a)
 {
 
     if (!nh)
@@ -310,8 +296,7 @@ inline void Model<TSeq>::set_initial(Assign<TSeq> a)
 
 // The run ---------------------------------------------------------------------
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_reset()
+inline void Model::nh_reset()
 {
 
     const size_t n  = population.size();
@@ -344,8 +329,7 @@ inline void Model<TSeq>::nh_reset()
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_step(Agent<TSeq> & p)
+inline void Model::nh_step(Agent & p)
 {
 
     const unsigned int c = p.state;
@@ -363,7 +347,7 @@ inline void Model<TSeq>::nh_step(Agent<TSeq> & p)
     {
 
         const auto & tr = nh_of(p).transitions[si.infection];
-        Virus<TSeq> * v = tr.sampler ? tr.sampler(p, *this) : sample_virus(&p);
+        Virus * v = tr.sampler ? tr.sampler(p, *this) : sample_virus(&p);
         if (v != nullptr)
         {
             nh_propose(si.infection, p, v);
@@ -416,7 +400,7 @@ inline void Model<TSeq>::nh_step(Agent<TSeq> & p)
     const int k = nh_status_of(c);
     const StageInfo & ki = st->stages[static_cast< size_t >(k)];
 
-    auto applies = [s](const Transition<TSeq> & tr) -> bool {
+    auto applies = [s](const Transition & tr) -> bool {
         return tr.when.empty() ||
             (std::find(tr.when.begin(), tr.when.end(), s) != tr.when.end());
     };
@@ -450,11 +434,10 @@ inline void Model<TSeq>::nh_step(Agent<TSeq> & p)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_propose(
+inline void Model::nh_propose(
     int transition,
-    Agent<TSeq> & p,
-    Virus<TSeq> * virus
+    Agent & p,
+    Virus * virus
 )
 {
 
@@ -491,21 +474,20 @@ inline void Model<TSeq>::nh_propose(
 
     const int s = nh_stage_of(p.state);
     if (status)
-        p.change_state(*this, static_cast< epiworld_fast_uint >(to), Queue<TSeq>::NoOne);
+        p.change_state(*this, static_cast< epiworld_fast_uint >(to), Queue::NoOne);
     else if (tr.kind == TransitionKind::infection)
-        p.set_virus(*this, *virus, to, Queue<TSeq>::NoOne);
+        p.set_virus(*this, *virus, to, Queue::NoOne);
     else if (nh->is_carrier(s) && !nh->is_carrier(to))
-        p.rm_virus(*this, to, Queue<TSeq>::NoOne);
+        p.rm_virus(*this, to, Queue::NoOne);
     else
-        p.change_state(*this, static_cast< epiworld_fast_uint >(to), Queue<TSeq>::NoOne);
+        p.change_state(*this, static_cast< epiworld_fast_uint >(to), Queue::NoOne);
 
     nh_pending = -1;
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_enter(
-    Agent<TSeq> & p,
+inline void Model::nh_enter(
+    Agent & p,
     unsigned int stage_old,
     int transition
 )
@@ -546,8 +528,7 @@ inline void Model<TSeq>::nh_enter(
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_react(Agent<TSeq> & p, int transition, int stage_old)
+inline void Model::nh_react(Agent & p, int transition, int stage_old)
 {
 
     if (nh_reactions.empty())
@@ -585,8 +566,7 @@ inline void Model<TSeq>::nh_react(Agent<TSeq> & p, int transition, int stage_old
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_queue_move(Agent<TSeq> & p, unsigned int state_old)
+inline void Model::nh_queue_move(Agent & p, unsigned int state_old)
 {
 
     const char from = nh_queue[state_old];
@@ -608,8 +588,7 @@ inline void Model<TSeq>::nh_queue_move(Agent<TSeq> & p, unsigned int state_old)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_initial_place()
+inline void Model::nh_initial_place()
 {
 
     if (!nh_initial.is_set())
@@ -643,7 +622,7 @@ inline void Model<TSeq>::nh_initial_place()
 
         nh_pending = NH_INITIAL;
         population[i].change_state(
-            *this, static_cast< epiworld_fast_uint >(s), Queue<TSeq>::NoOne
+            *this, static_cast< epiworld_fast_uint >(s), Queue::NoOne
         );
         nh_pending = -1;
 
@@ -653,10 +632,9 @@ inline void Model<TSeq>::nh_initial_place()
 
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::nh_infection_prob(
-    Agent<TSeq> & target,
-    const Virus<TSeq> & v
+inline epiworld_double Model::nh_infection_prob(
+    Agent & target,
+    const Virus & v
 )
 {
     const int tr = nh->stages[static_cast< size_t >(nh_stage_of(target.state))].infection;

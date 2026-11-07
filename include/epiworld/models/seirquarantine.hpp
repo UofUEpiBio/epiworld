@@ -50,11 +50,9 @@
  * **Implementation details:**
  * <a href="../impl/quarantine-isolation-and-contact-tracing.md">Quarantine, Isolation, and Contact Tracing</a>
  *
- * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
  * @ingroup basic_compartmental
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRQuarantine : public Model<TSeq>
+class ModelSEIRQuarantine : public Model
 {
 private:
 
@@ -63,7 +61,7 @@ private:
     std::vector< bool > isolation_willingness; ///< Indicator for isolation willingness
     std::vector< size_t > agent_quarantine_triggered; ///< Whether the quarantine process has started
 
-    static void _quarantine_process(Model<TSeq> * m);
+    static void _quarantine_process(Model * m);
 
 public:
 
@@ -125,7 +123,7 @@ public:
     );
 
     void reset() override;
-    std::unique_ptr< Model<TSeq> > clone_ptr() override;
+    std::unique_ptr< Model > clone_ptr() override;
 
     std::vector< size_t > get_agent_quarantine_triggered() const
     {
@@ -144,11 +142,10 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 };
 
-template<typename TSeq>
-inline void ModelSEIRQuarantine<TSeq>::reset()
+inline void ModelSEIRQuarantine::reset()
 {
 
     // The quarantine process reads the contacts of every layer
@@ -156,7 +153,7 @@ inline void ModelSEIRQuarantine<TSeq>::reset()
         if (!this->get_layer(i).is_tracing())
             this->get_layer(i).enable_tracing();
 
-    Model<TSeq>::reset();
+    Model::reset();
 
     // Who is willing to quarantine, and to isolate (drawn once per run)
     quarantine_willingness.assign(this->size(), false);
@@ -175,17 +172,15 @@ inline void ModelSEIRQuarantine<TSeq>::reset()
 
 }
 
-template<typename TSeq>
-inline std::unique_ptr<Model<TSeq>> ModelSEIRQuarantine<TSeq>::clone_ptr()
+inline std::unique_ptr<Model> ModelSEIRQuarantine::clone_ptr()
 {
-    return std::make_unique<ModelSEIRQuarantine<TSeq>>(*this);
+    return std::make_unique<ModelSEIRQuarantine>(*this);
 }
 
-template<typename TSeq>
-inline void ModelSEIRQuarantine<TSeq>::_quarantine_process(Model<TSeq> * m)
+inline void ModelSEIRQuarantine::_quarantine_process(Model * m)
 {
 
-    auto * model = model_cast<ModelSEIRQuarantine<TSeq>, TSeq>(m);
+    auto * model = model_cast<ModelSEIRQuarantine>(m);
     const int isolated = m->transition_id("Isolated");
     const int quarantined = m->transition_id("Quarantined");
     const bool isolation_on = EPI_PAR(m, "Isolation period") >= 0;
@@ -285,8 +280,7 @@ inline void ModelSEIRQuarantine<TSeq>::_quarantine_process(Model<TSeq> * m)
 
 }
 
-template<typename TSeq>
-inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
+inline ModelSEIRQuarantine::ModelSEIRQuarantine(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -322,22 +316,22 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
     this->add_param(contact_tracing_window, "Contact tracing window");
 
     // The disease
-    Virus<TSeq> virus(vname);
+    Virus virus(vname);
     virus.add_stage("Susceptible");
     virus.add_stage("Exposed", stage::carrier);
     virus.add_stage("Infected", stage::infectious);
     virus.add_stage("Severe", stage::carrier);
     virus.add_stage("Recovered");
     virus.infection(SUSCEPTIBLE, EXPOSED, "Transmission probability");
-    virus.after(EXPOSED, INFECTED, Duration<TSeq>::geometric("Latent period"));
+    virus.after(EXPOSED, INFECTED, Duration::geometric("Latent period"));
     virus.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
     virus.rate(INFECTED, SEVERE, "Hospitalization rate");
     const int out_severe =
-        virus.rate(SEVERE, RECOVERED, Value<TSeq>::inverse("Hospitalization period"));
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+        virus.rate(SEVERE, RECOVERED, Value::inverse("Hospitalization period"));
+    this->add_virus(virus, assign::share(prevalence));
 
     // Where agents are
-    Statuses<TSeq> s;
+    Statuses s;
     s.add_status("Free");
     s.add_status("Quarantined");
     s.add_status("Isolated");
@@ -347,13 +341,13 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
     s.set_contact(HOSPITALIZED, 0.0);
 
     s.external(FREE, QUARANTINED, "Quarantined");
-    s.after(QUARANTINED, FREE, Duration<TSeq>::fixed("Quarantine period"))
+    s.after(QUARANTINED, FREE, Duration::fixed("Quarantine period"))
         .name("Quarantine ends");
     s.external(FREE, ISOLATED, "Isolated");
     const int onset_q = s.external({FREE, QUARANTINED}, ISOLATED, "Onset in quarantine");
     s.after(
         ISOLATED, FREE,
-        Duration<TSeq>::fixed("Isolation period").since(INFECTED)
+        Duration::fixed("Isolation period").since(INFECTED)
     ).name("Isolation ends");
     const int admit = s.external({FREE, QUARANTINED, ISOLATED}, HOSPITALIZED, "Admitted");
     const int discharge = s.external(HOSPITALIZED, FREE, "Discharged");
@@ -364,7 +358,7 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
     this->react(Trigger::entered(SEVERE), admit);
     this->react(
         Trigger::entered(SEVERE),
-        [](Agent<TSeq> & p, Model<TSeq> & m) { m.record_hospitalization(p); }
+        [](Agent & p, Model & m) { m.record_hospitalization(p); }
     );
     this->react(Trigger::fired(out_severe), discharge);
 
@@ -374,8 +368,7 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
 
 }
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelSEIRQuarantine<TSeq>::model_info()
+inline ModelInfo ModelSEIRQuarantine::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -421,8 +414,8 @@ inline ModelInfo<TSeq> ModelSEIRQuarantine<TSeq>::model_info()
             ParamInfo::count("contact_tracing_window", "Contact tracing window",
                 4.0, "Days before detection whose contacts are traced.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelSEIRQuarantine<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelSEIRQuarantine >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
                 a("transmission_prob"), a("latent_period"), a("recovery_rate"),
                 a("hospitalization_rate"), a("hospitalization_period"),

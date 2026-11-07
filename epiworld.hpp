@@ -116,8 +116,6 @@ namespace epiworld {
     #define EPI_FAST_BINOM
 #endif
 
-#define EPI_DEFAULT_TSEQ int
-
 #ifndef EPI_MAX_TRACKING
     #define EPI_MAX_TRACKING 200
 #endif
@@ -134,70 +132,45 @@ namespace epiworld {
     #define EPI_NEIGHBOR_INDEX_THRESHOLD 32u
 #endif
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Model;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Agent;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class PersonTools;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Virus;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Viruses;
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Viruses_const;
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Tool;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class GlobalEvent;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ContactLayer;
 
 namespace layer {
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Network;
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class Mixing;
 }
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using VirusPtr = std::shared_ptr< Virus< TSeq > >;
+using VirusPtr = std::shared_ptr< Virus >;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ToolPtr = std::shared_ptr< Tool< TSeq > >;
+using ToolPtr = std::shared_ptr< Tool >;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using GlobalEventPtr = std::shared_ptr< GlobalEvent< TSeq > >;
+using GlobalEventPtr = std::shared_ptr< GlobalEvent >;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ToolFun = std::function<epiworld_double(Tool<TSeq>&,Agent<TSeq>*,VirusPtr<TSeq>&,Model<TSeq>*)>;
+using ToolFun = std::function<epiworld_double(Tool&,Agent*,VirusPtr&,Model*)>;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using MixerFun = std::function<epiworld_double(Agent<TSeq>*,VirusPtr<TSeq>&,Model<TSeq>*)>;
+using MixerFun = std::function<epiworld_double(Agent*,VirusPtr&,Model*)>;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using MutFun = std::function<bool(Agent<TSeq>*,Virus<TSeq>&,Model<TSeq>*)>;
+using MutFun = std::function<bool(Agent*,Virus&,Model*)>;
 
 /// The engine's update of the agents in a state (see `nh_build_states()`)
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using UpdateFun = std::function<void(Agent<TSeq>*,Model<TSeq>*)>;
+using UpdateFun = std::function<void(Agent*,Model*)>;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using GlobalFun = std::function<void(Model<TSeq>*)>;
+using GlobalFun = std::function<void(Model*)>;
 
-template<typename TSeq>
 struct Event;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using EventFun = std::function<void(Event<TSeq>&,Model<TSeq>*)>;
+using EventFun = std::function<void(Event&,Model*)>;
 
 enum class EventAction : uint8_t {
     AddVirus,
@@ -258,13 +231,11 @@ enum class TransmissionMode : uint8_t {
 /**
  * @brief Event data for update an agent
  *
- * @tparam TSeq
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 struct Event {
-    Agent<TSeq> * agent;
-    VirusPtr<TSeq> virus;
-    ToolPtr<TSeq> tool;
+    Agent * agent;
+    VirusPtr virus;
+    ToolPtr tool;
     epiworld_fast_int new_state;
     epiworld_fast_int queue;
     EventAction action;
@@ -287,9 +258,9 @@ public:
      * @param layer_ Layer of the contact that transmitted the virus, if any
      */
     Event(
-        Agent<TSeq> * agent_,
-        VirusPtr<TSeq> & virus_,
-        ToolPtr<TSeq> & tool_,
+        Agent * agent_,
+        VirusPtr & virus_,
+        ToolPtr & tool_,
         epiworld_fast_int new_state_,
         epiworld_fast_int queue_,
         EventAction action_,
@@ -448,24 +419,24 @@ public:
  * @brief Helper macro to define a new tool
  * 
  */
-#define EPI_NEW_TOOL(fname,tseq) inline epiworld_double \
+#define EPI_NEW_TOOL(fname) inline epiworld_double \
 (fname)(\
-    epiworld::Tool< tseq > & t, \
-    epiworld::Agent< tseq > * p, \
-    std::shared_ptr<epiworld::Virus< tseq >> v, \
-    epiworld::Model< tseq > * m\
+    epiworld::Tool & t, \
+    epiworld::Agent * p, \
+    std::shared_ptr<epiworld::Virus> v, \
+    epiworld::Model * m\
     )
 
 /**
  * @brief Create a Tool within a function
  * 
  */
-#define EPI_NEW_TOOL_LAMBDA(funname,tseq) \
-    epiworld::ToolFun<tseq> funname = \
-    [](epiworld::Tool<tseq> & t, \
-    epiworld::Agent<tseq> * p, \
-    std::shared_ptr<epiworld::Virus<tseq>> v, \
-    epiworld::Model<tseq> * m) -> epiworld_double
+#define EPI_NEW_TOOL_LAMBDA(funname) \
+    epiworld::ToolFun funname = \
+    [](epiworld::Tool & t, \
+    epiworld::Agent * p, \
+    std::shared_ptr<epiworld::Virus> v, \
+    epiworld::Model * m) -> epiworld_double
 
 /**
  * @brief Helper macro for accessing model parameters
@@ -492,17 +463,17 @@ public:
  * @brief Helper macro for defining Mutation Functions
  * 
  */
-#define EPI_NEW_MUTFUN(funname,tseq) inline bool \
+#define EPI_NEW_MUTFUN(funname) inline bool \
     (funname)(\
-    epiworld::Agent<tseq> * p, \
-    epiworld::Virus<tseq> & v, \
-    epiworld::Model<tseq> * m )
+    epiworld::Agent * p, \
+    epiworld::Virus & v, \
+    epiworld::Model * m )
 
-#define EPI_NEW_MUTFUN_LAMBDA(funname,tseq) \
-    epiworld::MutFun<tseq> funname = \
-    [](epiworld::Agent<tseq> * p, \
-    epiworld::Virus<tseq> & v, \
-    epiworld::Model<tseq> * m) -> void
+#define EPI_NEW_MUTFUN_LAMBDA(funname) \
+    epiworld::MutFun funname = \
+    [](epiworld::Agent * p, \
+    epiworld::Virus & v, \
+    epiworld::Model * m) -> bool
 
 #define EPI_RUNIF() m->runif()
 
@@ -510,12 +481,12 @@ public:
 #define MPAR(num) *(m->EPI_TOKENPASTE(p,num))
 
 
-#define EPI_NEW_GLOBALFUN(funname,tseq) inline void \
-    (funname)(epiworld::Model<tseq>* m)
+#define EPI_NEW_GLOBALFUN(funname) inline void \
+    (funname)(epiworld::Model* m)
 
-#define EPI_NEW_GLOBALFUN_LAMBDA(funname,tseq) \
-    epiworld::GlobalFun<tseq> funname = \
-    [](epiworld::Model<tseq>* m) -> void
+#define EPI_NEW_GLOBALFUN_LAMBDA(funname) \
+    epiworld::GlobalFun funname = \
+    [](epiworld::Model* m) -> void
 
 
 #define EPI_CHECK_COALESCE(proposed_, virus_tool_, alt_) \
@@ -1063,10 +1034,8 @@ public:
 #ifndef EPIWORLD_MISC_HPP
 #define EPIWORLD_MISC_HPP
 
-template<typename TSeq>
 class Model;
 
-template<typename TSeq>
 class Agent;
 
 // Relevant for anything using vecHasher function ------------------------------
@@ -1112,140 +1081,6 @@ inline bool IN(const Ta & a, const std::vector< Ta > & b) noexcept
             return true;
 
     return false;
-}
-
-/**
- * @brief Conditional Weighted Sampling
- *
- * @details
- * The sampling function will draw one of `{-1, 0,...,probs.size() - 1}` in a
- * weighted fashion. The probabilities are drawn given that either one or none
- * of the cases is drawn; in the latter returns -1.
- *
- * @param probs Vector of probabilities.
- * @param m A `Model`. This is used to draw random uniform numbers.
- * @return int If -1 then it means that none got sampled, otherwise the index
- * of the entry that got drawn.
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ, typename TDbl = epiworld_double >
-inline int roulette(
-    const std::vector< TDbl > & probs,
-    Model<TSeq> * m
-    )
-{
-
-    // Step 1: a probability of 1 is a certain event; if there are any, one of
-    // them is drawn uniformly. (This used to test `> 1 - 1e-100`, which is
-    // `> 1` in floating point, so p == 1 fell through to 0/0 below and the
-    // last entry won regardless.)
-    std::vector< int > certain_infection;
-    for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
-        if (probs[p] >= 1.0)
-            certain_infection.push_back(static_cast<int>(p));
-
-    TDbl r = static_cast<TDbl>(m->runif());
-    if (certain_infection.size() > 0)
-        return certain_infection[std::floor(r * certain_infection.size())];
-
-    // Step 2: the odds r_p = p / (1 - p) and their sum R. Then
-    // P(none) = 1 / (1 + R) and P(p) = r_p / (1 + R), the same as normalizing
-    // by prod(1 - p), which underflows to 0 with many entries (0/0 weights).
-    std::vector< TDbl > odds(probs.size());
-    TDbl odds_total = 0.0;
-    for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
-    {
-        odds[p] = probs[p] / (1.0 - probs[p]);
-        odds_total += odds[p];
-    }
-
-    // Step 3: Roulette
-    TDbl cumsum = 1.0 / (1.0 + odds_total);
-    if (r < cumsum)
-        return -1;
-
-    for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
-    {
-        // If it yield here, then bingo, the individual will acquire the disease
-        cumsum += odds[p] / (1.0 + odds_total);
-        if (r < cumsum)
-            return static_cast<int>(p);
-
-    }
-
-    #ifdef EPI_DEBUG
-    printf_epiworld("[epi-debug] roulette::cumsum = %.4f\n", cumsum);
-    #endif
-
-    return static_cast<int>(probs.size() - 1u);
-
-}
-
-template<typename TSeq>
-inline int roulette(std::vector< double > & probs, Model<TSeq> * m)
-{
-    return roulette<TSeq, double>(probs, m);
-}
-
-template<typename TSeq>
-inline int roulette(std::vector< float > & probs, Model<TSeq> * m)
-{
-    return roulette<TSeq, float>(probs, m);
-}
-
-
-template<typename TSeq>
-inline int roulette(
-    epiworld_fast_uint nelements,
-    Model<TSeq> * m
-    )
-{
-
-    if ((nelements * 2) > m->array_double_tmp.size())
-    {
-        throw std::logic_error(
-            "Trying to sample from more data than there is in roulette!" +
-            std::to_string(nelements) + " vs " +
-            std::to_string(m->array_double_tmp.size())
-            );
-    }
-
-    auto & tmp = m->array_double_tmp;
-
-    // Step 1: certain events (p >= 1; see the vector version), drawn uniformly
-    epiworld_fast_uint ncertain = 0u;
-    for (epiworld_fast_uint p = 0u; p < nelements; ++p)
-        if (tmp[p] >= 1.0)
-            tmp[nelements + ncertain++] = p;
-
-    epiworld_double r = m->runif();
-    if (ncertain > 0u)
-        return tmp[nelements + std::floor(ncertain * r)];
-
-    // Step 2: the odds and their sum, normalized by 1 + sum (see the vector
-    // version; prod(1 - p) underflows with many exposures)
-    epiworld_double odds_total = 0.0;
-    for (epiworld_fast_uint p = 0u; p < nelements; ++p)
-    {
-        tmp[nelements + p] = tmp[p] / (1.0 - tmp[p]);
-        odds_total += tmp[nelements + p];
-    }
-
-    // Step 3: Roulette
-    epiworld_double cumsum = 1.0 / (1.0 + odds_total);
-    if (r < cumsum)
-        return -1;
-
-    for (epiworld_fast_uint p = 0u; p < nelements; ++p)
-    {
-        // If it yield here, then bingo, the individual will acquire the disease
-        cumsum += tmp[nelements + p] / (1.0 + odds_total);
-        if (r < cumsum)
-            return static_cast<int>(p);
-
-    }
-
-    return static_cast<int>(nelements - 1u);
-
 }
 
 /**
@@ -1363,8 +1198,8 @@ inline unsigned int epi_ctz64(uint64_t x)
 #endif
 }
 
-template<class To, class TSeq>
-inline To* model_cast(Model<TSeq>* m) {
+template<class To>
+inline To* model_cast(Model* m) {
 #ifdef EPI_DEBUG
     auto* out = dynamic_cast<To*>(m);
     assert(out != nullptr);
@@ -3466,634 +3301,6 @@ inline LFMCMC<TData> & LFMCMC<TData>::verbose_on()
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -./include/epiworld/userdata-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_USERDATA_BONES_HPP
-#define EPIWORLD_USERDATA_BONES_HPP
-
-template<typename TSeq>
-class Model;
-
-template<typename TSeq>
-class DataBase;
-
-/**
- * @brief Personalized data by the user
- *
- * @tparam TSeq
- */
-template<typename TSeq>
-class UserData
-{
-    friend class Model<TSeq>;
-    friend class DataBase<TSeq>;
-
-private:
-    Model<TSeq> * model = nullptr;
-
-    std::vector< std::string > data_names;
-    std::vector< int > data_dates;
-    std::vector< epiworld_double > data_data;
-
-    epiworld_fast_uint k = 0u;
-    epiworld_fast_uint n = 0u;
-
-    int last_day = -1;
-
-public:
-
-    UserData() = delete;
-    UserData(Model<TSeq> & m) : model(&m) {};
-    UserData(Model<TSeq> * m) : model(m) {};
-
-    /**
-     * @brief Construct a new User Data object
-     *
-     * @param names A vector of names. The length of the vector sets
-     * the number of columns to record.
-     */
-    UserData(std::vector< std::string > names);
-
-    /**
-     * @name Append data
-     *
-     * @param x A vector of length `ncol()` (if vector), otherwise a `epiworld_double`.
-     * @param j Index of the data point, from 0 to `ncol() - 1`.
-     */
-    ///@{
-    void add(std::vector<epiworld_double> x);
-    void add(
-        epiworld_fast_uint j,
-        epiworld_double x
-        );
-    ///@}
-
-    /**
-     * @name Access data
-     *
-     * @param i Row (0 through ndays - 1.)
-     * @param j Column (0 through `ncols()`).
-     * @return epiworld_double&
-     */
-    ///@{
-    epiworld_double & operator()(
-        epiworld_fast_uint i,
-        epiworld_fast_uint j
-        );
-
-    epiworld_double & operator()(
-        epiworld_fast_uint i,
-        std::string name
-        );
-    ///@}
-
-    std::vector< std::string > & get_names();
-
-    std::vector< int > & get_dates();
-
-    std::vector< epiworld_double > & get_data();
-
-    void get_all(
-        std::vector< std::string > * names    = nullptr,
-        std::vector< int > * date             = nullptr,
-        std::vector< epiworld_double > * data = nullptr
-    );
-
-    epiworld_fast_uint nrow() const;
-    epiworld_fast_uint ncol() const;
-
-    void write(std::string fn);
-    void print() const;
-
-};
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/userdata-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/userdata-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_USERDATA_MEAT_HPP
-#define EPIWORLD_USERDATA_MEAT_HPP
-
-template<typename TSeq>
-class UserData;
-
-template<typename TSeq>
-inline UserData<TSeq>::UserData(std::vector< std::string > names)
-{
-
-    k = names.size();
-    data_names = names;
-
-}
-
-template<typename TSeq>
-inline void UserData<TSeq>::add(std::vector<epiworld_double> x)
-{
-
-    if (x.size() != k)
-        throw std::out_of_range(
-            "The size of -x-, " + std::to_string(x.size()) + ", does not match " +
-            "the number of elements registered (" + std::to_string(k));
-
-    for (auto & i : x)
-        data_data.push_back(i);
-
-    data_dates.push_back(model->today());
-
-    n++;
-    last_day = model->today();
-
-}
-
-template<typename TSeq>
-inline void UserData<TSeq>::add(epiworld_fast_uint j, epiworld_double x)
-{
-
-    // Starting with a new day?
-    if (static_cast<int>(model->today()) != last_day)
-    {
-
-        std::vector< epiworld_double > tmp(k, 0.0);
-
-        tmp[j] = x;
-
-        add(tmp);
-
-    }
-    else
-    {
-
-        this->operator()(n - 1, j) = x;
-
-    }
-
-}
-
-template<typename TSeq>
-inline std::vector< std::string > & UserData<TSeq>::get_names() 
-{
-    return data_names;
-}
-
-template<typename TSeq>
-inline std::vector< int > & UserData<TSeq>::get_dates() 
-{
-    return data_dates;
-}
-
-template<typename TSeq>
-inline std::vector< epiworld_double > & UserData<TSeq>::get_data() 
-{
-    return data_data;
-}
-
-template<typename TSeq>
-inline void UserData<TSeq>::get_all(
-    std::vector< std::string > * names,
-    std::vector< int > * date,
-    std::vector< epiworld_double > * data
-) 
-{
-    
-    if (names != nullptr)
-        names = &this->data_names;
-
-    if (date != nullptr)
-        date = &this->data_dates;
-
-    if (data != nullptr)
-        data = &this->data_data;
-
-}
-
-template<typename TSeq>
-inline epiworld_double & UserData<TSeq>::operator()(
-    epiworld_fast_uint i,
-    epiworld_fast_uint j
-)
-{
-
-    if (j >= k)
-        throw std::out_of_range("j cannot be greater than k - 1.");
-
-    if (i >= n)
-        throw std::out_of_range("j cannot be greater than n - 1.");
-
-    return data_data[k * i + j];
-
-}
-
-template<typename TSeq>
-inline epiworld_double & UserData<TSeq>::operator()(
-    epiworld_fast_uint i,
-    std::string name
-)
-{
-    int loc = -1;
-    for (epiworld_fast_uint l = 0u; l < k; ++l)
-    {
-
-        if (name == data_names[l])
-        {
-
-            loc = l;
-            break;
-
-        }
-
-    }
-
-    if (loc < 0)
-        throw std::range_error(
-            "The variable \"" + name + "\" is not present " +
-            "in the user UserData database."
-        );
-
-    return operator()(i, static_cast<epiworld_fast_uint>(loc));
-
-}
-
-template<typename TSeq>
-inline epiworld_fast_uint UserData<TSeq>::nrow() const
-{
-    return n;
-}
-
-template<typename TSeq>
-inline epiworld_fast_uint UserData<TSeq>::ncol() const
-{
-    return k;
-}
-
-template<typename TSeq>
-inline void UserData<TSeq>::write(std::string fn)
-{
-    std::ofstream file_ud(fn, std::ios_base::out);
-
-    // File header
-    file_ud << "\"date\"";
-    for (auto & cn : data_names)
-        file_ud << " \"" + cn + "\"";
-    file_ud << "\n";
-    
-    epiworld_fast_uint ndata = 0u;
-    for (epiworld_fast_uint i = 0u; i < n; ++i)
-    {
-        file_ud << data_dates[i];
-
-        for (epiworld_fast_uint j = 0u; j < k; ++j)
-            file_ud << " " << data_data[ndata++];
-
-        file_ud << "\n";
-    }
-
-    return;
-}
-
-template<typename TSeq>
-inline void UserData<TSeq>::print() const
-{
-    // File header
-    printf_epiworld("Total records: %llu\n", n);
-    printf_epiworld("date");
-
-    for (auto & cn : data_names)
-    {
-
-        printf_epiworld(" %s", cn.c_str());
-
-    }
-
-    printf_epiworld("\n");
-    
-    epiworld_fast_uint ndata = 0u;
-    
-    for (epiworld_fast_uint i = 0u; i < n; ++i)
-    {
-
-        printf_epiworld("%i", data_dates[i]);
-
-        for (epiworld_fast_uint j = 0u; j < k; ++j)
-        {
-
-            printf_epiworld(" %.2f", data_data[ndata++]);
-
-        }
-
-        printf_epiworld("\n");
-
-    }
-
-    return;
-}
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/userdata-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/hospitalizationstracker-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_HOSPITALIZATIONSTRACKER_BONES_HPP
-#define EPIWORLD_HOSPITALIZATIONSTRACKER_BONES_HPP
-
-template<typename TSeq>
-class Agent;
-
-template<typename TSeq>
-class Model;
-
-/**
- * @brief Class to track hospitalizations in an epidemiological model.
- * 
- * @details
- * This class keeps track of hospitalizations in a model. For each hospitalized
- * agent, it records the date, virus ID, and tool IDs with appropriate weights.
- * 
- * Since agents always have at most one virus but may have multiple tools,
- * if an agent has N tools, then N records are created, each with weight
- * equal to 1/N. If the agent has no tools, a single record is created with
- * tool_id = -1 and weight = 1.0.
- * 
- * The `get()` method returns a summary of the hospitalizations grouped by
- * date, virus_id, and tool_id, with weight summed across all matching
- * records.
- * 
- * @tparam TSeq Type of sequence (should match `TSeq` across the model)
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class HospitalizationsTracker {
-
-private:
-
-    std::vector<int> _date;           ///< Date of hospitalization
-    std::vector<int> _virus_id;       ///< ID of the virus causing hospitalization
-    std::vector<int> _tool_id;        ///< ID of the tool (-1 if no tools)
-    std::vector<double> _weight;      ///< Weight for the tool (1/N where N is tool count)
-
-public:
-
-    HospitalizationsTracker() = default;
-
-    /**
-     * @brief Reset the tracker by clearing all data.
-     */
-    void reset();
-
-    /**
-     * @brief Record a hospitalization event for an agent.
-     * 
-     * @param agent Reference to the agent being hospitalized.
-     * @param model Reference to the model.
-     * 
-     * @details
-     * For each hospitalization, the method records:
-     * - The current date from the model
-     * - The virus ID from the agent's virus
-     * - For each tool the agent has, a separate record with weight = 1/N
-     *   where N is the number of tools
-     * - If the agent has no tools, a single record with tool_id = -1 and
-     *   weight = 1.0
-     */
-    void record(Agent<TSeq> & agent, Model<TSeq> & model);
-
-    /**
-     * @brief Get the full time series of hospitalizations.
-     * 
-     * @param ndays Number of days in the simulation (0 to ndays-1).
-     * @param date Output vector for dates.
-     * @param virus_id Output vector for virus IDs.
-     * @param tool_id Output vector for tool IDs.
-     * @param count Output vector for counts (number of hospitalized individuals).
-     * @param weight Output vector for summed weights (fractional contribution 
-     *   based on tool distribution).
-     * 
-     * @details
-     * Returns the full time series of hospitalization data. For each unique 
-     * (virus_id, tool_id) combination observed, returns an entry for every 
-     * day from 0 to ndays-1.
-     * 
-     * The `count` vector contains the actual number of individuals hospitalized 
-     * for that (date, virus_id, tool_id) combination. This is useful for 
-     * answering questions like "how many total people were hospitalized?" 
-     * regardless of their tools.
-     * 
-     * The `weight` vector contains fractional contributions: if an agent has N 
-     * tools, each tool gets weight = 1/N. Summing weights across all tool_ids 
-     * for a given date and virus_id gives the total number of hospitalizations.
-     */
-    void get(
-        int ndays,
-        std::vector<int> & date,
-        std::vector<int> & virus_id,
-        std::vector<int> & tool_id,
-        std::vector<int> & count,
-        std::vector<double> & weight
-    ) const;
-
-    /**
-     * @brief Get the number of raw records in the tracker.
-     * @return Number of records.
-     */
-    size_t size() const;
-
-};
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/hospitalizationstracker-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/hospitalizationstracker-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_HOSPITALIZATIONSTRACKER_MEAT_HPP
-#define EPIWORLD_HOSPITALIZATIONSTRACKER_MEAT_HPP
-
-
-template<typename TSeq>
-inline void HospitalizationsTracker<TSeq>::reset()
-{
-    _date.clear();
-    _virus_id.clear();
-    _tool_id.clear();
-    _weight.clear();
-}
-
-template<typename TSeq>
-inline void HospitalizationsTracker<TSeq>::record(
-    Agent<TSeq> & agent,
-    Model<TSeq> & model
-)
-{
-    int current_date = model.today();
-    
-    // Get the virus ID (-1 if no virus)
-    int v_id = -1;
-    auto & virus = agent.get_virus();
-    if (virus != nullptr)
-        v_id = virus->get_id();
-    
-    // Get the number of tools
-    size_t n_tools = agent.get_n_tools();
-    
-    if (n_tools == 0u)
-    {
-        // No tools: single record with tool_id = -1 and weight = 1.0
-        _date.push_back(current_date);
-        _virus_id.push_back(v_id);
-        _tool_id.push_back(-1);
-        _weight.push_back(1.0);
-    }
-    else
-    {
-        // Multiple tools: one record per tool with weight = 1/N
-        double w = 1.0 / static_cast<double>(n_tools);
-        for (size_t i = 0u; i < n_tools; ++i)
-        {
-            _date.push_back(current_date);
-            _virus_id.push_back(v_id);
-            _tool_id.push_back(agent.get_tool(static_cast<int>(i))->get_id());
-            _weight.push_back(w);
-        }
-    }
-}
-
-template<typename TSeq>
-inline void HospitalizationsTracker<TSeq>::get(
-    int ndays,
-    std::vector<int> & date,
-    std::vector<int> & virus_id,
-    std::vector<int> & tool_id,
-    std::vector<int> & count,
-    std::vector<double> & weight
-) const
-{
-    // Clear output vectors
-    date.clear();
-    virus_id.clear();
-    tool_id.clear();
-    count.clear();
-    weight.clear();
-    
-    if (ndays <= 0)
-        return;
-    
-    // First, aggregate by (date, virus_id, tool_id) to get count and sum of weights
-    // Key: (date, virus_id, tool_id), Value: (count, sum of weight)
-    std::map<std::tuple<int, int, int>, std::pair<int, double>> aggregated;
-    
-    // Collect unique (virus_id, tool_id) combinations
-    std::set<std::pair<int, int>> unique_combinations;
-    
-    for (size_t i = 0u; i < _date.size(); ++i)
-    {
-        auto key = std::make_tuple(_date[i], _virus_id[i], _tool_id[i]);
-        aggregated[key].first += 1;  // Count
-        aggregated[key].second += _weight[i];  // Weight
-        unique_combinations.insert(std::make_pair(_virus_id[i], _tool_id[i]));
-    }
-    
-    // If no hospitalizations occurred, still output the full time series 
-    // with a single combination (virus_id=-1, tool_id=-1) and zeros
-    if (unique_combinations.empty())
-    {
-        unique_combinations.insert(std::make_pair(-1, -1));
-    }
-    
-    // For each unique (virus_id, tool_id) combination, output all days
-    for (const auto & combo : unique_combinations)
-    {
-        int v_id = combo.first;
-        int t_id = combo.second;
-        
-        for (int d = 0; d < ndays; ++d)
-        {
-            date.push_back(d);
-            virus_id.push_back(v_id);
-            tool_id.push_back(t_id);
-            
-            // Look up the count and weight for this (date, virus_id, tool_id) combination
-            auto key = std::make_tuple(d, v_id, t_id);
-            auto it = aggregated.find(key);
-            if (it != aggregated.end())
-            {
-                count.push_back(it->second.first);
-                weight.push_back(it->second.second);
-            }
-            else
-            {
-                count.push_back(0);
-                weight.push_back(0.0);
-            }
-        }
-    }
-}
-
-template<typename TSeq>
-inline size_t HospitalizationsTracker<TSeq>::size() const
-{
-    return _date.size();
-}
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/hospitalizationstracker-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
  Start of -./include/epiworld/run-outputs.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4235,14 +3442,7 @@ public:
         state->whats = std::move(whats);
     }
 
-    template<typename TSeq>
-    void operator()(size_t sim_id, Model<TSeq> * model) const
-    {
-        auto out = model->get_db().get_run_outputs(state->whats);
-        if (sim_id >= state->runs.size())
-            state->runs.resize(sim_id + 1u);
-        state->runs[sim_id] = std::move(out);
-    }
+    void operator()(size_t sim_id, Model * model) const; ///< In database-meat.hpp.
 
     /// All simulations, concatenated, with a leading 0-based `sim_id` column.
     RunOutputs results() const
@@ -4313,10 +3513,1539 @@ public:
 //////////////////////////////////////////////////////////////////////////////*/
 
 
+
+    // The classes, then their member functions: with no templates, a
+    // function body needs the classes it uses defined before it
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -./include/epiworld/database-bones.hpp-
+ Start of -./include/epiworld/userdata-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_USERDATA_BONES_HPP
+#define EPIWORLD_USERDATA_BONES_HPP
+
+class Model;
+
+class DataBase;
+
+/**
+ * @brief Personalized data by the user
+ *
+ */
+class UserData
+{
+    friend class Model;
+    friend class DataBase;
+
+private:
+    Model * model = nullptr;
+
+    std::vector< std::string > data_names;
+    std::vector< int > data_dates;
+    std::vector< epiworld_double > data_data;
+
+    epiworld_fast_uint k = 0u;
+    epiworld_fast_uint n = 0u;
+
+    int last_day = -1;
+
+public:
+
+    UserData() = delete;
+    UserData(Model & m) : model(&m) {};
+    UserData(Model * m) : model(m) {};
+
+    /**
+     * @brief Construct a new User Data object
+     *
+     * @param names A vector of names. The length of the vector sets
+     * the number of columns to record.
+     */
+    UserData(std::vector< std::string > names);
+
+    /**
+     * @name Append data
+     *
+     * @param x A vector of length `ncol()` (if vector), otherwise a `epiworld_double`.
+     * @param j Index of the data point, from 0 to `ncol() - 1`.
+     */
+    ///@{
+    void add(std::vector<epiworld_double> x);
+    void add(
+        epiworld_fast_uint j,
+        epiworld_double x
+        );
+    ///@}
+
+    /**
+     * @name Access data
+     *
+     * @param i Row (0 through ndays - 1.)
+     * @param j Column (0 through `ncols()`).
+     * @return epiworld_double&
+     */
+    ///@{
+    epiworld_double & operator()(
+        epiworld_fast_uint i,
+        epiworld_fast_uint j
+        );
+
+    epiworld_double & operator()(
+        epiworld_fast_uint i,
+        std::string name
+        );
+    ///@}
+
+    std::vector< std::string > & get_names();
+
+    std::vector< int > & get_dates();
+
+    std::vector< epiworld_double > & get_data();
+
+    void get_all(
+        std::vector< std::string > * names    = nullptr,
+        std::vector< int > * date             = nullptr,
+        std::vector< epiworld_double > * data = nullptr
+    );
+
+    epiworld_fast_uint nrow() const;
+    epiworld_fast_uint ncol() const;
+
+    void write(std::string fn);
+    void print() const;
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/userdata-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/hospitalizationstracker-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_HOSPITALIZATIONSTRACKER_BONES_HPP
+#define EPIWORLD_HOSPITALIZATIONSTRACKER_BONES_HPP
+
+class Agent;
+
+class Model;
+
+/**
+ * @brief Class to track hospitalizations in an epidemiological model.
+ * 
+ * @details
+ * This class keeps track of hospitalizations in a model. For each hospitalized
+ * agent, it records the date, virus ID, and tool IDs with appropriate weights.
+ * 
+ * Since agents always have at most one virus but may have multiple tools,
+ * if an agent has N tools, then N records are created, each with weight
+ * equal to 1/N. If the agent has no tools, a single record is created with
+ * tool_id = -1 and weight = 1.0.
+ * 
+ * The `get()` method returns a summary of the hospitalizations grouped by
+ * date, virus_id, and tool_id, with weight summed across all matching
+ * records.
+ * 
+ */
+class HospitalizationsTracker {
+
+private:
+
+    std::vector<int> _date;           ///< Date of hospitalization
+    std::vector<int> _virus_id;       ///< ID of the virus causing hospitalization
+    std::vector<int> _tool_id;        ///< ID of the tool (-1 if no tools)
+    std::vector<double> _weight;      ///< Weight for the tool (1/N where N is tool count)
+
+public:
+
+    HospitalizationsTracker() = default;
+
+    /**
+     * @brief Reset the tracker by clearing all data.
+     */
+    void reset();
+
+    /**
+     * @brief Record a hospitalization event for an agent.
+     * 
+     * @param agent Reference to the agent being hospitalized.
+     * @param model Reference to the model.
+     * 
+     * @details
+     * For each hospitalization, the method records:
+     * - The current date from the model
+     * - The virus ID from the agent's virus
+     * - For each tool the agent has, a separate record with weight = 1/N
+     *   where N is the number of tools
+     * - If the agent has no tools, a single record with tool_id = -1 and
+     *   weight = 1.0
+     */
+    void record(Agent & agent, Model & model);
+
+    /**
+     * @brief Get the full time series of hospitalizations.
+     * 
+     * @param ndays Number of days in the simulation (0 to ndays-1).
+     * @param date Output vector for dates.
+     * @param virus_id Output vector for virus IDs.
+     * @param tool_id Output vector for tool IDs.
+     * @param count Output vector for counts (number of hospitalized individuals).
+     * @param weight Output vector for summed weights (fractional contribution 
+     *   based on tool distribution).
+     * 
+     * @details
+     * Returns the full time series of hospitalization data. For each unique 
+     * (virus_id, tool_id) combination observed, returns an entry for every 
+     * day from 0 to ndays-1.
+     * 
+     * The `count` vector contains the actual number of individuals hospitalized 
+     * for that (date, virus_id, tool_id) combination. This is useful for 
+     * answering questions like "how many total people were hospitalized?" 
+     * regardless of their tools.
+     * 
+     * The `weight` vector contains fractional contributions: if an agent has N 
+     * tools, each tool gets weight = 1/N. Summing weights across all tool_ids 
+     * for a given date and virus_id gives the total number of hospitalizations.
+     */
+    void get(
+        int ndays,
+        std::vector<int> & date,
+        std::vector<int> & virus_id,
+        std::vector<int> & tool_id,
+        std::vector<int> & count,
+        std::vector<double> & weight
+    ) const;
+
+    /**
+     * @brief Get the number of raw records in the tracker.
+     * @return Number of records.
+     */
+    size_t size() const;
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/hospitalizationstracker-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/adjlist-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_ADJLIST_BONES_HPP
+#define EPIWORLD_ADJLIST_BONES_HPP
+
+
+/**
+ * @brief A network, as the ties of each vertex
+ *
+ * @details Row `i` holds the neighbors of vertex `i` (in a directed network,
+ * the targets of its ties) in ascending order, without repeats; an undirected
+ * tie is in the rows of both ends. The rows are stored back to back
+ * (compressed rows): row `i` is `get_ids()` from `get_start()[i]` to
+ * `get_start()[i + 1]`. A graph cannot be edited once built; the network layer
+ * that loads it can (see `layer::Network`).
+ */
+class AdjList {
+private:
+
+    std::vector< size_t > start; ///< Where each row starts in `ids` (`N + 1`)
+    std::vector< int > ids;      ///< The rows, back to back
+    bool directed = false;
+    epiworld_fast_uint N = 0;
+    epiworld_fast_uint E = 0;
+
+public:
+
+    AdjList() {};
+
+    /**
+     * @brief Construct a new Adj List object
+     *
+     * @details
+     * Ids in the network are assume to range from `0` to `size - 1`. A tie
+     * given more than once is kept once.
+     *
+     * @param source Unsigned int vector with the source
+     * @param target Unsigned int vector with the target
+     * @param size Number of vertices in the network.
+     * @param directed Bool true if the network is directed
+     */
+    AdjList(
+        const std::vector< int > & source,
+        const std::vector< int > & target,
+        int size,
+        bool directed
+        );
+
+    /**
+     * @brief Read an edgelist
+     *
+     * Ids in the network are assume to range from `0` to `size - 1`.
+     *
+     * @param fn Path to the file
+     * @param skip Number of lines to skip (e.g., 1 if there's a header)
+     * @param directed `true` if the network is directed
+     * @param size Number of vertices in the network.
+     */
+    void read_edgelist(
+        std::string fn,
+        int size,
+        int skip = 0,
+        bool directed = true
+        );
+
+    /// The neighbors of vertex `i` (a copy of its row).
+    std::vector< int > operator()(
+        epiworld_fast_uint i
+        ) const;
+
+    void print(epiworld_fast_uint limit = 20u) const;
+    size_t vcount() const; ///< Number of vertices/nodes in the network.
+    size_t ecount() const; ///< Number of edges given, repeats included.
+
+    /// Where each row starts in `get_ids()`, with the end as the last entry.
+    const std::vector< size_t > & get_start() const { return start; }
+
+    /// The rows, back to back (see the class description).
+    const std::vector< int > & get_ids() const { return ids; }
+
+    bool is_directed() const; ///< `true` if the network is directed.
+
+};
+
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/adjlist-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/contacttracing-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_CONTACTTRACING_BONES_H
+#define EPIWORLD_CONTACTTRACING_BONES_H
+
+#include <vector>
+#include <set>
+#include <map>
+#include <stdexcept>
+// (already included include/epiworld/config.hpp)
+
+/**
+ * @brief Represents a single contact relationship for an agent.
+ * @details
+ * Each instance holds the id of the contacted agent and the set of
+ * simulation days on which the contact occurred.  Instances are
+ * returned by `ContactTracing::get_contacts()`.
+ */
+class ContactRecord
+{
+private:
+    size_t m_contact_id;
+    std::set<int> m_times;
+
+public:
+    ContactRecord(size_t contact_id, std::set<int> times)
+        : m_contact_id(contact_id), m_times(std::move(times)) {}
+
+    /**
+     * @brief Return the id of the contacted agent.
+     */
+    size_t get_contact_id() const { return m_contact_id; }
+
+    /**
+     * @brief Return the set of days on which the contact was recorded.
+     * @return A const reference to the set of simulation days.
+     */
+    const std::set<int> & get_times() const { return m_times; }
+};
+
+/** 
+ * @brief Class for tracing contacts between agents
+ * @details
+ * The class assumes that contacts are stored in a matrix-like
+ * structure, where rows are agents and columns are contacts in a 
+ * column-major format. Each entry stores the id of the contact
+ * and the day of the contact is stored in a parallel array.
+ * 
+ * The maximum number of contacts per agent is fixed at initialization
+ * time. If more contacts are added, they will overwrite previous
+ * contacts in a circular buffer fashion.
+ * */
+class ContactTracing
+{
+private:
+
+    std::vector< size_t > contact_matrix;
+    std::vector< size_t > contacts_per_agent;
+    std::vector< size_t > contact_date;
+
+    size_t n_agents;
+    size_t max_contacts;
+
+    // Cache: for each agent, the list of unique contacts with their dates.
+    // up_to_date[a] is false whenever add_contact(a, ...) is called, and
+    // set to true after get_contacts(a) rebuilds the cache.
+    std::vector< std::vector<ContactRecord> > cached_contacts;
+    std::vector< bool > up_to_date;
+
+    size_t get_location(size_t row, size_t col) const;
+
+public:
+
+    ContactTracing();
+
+    /**
+     * @brief Construct a new Contact Tracing object
+     * 
+     * @param n_agents Agents in the system, usually `Model::size()`.
+     * @param max_contacts Maximum number of contacts to track per agent.
+     */
+    ContactTracing(size_t n_agents, size_t max_contacts);
+
+    /**
+     * @brief Add a contact between two agents at a given day.
+     * 
+     * @param agent_a Agent id (usually infectious agent)
+     * @param agent_b Agent id (usually susceptible agent)
+     * @param day Day of the contact (usually Model::today()).
+     */
+    void add_contact(size_t agent_a, size_t agent_b, size_t day);
+
+    /**
+     * @brief Get the number of contacts for an agent
+     * 
+     * @param agent Agent id
+     * @return size_t Number of contacts recorded for that agent (can be more than max_contacts)
+     */
+    size_t get_n_contacts(size_t agent); 
+
+    size_t get_max_contacts() const;
+
+    /// Number of agents the log covers (agent ids run from 0 to this - 1).
+    size_t get_n_agents() const;
+    
+    /**
+     * @brief Get the contact object
+     * 
+     * @param agent Source agent (id)
+     * @param idx Index of the contact (0 to get_n_contacts(agent)-1)
+     * @return std::pair<size_t, int> with (contact_id, contact_day)
+     * @throws std::out_of_range if idx is out of range.
+     */
+    std::pair<size_t, int> get_contact(size_t agent, size_t idx);
+
+    /**
+     * @brief Reset the contact tracing data
+     * 
+     * Usually called by `Model::reset()`.
+     * 
+     * @param n_agents Number of agents
+     * @param max_contacts Maximum number of contacts to track per agent
+     */
+    void reset(
+        size_t n_agents,
+        size_t max_contacts
+    );
+
+    /**
+     * @brief Get all unique contacts of an agent with the days they occurred.
+     * @details
+     * Returns a vector of `ContactRecord` objects, one per unique contacted
+     * agent.  Each record exposes:
+     *
+     * - `get_contact_id()` – the id of the other agent.
+     * - `get_times()` – the set of simulation days on which the contact was
+     *   recorded in the current (non-reset) window.
+     *
+     * The result is lazily computed on the first call after any new contact is
+     * recorded for this agent and cached until the next `add_contact()` call
+     * for the same agent.
+     *
+     * @param agent Source agent id.
+     * @return Const reference to the cached vector of ContactRecord objects.
+     */
+    const std::vector<ContactRecord> & get_contacts(size_t agent);
+
+    /**
+     * @brief Print the contacts of an agent 
+     * 
+     * @param agent Agent id
+     */
+    void print(size_t agent);
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/contacttracing-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/model-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_MODEL_BONES_HPP
+#define EPIWORLD_MODEL_BONES_HPP
+
+#include <memory>
+#include <vector>
+#include <functional>
+#include <string>
+#include <map>
+// (already included include/epiworld/config.hpp)
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/naturalhistory-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_NATURALHISTORY_BONES_HPP
+#define EPIWORLD_NATURALHISTORY_BONES_HPP
+
+/**
+ * @file naturalhistory-bones.hpp
+ * @brief The natural history of a disease: its stages and the declared
+ * transitions between them (see `natural-history.md`).
+ *
+ * @details A natural history is a small graph. Its nodes are **stages**
+ * (susceptible, latent, infectious, recovered, ...) and its edges are
+ * **transitions**, each of one kind:
+ *
+ * - `infection()`: by contact, drawn from the model's layers (or a custom
+ *   sampler). Taking it gives the agent the virus.
+ * - `rate()`: a daily probability. The rates out of a stage compete: one
+ *   draw (`roulette()`) picks one of them, or none.
+ * - `after()`: a duration, drawn when the agent enters the stage. It is a
+ *   deadline: the agent leaves on the update of the day it falls, unless a
+ *   rate fired first.
+ * - `external()`: fired by code, through `Model::fire()`.
+ *
+ * A stage is a **carrier** (its agents hold the virus) and may be
+ * **infectious** (they transmit; this implies carrier). Entering a
+ * non-carrier stage releases the virus. There are no fixed roles: a stage is
+ * susceptible because an infection transition leaves it, and a death is a
+ * stage with contact weight 0 and no exits.
+ *
+ * Every number a transition uses is a `Value`: a number, a model parameter
+ * (by name) or a function. A number given directly becomes a model parameter
+ * when the natural history is set on a model.
+ */
+
+class Nodes;
+
+class NaturalHistory;
+
+class TransitionRef;
+
+/// Flags of a stage (see `NaturalHistory::add_stage()`).
+namespace stage {
+    constexpr unsigned int carrier    = 1u;      ///< Agents in it hold the virus
+    constexpr unsigned int infectious = 1u | 2u; ///< They transmit (implies carrier)
+}
+
+/// Which tool effect a rate takes (see `TransitionRef::effect()`).
+enum class Effect : uint8_t {
+    none,     ///< No tool effect
+    recovery, ///< `p` becomes `1 - (1 - p) * (1 - recovery enhancer)`
+    death     ///< `p` becomes `p * (1 - death reduction)`
+};
+
+/// One or more stages (an `int` or a list of them).
+class Nodes {
+public:
+    std::vector< int > ids;
+    Nodes(int id) : ids({id}) {}
+    Nodes(std::initializer_list< int > l) : ids(l) {}
+    Nodes(std::vector< int > v) : ids(std::move(v)) {}
+};
+
+using ValueFun = std::function< epiworld_double(Agent &, Model &) >;
+
+using DurationFun = std::function< int(Agent &, Model &) >;
+
+/// A custom infection sampler: the virus the agent catches, or `nullptr`.
+using InfectionSampler = std::function< Virus * (Agent &, Model &) >;
+
+/**
+ * @brief A number a transition uses: a constant, a model parameter, or a
+ * function.
+ * @details
+ * - `Value(0.1)`: a number. When the natural history is set on a model, it
+ *   becomes a model parameter (named after the transition).
+ * - `Value("Recovery rate")`: a model parameter, by name.
+ * - `Value::inverse("Days")`, `Value::complement("p")`: `1 / p`, `1 - p`.
+ * - `Value(fun)`: `fun(agent, model)`.
+ *
+ * A parameter is read through the agent's virus, so a variant can point it to
+ * another parameter (`Virus::use_param()`).
+ */
+class Value {
+public:
+    enum class Kind : uint8_t { none, number, param, inverse, complement, fun };
+
+private:
+    Kind kind = Kind::none;
+    epiworld_double number = 0.0;
+    ParamRef param = ParamRef("");
+    ValueFun fun = nullptr;
+
+    friend class NaturalHistory;
+
+public:
+    Value() = default;
+    /// A number (any arithmetic type, whatever `epiworld_double` is)
+    template<
+        typename T,
+        typename std::enable_if< std::is_arithmetic< T >::value, int >::type = 0
+    >
+    Value(T x) : kind(Kind::number), number(static_cast< epiworld_double >(x)) {}
+    Value(const char * name) : kind(Kind::param), param(std::string(name)) {}
+    Value(std::string name) : kind(Kind::param), param(std::move(name)) {}
+    Value(ValueFun f) : kind(Kind::fun), fun(std::move(f)) {}
+
+    static Value inverse(std::string name);    ///< `1 / parameter`
+    static Value complement(std::string name); ///< `1 - parameter`
+
+    Kind get_kind() const { return kind; }
+    bool is_set() const { return kind != Kind::none; }
+
+    /// The parameter's name ("" for a function).
+    const std::string & get_param_name() const { return param.name(); }
+
+    /// The value for this agent (its virus may redirect the parameter).
+    epiworld_double eval(Agent & agent, Model & model) const;
+
+    /// The same, with the parameter redirected by `virus` (e.g., the
+    /// infector's, for a probability of infection).
+    epiworld_double eval(
+        Agent & agent,
+        const Virus * virus,
+        Model & model
+    ) const;
+};
+
+/**
+ * @brief How many days a stage lasts, drawn when the agent enters it.
+ * @details Always a whole number of days, at least one.
+ * - `fixed(p)`: `p`, rounded.
+ * - `geometric(mean)`: a geometric number of days with that mean (the same as
+ *   leaving each day with probability `1 / mean`).
+ * - `lognormal(mean, sd)`, `gamma(mean, sd)`: the mean and standard deviation
+ *   of the duration, in days. A standard deviation of zero is fixed.
+ * - `fun`: `fun(agent, model)`.
+ *
+ * `since(s)` counts the duration from the day the agent entered stage `s`
+ * (in the same infection), instead of the day it entered this stage.
+ */
+class Duration {
+public:
+    enum class Kind : uint8_t { none, fixed, geometric, lognormal, gamma, fun };
+
+private:
+    Kind kind = Kind::none;
+    Value mean;
+    Value sd;
+    DurationFun fun = nullptr;
+    int anchor = -1;
+
+    friend class NaturalHistory;
+
+public:
+    Duration() = default;
+    Duration(DurationFun f) : kind(Kind::fun), fun(std::move(f)) {}
+
+    static Duration fixed(Value days);
+    static Duration geometric(Value mean);
+    static Duration lognormal(Value mean, Value sd);
+    static Duration gamma(Value mean, Value sd);
+
+    /// Counts from the day the agent entered stage `s` in this infection.
+    Duration since(int s) const;
+
+    Kind get_kind() const { return kind; }
+    int get_anchor() const { return anchor; }
+
+    /// Draws a number of days (at least one).
+    int draw(Agent & agent, Model & model) const;
+};
+
+/// The kind of a transition (see `naturalhistory-bones.hpp`).
+enum class TransitionKind : uint8_t { infection, rate, after, external };
+
+/**
+ * @brief A declared transition: from a set of stages to a stage (or a branch
+ * of stages), of one kind.
+ */
+struct Transition {
+    std::string name;
+    TransitionKind kind;
+    std::vector< int > from;
+    int to = -1;
+
+    /// A branch: the target is drawn among these, with these probabilities.
+    std::vector< int > branch_to;
+    std::vector< Value > branch_prob;
+
+    Value value;          ///< infection (per contact) and rate
+    Duration duration;    ///< after
+    Effect effect = Effect::none;
+    InfectionSampler sampler = nullptr; ///< infection only (optional)
+
+    /// A status transition: only for agents in one of these stages (empty: any)
+    std::vector< int > when;
+};
+
+/**
+ * @brief Refines a transition just declared (chainable); converts to its id.
+ */
+class TransitionRef {
+private:
+    NaturalHistory * nh;
+    int id;
+
+public:
+    TransitionRef(NaturalHistory * nh_, int id_) : nh(nh_), id(id_) {}
+
+    /// The transition's id for `Model::fire()` and reactions: a stage
+    /// transition's own index, or, for a status transition, `-2 - index`.
+    operator int() const;
+    int get_id() const { return static_cast< int >(*this); }
+
+    TransitionRef & name(std::string n);     ///< Default: "From -> To"
+    TransitionRef & effect(Effect e);        ///< The tool effect a rate takes
+
+    /// The target is drawn among `targets`, with their probabilities.
+    TransitionRef & to(std::vector< std::pair< int, Value > > targets);
+
+    /// A custom infection sampler (infection transitions only; C++ only).
+    TransitionRef & sampler(InfectionSampler f);
+
+    /// A status transition: only for agents in these stages (read at the
+    /// start of the day).
+    TransitionRef & when(Nodes stages);
+};
+
+/**
+ * @brief What the engine needs about a stage, derived from the declarations.
+ */
+struct StageInfo {
+    int infection = -1;           ///< The infection transition out of it
+    std::vector< int > rates;     ///< Its rate transitions, in order
+    int after = -1;               ///< Its duration transition
+    bool needs_visit = false;     ///< Has a rate or a duration
+    bool pushable = false;        ///< Its only drawn exit is a default infection
+};
+
+/**
+ * @brief The natural history of a disease: stages and declared transitions.
+ * @details It is built on the virus (`Virus::add_stage()` and the others),
+ * and the model takes its stages from `Model::add_virus()`. The first stage
+ * is where agents start. Example (SIR):
+ *
+ * @code{.cpp}
+ * Virus flu("Flu");
+ * int S = flu.add_stage("Susceptible");
+ * int I = flu.add_stage("Infected", stage::infectious);
+ * int R = flu.add_stage("Recovered");
+ * flu.infection(S, I, "Transmission rate");
+ * flu.rate(I, R, "Recovery rate").effect(Effect::recovery);
+ * model.add_virus(flu, assign::share(0.01));
+ * @endcode
+ */
+class NaturalHistory {
+protected:
+    std::string name;
+    std::vector< std::string > stage_labels;
+    std::vector< unsigned int > stage_flags;
+    std::vector< epiworld_double > stage_contact;
+    std::vector< Transition > transitions;
+
+    // Derived by finalize()
+    std::vector< StageInfo > stages;
+    bool finalized = false;
+
+    friend class TransitionRef;
+    friend class Model;
+    bool status_chart = false; ///< See `Statuses`
+
+    int add_transition(Transition t);
+    void check_stage(int s, const char * what) const;
+
+    /// Checks the declarations and derives `stages`; turns numbers into model
+    /// parameters, named after `owner` (the virus) and the transition.
+    void finalize(Model & model, const std::string & owner);
+
+public:
+    explicit NaturalHistory(std::string name_);
+
+    /// Adds a stage; returns its id. Flags: `stage::carrier`, `stage::infectious`.
+    int add_stage(std::string label, unsigned int flags = 0u);
+
+    /// Contact weight of a stage (default 1). 0 takes its agents out of every
+    /// layer: they are not met and do not transmit.
+    void set_contact(int s, epiworld_double weight);
+
+    TransitionRef infection(Nodes from, int to, Value per_contact);
+    TransitionRef rate(Nodes from, int to, Value daily_probability);
+    TransitionRef after(int from, int to, Duration d);
+    TransitionRef external(Nodes from, int to, std::string label);
+
+    const std::string & get_name() const { return name; }
+    size_t get_n_stages() const { return stage_labels.size(); }
+    size_t get_n_transitions() const { return transitions.size(); }
+    const std::vector< std::string > & get_stages() const { return stage_labels; }
+    const Transition & get_transition(int id) const { return transitions.at(id); }
+
+    bool is_carrier(int s) const { return (stage_flags.at(s) & stage::carrier) != 0u; }
+    bool is_infectious(int s) const { return (stage_flags.at(s) & 2u) != 0u; }
+    epiworld_double get_contact(int s) const { return stage_contact.at(s); }
+
+    /// The stage's id, by label (throws if absent).
+    int stage_id(std::string_view label) const;
+
+    /// The transition's id, by name (throws if absent).
+    int transition_id(std::string_view label) const;
+
+    /// Whether `s` is one of the transition's sources.
+    bool is_source(int transition, int s) const;
+
+    /**
+     * @brief Whether `other` has the same structure: the same stages (labels,
+     * flags, contact weights) and the same transitions (names, kinds,
+     * sources and targets). Their values may differ.
+     */
+    bool same_structure(const NaturalHistory & other) const;
+
+    /// What the engine derived about stage `s` (once added to a model).
+    const StageInfo & get_stage_info(int s) const { return stages.at(s); }
+};
+
+/**
+ * @brief The statuses of a model: where agents are (free, quarantined,
+ * isolated, hospitalized), and the transitions between them.
+ * @details The same vocabulary as a natural history (`rate()`, `after()`,
+ * `external()`), without infections or carriers. A status transition can be
+ * restricted to agents in some stages (`TransitionRef::when()`); a duration
+ * can count from a stage's entry (`Duration::since()`). A status with contact
+ * weight 0 takes its agents out of every layer. The first status is where
+ * agents start. Set on a model with `Model::set_statuses()`; a model without
+ * statuses has one, "Free".
+ */
+class Statuses : public NaturalHistory {
+public:
+    Statuses() : NaturalHistory("Statuses") { this->status_chart = true; }
+
+    /// Adds a status; returns its id.
+    int add_status(std::string label) { return this->add_stage(std::move(label)); }
+
+    TransitionRef infection(Nodes, int, Value) = delete;
+};
+
+/**
+ * @brief What a reaction responds to (see `Model::react()`).
+ * @details `Trigger::entered(s)`: an agent enters stage `s`;
+ * `Trigger::fired(t)`: transition `t` is applied. `.was({statuses})`: only if
+ * the agent's status at the start of the day was one of these.
+ */
+struct Trigger {
+    enum class Kind : uint8_t { entered, fired } kind = Kind::entered;
+    int target = -1;
+    std::vector< int > was_status; ///< Empty: any status
+
+    static Trigger entered(int stage) { return {Kind::entered, stage, {}}; }
+    static Trigger fired(int transition) { return {Kind::fired, transition, {}}; }
+    Trigger was(std::vector< int > statuses) const
+    {
+        Trigger t(*this);
+        t.was_status = std::move(statuses);
+        return t;
+    }
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/naturalhistory-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/agent-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_PERSON_BONES_HPP
+#define EPIWORLD_PERSON_BONES_HPP
+
+class Model;
+
+class Virus;
+
+class Tool;
+
+
+class Queue;
+
+struct Event;
+
+class AgentsSample;
+
+/**
+ * @brief Non-allocating range over an agent's neighbors in a network layer.
+ *
+ * @details It iterates the agent's neighbor ids in place and resolves each one
+ * against the model's population as it goes, so a loop over the neighbors does
+ * not allocate:
+ *
+ * ```cpp
+ * for (auto * neighbor : net.neighbors_view(p->get_id()))
+ *     ...
+ * ```
+ *
+ * The order is the layer's tie order (see `layer::Network`). The view borrows
+ * from the layer and the model, so it must not outlive either, and it is
+ * invalidated by anything that changes the agent's ties.
+ *
+ */
+class NeighborsView {
+private:
+
+    const size_t * first = nullptr;
+    size_t n = 0u;
+    std::vector< Agent > * pop = nullptr;
+
+public:
+
+    class iterator {
+
+        friend class NeighborsView;
+
+        const size_t * ptr = nullptr;
+        std::vector< Agent > * pop = nullptr;
+
+        iterator(const size_t * ptr, std::vector< Agent > * pop) :
+            ptr(ptr), pop(pop) {}
+
+    public:
+
+        Agent * operator*() const { return &pop->operator[](*ptr); }
+        iterator & operator++() { ++ptr; return *this; }
+        bool operator!=(const iterator & other) const { return ptr != other.ptr; }
+        bool operator==(const iterator & other) const { return ptr == other.ptr; }
+
+    };
+
+    NeighborsView() = default;
+
+    NeighborsView(
+        const size_t * first,
+        size_t n,
+        std::vector< Agent > * pop
+    ) : first(first), n(n), pop(pop) {}
+
+    // The size is carried rather than derived as `last - first`: an agent with
+    // no ties has nothing to point at, and subtracting two null pointers is
+    // undefined behaviour (they point into no array).
+    iterator begin() const { return iterator(first, pop); }
+    iterator end() const { return iterator(first + n, pop); }
+
+    size_t size() const { return n; }
+    bool empty() const { return n == 0u; }
+
+    /// Id of the `k`-th neighbor, without touching the neighbor's `Agent`.
+    /// @throws std::out_of_range if `k >= size()`.
+    size_t id(size_t k) const
+    {
+        if (k >= n)
+            throw std::out_of_range("NeighborsView::id(): index out of range.");
+        return first[k];
+    }
+
+    /// The `k`-th neighbor.
+    /// @throws std::out_of_range if `k >= size()`.
+    Agent * agent(size_t k) const
+    {
+        if (k >= n)
+            throw std::out_of_range("NeighborsView::agent(): index out of range.");
+        return &pop->operator[](first[k]);
+    }
+
+    /// The ids of the `size()` neighbors, in order (like `std::vector::data()`:
+    /// only valid for indices below `size()`; `nullptr` when there are none).
+    /// For scans that must not touch the neighbors' `Agent`s.
+    const size_t * ids() const { return first; }
+
+};
+
+/**
+ * @brief Agent (agents)
+ * 
+ */
+class Agent {
+    friend class Model;
+    friend class Virus;
+    friend class Tool;
+    friend class Queue;
+    friend class AgentsSample;
+    friend class DataBase;
+    friend class layer::Network;
+protected:
+
+    unsigned int state = 0u;
+    unsigned int state_prev = 0u; ///< For accounting, if need to undo a change.
+    
+    int state_last_changed = -1; ///< Last time the agent was updated.
+    int id = -1;
+    
+    VirusPtr virus = nullptr;
+
+    std::vector< ToolPtr > tools;
+
+    void reset(); ///< Resets the agent to the initial state (no virus, no tools, state 0.)
+
+    /**
+     * @name The engine's changes (with the target state and queue)
+     * @details -99 means the default: no change of state (tools), the
+     * infection's target (a virus given from outside).
+     */
+    ///@{
+    void add_tool(
+        Model & model,
+        const Tool & tool,
+        epiworld_fast_int state_new,
+        epiworld_fast_int queue
+        );
+
+    void set_virus(
+        Model & model,
+        const Virus & virus,
+        epiworld_fast_int state_new,
+        epiworld_fast_int queue
+        );
+
+    void rm_tool(
+        Model & model,
+        epiworld_fast_uint tool_idx,
+        epiworld_fast_int state_new,
+        epiworld_fast_int queue
+    );
+
+    void rm_tool(
+        Model & model,
+        ToolPtr & tool,
+        epiworld_fast_int state_new,
+        epiworld_fast_int queue
+    );
+
+    void rm_virus(
+        Model & model,
+        epiworld_fast_int state_new,
+        epiworld_fast_int queue
+    );
+
+    void change_state(
+        Model & model,
+        epiworld_fast_uint new_state,
+        epiworld_fast_int queue = 0
+        );
+
+    /// The engine's index of the agent's stage and status (see
+    /// `Model::get_stage()` and `Model::get_status()`).
+    unsigned int get_state() const;
+    unsigned int get_state_prev() const;
+    ///@}
+
+public:
+
+    Agent() = default;
+    Agent(Agent && p);
+    Agent(const Agent & p);
+    Agent & operator=(const Agent & other_agent);
+    ~Agent();
+
+    /**
+     * @name Add/Remove Virus/Tool
+     *
+     * Any of these is ultimately reflected at the end of the iteration. A
+     * virus given to an agent takes it through the infection transition out
+     * of its stage (see `NaturalHistory`); moving an agent otherwise is done
+     * with `Model::fire()`.
+     *
+     * @param tool Tool to add
+     * @param virus Virus to add
+     */
+    ///@{
+    void add_tool(Model & model, const Tool & tool);
+    void set_virus(Model & model, const Virus & virus);
+    void rm_tool(Model & model, epiworld_fast_uint tool_idx);
+    void rm_tool(Model & model, ToolPtr & tool);
+    void rm_agent_by_virus(Model & model) = delete; ///< Agent removed by virus
+    ///@}
+    
+    /**
+     * @name Get the rates (multipliers) for the agent
+     * 
+     * @param v A pointer to a virus.
+     * @return epiworld_double 
+     */
+    ///@{
+    epiworld_double get_susceptibility_reduction(VirusPtr & v, Model & model);
+    epiworld_double get_transmission_reduction(VirusPtr & v, Model & model);
+    epiworld_double get_recovery_enhancer(VirusPtr & v, Model & model);
+    epiworld_double get_death_reduction(VirusPtr & v, Model & model);
+    ///@}
+
+    int get_id() const; ///< Id of the individual
+
+    VirusPtr & get_virus();
+    const VirusPtr & get_virus() const;
+
+    ToolPtr & get_tool(int i);
+    ToolPtr & get_tool(std::string name);
+
+    std::vector<ToolPtr> get_tools();
+    const std::vector<ToolPtr> get_tools() const;
+    size_t get_n_tools() const noexcept;
+
+    /// @brief Applies the virus' mutation function (throws if the agent has no virus).
+    void mutate_virus(Model & model);
+
+    /// The last day the agent's stage or status changed.
+    int get_state_last_changed() const;
+
+
+    bool has_tool(epiworld_fast_uint t) const;
+    bool has_tool(std::string_view name) const;
+    bool has_tool(const Tool & t) const;
+    bool has_virus(epiworld_fast_uint t) const;
+    bool has_virus(std::string_view name) const;
+    bool has_virus(const Virus & v) const;
+
+    void print(Model & model, bool compressed = false) const;
+
+    /**
+     * @brief Access the j-th column of the agent
+     * 
+     * If an external array has been specified, then these two
+     * functions can be used to access additional agent's features 
+     * not included in the model.
+     * 
+     * @param j 
+     * @param model Reference to the Model
+     * @return double& 
+     */
+    ///@{
+    double & operator()(size_t j, Model & model);
+    double operator()(size_t j, const Model & model) const;
+    ///@}
+
+    bool operator==(const Agent & other) const;
+    bool operator!=(const Agent & other) const {return !operator==(other);};
+
+};
+
+
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/agent-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/virus-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_VIRUS_HPP
+#define EPIWORLD_VIRUS_HPP
+
+class Agent;
+
+class Virus;
+
+class Model;
+
+class Tool;
+
+/**
+ * @brief Virus
+ * 
+ * @details
+ * A virus is identified by its id, which the model assigns: `Model::add_virus()`
+ * records a new variant (the founder of a lineage), and so does every
+ * mutation (a child of the variant it changed). Tools can reduce what a
+ * virus does, so its effects are a function of the agent.
+ */
+class Virus {
+    friend class Agent;
+    friend class Model;
+    friend class DataBase;
+    friend class Tool;
+    friend class ContactLayer;
+private:
+    
+    Agent * agent = nullptr;
+
+
+    std::string virus_name = "unknown virus";
+    int date = -99;
+    int id   = -99;    
+    int lineage_id = -99; ///< Id of the founding virus (kept across mutations).
+    uint64_t lineage_bit = uint64_t(1) << 63; ///< Bit matched against Tool::target_mask.
+    MutFun          mutation                 = nullptr;
+
+    /// Parameters this variant reads in place of others (see `use_param()`)
+    std::vector< std::pair< ParamRef, ParamRef > > param_redirects;
+
+    /// Its natural history (shared by its copies; copied on the first edit)
+    std::shared_ptr< NaturalHistory > nh_def = nullptr;
+    NaturalHistory & nh_edit();
+        
+public:
+
+    #ifdef EPI_DEBUG_VIRUS
+    static std::atomic<int> counter_construct;          // Default and parameterized constructors
+    static std::atomic<int> counter_copy_construct;     // Copy constructor
+    static std::atomic<int> counter_move_construct;     // Move constructor
+    static std::atomic<int> counter_copy_assign;        // Copy assignment
+    static std::atomic<int> counter_move_assign;        // Move assignment
+    static std::atomic<int> counter_destruct;           // Destructor
+    #endif
+
+    Virus();
+
+    Virus(std::string name = "unknown virus");
+    
+    
+    #ifdef EPI_DEBUG_VIRUS
+    
+    // Copy and move operations for debugging
+    Virus(const Virus& other);                    // Copy constructor
+    Virus(Virus&& other) noexcept;                // Move constructor
+    Virus& operator=(const Virus& other);   // Copy assignment
+    Virus& operator=(Virus&& other) noexcept; // Move assignment
+
+    ~Virus();
+    #endif
+    
+    /**
+     * @brief Mutation
+     * @details The function returns `true` when it changed the virus (it may
+     * change its name or, with `use_param()`, the parameters it reads). The
+     * model then records the virus as a new variant: a new id, whose parent is
+     * the id it had, in the same lineage. Each mutation is a new variant, even
+     * if two of them made the same change.
+     */
+    ///@{
+    void mutate(Model * model);
+    void set_mutation(MutFun fun);
+    ///@}
+    
+    
+    Agent * get_agent();
+    void set_agent(Agent * p);
+    
+    void set_date(int d);
+    int get_date() const;
+
+    void set_id(int idx);
+    int get_id() const;
+
+    /**
+     * @brief Id of the virus lineage
+     * 
+     * The id assigned to the founding virus when it was added to the model
+     * (see `Model::add_virus()`). Mutations change the virus id but keep
+     * the lineage id, so all variants of a virus share it. Tools target
+     * viruses by lineage (see `Tool::add_target()`).
+     * 
+     * @return int The lineage id (-99 if the virus has not been recorded).
+     */
+    int get_lineage_id() const;
+
+    void set_name(std::string name);
+    std::string get_name() const;
+
+    bool operator==(const Virus & other) const;
+    bool operator!=(const Virus & other) const {return !operator==(other);};
+
+    void print() const;
+
+
+    /**
+     * @name Natural history
+     * @brief The disease's stages and the transitions between them, declared
+     * on the virus (see `NaturalHistory` for each method).
+     * @details `Model::add_virus()` gives the model the virus's stages (its
+     * states). A copy of the virus (a strain, or a variant from a mutation)
+     * keeps the natural history; it can read other parameters with
+     * `use_param()`. The viruses of one model share their stages.
+     */
+    ///@{
+    int add_stage(std::string label, unsigned int flags = 0u);
+    void set_contact(int s, epiworld_double weight);
+    TransitionRef infection(Nodes from, int to, Value per_contact);
+    TransitionRef rate(Nodes from, int to, Value daily_probability);
+    TransitionRef after(int from, int to, Duration d);
+    TransitionRef external(Nodes from, int to, std::string label);
+
+    /// The natural history (`nullptr` if the virus has none).
+    const NaturalHistory * get_natural_history() const { return nh_def.get(); }
+    ///@}
+
+    /**
+     * @brief This variant reads the model parameter `replacement` wherever a
+     * transition of the natural history reads `param`.
+     * @details Every parameter lives in the model; a variant changes a value
+     * by pointing to another parameter (e.g., `"Recovery rate (Delta)"`).
+     */
+    void use_param(std::string param, std::string replacement);
+
+    /// The parameter this variant reads in place of `id`.
+    ParamId param_redirect(ParamId id, const Model & model) const;
+
+    /// Throws if a parameter it reads (see `use_param()`) is not in `model`.
+    void check_params(const Model & model) const;
+
+    virtual ~Virus() = default;
+    virtual std::unique_ptr<Virus> clone_ptr() const;
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/virus-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/tool-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_TOOL_BONES_HPP
+#define EPIWORLD_TOOL_BONES_HPP
+
+class Virus;
+
+class Agent;
+
+class Model;
+
+class Tool;
+
+/**
+ * @brief Tools for defending the agent against the virus
+ * 
+ */
+class Tool {
+    friend class Agent;
+    friend class Model;
+protected:
+
+    Agent * agent = nullptr;
+    int pos_in_agent        = -99; ///< Location in the agent
+
+    int date = -99;
+    int id   = -99;
+    std::string tool_name;
+    
+
+    ToolFun susceptibility_reduction = nullptr;
+    ToolFun transmission_reduction   = nullptr;
+    ToolFun recovery_enhancer        = nullptr;
+    ToolFun death_reduction          = nullptr;
+
+
+    /// Bitmask of targeted virus lineages (all ones: every virus).
+    uint64_t target_mask = ~uint64_t(0);
+
+
+    void set_agent(Agent * p, size_t idx);
+
+public:
+
+    /// Bit of a virus lineage in a target mask (contact layers use it too).
+    static uint64_t target_bit(int lineage_id); ///< Throws for ids out of range.
+
+    Tool();
+    Tool(std::string name = "unknown tool");
+
+    virtual ~Tool() = default;
+
+
+    /**
+     * @name Get and set the tool functions
+     * 
+     * @param v The virus over which to operate
+     * @param fun the function to be used
+     * 
+     * @return epiworld_double 
+     */
+    ///@{
+    virtual epiworld_double get_susceptibility_reduction(VirusPtr & v, Model * model);
+    virtual epiworld_double get_transmission_reduction(VirusPtr & v, Model * model);
+    virtual epiworld_double get_recovery_enhancer(VirusPtr & v, Model * model);
+    virtual epiworld_double get_death_reduction(VirusPtr & v, Model * model);
+    
+    virtual void set_susceptibility_reduction_fun(ToolFun fun);
+    virtual void set_transmission_reduction_fun(ToolFun fun);
+    virtual void set_recovery_enhancer_fun(ToolFun fun);
+    virtual void set_death_reduction_fun(ToolFun fun);
+
+    virtual void set_susceptibility_reduction(std::string param);
+    virtual void set_transmission_reduction(std::string param);
+    virtual void set_recovery_enhancer(std::string param);
+    virtual void set_death_reduction(std::string param);
+
+    // Deleting pointer versions to avoid mistakes
+    virtual void set_susceptibility_reduction(epiworld_double * prob) = delete;
+    virtual void set_transmission_reduction(epiworld_double * prob) = delete;
+    virtual void set_recovery_enhancer(epiworld_double * prob) = delete;
+    virtual void set_death_reduction(epiworld_double * prob) = delete;
+
+    virtual void set_susceptibility_reduction(epiworld_double prob);
+    virtual void set_transmission_reduction(epiworld_double prob);
+    virtual void set_recovery_enhancer(epiworld_double prob);
+    virtual void set_death_reduction(epiworld_double prob);
+    ///@}
+
+    /**
+     * @name Virus targets
+     * 
+     * @details
+     * By default, a tool acts on every virus. Adding targets restricts the
+     * tool (all four effects: susceptibility and transmission reduction,
+     * recovery enhancer, and death reduction) to the listed virus lineages.
+     * A lineage is a virus added with `Model::add_virus()` together with all
+     * of its mutations, so a tool targeting a virus also acts on its
+     * variants. Lineage ids are the virus ids assigned by
+     * `Model::add_virus()`; only lineages 0 to 62 can be targeted.
+     * 
+     * @param lineage_id Id of the virus lineage (see
+     * `Virus::get_lineage_id()`).
+     * @param v A virus already added to the model.
+     */
+    ///@{
+    void add_target(int lineage_id);
+    void add_target(const Virus & v);
+    void set_targets(const std::vector< int > & lineage_ids);
+    std::vector< int > get_targets() const; ///< Empty if the tool acts on every virus.
+    void clear_targets();
+    bool targets(const Virus & v) const;
+    ///@}
+
+    void set_name(std::string name);
+    virtual std::string get_name() const;
+
+    Agent * get_agent();
+    int get_id() const;
+    void set_id(int id);
+    void set_date(int d);
+    int get_date() const;
+
+
+    bool operator==(const Tool & other) const;
+    bool operator!=(const Tool & other) const {return !operator==(other);};
+
+    void print() const;
+
+
+    virtual std::unique_ptr<Tool> clone_ptr() const; 
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/tool-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/database-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -4325,13 +5054,10 @@ public:
 #ifndef EPIWORLD_DATABASE_BONES_HPP
 #define EPIWORLD_DATABASE_BONES_HPP
 
-template<typename TSeq>
 class Model;
 
-template<typename TSeq>
 class Virus;
 
-template<typename TSeq>
 class UserData;
 
 /**
@@ -4341,15 +5067,13 @@ class UserData;
  * <a href="../impl/data-collection-and-analysis.md">Data Collection and Analysis</a>,
  * <a href="../impl/generation-interval-and-reproductive-number.md">Generation Interval and Reproductive Number Calculation</a>
  *
- * @tparam TSeq
  */
-template<typename TSeq>
 class DataBase {
-    friend class Model<TSeq>;
+    friend class Model;
 private:
-    Model<TSeq> * model;
+    Model * model;
 
-    HospitalizationsTracker<TSeq> m_hospitalizations; ///< Tracker for hospitalization events
+    HospitalizationsTracker m_hospitalizations; ///< Tracker for hospitalization events
 
     // Variants, by id: the viruses added to the model first (founders, kept
     // even if removed, so ids stay put), then the run's mutations
@@ -4418,7 +5142,7 @@ private:
     void record_declared_transition(int id) { ++transition_today[static_cast< size_t >(id)]; }
     ///@}
 
-    UserData<TSeq> user_data;
+    UserData user_data;
 
     void update_state(
         epiworld_fast_uint prev_state,
@@ -4471,9 +5195,9 @@ public:
     #endif
 
     DataBase() = delete;
-    DataBase(Model<TSeq> & m) : model(&m), m_hospitalizations(), user_data(m) {};
-    DataBase(const DataBase<TSeq> & db);
-    // DataBase<TSeq> & operator=(const DataBase<TSeq> & m);
+    DataBase(Model & m) : model(&m), m_hospitalizations(), user_data(m) {};
+    DataBase(const DataBase & db);
+    // DataBase & operator=(const DataBase & m);
 
     /**
      * @brief Records a new variant, giving the virus its id
@@ -4484,11 +5208,11 @@ public:
      * Otherwise `v` has mutated: the new variant is a child of the id it had,
      * and its agent's counts move from the parent to it.
      */
-    void record_virus(Virus<TSeq> & v, bool founder = false);
-    void record_tool(Tool<TSeq> & t); ///< Gives the tool the next id.
+    void record_virus(Virus & v, bool founder = false);
+    void record_tool(Tool & t); ///< Gives the tool the next id.
     void reset();
     void drop_variants(); ///< Keeps the founders' records, dropping the run's variants.
-    Model<TSeq> * get_model();
+    Model * get_model();
     void record();
 
     const std::vector< int > & get_nexposed() const;
@@ -4668,7 +5392,7 @@ public:
     void set_user_data(std::vector< std::string > names);
     void add_user_data(std::vector< epiworld_double > x);
     void add_user_data(epiworld_fast_uint j, epiworld_double x);
-    UserData<TSeq> & get_user_data();
+    UserData & get_user_data();
 
 
     /**
@@ -4716,8 +5440,8 @@ public:
         bool normalize = true
     ) const;
 
-    bool operator==(const DataBase<TSeq> & other) const;
-    bool operator!=(const DataBase<TSeq> & other) const {return !operator==(other);};
+    bool operator==(const DataBase & other) const;
+    bool operator!=(const DataBase & other) const {return !operator==(other);};
 
     /**
      * Calculates the generating time
@@ -4754,7 +5478,7 @@ public:
      * - If the agent has no tools, a single record with tool_id = -1 and
      *   weight = 1.0
      */
-    void record_hospitalization(Agent<TSeq> & agent);
+    void record_hospitalization(Agent & agent);
 
     /**
      * @brief Get the full time series of hospitalization data.
@@ -4795,7 +5519,7 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -./include/epiworld/database-bones.hpp-
+ End of -include/epiworld/database-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -4804,1772 +5528,192 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -./include/epiworld/database-meat.hpp-
+ Start of -include/epiworld/queue-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_DATABASE_MEAT_HPP
-#define EPIWORLD_DATABASE_MEAT_HPP
+#ifndef EPIWORLD_QUEUE_BONES_HPP
+#define EPIWORLD_QUEUE_BONES_HPP
 
-#include <vector>
-#include <string>
-// (already included include/epiworld/config.hpp)
-// (already included include/epiworld/epiworld-macros.hpp)
-// (already included include/epiworld/misc.hpp)
-// (already included include/epiworld/database-bones.hpp)
-
-template<typename TSeq>
-inline void DataBase<TSeq>::reset()
+/**
+ * @brief Controls which agents are verified at each step
+ * 
+ * @details The idea is that only agents who are either in
+ * an infected state or have an infected neighbor should be
+ * checked. Otherwise it makes no sense (no chance to recover
+ * or capture the disease).
+ * 
+ * **Implementation details:**
+ * <a href="../impl/queueing-system.md">Queueing System</a>
+ * 
+ */
+class Queue
 {
-
-    // Initializing the counts
-    today_total.assign(model->nstates, 0);
-    for (auto & p : model->get_agents())
-        ++today_total[p.get_state()];
-
-    #ifdef EPI_DEBUG
-    // Only the first should be different from zero
-    {
-        int n = static_cast<int>(model->size());
-        if (today_total[0] != n)
-            throw std::runtime_error("The number of susceptible agents is not equal to the total number of agents.");
-
-        if (std::accumulate(today_total.begin(), today_total.end(), 0) != n)
-            throw std::runtime_error("The total number of agents is not equal to the sum of the number of agents in each state.");
-            
-    }
-    #endif
-
-    
-    transition_matrix.assign(model->nstates * model->nstates, 0);
-    for (size_t s = 0u; s < model->nstates; ++s)
-        transition_matrix[s + s * model->nstates] = today_total[s];
-
-    // The last run's variants go; the founders keep their ids
-    drop_variants();
-
-    hist_virus_date.clear();
-    hist_virus_id.clear();
-    hist_virus_state.clear();
-    hist_virus_counts.clear();
-
-    hist_tool_date.clear();
-    hist_tool_id.clear();
-    hist_tool_state.clear();
-    hist_tool_counts.clear();    
-
-    today_virus.resize(get_n_viruses());
-    for (auto& virus_states : today_virus)
-        virus_states.assign(model->nstates, 0);
-
-    today_tool.resize(get_n_tools());
-    for (auto& tool_states : today_tool)
-        tool_states.assign(model->nstates, 0);
-
-    hist_total_date.clear();
-    hist_total_state.clear();
-    hist_total_nviruses_active.clear();
-    hist_total_counts.clear();
-    hist_transition_matrix.clear();
-
-    transmission_date.clear();
-    transmission_virus.clear();
-    transmission_source.clear();
-    transmission_target.clear();
-    transmission_source_exposure_date.clear();
-    transmission_layer.clear();
-
-    transition_today.assign(
-        model->nh ?
-            model->nh->get_n_transitions() +
-                (model->st ? model->st->get_n_transitions() : 0u) :
-            0u,
-        0
-    );
-    hist_transition_date.clear();
-    hist_transition_id.clear();
-    hist_transition_counts.clear();
-
-    m_hospitalizations.reset();
-
-    return;
-
-}
-
-template<typename TSeq>
-inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
-    m_hospitalizations(db.m_hospitalizations),
-    n_founders(db.n_founders),
-    virus_name(db.virus_name),
-    virus_origin_date(db.virus_origin_date),
-    virus_parent_id(db.virus_parent_id),
-    tool_name(db.tool_name),
-    tool_origin_date(db.tool_origin_date),
-    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
-    today_virus(db.today_virus),
-    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
-    today_tool(db.today_tool),
-    // {Susceptible, Infected, etc.}
-    today_total(db.today_total),
-    // Totals
-    today_total_nviruses_active(db.today_total_nviruses_active),
-    sampling_freq(db.sampling_freq),
-    // Variants history
-    hist_virus_date(db.hist_virus_date),
-    hist_virus_id(db.hist_virus_id),
-    hist_virus_state(db.hist_virus_state),
-    hist_virus_counts(db.hist_virus_counts),
-    // Tools history
-    hist_tool_date(db.hist_tool_date),
-    hist_tool_id(db.hist_tool_id),
-    hist_tool_state(db.hist_tool_state),
-    hist_tool_counts(db.hist_tool_counts),
-    // Overall hist
-    hist_total_date(db.hist_total_date),
-    hist_total_nviruses_active(db.hist_total_nviruses_active),
-    hist_total_state(db.hist_total_state),
-    hist_total_counts(db.hist_total_counts),
-    hist_transition_matrix(db.hist_transition_matrix),
-    // Transmission network
-    transmission_date(db.transmission_date),
-    transmission_source(db.transmission_source),
-    transmission_target(db.transmission_target),
-    transmission_virus(db.transmission_virus),
-    transmission_source_exposure_date(db.transmission_source_exposure_date),
-    transmission_layer(db.transmission_layer),
-    transition_matrix(db.transition_matrix),
-    transition_today(db.transition_today),
-    hist_transition_date(db.hist_transition_date),
-    hist_transition_id(db.hist_transition_id),
-    hist_transition_counts(db.hist_transition_counts),
-    user_data(nullptr)
-{}
-
-// DataBase<TSeq> & DataBase<TSeq>::operator=(const DataBase<TSeq> & m)
-// {
-
-// }
-
-template<typename TSeq>
-inline Model<TSeq> * DataBase<TSeq>::get_model() {
-    return model;
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::record() 
-{
-
-    ////////////////////////////////////////////////////////////////////////////
-    // DEBUGGING BLOCK
-    ////////////////////////////////////////////////////////////////////////////
-    EPI_DEBUG_SUM_INT(today_total, model->size())
-    EPI_DEBUG_ALL_NON_NEGATIVE(today_total)
-
-    #ifdef EPI_DEBUG
-    // Checking whether the sums correspond
-    std::vector< int > _today_total_cp(today_total.size(), 0);
-    for (auto & p : model->population)
-        _today_total_cp[p.get_state()]++;
-    
-    EPI_DEBUG_VECTOR_MATCH_INT(
-        _today_total_cp, today_total,
-        "Sums of __today_total_cp in database-meat.hpp"
-        )
-
-    // EPI_DEBUG only: the model's agents-by-state index (see
-    // Model::get_agents_in_state()) is maintained incrementally, event by
-    // event, so check it against the population once per step, next to the
-    // same check for today_total above. Each state's block must hold exactly
-    // the agents in that state, each agent's recorded position must be right,
-    // and the degree and carrier sums used by the transmission step must match
-    // a recount. A drift here would silently bias which agents push, or which
-    // mode "auto" picks.
-    if (model->state_index_ready)
-    {
-
-        std::vector< size_t > _deg(model->nstates, 0u);
-        std::vector< size_t > _carriers(model->nstates, 0u);
-        std::vector< size_t > _carrier_deg(model->nstates, 0u);
-        for (auto & p : model->population)
-        {
-            const size_t _d = model->network_degree(static_cast< size_t >(p.get_id()));
-            _deg[p.get_state()] += _d;
-            if (p.get_virus() != nullptr)
-            {
-                _carriers[p.get_state()]++;
-                _carrier_deg[p.get_state()] += _d;
-            }
-        }
-
-        for (size_t s = 0u; s < model->nstates; ++s)
-        {
-
-            const auto members = model->state_index_members(s);
-            if (static_cast< int >(members.size()) != today_total[s])
-                throw std::logic_error("[epi-debug] DataBase::record state index size doesn't match today_total.");
-
-            for (size_t k = 0u; k < members.size(); ++k)
-            {
-                if (model->population[members[k]].get_state() != s)
-                    throw std::logic_error("[epi-debug] DataBase::record state index lists an agent in another state.");
-                if (model->agent_state[members[k]] != s)
-                    throw std::logic_error("[epi-debug] DataBase::record agent_state is out of step.");
-                if (model->agent_carrier[members[k]] != (model->population[members[k]].get_virus() != nullptr))
-                    throw std::logic_error("[epi-debug] DataBase::record agent_carrier is out of step.");
-                if (model->state_member_pos[members[k]] != model->state_start[s] + k)
-                    throw std::logic_error("[epi-debug] DataBase::record state_member_pos is out of step.");
-            }
-
-            if (
-                (_deg[s] != model->state_degree[s]) ||
-                (_carriers[s] != model->state_carriers[s]) ||
-                (_carrier_deg[s] != model->state_carrier_degree[s])
-            )
-                throw std::logic_error("[epi-debug] DataBase::record state degree/carrier sums are out of step.");
-
-        }
-
-    }
-
-    if (model->today() == 0)
-    {
-        if (hist_total_date.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_date should be of length 0.")
-        if (hist_total_nviruses_active.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_nviruses_active should be of length 0.")
-        if (hist_total_state.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_state should be of length 0.")
-        if (hist_total_counts.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_counts should be of length 0.")
-        if (hist_virus_date.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_virus_date should be of length 0.")
-        if (hist_virus_id.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_virus_id should be of length 0.")
-        if (hist_virus_state.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_virus_state should be of length 0.")
-        if (hist_virus_counts.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_virus_counts should be of length 0.")
-        if (hist_tool_date.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_date should be of length 0.")
-        if (hist_tool_id.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_id should be of length 0.")
-        if (hist_tool_state.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_state should be of length 0.")
-        if (hist_tool_counts.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_counts should be of length 0.")
-    }
-    #endif
-    ////////////////////////////////////////////////////////////////////////////
-
-    // Only store every now and then
-    if ((model->today() % sampling_freq) == 0)
-    {
-
-        // Recording virus's history
-        for (size_t v = 0u; v < today_virus.size(); ++v)
-        {
-
-            for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
-            {
-
-                hist_virus_date.push_back(model->today());
-                hist_virus_id.push_back(static_cast< int >(v));
-                hist_virus_state.push_back(s);
-
-                #ifdef EPI_DEBUG
-                if (today_virus[v][s] < 0)
-                    throw std::logic_error(
-                        "The count of viruses in DataBase::record cannot be negative."
-                    );
-                #endif
-
-                hist_virus_counts.push_back(today_virus[v][s]);
-
-            }
-
-        }
-
-        // Recording tool's history
-        for (size_t t = 0u; t < today_tool.size(); ++t)
-        {
-
-            for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
-            {
-
-                hist_tool_date.push_back(model->today());
-                hist_tool_id.push_back(static_cast< int >(t));
-                hist_tool_state.push_back(s);
-                hist_tool_counts.push_back(today_tool[t][s]);
-
-            }
-
-        }
-
-        // Recording the overall history
-        for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
-        {
-            hist_total_date.push_back(model->today());
-            hist_total_nviruses_active.push_back(today_total_nviruses_active);
-            hist_total_state.push_back(s);
-            hist_total_counts.push_back(today_total[s]);
-        }
-
-        for (const auto& cell : transition_matrix)
-            hist_transition_matrix.push_back(cell);
-
-        for (size_t k = 0u; k < transition_today.size(); ++k)
-        {
-            hist_transition_date.push_back(model->today());
-            hist_transition_id.push_back(static_cast< int >(k));
-            hist_transition_counts.push_back(transition_today[k]);
-            transition_today[k] = 0;
-        }
-
-        // Now the diagonal must reflect the state
-        for (size_t s_i = 0u; s_i < model->nstates; ++s_i)
-        {
-
-            for (size_t s_j = 0u; s_j < model->nstates; ++s_j)
-            {
-                
-                if ((s_i != s_j) && (transition_matrix[s_i + s_j * model->nstates] > 0))
-                {
-                    transition_matrix[s_j + s_j * model->nstates] +=
-                        transition_matrix[s_i + s_j * model->nstates];
-
-                    transition_matrix[s_i + s_j * model->nstates] = 0;
-                }
-         
-            }
-
-        }
-
-        #ifdef EPI_DEBUG
-        for (size_t s_i = 0u; s_i < model->nstates; ++s_i)
-        {
-            if (transition_matrix[s_i + s_i * model->nstates] != 
-                today_total[s_i])
-                throw std::logic_error(
-                    "The diagonal of the updated transition Matrix should match the daily totals"
-                    );
-        }
-        #endif
-
-    }
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::drop_variants()
-{
-
-    const size_t n = n_founders;
-    if (virus_name.size() <= n)
-        return;
-
-    virus_name.resize(n);
-    virus_origin_date.resize(n);
-    virus_parent_id.resize(n);
-    today_virus.resize(n);
-    today_total_nviruses_active = static_cast< int >(n);
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v, bool founder)
-{
-
-    if (founder)
-    {
-        drop_variants();
-        ++n_founders;
-    }
-    else if (v.get_id() < 0)
-        throw std::logic_error(
-            "The virus \"" + v.get_name() + "\" mutated but is not on record."
-        );
-
-    const int parent = founder ? -99 : v.get_id();
-    const int id = static_cast< int >(virus_name.size());
-
-    virus_name.push_back(v.get_name());
-    virus_origin_date.push_back(model->today());
-    virus_parent_id.push_back(parent);
-    today_virus.push_back(std::vector< int >(model->nstates, 0));
-    today_total_nviruses_active++;
-
-    v.set_id(id);
-    v.set_date(model->today());
-
-    // A founder starts a lineage, which its mutations keep. Lineages 63 and
-    // above share the overflow bit, which tools cannot target.
-    if (founder)
-    {
-        v.lineage_id  = id;
-        v.lineage_bit = uint64_t(1) << std::min(id, 63);
-    }
-    else if (v.get_agent() != nullptr)
-    {
-        // The agent's counts move from the parent to the variant
-        const auto s = v.get_agent()->get_state();
-        today_virus[parent][s]--;
-        today_virus[id][s]++;
-    }
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
-{
-
-    t.set_id(static_cast< int >(tool_name.size()));
-    t.set_date(model->today());
-    tool_name.push_back(t.get_name());
-    tool_origin_date.push_back(model->today());
-    today_tool.push_back(std::vector< int >(model->nstates, 0));
-
-}
-
-template<typename TSeq>
-inline size_t DataBase<TSeq>::size() const
-{
-    return virus_name.size();
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::update_state(
-        epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state,
-        bool undo
-) {
-
-    if (prev_state == new_state)
-        return; // No need to update if the state is the same
-
-    #ifdef EPI_DEBUG
-    // Checking ranges (should be within expected)
-    if ((prev_state >= model->nstates))
-        throw std::out_of_range(
-            "prev_state is out of range in DataBase::update_state"
-        );
-    if ((new_state >= model->nstates))
-        throw std::out_of_range(
-            "new_state is out of range in DataBase::update_state"
-        );
-    if (prev_state == new_state)
-        throw std::logic_error(
-            "prev_state and new_state are the same in DataBase::update_state"
-        );
-    #endif
-
-    if (undo)
-    {
-
-        today_total[prev_state]++;
-        today_total[new_state]--;
-        
-    } else {
-
-        today_total[prev_state]--;
-        today_total[new_state]++;
-
-    }
-
-    record_transition(prev_state, new_state, undo);
-    
-    return;
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::update_virus(
-        epiworld_fast_uint virus_id,
-        epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state,
-        bool undo
-) {
-
-    if (undo)
-    {
-        today_virus[virus_id][prev_state]++;
-        today_virus[virus_id][new_state]--;
-    }
-    else
-    {
-        today_virus[virus_id][prev_state]--;
-        today_virus[virus_id][new_state]++;
-    }
-
-    #ifdef EPI_DEBUG
-    if (today_virus[virus_id][prev_state] < 0)
-        throw std::logic_error("An entry in today_virus is negative.");
-    if (today_virus[virus_id][new_state] < 0)
-        throw std::logic_error("An entry in today_virus is negative (new_state).");
-    #endif
-
-    return;
-    
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::update_tool(
-        epiworld_fast_uint tool_id,
-        epiworld_fast_uint prev_state,
-        epiworld_fast_uint new_state,
-        bool undo
-) {
-
-    if (undo)
-    {
-        today_tool[tool_id][prev_state]++;
-        today_tool[tool_id][new_state]--;
-    }
-    else
-    {
-        today_tool[tool_id][prev_state]--;
-        today_tool[tool_id][new_state]++;
-    }
-
-    return;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::record_transition(
-    epiworld_fast_uint from,
-    epiworld_fast_uint to,
-    bool undo
-) {
-
-    if (undo)
-    {   
-
-        transition_matrix[to * model->nstates + from]--;
-        transition_matrix[from * model->nstates + from]++;
-
-    } else {
-
-        transition_matrix[to * model->nstates + from]++;
-        transition_matrix[from * model->nstates + from]--;
-
-    }
-
-    #ifdef EPI_DEBUG
-    if (transition_matrix[from * model->nstates + from] < 0)
-        throw std::logic_error("An entry in transition matrix is negative.");
-    #endif
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::split_state(
-    epiworld_fast_uint state,
-    std::string & status,
-    std::string & stage
-) const
-{
-
-    if (!model->nh)
-    {
-        status = "Free";
-        stage = model->states_labels[state];
-        return;
-    }
-
-    const unsigned int c = static_cast< unsigned int >(state);
-    stage = model->nh->get_stages()[static_cast< size_t >(model->nh_stage_of(c))];
-    status = model->st ?
-        model->st->get_stages()[static_cast< size_t >(model->nh_status_of(c))] :
-        std::string("Free");
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::split_states(
-    const std::vector< epiworld_fast_uint > & states,
-    std::vector< std::string > * status,
-    std::vector< std::string > * stage
-) const
-{
-
-    std::string k, s;
-    if (status != nullptr)
-        status->resize(states.size());
-    if (stage != nullptr)
-        stage->resize(states.size());
-
-    for (size_t i = 0u; i < states.size(); ++i)
-    {
-        split_state(states[i], k, s);
-        if (status != nullptr)
-            (*status)[i] = k;
-        if (stage != nullptr)
-            (*stage)[i] = s;
-    }
-
-}
-
-template<typename TSeq>
-inline int DataBase<TSeq>::today_total_of(
-    const std::string & name,
-    bool by_stage
-) const
-{
-
-    bool found = false;
-    int total = 0;
-    std::string k, s;
-    for (epiworld_fast_uint i = 0u; i < today_total.size(); ++i)
-    {
-        split_state(i, k, s);
-        if ((by_stage ? s : k) == name)
-        {
-            found = true;
-            total += today_total[i];
-        }
-    }
-
-    if (!found)
-        throw std::range_error(
-            "'" + name + "' is not a " + (by_stage ? "stage" : "status") +
-            " of the model."
-        );
-
-    return total;
-
-}
-
-template<typename TSeq>
-inline int DataBase<TSeq>::get_today_total_stage(
-    const std::string & stage
-) const
-{
-    return today_total_of(stage, true);
-}
-
-template<typename TSeq>
-inline int DataBase<TSeq>::get_today_total_status(
-    const std::string & status
-) const
-{
-    return today_total_of(status, false);
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_today_total(
-    std::vector< std::string > * status,
-    std::vector< std::string > * stage,
-    std::vector< int > * counts
-) const
-{
-
-    std::vector< epiworld_fast_uint > states(today_total.size());
-    for (size_t i = 0u; i < states.size(); ++i)
-        states[i] = static_cast< epiworld_fast_uint >(i);
-
-    split_states(states, status, stage);
-
-    if (counts != nullptr)
-        *counts = today_total;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_today_virus(
-    std::vector< std::string > & status,
-    std::vector< std::string > & stage,
-    std::vector< int > & id,
-    std::vector< int > & counts
-    ) const
-{
-
-    // One row per virus and state
-    const size_t n_viruses = today_virus.size();
-    const size_t n_states = model->states_labels.size();
-
-    std::vector< epiworld_fast_uint > states;
-    states.reserve(n_viruses * n_states);
-    id.clear();
-    counts.clear();
-
-    for (epiworld_fast_uint v = 0u; v < n_viruses; ++v)
-        for (epiworld_fast_uint s = 0u; s < n_states; ++s)
-        {
-            states.push_back(s);
-            id.push_back(static_cast<int>(v));
-            counts.push_back(today_virus[v][s]);
-        }
-
-    split_states(states, &status, &stage);
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_hist_total(
-    std::vector< int > * date,
-    std::vector< std::string > * status,
-    std::vector< std::string > * stage,
-    std::vector< int > * counts
-) const
-{
-
-    if (date != nullptr)
-        *date = hist_total_date;
-
-    split_states(hist_total_state, status, stage);
-
-    if (counts != nullptr)
-        *counts = hist_total_counts;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_hist_virus(
-    std::vector< int > & date,
-    std::vector< int > & id,
-    std::vector< std::string > & status,
-    std::vector< std::string > & stage,
-    std::vector< int > & counts
-) const {
-
-    date = hist_virus_date;
-    id = hist_virus_id;
-    split_states(hist_virus_state, &status, &stage);
-    counts = hist_virus_counts;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_hist_tool(
-    std::vector< int > & date,
-    std::vector< int > & id,
-    std::vector< std::string > & status,
-    std::vector< std::string > & stage,
-    std::vector< int > & counts
-) const {
-
-    date = hist_tool_date;
-    id = hist_tool_id;
-    split_states(hist_tool_state, &status, &stage);
-    counts = hist_tool_counts;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_today_transition_matrix(
-    std::vector< int > & counts
-) const
-{
-
-    counts = transition_matrix;
-
-    return;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_hist_transition_matrix(
-    std::vector< std::string > & status_from,
-    std::vector< std::string > & stage_from,
-    std::vector< std::string > & status_to,
-    std::vector< std::string > & stage_to,
-    std::vector< int > & date,
-    std::vector< int > & counts,
-    bool skip_zeros
-) const
-{
-
-    size_t n = this->hist_transition_matrix.size();
-
-    std::vector< epiworld_fast_uint > from, to;
-    from.reserve(n);
-    to.reserve(n);
-    date.clear();
-    counts.clear();
-    date.reserve(n);
-    counts.reserve(n);
-
-    size_t n_states = model->nstates;
-    size_t n_steps  = model->get_ndays();
-
-    // If n is zero, then we are done
-    if (n == 0u)
-    {
-        split_states(from, &status_from, &stage_from);
-        split_states(to, &status_to, &stage_to);
-        return;
-    }
-
-    for (size_t step = 0u; step <= n_steps; ++step) // The final step counts
-    {
-        for (size_t j = 0u; j < n_states; ++j) // Column major storage
-        {
-            for (size_t i = 0u; i < n_states; ++i)
-            {
-                // Retrieving the value of the day
-                int v = hist_transition_matrix[
-                    step * n_states * n_states + // Day of the data
-                    j * n_states +               // Column (to)
-                    i                            // Row (from)
-                    ];
-
-                // If we are skipping the zeros and it is zero, then don't save
-                if (skip_zeros && v == 0)
-                    continue;
-                                
-                from.push_back(static_cast< epiworld_fast_uint >(i));
-                to.push_back(static_cast< epiworld_fast_uint >(j));
-                date.push_back(hist_total_date[step * n_states]);
-                counts.push_back(v);
-
-            }
-
-        }
-    }
-
-    split_states(from, &status_from, &stage_from);
-    split_states(to, &status_to, &stage_to);
-
-
-}
-
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_active_cases(
-    std::vector<int> & date,
-    std::vector<int> & virus_id,
-    std::vector<int> & count
-) const 
-{
-
-    // Extracting useful sizes
-    size_t n_days    = model->get_ndays() + 1u; // Including day 0
-    size_t n_viruses = model->get_n_viruses();
-    
-    // Making room
-    date.assign(n_days * n_viruses, 0);
-    virus_id.assign(n_days * n_viruses, 0);
-    count.assign(n_days * n_viruses, 0);
-
-    for (size_t i = 0u; i < hist_virus_id.size(); ++i)
-    {
-
-        // With more viruses, there are more days
-        auto location = hist_virus_date[i] + hist_virus_id[i] * n_days;
-
-        date[location] = hist_virus_date[i];
-        virus_id[location] = hist_virus_id[i];
-        count[location] += hist_virus_counts[i];
-
-    }
-
-    return;
-    
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_outbreak_size(
-    std::vector<int> & date,
-    std::vector<int> & virus_id,
-    std::vector<int> & outbreak_size
-) const 
-{
-
-    // Extracting useful sizes
-    size_t n_days    = model->get_ndays() + 1u; // Including day 0
-    size_t n_viruses = model->get_n_viruses();
-    
-    // Making room
-    date.assign(n_days * n_viruses, 0);
-    std::iota(date.begin(), date.end(), 0);
-
-    virus_id.assign(n_days * n_viruses, 0);
-    for (size_t v = 0u; v < n_viruses; ++v)
-        for (size_t d = 0u; d < n_days; ++d)
-            virus_id[d + v * n_days] = static_cast<int>(v);
-
-    outbreak_size.assign(n_days * n_viruses, 0);
-
-    // With more viruses, there are more days;
-    for (size_t i = 0u; i < transmission_date.size(); ++i)
-    {
-        outbreak_size[
-            transmission_date[i] + transmission_virus[i] * n_days
-        ] += 1;
-    }
-
-    // Now, we generate the cumulative sum
-    for (size_t v = 0u; v < n_viruses; ++v)
-    {
-        for (size_t d = 1u; d < n_days; ++d)
-        {
-            auto location = d + v * n_days;
-            outbreak_size[location] += outbreak_size[location - 1u];
-        }
-    }
-
-    return;
-    
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_transmissions(
-    std::vector<int> & date,
-    std::vector<int> & source,
-    std::vector<int> & target,
-    std::vector<int> & virus,
-    std::vector<int> & source_exposure_date,
-    std::vector<int> & layer
-) const 
-{
-
-    size_t nevents = transmission_date.size();
-
-    date.resize(nevents);
-    source.resize(nevents);
-    target.resize(nevents);
-    virus.resize(nevents);
-    source_exposure_date.resize(nevents);
-    layer.resize(nevents);
-
-    get_transmissions(
-        date.data(),
-        source.data(),
-        target.data(),
-        virus.data(),
-        source_exposure_date.data(),
-        layer.data()
+    friend class Model;
+
+private:
+
+    /**
+     * @brief Count of ego's neighbors in queue (including ego)
+     */
+    std::vector< epiworld_fast_int > active;
+
+    /**
+     * @brief Outstanding `Everyone` registrations per agent.
+     *
+     * @details `active[i]` is `everyone[i]` plus the sum of `everyone[j]` over
+     * the agents `j` whose neighbor lists contain `i`, in every network layer
+     * of the model (`operator+=` credits the agents in the registered agent's
+     * own lists). In an undirected network those are `i`'s neighbors; in a
+     * directed one they are the agents that list `i`. So this is what a tie is worth to the far end of
+     * it: adding an edge next to a registered agent is a `+everyone[]`
+     * over there, and removing one is the mirror (see `notify_edge_added`).
+     *
+     * Keeping the count explicit -- rather than inferring "is this agent
+     * contributing?" from whether it carries a virus -- means the bookkeeping
+     * stays right no matter what registered the agent: a virus, a tool, or an
+     * explicit queue argument to `Agent::change_state`.
+     */
+    std::vector< epiworld_fast_int > everyone;
+
+    /**
+     * @brief One bit per agent: bit `i` is set iff `active[i] != 0`.
+     *
+     * @details This is what lets `Model::update_state()` visit only the agents
+     * in the queue, in ascending id order, without scanning the whole
+     * population: it walks the set bits (see `for_each_nonzero`). Every change
+     * to `active` goes through `shift()`, which keeps the two in step.
+     */
+    std::vector< uint64_t > bits;
+
+    Model * model = nullptr;
+    int n_in_queue = 0;
+
+    /// @brief Adds `n` to `active[id]`, keeping `n_in_queue` and `bits` in step.
+    void shift(size_t id, epiworld_fast_int n);
+
+    /// @brief Whether the counters have been sized to cover these two agents.
+    bool tracks(size_t a, size_t b) const;
+
+    /// @brief Adds `n` to the counts of `id`'s neighbors in every network
+    /// and of its group-mates in every within-group mixing layer.
+    void shift_neighbors(size_t id, epiworld_fast_int n);
+
+    // Auxiliary variable that checks how many steps
+    // left are there
+    // int n_steps_left;
+    // bool queuing_started   = false;
+
+public:
+
+    void operator+=(Agent * p);
+    void operator-=(Agent * p);
+
+    /**
+     * @brief How many registrations cover agent `i` (itself or a neighbor).
+     *
+     * @details Read-only: the count must only change through `+=`, `-=` and
+     * the edge notifications, which keep the ordered set of queued agents in
+     * step with it.
+     */
+    epiworld_fast_int operator[](epiworld_fast_uint i) const;
+
+    /**
+     * @brief Calls `f(i)` for every agent with a non-zero count, in ascending
+     * id order.
+     *
+     * @details Costs O(N / 64 + number of queued agents), instead of a scan of
+     * the whole population. The count of an agent is read when the walk
+     * reaches it, so if `f` changes the queue (e.g., a state function that
+     * adds a tie), agents further ahead see the change -- exactly what a plain
+     * `for (i = 0; i < N; ++i) if (queue[i] ...)` loop would do.
+     */
+    template< typename F >
+    void for_each_nonzero(F && f);
+
+    /**
+     * @name Keep the queue in step with a change to the contact network
+     *
+     * @details The queue counts, for every agent, how many of its neighbors are
+     * registered as active. That count is built when an agent is registered
+     * (`operator+=`) and unwound when it is deregistered (`operator-=`), both
+     * walking the agent's neighbors *as they are at that moment*. Changing the
+     * network in between would leave the two walks disagreeing, and an agent
+     * whose count drifted to zero is silently skipped by
+     * `Model::update_state()`.
+     *
+     * This keeps the counts exact as the change happens, in constant time: an
+     * agent that gains a tie to another hands it whatever it contributes, and
+     * one that loses the tie takes it back.
+     *
+     * @param a,b The two ends of the tie that was just added or removed.
+     * @param da,db How `a`'s list changed (`+1` gained `b`, `-1` lost it, `0`
+     * unchanged), and `b`'s.
+     */
+    void notify_ties_changed(size_t a, int da, size_t b, int db);
+
+    /**
+     * @brief Keep the queue in step with `layer::Network::swap_ties()`.
+     *
+     * @details `a`'s tie to `b` and `c`'s tie to `d` traded ends: (a-b), (c-d)
+     * became (a-d), (c-b). Nobody's degree changed, only whose registrations
+     * reach whom: `b` now gets what `c` contributes instead of what `a` does,
+     * and `d` the reverse. In an undirected network the other ends traded too,
+     * so `a` gets what `d` contributes instead of `b`, and `c` the reverse.
+     * Four shifts, whatever the degrees.
+     *
+     * In a directed network only `a`'s and `c`'s lists change, and the queue
+     * follows each agent's own list (`operator+=`), so only `b`'s and `d`'s
+     * counts change.
+     *
+     * @param a,c The agents whose neighbors were swapped.
+     * @param b,d Their neighbors before the swap (`b` was `a`'s, `d` was `c`'s).
+     * @param directed Whether only `a`'s and `c`'s lists changed.
+     */
+    void notify_edges_swapped(
+        size_t a,
+        size_t b,
+        size_t c,
+        size_t d,
+        bool directed
     );
 
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_transmissions(
-    int * date,
-    int * source,
-    int * target,
-    int * virus,
-    int * source_exposure_date,
-    int * layer
-) const 
-{
-
-    size_t nevents = transmission_date.size();
-
-    for (size_t i = 0u; i < nevents; ++i)
-    {
-
-        *(date + i) = transmission_date.at(i);
-        *(source + i) = transmission_source.at(i);
-        *(target + i) = transmission_target.at(i);
-        *(virus + i) = transmission_virus.at(i);
-        *(source_exposure_date + i) = transmission_source_exposure_date.at(i);
-        *(layer + i) = transmission_layer.at(i);
-
-    }
-
-}
-
-template<typename TSeq>
-inline RunOutputs DataBase<TSeq>::get_run_outputs(
-    const std::vector< std::string > & whats
-) const
-{
-
-    // Names of the viruses, given their ids
-    auto vnames = [this](const std::vector< int > & ids) {
-        std::vector< std::string > names;
-        names.reserve(ids.size());
-        for (auto i : ids)
-            names.push_back(virus_name[i]);
-        return names;
-    };
-
-    // Names of the layers, given their ids ("" for -1: not from a contact)
-    auto lnames = [this](const std::vector< int > & ids) {
-        std::vector< std::string > names;
-        names.reserve(ids.size());
-        for (auto i : ids)
-            names.push_back(
-                i < 0 ? std::string() :
-                model->get_layer(static_cast< size_t >(i)).get_name()
-            );
-        return names;
-    };
-
-    // The status and stage columns of a vector of states
-    auto add_pairs = [this](
-        OutputTable & t,
-        const std::vector< epiworld_fast_uint > & states,
-        const std::string & prefix
-    ) {
-        std::vector< std::string > status, stage;
-        split_states(states, &status, &stage);
-        t.add(prefix + "status", status);
-        t.add(prefix + "stage", stage);
-    };
-
-    RunOutputs out;
-
-    for (const auto & what : whats)
-    {
-
-        OutputTable t;
-
-        if (what == "virus_info")
-        {
-            std::vector< int > id(virus_name.size());
-            std::iota(id.begin(), id.end(), 0);
-            t.add("virus_id", id);
-            t.add("virus", virus_name);
-            t.add("date_recorded", virus_origin_date);
-            t.add("parent", virus_parent_id);
-        }
-        else if (what == "virus_hist")
-        {
-            t.add("date", hist_virus_date);
-            t.add("virus_id", hist_virus_id);
-            t.add("virus", vnames(hist_virus_id));
-            add_pairs(t, hist_virus_state, "");
-            t.add("n", hist_virus_counts);
-        }
-        else if (what == "tool_info")
-        {
-            std::vector< int > id(tool_name.size());
-            std::iota(id.begin(), id.end(), 0);
-            t.add("id", id);
-            t.add("tool_name", tool_name);
-            t.add("date_recorded", tool_origin_date);
-        }
-        else if (what == "tool_hist")
-        {
-            t.add("date", hist_tool_date);
-            t.add("id", hist_tool_id);
-            add_pairs(t, hist_tool_state, "");
-            t.add("n", hist_tool_counts);
-        }
-        else if (what == "total_hist")
-        {
-            t.add("date", hist_total_date);
-            t.add("nviruses", hist_total_nviruses_active);
-            add_pairs(t, hist_total_state, "");
-            t.add("counts", hist_total_counts);
-        }
-        else if (what == "transmission")
-        {
-            t.add("date", transmission_date);
-            t.add("virus_id", transmission_virus);
-            t.add("virus", vnames(transmission_virus));
-            t.add("source_exposure_date", transmission_source_exposure_date);
-            t.add("source", transmission_source);
-            t.add("target", transmission_target);
-            t.add("layer_id", transmission_layer);
-            t.add("layer", lnames(transmission_layer));
-        }
-        else if (what == "transition")
-        {
-            std::vector< int > date, counts;
-            std::vector< epiworld_fast_uint > from, to;
-            int ns = model->nstates;
-            for (int i = 0; i <= model->today(); ++i)
-                for (int f = 0; f < ns; ++f)
-                    for (int s = 0; s < ns; ++s)
-                    {
-                        int n = hist_transition_matrix[i * (ns * ns) + s * ns + f];
-                        if (n == 0)
-                            continue;
-                        date.push_back(i);
-                        from.push_back(static_cast< epiworld_fast_uint >(f));
-                        to.push_back(static_cast< epiworld_fast_uint >(s));
-                        counts.push_back(n);
-                    }
-            t.add("date", date);
-            add_pairs(t, from, "from_");
-            add_pairs(t, to, "to_");
-            t.add("counts", counts);
-        }
-        else if (what == "reproductive")
-        {
-            std::vector< int > id, source, date, rt;
-            for (const auto & m : get_reproductive_number())
-            {
-                id.push_back(m.first[0u]);
-                source.push_back(m.first[1u]);
-                date.push_back(m.first[2u]);
-                rt.push_back(m.second);
-            }
-            t.add("virus_id", id);
-            t.add("virus", vnames(id));
-            t.add("source", source);
-            t.add("source_exposure_date", date);
-            t.add("rt", rt);
-        }
-        else if (what == "generation")
-        {
-            std::vector< int > agent, virus, time, gentime;
-            get_generation_time(agent, virus, time, gentime);
-            t.add("virus", virus);
-            t.add("source", agent);
-            t.add("source_exposure_date", time);
-            t.add("gentime", gentime);
-        }
-        else if (what == "active_cases" || what == "outbreak_size")
-        {
-            std::vector< int > date, id, n;
-            if (what == "active_cases")
-                get_active_cases(date, id, n);
-            else
-                get_outbreak_size(date, id, n);
-
-            // Skipping the zeros
-            std::vector< int > date_, id_, n_;
-            for (size_t i = 0u; i < n.size(); ++i)
-                if (n[i] > 0)
-                {
-                    date_.push_back(date[i]);
-                    id_.push_back(id[i]);
-                    n_.push_back(n[i]);
-                }
-
-            t.add("date", date_);
-            t.add("virus_id", id_);
-            t.add("virus", vnames(id_));
-            t.add(what, n_);
-        }
-        else if (what == "hospitalizations")
-        {
-            std::vector< int > date, id, tool, count;
-            std::vector< double > weight;
-            get_hospitalizations(date, id, tool, count, weight);
-
-            // Skipping the zeros
-            std::vector< int > date_, id_, tool_, count_;
-            std::vector< double > weight_;
-            for (size_t i = 0u; i < date.size(); ++i)
-                if (count[i] > 0 || weight[i] > 0.0)
-                {
-                    date_.push_back(date[i]);
-                    id_.push_back(id[i]);
-                    tool_.push_back(tool[i]);
-                    count_.push_back(count[i]);
-                    weight_.push_back(weight[i]);
-                }
-
-            t.add("date", date_);
-            t.add("virus_id", id_);
-            t.add("tool_id", tool_);
-            t.add("count", count_);
-            t.add("weight", weight_);
-        }
-        else
-        {
-            std::string valid;
-            for (const auto & n : run_output_names())
-                valid += " \"" + n + "\"";
-            throw std::invalid_argument(
-                "Unknown output \"" + what + "\". Valid outputs are:" + valid + "."
-            );
-        }
-
-        out[what] = std::move(t);
-
-    }
-
-    return out;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::write_data(
-    std::string fn_virus_info,
-    std::string fn_virus_hist,
-    std::string fn_tool_info,
-    std::string fn_tool_hist,
-    std::string fn_total_hist,
-    std::string fn_transmission,
-    std::string fn_transition,
-    std::string fn_reproductive_number,
-    std::string fn_generation_time,
-    std::string fn_active_cases,
-    std::string fn_outbreak_size,
-    std::string fn_hospitalizations
-) const
-{
-
-    // Same order as run_output_names()
-    const std::vector< std::string > fns = {
-        fn_virus_info, fn_virus_hist, fn_tool_info, fn_tool_hist,
-        fn_total_hist, fn_transmission, fn_transition,
-        fn_reproductive_number, fn_generation_time, fn_active_cases,
-        fn_outbreak_size, fn_hospitalizations
-    };
-
-    std::vector< std::string > whats;
-    for (size_t i = 0u; i < fns.size(); ++i)
-        if (fns[i] != "")
-            whats.push_back(run_output_names()[i]);
-
-    auto out = get_run_outputs(whats);
-
-    for (size_t i = 0u; i < fns.size(); ++i)
-        if (fns[i] != "")
-            write_table(fns[i], out.at(run_output_names()[i]));
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::record_transmission(
-    int i,
-    int j,
-    int virus,
-    int i_expo_date,
-    int layer
-) {
-
-    transmission_date.push_back(model->today());
-    transmission_source.push_back(i);
-    transmission_target.push_back(j);
-    transmission_virus.push_back(virus);
-    transmission_source_exposure_date.push_back(i_expo_date);
-    transmission_layer.push_back(layer);
-
-}
-
-template<typename TSeq>
-inline size_t DataBase<TSeq>::get_n_viruses() const
-{
-    return virus_name.size();
-}
-
-template<typename TSeq>
-inline size_t DataBase<TSeq>::get_n_tools() const
-{
-    return tool_name.size();
-}
-
-
-template<typename TSeq>
-inline void DataBase<TSeq>::set_user_data(
-    std::vector< std::string > names
-)
-{
-    user_data = UserData<TSeq>(names);
-    user_data.model = model;
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::add_user_data(
-    std::vector< epiworld_double > x
-)
-{
-
-    user_data.add(x);
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::add_user_data(
-    epiworld_fast_uint k,
-    epiworld_double x
-)
-{
-
-    user_data.add(k, x);
-
-}
-
-template<typename TSeq>
-inline UserData<TSeq> & DataBase<TSeq>::get_user_data()
-{
-    return user_data;
-}
-
-template<typename TSeq>
-inline MapVec_type<int,int> DataBase<TSeq>::get_reproductive_number()
-const {
-
-    // Checking size
-    MapVec_type<int,int> map;
-
-    // Number of digits of maxid
-    for (size_t i = 0u; i < transmission_date.size(); ++i)
-    {
-        // Fabricating id
-        std::vector< int > h = {
-            transmission_virus[i],
-            transmission_source[i],
-            transmission_source_exposure_date[i]
-        };
-
-        // Adding to counter
-        if (map.find(h) == map.end())
-            map[h] = 1;
-        else
-            map[h]++;
-
-        // The target is added
-        std::vector< int > h_target = {
-            transmission_virus[i],
-            transmission_target[i],
-            transmission_date[i]
-        };
-
-        map[h_target] = 0;
-        
-    }
-
-    return map;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_reproductive_number(
-    std::string fn
-) const {
-
-    write_table(fn, get_run_outputs({"reproductive"}).at("reproductive"));
-
-}
-
-template<typename TSeq>
-inline std::vector< epiworld_double > DataBase<TSeq>::get_transition_probability(
-    bool print,
-    bool normalize
-) const {
-
-    const auto& states_labels = model->states_labels;
-    size_t n_state = states_labels.size();
-    size_t n_days   = model->get_ndays();
-    std::vector< epiworld_double > res(n_state * n_state, 0.0);
-    std::vector< epiworld_double > rowsums(n_state, 0.0);
-
-    for (size_t t = 0; t < n_days; ++t)
-    {
-
-        for (size_t s_i = 0; s_i < n_state; ++s_i)
-        {
-
-            for (size_t s_j = 0u; s_j < n_state; ++s_j)
-            {
-                res[s_i + s_j * n_state] += (
-                    hist_transition_matrix[
-                        s_i + s_j * n_state +
-                        t * (n_state * n_state)
-                    ]
-                );
-                
-                rowsums[s_i] += hist_transition_matrix[
-                    s_i + s_j * n_state +
-                    t * (n_state * n_state)
-                ];
-            
-            }
-
-        }
-
-    }
-
-    if (normalize)
-    {
-        for (size_t s_i = 0; s_i < n_state; ++s_i)
-        {
-            // Nothing to normalize if the row is zero
-            if (rowsums[s_i] == 0)
-                continue;
-
-            for (size_t s_j = 0; s_j < n_state; ++s_j)
-                res[s_i + s_j * n_state] /= rowsums[s_i];
-        }
-    }
-
-    if (print)
-    {   
-
-        size_t nchar = 0u;
-        for (auto & l : states_labels)
-            if (l.length() > nchar)
-                nchar = l.length();
-
-        std::string fmt = " - %-" + std::to_string(nchar) + "s";
-
-        std::string fmt_entry = " % 4.2f";
-        if (!normalize)
-        {
-            nchar = 0u;
-            for (auto & l: res)
-            {
-                std::string tmp = std::to_string(l);
-                if (tmp.length() > nchar)
-                    nchar = tmp.length();
-            }
-
-            fmt_entry = " % " + std::to_string(nchar) + ".0f";
-        } 
-
-        
-        printf_epiworld("\nTransition Probabilities:\n");
-        for (size_t s_i = 0u; s_i < n_state; ++s_i)
-        {
-            printf_epiworld(fmt.c_str(), states_labels[s_i].c_str());
-            for (size_t s_j = 0u; s_j < n_state; ++s_j)
-            {
-                if (
-                    std::isnan(res[s_i + s_j * n_state]) ||
-                    (res[s_i + s_j * n_state] < 1e-10)
-                )
-                {
-                    printf_epiworld("     -");
-                } else {
-                    printf_epiworld(
-                        fmt_entry.c_str(), res[s_i + s_j * n_state]
-                    );
-                }
-            }
-            printf_epiworld("\n");
-        }
-
-        printf_epiworld("\n");
-
-    }
-
-    return res;
-
-
-} 
-
-#define VECT_MATCH(a, b, c) \
-    EPI_DEBUG_FAIL_AT_TRUE(a.size() != b.size(), c) \
-    for (size_t __i = 0u; __i < a.size(); ++__i) \
-    {\
-        EPI_DEBUG_FAIL_AT_TRUE(a[__i] != b[__i], c) \
-    }
-
-template<typename TSeq>
-inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
-{
-    VECT_MATCH(
-        virus_name,
-        other.virus_name,
-        "DataBase:: virus_name[i] don't match"
-    )
-
-    VECT_MATCH(
-        virus_origin_date,
-        other.virus_origin_date,
-        "DataBase:: virus_origin_date[i] don't match"
-    )
-
-    VECT_MATCH(
-        virus_parent_id,
-        other.virus_parent_id,
-        "DataBase:: virus_parent_id[i] don't match"
-    )
-
-    VECT_MATCH(
-        tool_name,
-        other.tool_name,
-        "DataBase:: tool_name[i] don't match"
-    )
-
-    VECT_MATCH(
-        tool_origin_date,
-        other.tool_origin_date,
-        "DataBase:: tool_origin_date[i] don't match"
-    )
-
-    
-    EPI_DEBUG_FAIL_AT_TRUE(
-        sampling_freq != other.sampling_freq,
-        "DataBase:: sampling_freq don't match."
-    )
-
-    // Variants history
-    VECT_MATCH(
-        hist_virus_date,
-        other.hist_virus_date,
-        "DataBase:: hist_virus_date[i] don't match"
-    )
-
-    VECT_MATCH(
-        hist_virus_id,
-        other.hist_virus_id,
-        "DataBase:: hist_virus_id[i] don't match"
-    )
-
-    VECT_MATCH(
-        hist_virus_state,
-        other.hist_virus_state,
-        "DataBase:: hist_virus_state[i] don't match"
-    )
-
-    VECT_MATCH(
-        hist_virus_counts,
-        other.hist_virus_counts,
-        "DataBase:: hist_virus_counts[i] don't match"
-    )
-
-    // Tools history
-    VECT_MATCH(
-        hist_tool_date,
-        other.hist_tool_date,
-        "DataBase:: hist_tool_date[i] don't match"
-    )
-
-    VECT_MATCH(
-        hist_tool_id,
-        other.hist_tool_id,
-        "DataBase:: hist_tool_id[i] don't match"
-    )
-
-    VECT_MATCH(
-        hist_tool_state,
-        other.hist_tool_state,
-        "DataBase:: hist_tool_state[i] don't match"
-    )
-
-    VECT_MATCH(
-        hist_tool_counts,
-        other.hist_tool_counts,
-        "DataBase:: hist_tool_counts[i] don't match"
-    )
-
-    // Overall hist
-    VECT_MATCH(
-        hist_total_date,
-        other.hist_total_date,
-        "DataBase:: hist_total_date[i] don't match"
-    )
-
-    VECT_MATCH(
-        hist_total_nviruses_active,
-        other.hist_total_nviruses_active,
-        "DataBase:: hist_total_nviruses_active[i] don't match"
-    )
-
-    VECT_MATCH(
-        hist_total_state,
-        other.hist_total_state,
-        "DataBase:: hist_total_state[i] don't match"
-    )
-
-    VECT_MATCH(
-        hist_total_counts,
-        other.hist_total_counts,
-        "DataBase:: hist_total_counts[i] don't match"
-    )
-
-    VECT_MATCH(
-        hist_transition_matrix,
-        other.hist_transition_matrix,
-        "DataBase:: hist_transition_matrix[i] don't match"
-    )
-
-    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_virus.size() != other.today_virus.size(),
-        "DataBase:: today_virus.size() don't match."
-    )
-    
-    for (size_t i = 0u; i < today_virus.size(); ++i)
-    {
-        VECT_MATCH(
-            today_virus[i], other.today_virus[i],
-            "DataBase:: today_virus[i] don't match"
-            )
-    }
-
-    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_tool.size() != other.today_tool.size(),
-        "DataBase:: today_tool.size() don't match."
-    )
-    
-    for (size_t i = 0u; i < today_tool.size(); ++i)
-    {
-        VECT_MATCH(
-            today_tool[i], other.today_tool[i],
-            "DataBase:: today_tool[i] don't match"
-            )
-    }
-
-    // {Susceptible, Infected, etc.}
-    VECT_MATCH(
-        today_total, other.today_total,
-        "DataBase:: today_total[i] don't match"
-        )
-
-    // Totals
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_total_nviruses_active != other.today_total_nviruses_active,
-        "DataBase:: today_total_nviruses_active don't match."
-    )
-
-    // Transmission network
-    VECT_MATCH( ///< Date of the transmission eve
-        transmission_date,
-        other.transmission_date,
-        "DataBase:: transmission_date[i] don't match"
-    )
-
-    VECT_MATCH( ///< Id of the sour
-        transmission_source,
-        other.transmission_source,
-        "DataBase:: transmission_source[i] don't match"
-    )
-
-    VECT_MATCH( ///< Id of the targ
-        transmission_target,
-        other.transmission_target,
-        "DataBase:: transmission_target[i] don't match"
-    )
-
-    VECT_MATCH( ///< Id of the varia
-        transmission_virus,
-        other.transmission_virus,
-        "DataBase:: transmission_virus[i] don't match"
-    )
-
-    VECT_MATCH( ///< Date when the source acquired the varia
-        transmission_source_exposure_date,
-        other.transmission_source_exposure_date,
-        "DataBase:: transmission_source_exposure_date[i] don't match"
-    )
-
-    VECT_MATCH(
-        transmission_layer,
-        other.transmission_layer,
-        "DataBase:: transmission_layer[i] don't match"
-    )
-
-    VECT_MATCH(
-        transition_matrix,
-        other.transition_matrix,
-        "DataBase:: transition_matrix[i] don't match"
-    )
-
-    return true;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_generation_time(
-    std::vector< int > & agent_id,
-    std::vector< int > & virus_id,
-    std::vector< int > & time,
-    std::vector< int > & gentime
-) const {
-    
-    size_t nevents = transmission_date.size();
-
-    agent_id.reserve(nevents);
-    virus_id.reserve(nevents);
-    time.reserve(nevents);
-    gentime.reserve(nevents);
-
-    // Iterating through the individuals
-    for (size_t i = 0u; i < nevents; ++i)
-    {
-        int agent_id_i = transmission_target[i];
-        agent_id.push_back(agent_id_i);
-        virus_id.push_back(transmission_virus[i]);
-        time.push_back(transmission_date[i]);
-
-        bool found = false;
-        for (size_t j = i; j < nevents; ++j)
-        {
-
-            if (transmission_source[j] == agent_id_i)
-            {
-                gentime.push_back(transmission_date[j] - time[i]);
-                found = true;
-                break;
-            }
-
-        }
-
-        // If there's no transmission, we set the generation time to
-        // minus 1;
-        if (!found)
-            gentime.push_back(-1);
-
-    }
-
-    agent_id.shrink_to_fit();
-    virus_id.shrink_to_fit();
-    time.shrink_to_fit();
-    gentime.shrink_to_fit();
-
-    return;
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_generation_time(
-    std::string fn
-) const
-{
-
-    write_table(fn, get_run_outputs({"generation"}).at("generation"));
-
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::record_hospitalization(Agent<TSeq> & agent)
-{
-    m_hospitalizations.record(agent, *model);
-}
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_hospitalizations(
-    std::vector<int> & date,
-    std::vector<int> & virus_id,
-    std::vector<int> & tool_id,
-    std::vector<int> & count,
-    std::vector<double> & weight
-) const
-{
-    // Get the number of days from the model and add 1 since days are 0-indexed
-    // today() returns the last day, so we need today() + 1 for the full count
-    int ndays = model->today() + 1;
-    m_hospitalizations.get(ndays, date, virus_id, tool_id, count, weight);
-}
-
-#undef VECT_MATCH
-
-template<typename TSeq>
-inline void DataBase<TSeq>::get_hist_transitions(
-    std::vector< int > & date,
-    std::vector< std::string > & transition,
-    std::vector< int > & counts
-) const
-{
-
-    if (!model->nh)
-        throw std::logic_error(
-            "get_hist_transitions() needs a model with a natural history."
-        );
-
-    date = hist_transition_date;
-    counts = hist_transition_counts;
-    // Stage transitions first, then the status ones
-    const int n_stage = static_cast< int >(model->nh->get_n_transitions());
-    transition.resize(hist_transition_id.size());
-    for (size_t k = 0u; k < hist_transition_id.size(); ++k)
-    {
-        const int t = hist_transition_id[k];
-        transition[k] = (t < n_stage) ?
-            model->nh->get_transition(t).name :
-            model->st->get_transition(t - n_stage).name;
-    }
-
-}
+    /**
+     * @brief Keep the queue in step with an agent changing groups in a
+     * within-group mixing layer.
+     *
+     * @details A group works like a clique of ties for the queue: `a` leaving
+     * `from` is a tie lost to each of its members, and joining `to` a tie
+     * gained to each (`from` still lists `a`, `to` does not yet).
+     *
+     * @param a The agent that moved.
+     * @param from,to Members of its old and new groups (`nullptr`: none).
+     */
+    void notify_group_changed(
+        size_t a,
+        const std::vector< size_t > * from,
+        const std::vector< size_t > * to
+    );
+
+    // void initialize(Model * m, Agent * p);
+    void reset();
+
+    bool operator==(const Queue & other) const;
+    bool operator!=(const Queue & other) const {return !operator==(other);};
+
+    static const int NoOne    = 0;
+    static const int OnlySelf = 1;
+    static const int Everyone = 2;
+
+};
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -./include/epiworld/database-meat.hpp-
+ End of -include/epiworld/queue-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6578,100 +5722,197 @@ inline void DataBase<TSeq>::get_hist_transitions(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -./include/epiworld/adjlist-bones.hpp-
+ Start of -include/epiworld/globalevent-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_ADJLIST_BONES_HPP
-#define EPIWORLD_ADJLIST_BONES_HPP
+#ifndef EPIWORLD_GLOBALEVENT_BONES_HPP
+#define EPIWORLD_GLOBALEVENT_BONES_HPP
 
+#include <string>
+// (already included include/epiworld/config.hpp)
 
 /**
- * @brief A network, as the ties of each vertex
- *
- * @details Row `i` holds the neighbors of vertex `i` (in a directed network,
- * the targets of its ties) in ascending order, without repeats; an undirected
- * tie is in the rows of both ends. The rows are stored back to back
- * (compressed rows): row `i` is `get_ids()` from `get_start()[i]` to
- * `get_start()[i + 1]`. A graph cannot be edited once built; the network layer
- * that loads it can (see `layer::Network`).
+ * @brief Template for a Global Event
+ * @details Global events are functions that Model executes
+ * at the end of a day.
+ * 
  */
-class AdjList {
+class GlobalEvent
+{
 private:
-
-    std::vector< size_t > start; ///< Where each row starts in `ids` (`N + 1`)
-    std::vector< int > ids;      ///< The rows, back to back
-    bool directed = false;
-    epiworld_fast_uint N = 0;
-    epiworld_fast_uint E = 0;
-
+    GlobalFun fun = nullptr;
+    std::string name = "A global action";
+    int day = -99;
 public:
 
-    AdjList() {};
+    GlobalEvent() {};
 
     /**
-     * @brief Construct a new Adj List object
-     *
-     * @details
-     * Ids in the network are assume to range from `0` to `size - 1`. A tie
-     * given more than once is kept once.
-     *
-     * @param source Unsigned int vector with the source
-     * @param target Unsigned int vector with the target
-     * @param size Number of vertices in the network.
-     * @param directed Bool true if the network is directed
+     * @brief Construct a new Global Event object
+     * 
+     * @param fun A function that takes a Model * as argument and returns void.
+     * @param name A descriptive name for the action.
+     * @param day The day when the action will be executed. If negative, it will be executed every day.
      */
-    AdjList(
-        const std::vector< int > & source,
-        const std::vector< int > & target,
-        int size,
-        bool directed
-        );
+    GlobalEvent(GlobalFun fun, std::string name, int day = -99);
+    
+    virtual ~GlobalEvent() = default;
+
+    virtual void operator()(Model * m, int day);
 
     /**
-     * @brief Read an edgelist
+     * @brief Prepare the event for a run.
      *
-     * Ids in the network are assume to range from `0` to `size - 1`.
+     * @details Called by `Model::reset()` at the end of every reset, i.e. once
+     * per run and once per replicate of `Model::run_multiple()`, with the run's
+     * RNG already seeded and the agents, tools, and viruses distributed. Events
+     * that need to set themselves up on the model they are running in -- the
+     * moment before day 1 -- do it here; the default does nothing.
      *
-     * @param fn Path to the file
-     * @param skip Number of lines to skip (e.g., 1 if there's a header)
-     * @param directed `true` if the network is directed
-     * @param size Number of vertices in the network.
+     * @param m The model the event belongs to.
      */
-    void read_edgelist(
-        std::string fn,
-        int size,
-        int skip = 0,
-        bool directed = true
-        );
+    virtual void reset(Model * m);
 
-    /// The neighbors of vertex `i` (a copy of its row).
-    std::vector< int > operator()(
-        epiworld_fast_uint i
-        ) const;
+    void set_name(std::string name);
+    std::string get_name() const;
 
-    void print(epiworld_fast_uint limit = 20u) const;
-    size_t vcount() const; ///< Number of vertices/nodes in the network.
-    size_t ecount() const; ///< Number of edges given, repeats included.
+    void set_day(int day);
+    int get_day() const;
+    
+    void print() const;
 
-    /// Where each row starts in `get_ids()`, with the end as the last entry.
-    const std::vector< size_t > & get_start() const { return start; }
+    // Comparison operators
+    bool operator==(const GlobalEvent & other) const;
+    bool operator!=(const GlobalEvent & other) const;
 
-    /// The rows, back to back (see the class description).
-    const std::vector< int > & get_ids() const { return ids; }
-
-    bool is_directed() const; ///< `true` if the network is directed.
+    virtual std::unique_ptr<GlobalEvent> clone_ptr() const;
 
 };
 
 
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -./include/epiworld/adjlist-bones.hpp-
+ End of -include/epiworld/globalevent-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+// (already included include/epiworld/contacttracing-bones.hpp)
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -include/epiworld/postsampling-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_POSTSAMPLING_BONES_HPP
+#define EPIWORLD_POSTSAMPLING_BONES_HPP
+
+#include <cstdint>
+#include <cstddef>
+#include <functional>
+#include <vector>
+
+class Agent;
+class Model;
+
+/**
+ * @brief Read-only view of the agents one infectious agent was in contact with.
+ *
+ * @details Passed to a `PostSamplingFun`. It points into the model's scratch
+ * storage, so it is valid only during the callback: do not keep it (copy the
+ * ids if you need them later). The contacts are a multiset: repeated contacts
+ * appear repeatedly, and contacts that did not transmit are included. The
+ * order of the contacts within the view is unspecified.
+ */
+class SampledContactsView {
+private:
+    const uint32_t * first = nullptr;
+    size_t n = 0u;
+public:
+    SampledContactsView() = default;
+    SampledContactsView(const uint32_t * first_, size_t n_) : first(first_), n(n_) {}
+    const uint32_t * begin() const { return first; }
+    const uint32_t * end() const { return first + n; }
+    size_t size() const { return n; }
+    bool empty() const { return n == 0u; }
+    size_t operator[](size_t i) const { return first[i]; }
+};
+
+/**
+ * @brief Callback run after the contacts of a step were sampled.
+ *
+ * @details Called once per infectious agent that had at least one sampled
+ * contact in the step, in ascending order of the agent's id, after all the
+ * susceptible agents were updated and right before the events are applied.
+ * The agents still have the state they had when the contacts were sampled;
+ * events the callback queues are applied in the same step.
+ *
+ * Arguments: the infectious agent, the ids of the agents it was in contact
+ * with (see `SampledContactsView`), and the model.
+ */
+using PostSamplingFun = std::function<
+    void(Agent *, const SampledContactsView &, Model *)
+>;
+
+/**
+ * @brief Model-local storage used to batch sampled contacts.
+ *
+ * @details Pairs `(infectious, contacted)` are appended while sampling and
+ * grouped by infectious agent once, at the end of the sampling phase. Lengths
+ * are cleared, not released, between steps. Copies of a model start with empty
+ * scratch (nothing is shared or copied); the model sizes `counts` for its
+ * population the first time it needs it (see `Model::post_sampling_dispatch()`).
+ */
+struct PostSamplingScratch {
+
+    std::vector< uint32_t > pairs;    ///< Flat: infectious, contacted, ...
+    std::vector< uint32_t > grouped;  ///< Contacted ids, by infectious agent
+    std::vector< uint32_t > touched;  ///< Distinct infectious ids (sorted)
+    std::vector< size_t > starts;     ///< [touched] Where the batch starts
+    std::vector< uint32_t > counts;   ///< [agent] Zero between steps
+
+    PostSamplingScratch() = default;
+    PostSamplingScratch(const PostSamplingScratch &) {}
+    PostSamplingScratch & operator=(const PostSamplingScratch &) { reset(0u); return *this; }
+
+    /// Empties the batch and restores the invariant of `counts` (all zero).
+    void clear()
+    {
+        for (auto id : touched)
+            counts[id] = 0u;
+        pairs.clear();
+        grouped.clear();
+        touched.clear();
+        starts.clear();
+    }
+
+    /// Sizes the storage for a population (call at reset).
+    void reset(size_t n_agents)
+    {
+        pairs.clear();
+        grouped.clear();
+        touched.clear();
+        starts.clear();
+        counts.assign(n_agents, 0u);
+    }
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -include/epiworld/postsampling-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -6680,246 +5921,2694 @@ public:
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -./include/epiworld/adjlist-meat.hpp-
+ Start of -include/epiworld/assign.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_ADJLIST_MEAT_HPP
-#define EPIWORLD_ADJLIST_MEAT_HPP
+#ifndef EPIWORLD_ASSIGN_HPP
+#define EPIWORLD_ASSIGN_HPP
 
-#include <vector>
-#include <algorithm>
-#include <numeric>
-#include <string>
-#include <stdexcept>
-#include <fstream>
-// (already included include/epiworld/config.hpp)
-// (already included include/epiworld/adjlist-bones.hpp)
+/**
+ * @file assign.hpp
+ * @brief How agents get something at the start of each run: a virus (and the
+ * stage it puts them in), a tool, an initial stage, or a group of a mixing
+ * layer. One vocabulary for all of them.
+ *
+ * @details An `Assign` gives each eligible agent a **label**, or none (-1),
+ * drawn with the model's random numbers when a run starts:
+ *
+ * | Form | Labels |
+ * |---|---|
+ * | `assign::share(p)`, `assign::count(n)` | A random share (or number) of the eligible agents |
+ * | `assign::shares({{l, p}, ...})`, `assign::counts({{l, n}, ...})` | Several labels: each takes its share (or number) of the eligible agents, in order, from those left |
+ * | `assign::group_shares(layer, {p_g})`, `assign::group_counts(layer, {n_g})` | A share (or number) of each group of a mixing layer |
+ * | `assign::agents(ids)` | The given agents |
+ * | `assign::labels(v)` | `v[i]` for agent `i` (-1: none); the same every run |
+ * | `assign::by(fun)` | `fun(agent, model)` for each eligible agent |
+ *
+ * What a label means, and who is eligible, depends on the use:
+ *
+ * | Use | Label | Eligible |
+ * |---|---|---|
+ * | `Model::add_virus(v, a)` | The stage the agent starts in (a carrier stage); a form without labels uses the infection's target | Agents without a virus whose stage can be infected |
+ * | `Model::add_tool(t, a)` | -- (has the tool) | Everyone |
+ * | `Model::set_initial(a)` | A stage without the virus | Agents left without a virus, in the first stage |
+ * | `layer::Mixing::set_groups(a, n)` | A group, in `[0, n)` | Everyone |
+ *
+ * The placements are made in this order at every reset: the layers (so a
+ * placement can use their groups), the viruses, the tools, the initial
+ * stages, then the global events' set-up. The random forms are drawn again in
+ * each run; `agents()` and `labels()` are fixed.
+ */
 
-inline AdjList::AdjList(
-    const std::vector< int > & source,
-    const std::vector< int > & target,
-    int size,
-    bool directed
-) : directed(directed) {
+class Assign;
 
-    if (size < 0)
-        throw std::length_error(
-            "The size of the network cannot be negative (" +
-            std::to_string(size) + ")."
-            );
-
-    if (source.size() != target.size())
-        throw std::length_error(
-            "source and target must have the same length (" +
-            std::to_string(source.size()) + " vs " +
-            std::to_string(target.size()) + ")."
-            );
-
-    N = size;
-    E = source.size();
-    int max_id = size - 1;
-
-    // Counting sort of the tie ends by vertex: first the size of each row (an
-    // undirected tie counts in both), then the rows themselves
-    start.assign(N + 1u, 0u);
-    for (size_t m = 0u; m < source.size(); ++m)
-    {
-
-        int i = source[m];
-        int j = target[m];
-
-        if ((i < 0) || (i > max_id))
-            throw std::range_error(
-                "The source["+std::to_string(m)+"] = " + std::to_string(i) +
-                " is above the max_id " + std::to_string(max_id)
-                );
-
-        if ((j < 0) || (j > max_id))
-            throw std::range_error(
-                "The target["+std::to_string(m)+"] = " + std::to_string(j) +
-                " is above the max_id " + std::to_string(max_id)
-                );
-
-        start[i + 1]++;
-        if (!directed)
-            start[j + 1]++;
-
-    }
-
-    std::partial_sum(start.begin(), start.end(), start.begin());
-
-    ids.resize(start[N]);
-    std::vector< size_t > next(start.begin(), start.end() - 1);
-    for (size_t m = 0u; m < source.size(); ++m)
-    {
-        ids[next[source[m]]++] = target[m];
-        if (!directed)
-            ids[next[target[m]]++] = source[m];
-    }
-
-    // Each row sorted and without repeats, moved down over the repeats
-    // dropped before it
-    size_t kept = 0u;
-    for (size_t i = 0u; i < N; ++i)
-    {
-
-        auto first = ids.begin() + static_cast< std::ptrdiff_t >(start[i]);
-        auto last  = ids.begin() + static_cast< std::ptrdiff_t >(start[i + 1u]);
-
-        std::sort(first, last);
-        last = std::unique(first, last);
-
-        start[i] = kept;
-        for (auto it = first; it != last; ++it)
-            ids[kept++] = *it;
-
-    }
-
-    start[N] = kept;
-    ids.resize(kept);
-
-    return;
-
+namespace assign {
+    /// The label of the forms that give none: the use's default (see above)
+    constexpr int ANY = -2;
 }
 
-inline void AdjList::read_edgelist(
-    std::string fn,
-    int size,
-    int skip,
-    bool directed
-) {
+/// A function that gives an agent's label (-1: none).
+using AssignFun = std::function< int(Agent &, Model &) >;
 
-    int i,j;
-    std::ifstream filei(fn);
+/**
+ * @brief Gives each eligible agent a label, or none (see `assign.hpp`).
+ * @details Default-constructed, it gives no one anything.
+ */
+class Assign {
+public:
+    /// The labels of the agents (-1: none), given who is eligible.
+    using DrawFun = std::function<
+        std::vector< int >(Model &, const std::vector< char > &)
+    >;
 
-    if (!filei)
-        throw std::logic_error("The file " + fn + " was not found.");
+private:
+    DrawFun fun = nullptr;
+    std::shared_ptr< const std::vector< int > > fixed_labels = nullptr;
 
-    int linenum = 0;
-    std::vector< int > source_;
-    std::vector< int > target_;
+public:
+    Assign() = default;
+    explicit Assign(
+        DrawFun f,
+        std::shared_ptr< const std::vector< int > > fixed_ = nullptr
+    ) : fun(std::move(f)), fixed_labels(std::move(fixed_)) {}
 
-    source_.reserve(1e5);
-    target_.reserve(1e5);
+    /// The labels, if they are the same every run (`assign::labels()`).
+    const std::vector< int > * get_fixed() const { return fixed_labels.get(); }
 
-    int max_id = size - 1;
+    /// Whether it gives anyone anything.
+    bool is_set() const { return static_cast< bool >(fun); }
 
-    while (!filei.eof())
-    {
+    /**
+     * @brief The labels of the agents of `model` (-1: none).
+     * @param eligible One entry per agent: whether it can be given a label.
+     * @throws std::logic_error if the form names an agent that is not
+     * eligible.
+     */
+    std::vector< int > draw(Model & model, const std::vector< char > & eligible) const;
+};
 
-        if (linenum++ < skip)
-            continue;
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-        filei >> i >> j;
+ End of -include/epiworld/assign.hpp-
 
-        // Looking for exceptions
-        if (filei.bad())
-            throw std::logic_error(
-                "I/O error while reading the file " +
-                fn
-            );
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
 
-        if (filei.fail())
-            break;
 
-        if (i > max_id)
-            throw std::range_error(
-                "The source["+std::to_string(linenum)+"] = " + std::to_string(i) +
-                " is above the max_id " + std::to_string(max_id)
-                );
 
-        if (j > max_id)
-            throw std::range_error(
-                "The target["+std::to_string(linenum)+"] = " + std::to_string(j) +
-                " is above the max_id " + std::to_string(max_id)
-                );
+class AgentsSample;
 
-        source_.push_back(i);
-        target_.push_back(j);
+class AdjList;
 
-    }
-
-    // Now using the right constructor
-    *this = AdjList(source_, target_, size, directed);
-
-    return;
-
-}
-
-inline std::vector< int > AdjList::operator()(
-    epiworld_fast_uint i
-    ) const {
-
-    if (i >= N)
-        throw std::range_error(
-            "The vertex id " + std::to_string(i) + " is not in the network."
-            );
-
-    return std::vector< int >(
-        ids.begin() + static_cast< std::ptrdiff_t >(start[i]),
-        ids.begin() + static_cast< std::ptrdiff_t >(start[i + 1u])
+inline std::function<void(size_t,Model*)> make_save_run(
+    std::string fmt = "%03lu-episimulation.csv",
+    bool total_hist = true,
+    bool virus_info = false,
+    bool virus_hist = false,
+    bool tool_info = false,
+    bool tool_hist = false,
+    bool transmission = false,
+    bool transition = false,
+    bool reproductive = false,
+    bool generation = false,
+    bool active_cases = false,
+    bool outbreak_size = false,
+    bool hospitalizations = false
     );
 
-}
+/**
+ * @brief Read-only view of a contiguous run of agent ids.
+ *
+ * @details Returned by `Model::get_agents_in_state()`. It points into the
+ * model's index, so it is invalidated by the next step (or anything else that
+ * moves agents between states).
+ */
+class AgentIdsView {
+private:
+    const size_t * first = nullptr;
+    size_t n = 0u;
+public:
+    AgentIdsView() = default;
+    AgentIdsView(const size_t * first_, size_t n_) : first(first_), n(n_) {}
+    const size_t * begin() const { return first; }
+    const size_t * end() const { return first + n; }
+    size_t size() const { return n; }
+    bool empty() const { return n == 0u; }
+    size_t operator[](size_t i) const { return first[i]; }
+};
 
-inline void AdjList::print(epiworld_fast_uint limit) const {
+/**
+ * @brief Core class of epiworld.
+ *
+ * The model class provides the wrapper that puts together `Agent`, `Virus`, and
+ * `Tools`.
+ *
+ * virus and human sequence is represented as numeric vectors (if needed.)
+ */
+class Model {
+    friend class Agent;
+    friend class AgentsSample;
+    friend class DataBase;
+    friend class Queue;
+    friend class layer::Network;
+    friend class layer::Mixing;
 
-    printf_epiworld("Nodeset:\n");
-    for (epiworld_fast_uint i = 0u; (i < N) && (i <= limit); ++i)
+protected:
+
+    std::string name = ""; ///< Name of the model
+
+    DataBase db = DataBase(*this);
+
+    std::vector< Agent > population = {};
+
+    /**
+     * @brief Creates the population: `n` agents, in the baseline state.
+     * @details The models' constructors call it; the population is set once,
+     * when the model is built (a different size is a different model).
+     */
+    void set_population_size(size_t n);
+
+    /**
+     * @name Auxiliary variables for AgentsSample iterators
+     *
+     * @details These variables+objects are used by the AgentsSample
+     * class for building efficient iterators over agents. The idea is to
+     * reduce the memory allocation, so only during the first call of
+     * AgentsSample::AgentsSample(Model) these vectors are allocated.
+     */
+    ///@{
+    std::vector< Agent * > sampled_population;
+    size_t sampled_population_n = 0u;
+    std::vector< size_t > population_left;
+    size_t population_left_n = 0u;
+    ///@}
+
+    /**
+     * @name Agents features
+     *
+     * @details Optionally, a model can include an external data source
+     * pointing to agents information. The data can then be access through
+     * the `Agent::operator()` method.
+     *
+     */
+    ///@{
+    double * agents_data = nullptr;
+    size_t agents_data_ncols = 0u;
+    ///@}
+
+    std::vector< VirusPtr > viruses = {};
+    std::vector< ToolPtr > tools = {};
+    std::vector< Assign > virus_assign = {}; ///< [virus] Who gets it at each reset
+    std::vector< Assign > tool_assign = {};  ///< [tool] Who gets it at each reset
+
+    std::shared_ptr< epi_xoshiro256ss > engine = std::make_shared< epi_xoshiro256ss >();
+
+    epiworld_double runifd_a = 0.0;
+    epiworld_double runifd_b = 1.0;
+    std::normal_distribution<>       rnormd      =
+        std::normal_distribution<>(0.0);
+    std::gamma_distribution<>        rgammad     =
+        std::gamma_distribution<>();
+    std::lognormal_distribution<>    rlognormald =
+        std::lognormal_distribution<>();
+    std::exponential_distribution<>  rexpd       =
+        std::exponential_distribution<>();
+    std::binomial_distribution<> rbinomd         =
+        std::binomial_distribution<>();
+    int rbinomd_n = 1;
+    epiworld_double rbinomd_fast_lambda = 0.0;
+    bool rbinomd_use_poisson = false;
+    std::negative_binomial_distribution<> rnbinomd =
+        std::negative_binomial_distribution<>();
+    std::geometric_distribution<> rgeomd          =
+        std::geometric_distribution<>();
+    std::poisson_distribution<> rpoissd           =
+        std::poisson_distribution<>();
+
+    // Parameter values, by position, and each name's position. Parameters are
+    // never removed, so positions (ParamId) stay valid. The comparator is
+    // transparent (std::less<>) so names can be looked up as
+    // std::string_view without building a std::string.
+    std::vector< epiworld_double > param_values;
+    std::map<std::string, size_t, std::less<> > param_index;
+    uint32_t param_layout_id = new_param_layout_id();
+    epiworld_fast_uint ndays = 0;
+    Progress pb;
+
+    std::vector< UpdateFun >    state_fun = {};                  ///< Functions to update states
+    std::vector< std::string >        states_labels = {};              ///< Labels of the states
+
+    epiworld_fast_uint nstates = 0u;
+
+    bool verbose     = true;
+    int current_date = 0;
+
+    // True while run() is driving the day loop, so get_ndays() is the run's
+    // actual horizon. Not copied: a copy of the model is not in a run.
+    bool running = false;
+
+    void set_running(bool value); ///< Also tells the layers (see `ContactLayer`)
+
+    void dist_tools();
+    void dist_virus();
+
+    std::chrono::time_point<std::chrono::steady_clock> time_start;
+    std::chrono::time_point<std::chrono::steady_clock> time_end;
+
+    // std::chrono::milliseconds
+    std::chrono::duration<epiworld_double,std::micro> time_elapsed =
+        std::chrono::duration<epiworld_double,std::micro>::zero();
+    epiworld_fast_uint n_replicates = 0u;
+    int last_seed = 0;
+    void chrono_start();
+    void chrono_end();
+
+    std::vector<GlobalEventPtr> globalevents;
+
+    /// Contact layers (see `add_layer()`), deep-copied with the model
+    std::vector< std::shared_ptr< ContactLayer > > layers;
+
+    /**
+     * @name Network layers
+     *
+     * @details The network layers among `layers`, in order. Susceptible agents
+     * pull from all of them, the queue and pushing follow all of their ties,
+     * and the agents-by-state index counts an agent's ties across them (its
+     * degree).
+     */
+    ///@{
+    std::vector< layer::Network * > network_layers;
+    std::vector< layer::Mixing * > group_layers; ///< Within-group mixing layers (the queue follows them)
+    std::vector< size_t > layer_contacts; ///< Scratch of `sample_virus()`
+    bool pull_only = false; ///< See `has_pull_only_layer()`
+    bool queue_blind = false; ///< See `has_queue_blind_layer()`
+    int sampled_layer = -1; ///< See `take_sampled_layer()`
+
+    /// Adds the exposures of `contacts` to the arrays; returns their number.
+    size_t add_exposures(
+        Agent * agent,
+        const ContactLayer * layer,
+        const size_t * contacts,
+        size_t n,
+        size_t n_exposures
+    );
+
+    /// One draw over the first `n_exposures` exposures.
+    Virus * draw_exposure(size_t n_exposures);
+    void layers_attach(); ///< Points the layers at this model, lists the networks
+    void layers_classify(); ///< Sets `pull_only`, `queue_blind` and `group_layers`
+    void layers_detach(); ///< Leaves the layers without a model (they may outlive it)
+    void add_layer_ptr(std::shared_ptr< ContactLayer > layer);
+    size_t network_degree(size_t id) const; ///< Ties of agent `id`, all networks
+
+    /**
+     * Whether some layer's contacts are not seen from both ends or not by the
+     * queue: a directed network (a tie is kept by its source only) or a layer
+     * that is not a network. The model then pulls, and visits every agent
+     * instead of using the queue.
+     */
+    bool has_pull_only_layer() const { return pull_only; }
+
+    /**
+     * Whether some layer's contacts are not seen by the queue (see
+     * `ContactLayer::supports_queue()`): a directed network, or a mixing layer
+     * with a contact matrix. The model then visits every agent.
+     */
+    bool has_queue_blind_layer() const { return queue_blind; }
+
+    /// Agent `i` moved from `from` to `to` in a within-group mixing layer.
+    void group_member_moved(
+        size_t i,
+        const std::vector< size_t > * from,
+        const std::vector< size_t > * to
+    );
+
+    /// A network layer changed the ties of `i` and `j` by `di` and `dj`.
+    void network_tie_changed(size_t i, int di, size_t j, int dj);
+
+    /// A network layer swapped two ties (see `layer::Network::swap_ties()`).
+    void network_ties_swapped(
+        size_t i, size_t j, size_t k, size_t l, bool directed
+    );
+    ///@}
+
+    Queue queue;
+    bool use_queuing   = true;
+    size_t sim_id = 0u;
+    void set_sim_id(size_t id);
+
+    PostSamplingFun post_sampling_fun = nullptr; ///< See set_post_sampling()
+    bool post_sampling_on = false;                     ///< post_sampling_fun is set
+    PostSamplingScratch post_sampling_scratch;         ///< Never copied
+    void post_sampling_dispatch();
+    void post_sampling_prepare_scratch(); ///< Sizes the scratch for the population
+
+    /**
+     * @name Agents by state
+     *
+     * @details All agent ids live in one array, `state_order`, grouped by
+     * state: the agents in state `s` are `state_order[state_start[s]]` up to
+     * (not including) `state_order[state_start[s + 1]]`, in no particular
+     * order, and `state_member_pos[i]` is where agent `i` sits. One contiguous
+     * block of N ids, whatever the number of states. Moving an agent from
+     * state `a` to state `b` walks it across the blocks in between, one swap
+     * per block boundary: O(|a - b|).
+     *
+     * Per state, the index also keeps the sum of the members' degrees, how
+     * many of them carry a virus, and the sum of those carriers' degrees.
+     *
+     * Built in `reset()` and kept current in `events_run()` -- the only place
+     * where an agent's state or virus changes during a run -- and by the
+     * network layers' edits. The degree sums let the transmission step
+     * compare the cost of pushing and pulling in O(number of states).
+     */
+    ///@{
+    std::vector< size_t > state_order;       ///< [N] Agent ids, grouped by state
+    std::vector< size_t > state_start;       ///< [nstates + 1] Where each state's block starts
+    std::vector< size_t > state_member_pos;  ///< [agent] Position in state_order
+    std::vector< unsigned int > agent_state;    ///< [agent] Copy of Agent::state, compact for scans
+    std::vector< char > agent_carrier;          ///< [agent] 1 if Agent::virus is set, compact for scans
+    std::vector< size_t > state_degree;
+    std::vector< size_t > state_carriers;
+    std::vector< size_t > state_carrier_degree;
+    bool state_index_ready = false;
+
+    void state_index_build();
+    void state_index_update(Agent * p, unsigned int state_old, bool had_virus);
+    void state_index_move(size_t id, unsigned int state_old, unsigned int state_new);
+    AgentIdsView state_index_members(size_t state) const;
+    void state_index_degree(size_t id, int delta);
+    ///@}
+
+    /**
+     * @name Infectious and excluded states
+     * @details Derived from the natural history and the statuses (see
+     * `nh_build_states()`). The per-state masks are built at `reset()`.
+     */
+    ///@{
+    std::vector< int > infectious_states;     ///< Empty: every state
+    std::vector< int > excluded_states;
+    std::vector< bool > state_not_infectious; ///< [state] Empty if every state is infectious
+    std::vector< char > state_excluded;       ///< [state]
+    void state_masks_build();
+    ///@}
+
+    /**
+     * @name Network transmission
+     *
+     * @details See `set_transmission_mode()` and
+     * `model-meat-transmission.hpp`. The push scratch space is per model and
+     * is not copied: a copy sizes its own the first time it pushes.
+     */
+    ///@{
+    TransmissionMode transmission_mode = TransmissionMode::automatic;
+    TransmissionMode transmission_mode_last = TransmissionMode::pull;
+    double transmission_kappa = EPI_DEFAULT_TRANSMISSION_KAPPA;
+
+    struct PushTarget {
+        size_t id;
+        double odds;                // Sum of p / (1 - p) over the contacts
+        unsigned int n_certain;     // Contacts with p >= 1
+        Virus * candidate;    // Infector's virus drawn so far
+        int layer;                  // Layer of the candidate's contact
+    };
+
+    std::vector< char > push_pushable;       ///< [state] Infected by a default infection only
+    std::vector< char > push_source_ok;      ///< [state] Infectious, and some state is pushable
+    std::vector< int >  push_slot;           ///< [agent] Index in push_targets, or -1
+    std::vector< PushTarget > push_targets;
+    std::vector< uint64_t > push_visit;      ///< [agent bit] To update after a push
+    std::vector< uint64_t > push_sources;    ///< [agent bit] Carriers that push this step
+
+    bool transmission_prepare();
+    bool transmission_choose_push() const;
+    void transmission_push();
+    template<bool Record> void transmission_push_impl();
+    void transmission_update_others();
+    ///@}
+
+    /**
+     * @name Natural history
+     *
+     * @details See `naturalhistory-bones.hpp`. The first virus with a natural
+     * history installs it (`add_virus()`); the model's copy of that virus
+     * shares it. It is shared by the model's copies (it does not change once
+     * installed); what it stores per agent is the model's, and is reset with
+     * it.
+     */
+    ///@{
+    std::shared_ptr< const NaturalHistory > nh = nullptr;
+    std::vector< int > nh_until;    ///< [agent] Day the stage's duration ends
+    std::vector< int > nh_entered;  ///< [agent * stage] Day entered, this infection (-1: not)
+    std::vector< int > nh_episode;  ///< [agent] Infections so far
+    std::vector< char > nh_queue;   ///< [stage] Queue mode: 0 none, 1 self, 2 everyone
+    Assign nh_initial;        ///< See set_initial()
+    int nh_pending = -1;            ///< Transition of the next event (see _add_event())
+
+    /// Event: a seeded infection, and an initial placement (status transitions
+    /// are `-2 - index`, see `TransitionRef`)
+    static constexpr int NH_SEED = std::numeric_limits< int >::min();
+    static constexpr int NH_INITIAL = std::numeric_limits< int >::min() + 1;
+
+    /// The statuses (`nullptr`: one status, "Free")
+    std::shared_ptr< const Statuses > st = nullptr;
+    std::vector< int > nh_status_until; ///< [agent] Day the status's duration ends
+    std::vector< int > nh_status_since; ///< [agent] Day the status was entered
+    std::vector< int > nh_status_sod;   ///< [agent] Status at the start of the day it last changed
+
+    struct Reaction {
+        Trigger on;
+        int transition;                          ///< Fired, or (-1) ...
+        std::function< void(Agent &, Model &) > fun; ///< ... called
+    };
+    std::vector< Reaction > nh_reactions;
+
+    size_t nh_nstatus() const { return st ? st->get_n_stages() : 1u; }
+    int nh_stage_of(unsigned int cell) const { return static_cast< int >(cell / nh_nstatus()); }
+    int nh_status_of(unsigned int cell) const { return static_cast< int >(cell % nh_nstatus()); }
+    unsigned int nh_cell(int stage, int status) const
     {
+        return static_cast< unsigned int >(stage) * static_cast< unsigned int >(nh_nstatus()) +
+            static_cast< unsigned int >(status);
+    }
+    static bool nh_is_status_tr(int t) { return (t <= -2) && (t > NH_INITIAL); }
+    static int nh_status_tr(int t) { return -2 - t; }
+    int nh_db_id(int t) const
+    {
+        return nh_is_status_tr(t) ?
+            static_cast< int >(nh->get_n_transitions()) + nh_status_tr(t) : t;
+    }
+    void nh_build_states();
+    void nh_react(Agent & p, int transition, int stage_old);
+    bool nh_removed(int stage) const;
 
-        printf_epiworld("  % 3i: {", static_cast<int>(i));
-        for (size_t k = start[i]; k < start[i + 1u]; ++k)
-        {
-            printf_epiworld("%s%i", (k > start[i]) ? ", " : "", ids[k]);
-        }
-        printf_epiworld("}\n");
+    void nh_install(std::shared_ptr< NaturalHistory > def);
+    void nh_reset();
+    void nh_step(Agent & p);
 
+    /// The natural history whose values apply to `p`: its virus's, or (no
+    /// virus) the model's
+    const NaturalHistory & nh_of(const Agent & p) const
+    {
+        const auto & v = p.get_virus();
+        return (v && v->nh_def) ? *v->nh_def : *nh;
+    }
+    void nh_propose(int transition, Agent & p, Virus * virus = nullptr);
+    void nh_enter(Agent & p, unsigned int state_old, int transition);
+    void nh_queue_move(Agent & p, unsigned int state_old);
+    void nh_initial_place();
+    epiworld_double nh_infection_prob(Agent & target, const Virus & v);
+    ///@}
+
+    /**
+     * @brief Variables used to keep track of the events
+     * to be made regarding viruses.
+     */
+    std::vector< Event > events = {};
+    epiworld_fast_uint nactions = 0u;
+
+    /**
+     * @brief Construct a new Event object
+     *
+     * @param agent_ Agent over which the action will be called
+     * @param virus_ Virus pointer included in the action
+     * @param tool_ Tool pointer included in the action
+     * @param new_state_ New state of the agent
+     * @param queue_ Change in the queue
+      * @param action_ Action to execute when processing the event
+     */
+    void _add_event(
+        Agent * agent_,
+        VirusPtr virus_,
+        ToolPtr tool_,
+        epiworld_fast_int new_state_,
+        epiworld_fast_int queue_,
+        EventAction action_,
+        int layer_ = -1
+        );
+
+    /**
+     * @name Default event handlers
+     *
+     * These member functions implement the default behavior for each
+     * event action (add/remove virus or tool, or change state).
+     */
+    ///@{
+    void _event_add_virus(Event & a);
+    void _event_add_tool(Event & a);
+    void _event_rm_virus(Event & a);
+    void _event_rm_tool(Event & a);
+    void _event_change_state(Event & a);
+    ///@}
+
+    /**
+     * @name Tool Mixers
+     *
+     * These functions combine the effects tools have to deliver
+     * a single effect. For example, wearing a mask, been vaccinated,
+     * and the immune system combine together to jointly reduce
+     * the susceptibility for a given virus.
+     *
+     */
+    virtual epiworld_double susceptibility_reduction_mixer(
+        Agent * agent, VirusPtr & virus
+    );
+    virtual epiworld_double transmission_reduction_mixer(
+        Agent * agent, VirusPtr & virus
+    );
+    virtual epiworld_double recovery_enhancer_mixer(
+        Agent * agent, VirusPtr & virus
+    );
+    virtual epiworld_double death_reduction_mixer(
+        Agent * agent, VirusPtr & virus
+    );
+
+    /**
+     * @brief Advanced usage: Makes a copy of data and returns it as undeleted pointer
+     *
+     * @param copy
+     */
+    virtual std::unique_ptr<Model> clone_ptr();
+
+    /// For the models built on this class, which set their population.
+    Model();
+
+public:
+
+    /**
+     * @name Scratch arrays for sampling exposures
+     * @details Update functions store each exposure's probability in
+     * `array_double_tmp` and its virus in `array_virus_tmp`, then draw with
+     * `roulette()`, which uses two doubles per exposure. An agent can have any
+     * number of exposures across its layers, so call `reserve_tmp()` before
+     * storing them.
+     */
+    ///@{
+    std::vector< epiworld_double > array_double_tmp =
+        std::vector< epiworld_double >(1024u * 2u);
+    std::vector< Virus * > array_virus_tmp =
+        std::vector< Virus * >(1024u);
+    std::vector< int > array_layer_tmp =
+        std::vector< int >(1024u); ///< Layer of each exposure
+
+    /// Makes room for `n` exposures in the scratch arrays.
+    void reserve_tmp(size_t n);
+    ///@}
+
+    /// A model with `n` agents.
+    explicit Model(size_t n);
+    Model(const Model & m);
+    Model(Model && m);
+    Model & operator=(const Model & m);
+
+    virtual ~Model() { layers_detach(); };
+
+    DataBase & get_db();
+    const DataBase & get_db() const;
+    epiworld_double operator()(std::string_view pname) const;
+
+    size_t size() const;
+
+    /**
+     * @name Random number generation
+     *
+     * @param eng Random number generator
+     * @param s Seed
+     */
+    ///@{
+    void set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng);
+    std::shared_ptr< epi_xoshiro256ss > & get_rand_endgine();
+    void seed(size_t s);
+    void set_rand_norm(epiworld_double mean, epiworld_double sd);
+    void set_rand_unif(epiworld_double a, epiworld_double b);
+    void set_rand_exp(epiworld_double lambda);
+    void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
+    void set_rand_lognormal(epiworld_double mean, epiworld_double shape);
+    void set_rand_binom(int n, epiworld_double p);
+    void set_rand_nbinom(int n, epiworld_double p);
+    void set_rand_geom(epiworld_double p);
+    void set_rand_poiss(epiworld_double lambda);
+    epiworld_double rnorm();
+    epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
+    epiworld_double rgamma();
+    epiworld_double rgamma(epiworld_double alpha, epiworld_double beta);
+    epiworld_double rexp();
+    epiworld_double rexp(epiworld_double lambda);
+    epiworld_double rlognormal();
+    epiworld_double rlognormal(epiworld_double mean, epiworld_double shape);
+
+    /**
+     * @brief Draw from the currently configured uniform distribution.
+     * @return A random draw from the configured uniform distribution.
+     * @details
+     * These uniform draws make use of Lemire's algorithm for fast
+     * uniform integer generation, which is both faster and more accurate than
+     * the common `std::uniform_int_distribution` approach.
+     * 
+     * 
+     * Lemire, D. (2019). Fast Random Integer Generation in an Interval.
+     * ACM Trans. Model. Comput. Simul., 29(1), 3:1-3:12.
+     * <https://doi.org/10.1145/3230636>
+     */
+    epiworld_double runif();
+    epiworld_double runif(epiworld_double a, epiworld_double b);
+    int runif_int(int a, int b);
+    uint32_t runif_index(uint32_t n);
+    /**
+     * @brief Draw from the currently configured binomial distribution.
+     * @details When `EPI_FAST_BINOM` is enabled (default), this uses
+     * `rpoiss(lambda)` with `lambda = n * p` after `set_rand_binom(n, p)` in the
+     * rare-event regime `p <= 0.01` and `n * p * p <= 0.1`. Define
+     * `EPI_NO_FAST_BINOM` before including epiworld to disable this behavior.
+     * @return A random draw from the configured binomial distribution, or from
+     * its Poisson approximation when the fast path is active.
+     */
+    int rbinom();
+    /**
+     * @brief Draw from a binomial distribution with parameters `n` and `p`.
+     * @details When `EPI_FAST_BINOM` is enabled (default), this uses
+     * `rpoiss(lambda)` with `lambda = n * p` in the rare-event regime
+     * `p <= 0.01` and `n * p * p <= 0.1`. This preserves the mean and is often
+     * substantially faster in practice while remaining very accurate in that
+     * region. Define `EPI_NO_FAST_BINOM` before including epiworld to disable
+     * this behavior and force the exact binomial draw.
+     * @param n Number of trials.
+     * @param p Success probability.
+     * @return A random draw from the binomial distribution, or from its
+     * Poisson approximation when the fast path is active.
+     */
+    int rbinom(int n, epiworld_double p);
+    int rnbinom();
+    int rnbinom(int n, epiworld_double p);
+    int rgeom();
+    int rgeom(epiworld_double p);
+    int rpoiss();
+    int rpoiss(epiworld_double lambda);
+    ///@}
+
+    /**
+     * @brief Sample from a set of probabilities stored in array_double_tmp.
+     * @details Uses a cumulative probability approach: draws a uniform random
+     * number and walks through array_double_tmp[0..n-1], accumulating
+     * probabilities until the draw is exceeded. If no event fires, returns n
+     * (meaning "none of the above").
+     * @param n Number of probability entries in array_double_tmp to consider.
+     * @return Index in [0, n] of the sampled event (n = no event).
+     */
+    size_t sample_from_probs(size_t n);
+
+    /**
+     * @name Add Virus/Tool to the model
+     *
+     * This is done before the model has been initialized.
+     *
+     * @param v Virus to be added
+     * @param t Tool to be added
+     * @param preval Initial prevalence (initial state.) It can be
+     * specified as a proportion (between zero and one,) or an integer
+     * indicating number of individuals.
+     */
+    ///@{
+    /**
+     * @brief Adds a virus, and who gets it at the start of each run.
+     * @details `a` gives each agent without a virus whose stage can be
+     * infected a label: the stage it starts in (a carrier stage), or, for the
+     * forms without labels (e.g., `assign::share()`), the infection's target.
+     * By default, no one gets it (see `assign.hpp`).
+     *
+     * Each call records a new variant, the founder of a lineage, whose id is
+     * the number of viruses added before it (adding the same virus twice
+     * records two; a removed virus keeps its record, so ids do not move).
+     * Mutations during a run add variants after them, which the next run
+     * (or the next `add_virus()`) drops.
+     */
+    void add_virus(const Virus & v, Assign a = Assign());
+
+    /// Adds a tool, and who gets it at the start of each run (default: no one).
+    void add_tool(const Tool & t, Assign a = Assign());
+
+    /// Replaces who gets virus `id` (e.g., the virus of a built-in model).
+    void assign_virus(size_t id, Assign a);
+
+    /// Replaces who gets tool `id`.
+    void assign_tool(size_t id, Assign a);
+
+    void rm_virus(size_t virus_pos);
+    void rm_tool(size_t tool_pos);
+    ///@}
+
+    /**
+     * @name Accessing population of the model
+     */
+    ///@{
+    std::vector< Agent > & get_agents(); ///< Returns a reference to the vector of agents.
+
+    Agent & get_agent(size_t i);
+
+    std::vector< epiworld_fast_uint > get_agents_states() const; ///< Returns a vector with the states of the agents.
+
+
+
+
+    /**
+     * @name Functions to run the model
+     *
+     * @param seed Seed to be used for Pseudo-RNG.
+     * @param ndays Number of days (steps) of the simulation.
+     * @param fun In the case of `run_multiple`, a function that is called
+     * after each experiment.
+     *
+     */
+    ///@{
+    void update_state();
+    void mutate_virus();
+    virtual void next();
+    virtual Model & run(
+        epiworld_fast_uint ndays,
+        int seed = -1
+    ); ///< Runs the simulation (after initialization)
+    Model & run_multiple( ///< Multiple runs of the simulation
+        epiworld_fast_uint ndays,
+        epiworld_fast_uint nexperiments,
+        int seed_ = -1,
+        std::function<void(size_t,Model*)> fun = make_save_run(),
+        bool reset = true,
+        bool verbose = true,
+        int nthreads = 1
+        );
+    ///@}
+
+    size_t get_n_viruses() const; ///< Number of viruses in the model
+    size_t get_n_tools() const; ///< Number of tools in the model
+    epiworld_fast_uint get_ndays() const;
+
+    /**
+     * @brief True while `run()` is driving the day loop.
+     *
+     * @details It is set from just before `reset()` until the last day is
+     * done, so global events (including their `reset()`) can rely on
+     * `get_ndays()` being the run's horizon -- even when it is zero. It is
+     * false when the day loop is driven by hand (`reset()`, then the steps
+     * called directly), where `get_ndays()` means nothing.
+     */
+    bool is_running() const;
+    epiworld_fast_uint get_n_replicates() const;
+    size_t get_sim_id() const;
+    void set_ndays(epiworld_fast_uint ndays);
+    bool get_verbose() const;
+    Model & verbose_off();
+    Model & verbose_on();
+    int today() const; ///< The current time of the model
+
+
+    /**
+     * @brief Wrapper of `DataBase::write_data`
+     *
+     * @param fn_virus_info Filename. Information about the virus.
+     * @param fn_virus_hist Filename. History of the virus.
+     * @param fn_tool_info Filename. Information about the tool.
+     * @param fn_tool_hist Filename. History of the tool.
+     * @param fn_total_hist   Filename. Aggregated history (state)
+     * @param fn_transmission Filename. Transmission history.
+     * @param fn_transition   Filename. Markov transition history.
+     * @param fn_reproductive_number Filename. Case by case reproductive number
+     * @param fn_generation_time Filename. Generation time data.
+     * @param fn_active_cases Filename. Active cases data.
+     * @param fn_outbreak_size Filename. Outbreak size data.
+     * @param fn_hospitalizations Filename. Hospitalization data.
+     */
+    void write_data(
+        std::string fn_virus_info,
+        std::string fn_virus_hist,
+        std::string fn_tool_info,
+        std::string fn_tool_hist,
+        std::string fn_total_hist,
+        std::string fn_transmission,
+        std::string fn_transition,
+        std::string fn_reproductive_number,
+        std::string fn_generation_time,
+        std::string fn_active_cases,
+        std::string fn_outbreak_size,
+        std::string fn_hospitalizations
+        ) const;
+
+
+    /**
+     * @brief Copy of the model parameters, by name.
+     * @details To change a parameter, use `set_param()`.
+     */
+    std::map<std::string, epiworld_double> params() const;
+
+    /**
+     * @brief Reset the model
+     *
+     * @details Resetting the model will:
+     * - clear the database
+     * - reset the contact layers (see `ContactLayer`)
+     * - re-distribute tools
+     * - re-distribute viruses
+     * - set the date to 0
+     *
+     */
+    virtual void reset();
+    const Model & print(bool lite = false) const;
+
+    /**
+     * @brief The number of the engine's states: one per pair of stage (of the
+     * virus's natural history) and status (of the model's statuses), stage
+     * major (`state = stage * n_statuses + status`). Use `get_stage()` and
+     * `get_status()` for an agent's.
+     */
+    size_t get_n_states() const;
+
+    /**
+     * @name Natural history
+     * @brief The disease's stages and the declared transitions between them.
+     */
+    ///@{
+
+    /// The natural history of the model's viruses (`nullptr` if none has one).
+    const NaturalHistory * get_natural_history() const { return nh.get(); }
+
+    /**
+     * @brief Fires a declared transition on an agent, applied at the end of
+     * the step (or of the global event).
+     * @details Nothing happens if, when it is applied, the agent is not in one
+     * of the transition's sources. An infection is not fired: seed instead.
+     * @return Whether the agent was in a source when fired.
+     */
+    bool fire(int transition, Agent & agent);
+
+    /**
+     * @brief Places agents left without a virus in stages at the start of
+     * each run (e.g., `assign::shares({{R, 0.1}})`: 10% Recovered).
+     * @details The labels are stages without the virus; the eligible agents
+     * are those left without a virus, in the first stage. Replaces what was
+     * set before.
+     */
+    void set_initial(Assign a);
+
+    /// Day agent `id` entered `stage` in its current (or last) infection (-1: not).
+    int get_stage_entered(size_t id, int stage) const;
+
+    /// Day agent `id`'s stage duration ends (`INT_MAX`: none).
+    int get_stage_until(size_t id) const;
+
+    /// Infections agent `id` has had in the current run.
+    int get_episode(size_t id) const;
+
+    /// The stage and the status of an agent.
+    int get_stage(const Agent & agent) const;
+    int get_status(const Agent & agent) const;
+
+    /**
+     * @brief Sets the model's statuses (see `Statuses`): where agents are,
+     * and the transitions between them. Between runs only.
+     */
+    void set_statuses(Statuses s);
+
+    /// The statuses (`nullptr` if the model has one, "Free").
+    const Statuses * get_statuses() const { return st.get(); }
+
+    /**
+     * @brief When `on` happens to an agent, fire `transition` on it (or call
+     * `fun`), in the same step.
+     * @details Reactions link the axes: e.g., entering Rash fires
+     * "Quarantined -> Isolated". Within a day, stage changes apply first, then
+     * status changes, then reactions (which see the resulting status; `.was()`
+     * reads the one at the start of the day).
+     */
+    void react(Trigger on, int transition);
+    void react(Trigger on, std::function< void(Agent &, Model &) > fun);
+
+    /// A transition's id (stage or status), by name.
+    int transition_id(std::string_view name) const;
+    ///@}
+
+    /**
+     * @brief Ids of the agents currently in a state.
+     *
+     * @details The list is kept up to date as the model runs, so looking up
+     * who is in a state costs nothing (no scan of the population). The ids are
+     * in no particular order. The index is built when a run starts, so this is
+     * available once `run()` (or `run_multiple()`) has been called, and it
+     * reflects the model at its current step.
+     *
+     * @param state The state code.
+     * @return A view of the ids (iterable, with `size()` and `[]`); it is
+     * invalidated by the next step.
+     * @throws std::logic_error if the model has not been run yet (or its
+     * population changed since).
+     * @throws std::range_error if `state` is not a state of the model.
+     */
+    AgentIdsView get_agents_in_state(epiworld_fast_uint state) const;
+
+    /**
+     * @brief One flag per agent: 1 if the agent carries a virus.
+     * @details A compact copy of "has a virus", one byte per agent, so a scan
+     * of an agent's neighbors can rule most of them out without loading their
+     * `Agent` (a cache miss each). It is kept current from the moment a run
+     * starts. Returns `nullptr` before that (and after the population
+     * changes): callers then have to look at the agents.
+     */
+    const char * get_agent_carrier() const
+    {
+        return state_index_ready ? agent_carrier.data() : nullptr;
     }
 
-    if (limit < N)
+    /**
+     * @brief Draws the virus, if any, that infects `agent` from its contacts.
+     * @details This is where contacts become an infection. Every contact that
+     * carries a virus is an exposure with probability
+     * `(1 - susceptibility reduction of agent) * probability of infecting *
+     * (1 - transmission reduction of the contact)`, and one draw
+     * (`roulette()`) picks at most one infector. A contact listed twice is
+     * two exposures.
+     * With a `layer`, the probabilities follow its weight and the viruses it
+     * admits (see `ContactLayer`), and the layer is recorded as the one of the
+     * transmission.
+     * @param agent Agent without a virus.
+     * @param contacts Ids of the contacts.
+     * @param n Number of contacts.
+     * @param layer The layer the contacts came from (none: weight 1, any
+     * virus, no layer recorded).
+     * @return The virus transmitted, or `nullptr` if none is.
+     */
+    Virus * sample_virus(
+        Agent * agent,
+        const size_t * contacts,
+        size_t n,
+        const ContactLayer * layer = nullptr
+    );
+
+    /**
+     * @brief The layer of the last transmission drawn by `sample_virus()`
+     * (-1 if none), which the next `Agent::set_virus()` records and clears.
+     */
+    int take_sampled_layer()
     {
-        printf_epiworld(
-            "  (... skipping %i records ...)\n",
-            static_cast<int>(N - limit)
+        const int layer = sampled_layer;
+        sampled_layer = -1;
+        return layer;
+    }
+
+    /**
+     * @brief Draws the virus, if any, that `agent` catches from its contacts
+     * in the model's layers.
+     * @details The contacts that carry a virus, layer by layer in the order
+     * the layers were added and each layer in its own order, are all
+     * exposures of one draw (`sample_virus(agent, contacts, n, layer)` adds
+     * them). Only contacts in an infectious stage (`stage::infectious`) are
+     * sources. This is what a default infection does; a pushing step
+     * (networks only) gives the same distribution.
+     * @throws std::logic_error if `agent` carries a virus.
+     */
+    Virus * sample_virus(Agent * agent);
+
+    /**
+     * @name Network transmission mode
+     *
+     * @details Stages whose only drawn exit is a default infection (no
+     * custom sampler) can be updated by pulling (each
+     * susceptible agent scans its neighbors) or by pushing (each agent with a
+     * virus adds its infection odds to its susceptible neighbors). Both give
+     * the same distribution of who gets infected, and by whom; only the random
+     * number stream differs. See `TransmissionMode`.
+     *
+     * With `"auto"` (the default) the model estimates the cost of each step,
+     * as the ties to scan plus a fixed price per agent visited
+     * (`EPI_TRANSMISSION_AGENT_COST` ties), for the carriers that can transmit
+     * (push) and for the susceptible agents (pull). It pushes whenever the
+     * push cost is no more than `kappa` times the pull cost, and pulls
+     * otherwise; `kappa` only matters in this mode. The choice depends only on
+     * the model's state, never on the queueing system, so turning queuing on or
+     * off leaves results unchanged. A `kappa` below 1 makes pushing harder to
+     * choose (it favors pulling); the default, 0.5, is below 1 because the
+     * queue spares a pull the susceptibles with no infectious neighbor, which
+     * the costs do not see. It was fitted together with the per-agent price
+     * with `examples/20-transmission-benchmark`.
+     *
+     * Directed networks, and states with other update functions, always pull.
+     * Set `"pull"` to reproduce the random streams of epiworld <= 0.15.
+     *
+     * @param mode `"auto"`, `"push"`, or `"pull"` (or the enum).
+     * @param kappa Relative cost threshold used by `"auto"`: a finite,
+     * non-negative number (default `EPI_DEFAULT_TRANSMISSION_KAPPA`, 0.5).
+     * @throws std::invalid_argument for an unknown mode.
+     * @throws std::range_error for a negative or infinite `kappa`.
+     */
+    ///@{
+    Model & set_transmission_mode(
+        TransmissionMode mode,
+        double kappa = EPI_DEFAULT_TRANSMISSION_KAPPA
+    );
+    Model & set_transmission_mode(
+        std::string_view mode,
+        double kappa = EPI_DEFAULT_TRANSMISSION_KAPPA
+    );
+    TransmissionMode get_transmission_mode() const;
+    /// The mode used in the most recent step (`push` or `pull`).
+    TransmissionMode get_last_transmission_mode() const;
+    /// The threshold used by `"auto"`.
+    double get_transmission_kappa() const;
+
+    /**
+     * @brief The sums `"auto"` compares to choose between push and pull.
+     * @details Totals over the states that can be sources of infection (the
+     * carriers) and over the states updated by the default susceptible sampler
+     * (the susceptibles), as they stand now. All zero before the model has run.
+     */
+    struct TransmissionSums {
+        size_t carrier_degree;      ///< Sum of the carriers' degrees
+        size_t susceptible_degree;  ///< Sum of the susceptibles' degrees
+        size_t carriers;            ///< Number of carriers that can transmit
+        size_t susceptibles;        ///< Number of susceptible agents
+    };
+    TransmissionSums get_transmission_sums() const;
+    ///@}
+
+
+    /**
+     * @name Setting and accessing parameters from the model
+     *
+     * @details Parameters are stored in a vector, in the order they were
+     * added, with a map from each name to its position. Lookups by name take
+     * the name as a `std::string_view` (no allocation) and search the map once.
+     * Unknown names throw.
+     *
+     * Code that reads parameters for many agents every day can skip the
+     * search:
+     *
+     * - `get_param_id()` returns the position (`ParamId`) of a parameter, and
+     *   `par_at()` / `set_param_at()` read and write by position. Positions
+     *   are valid for the model and all its copies.
+     * - `ParamRef` (and the `EPI_PAR(model, "name")` macro) resolves a name
+     *   once per model layout and caches the position, so it is safe to use
+     *   with any model.
+     *
+     * The `par()` function members are aliases for `get_param()`.
+     *
+     * In the case of the function `read_params`, users can pass a file
+     * listing parameters to be included in the model. Each line in the
+     * file should have the following structure:
+     *
+     * ```
+     * [name of parameter 1]: [value in double]
+     * [name of parameter 2]: [value in double]
+     * ...
+     * ```
+     *
+     * The only condition for parameter names is that these do not include
+     * a colon.
+     *
+     *
+     * @param initial_val
+     * @param pname Name of the parameter to add or to fetch
+     * @param fn Path to the file containing parameters
+     * @return The current value of the parameter
+     * in the model.
+     *
+     */
+    ///@{
+    epiworld_double add_param(
+        epiworld_double initial_val, std::string pname, bool overwrite = false
+    );
+    Model & read_params(std::string fn, bool overwrite = false);
+    epiworld_double get_param(std::string_view pname) const;
+    bool has_param(std::string_view pname) const;
+    void set_param(std::string_view pname, epiworld_double val);
+    epiworld_double par(std::string_view pname) const;
+    ParamId get_param_id(std::string_view pname) const;
+    epiworld_double par_at(ParamId id) const;
+    void set_param_at(ParamId id, epiworld_double val);
+    size_t get_n_params() const { return param_values.size(); };
+    uint32_t get_param_layout_id() const { return param_layout_id; };
+    ///@}
+
+    void get_elapsed(
+        std::string unit = "auto",
+        epiworld_double * last_elapsed = nullptr,
+        epiworld_double * total_elapsed = nullptr,
+        std::string * unit_abbr = nullptr,
+        bool print = true
+    ) const;
+
+    /**
+     * @name Set the user data object
+     *
+     * @param names string vector with the names of the variables.
+     */
+    ///[@
+    void set_user_data(std::vector< std::string > names);
+    void add_user_data(epiworld_fast_uint j, epiworld_double x);
+    void add_user_data(std::vector< epiworld_double > x);
+    UserData & get_user_data();
+    ///@}
+
+    /**
+     * @brief Set a global action
+     *
+     * @param fun A function to be called on the prescribed date
+     * @param name Name of the action.
+     * @param date Integer indicating when the function is called (see details)
+     *
+     * @details When date is less than zero, then the function is called
+     * at the end of every day. Otherwise, the function will be called only
+     * at the end of the indicated date.
+     */
+    void add_globalevent(
+        std::function<void(Model*)> fun,
+        std::string name = "A global action",
+        int date = -99
+        );
+
+    void add_globalevent(
+        GlobalEvent & action
+    );
+
+    GlobalEvent & get_globalevent(std::string name); ///< Retrieve a global action by name
+    GlobalEvent & get_globalevent(size_t i); ///< Retrieve a global action by index
+    bool has_globalevent(std::string_view name) const; ///< Whether a global action by that name exists
+    size_t get_n_globalevents() const; ///< Number of global actions registered
+
+    void rm_globalevent(std::string name); ///< Remove a global action by name
+    void rm_globalevent(size_t i); ///< Remove a global action by index
+
+    void run_globalevents();
+
+    /**
+     * @name Contact layers
+     * @brief Sources of contacts of the model (see `ContactLayer`).
+     * @{
+     */
+
+    /**
+     * @brief Adds a contact layer to the model.
+     * @details The model shares the layer with the caller (an edit through
+     * `layer` is an edit of the model's layer), resets it at the start of
+     * `reset()`, updates it at the end of every step, and clones it when the
+     * model is copied (see `ContactLayer`). Layers are added between runs only
+     * (a layer that should act only part of the time is added up front and
+     * edited, e.g., by a global event).
+     * @param layer The layer (e.g., from `layer::network()`). Its name must not
+     * be in use by another layer, and it must not belong to another model.
+     * @return A reference to the layer, as its own type.
+     */
+    template<typename TLayer>
+    TLayer & add_layer(std::shared_ptr< TLayer > layer)
+    {
+        TLayer * ptr = layer.get();
+        add_layer_ptr(std::move(layer));
+        return *ptr;
+    }
+
+    size_t get_n_layers() const; ///< Number of contact layers
+    bool has_layer(std::string_view name) const; ///< Whether a layer by that name exists
+    size_t get_layer_id(std::string_view name) const; ///< Id of a layer by name (throws if absent)
+    ContactLayer & get_layer(size_t id); ///< Retrieve a layer by id
+    ContactLayer & get_layer(std::string_view name); ///< Retrieve a layer by name
+
+    /// Retrieve a layer as its own type (unchecked cast; ids are cheaper than names)
+    template<typename TLayer>
+    TLayer & get_layer_as(size_t id)
+    {
+        return static_cast< TLayer & >(get_layer(id));
+    }
+
+    template<typename TLayer>
+    TLayer & get_layer_as(std::string_view name)
+    {
+        return static_cast< TLayer & >(get_layer(name));
+    }
+
+    /// Calls `update()` on every layer (done by `next()` at the end of each step)
+    void update_layers();
+
+    /// The network layers of the model, in the order they were added.
+    const std::vector< layer::Network * > & get_network_layers() const
+    {
+        return network_layers;
+    }
+
+    /** @} */
+
+    void clear_state_set();
+
+    /**
+     * @name Queuing system
+     * @details When queueing is on, the model will keep track of which agents
+     * are either in risk of exposure or exposed. This then is used at each
+     * step to act only on the aforementioned agents.
+     *
+     */
+    ////@{
+    void queuing_on(); ///< Activates the queuing system (default.)
+    Model & queuing_off(); ///< Deactivates the queuing system.
+    bool is_queuing_on() const; ///< Query if the queuing system is on.
+    Queue & get_queue(); ///< Retrieve the `Queue` object.
+    ///@}
+
+    /**
+     * @name Post-sampling callback
+     * @details A callback that receives, for each infectious agent, the agents
+     * it was in contact with during the step (see `PostSamplingFun`). The
+     * models whose samplers report contacts (network pull and push, the
+     * mixing models) collect them only while a callback is installed;
+     * otherwise the cost is one check per sampling operation (per step in a
+     * push). Pull and push report the same contacts. The callback is kept by
+     * copies of the model, including the ones `run_multiple()` makes.
+     *
+     * Installing a callback replaces the previous one. Contact tracing does
+     * not use it: a layer keeps its own log (`ContactLayer::enable_tracing()`).
+     */
+    ///@{
+    Model & set_post_sampling(PostSamplingFun fun); ///< Install a callback (an empty function clears it).
+    Model & clear_post_sampling(); ///< Remove the callback.
+    bool has_post_sampling() const { return post_sampling_on; } ///< Is a callback installed?
+
+    /// Reports that `infectious_id` was in contact with `contacted_id`. Samplers
+    /// call it, only if `has_post_sampling()`.
+    void register_sampled_contact(size_t infectious_id, size_t contacted_id);
+
+    /// Same, for several infectious agents in contact with `contacted_id`.
+    void register_sampled_contacts(
+        const size_t * infectious_ids, size_t n, size_t contacted_id
+    );
+    ///@}
+
+    const std::vector< VirusPtr > & get_viruses() const;
+    const std::vector< ToolPtr > & get_tools() const;
+    Virus & get_virus(size_t id);
+    Virus & get_virus(std::string_view name);
+    Tool & get_tool(size_t id);
+    Tool & get_tool(std::string_view name);
+
+    bool has_virus(std::string_view name) const;
+    bool has_tool(std::string_view name) const;
+
+    /**
+     * @brief Set the agents data object
+     *
+     * @details The data should be an array with the data stored in a
+     * column major order, i.e., by column.
+     *
+     * @param data_ Pointer to the first element of an array of size
+     * `size() * ncols_`.
+     * @param ncols_ Number of features included in the data.
+     *
+     */
+    void set_agents_data(double * data_, size_t ncols_);
+    double * get_agents_data();
+    size_t get_agents_data_ncols() const;
+
+    /**
+     * @brief Set the name object
+     *
+     * @param name
+     */
+    void set_name(std::string name);
+    std::string get_name() const;
+
+    bool operator==(const Model & other) const;
+    bool operator!=(const Model & other) const {return !operator==(other);};
+
+    /**
+     * @brief Executes the stored action
+     *
+     * @param model_ Model over which it will be executed.
+     */
+    void events_run();
+
+    /**
+     * @brief Draws a mermaid diagram of the model.
+     * @param model The model to draw.
+     * @param fn_output The name of the file to write the diagram.
+     * If empty, the diagram will be printed to the standard output.
+     * @param self Whether to allow self-transitions.
+     */
+    void draw(
+        DiagramType diagram_type = DiagramType::Mermaid,
+        const std::string & fn_output = "",
+        bool self = false
+    );
+
+    /**
+     * @brief Record a hospitalization event for an agent.
+     * 
+     * @param agent Reference to the agent being hospitalized.
+     * 
+     * @details
+     * This is a wrapper for `DataBase::record_hospitalization()`.
+     * For each hospitalization, the method records:
+     * - The current date from the model
+     * - The virus ID from the agent's virus
+     * - For each tool the agent has, a separate record with weight = 1/N
+     *   where N is the number of tools
+     * - If the agent has no tools, a single record with tool_id = -1 and
+     *   weight = 1.0
+     */
+    void record_hospitalization(Agent & agent);
+
+    /**
+     * @brief Get the full time series of hospitalization data.
+     * 
+     * @param date Output vector for dates.
+     * @param virus_id Output vector for virus IDs.
+     * @param tool_id Output vector for tool IDs.
+     * @param count Output vector for counts (number of hospitalized individuals).
+     * @param weight Output vector for summed weights (fractional contribution
+     *   based on tool distribution).
+     * 
+     * @details
+     * This is a wrapper for `DataBase::get_hospitalizations()`.
+     * Returns the full time series of hospitalization data. For each unique 
+     * (virus_id, tool_id) combination observed, returns an entry for every 
+     * day from 0 to ndays-1.
+     * 
+     * The `count` vector contains the actual number of individuals hospitalized 
+     * for that (date, virus_id, tool_id) combination. This is useful for 
+     * answering questions like "how many total people were hospitalized?" 
+     * regardless of their tools.
+     * 
+     * The `weight` vector contains fractional contributions: if an agent has N 
+     * tools, each tool gets weight = 1/N. Summing weights across all tool_ids 
+     * for a given date and virus_id gives the total number of hospitalizations.
+     */
+    void get_hospitalizations(
+        std::vector<int> & date,
+        std::vector<int> & virus_id,
+        std::vector<int> & tool_id,
+        std::vector<int> & count,
+        std::vector<double> & weight
+    ) const;
+
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/model-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/contactlayer-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_CONTACTLAYER_BONES_HPP
+#define EPIWORLD_CONTACTLAYER_BONES_HPP
+
+/**
+ * @file contactlayer-bones.hpp
+ * @brief Base class of the contact layers of a model.
+ *
+ * @details A *contact layer* is one source of contacts of a model: it answers
+ * "whom did agent `i` contact this step?". A model owns any number of them (see
+ * `Model::add_layer()`), and none are implied: a model without layers has no
+ * transmission through contacts.
+ *
+ * The model drives the life cycle of its layers:
+ *
+ * - `reset()` at the start of `Model::reset()`, before anything is distributed
+ *   (viruses, tools, the global events' set-up), so that those see
+ *   the run's contacts. A layer restores its baseline if it was edited during
+ *   the previous run (see `is_dirty()`), or draws a new one, and sizes its
+ *   per-run buffers.
+ * - `update()` at the end of every step, including day 0 (at the start of
+ *   `Model::next()`): after the agents' update functions, the global events
+ *   and rewiring, so that whatever changed during a step (states, edits of the
+ *   layer) is in force for the next step's contacts.
+ * - `clone()` whenever the model is copied (`run_multiple()` copies models),
+ *   so replicates never share layer state.
+ *
+ * ### Ownership
+ *
+ * Layers are created as shared pointers (`layer::network()`,
+ * `layer::mixing()`; `std::make_shared` for a layer type of your own), and
+ * `Model::add_layer()` shares the pointer: the model and whoever else holds it
+ * see the same layer, so an edit made through either is an edit of the model.
+ * A layer belongs to one model at most. A copy of the model clones its layers
+ * (the pointers held outside keep pointing at the original's), and a layer
+ * outlives its model only detached from it. A copy of a layer is detached too.
+ *
+ * ### Weight and viruses
+ *
+ * `set_weight()` makes the layer's contacts count more or less than the others':
+ * the odds of infection through the layer are multiplied by the weight (a
+ * model parameter, read at every step; 1 if none is set; 0 turns the layer
+ * off). `add_virus_target()` restricts the layer to some viruses, as tools are
+ * restricted; by default every virus spreads through every layer.
+ *
+ * ### Edits and the dirty flag
+ *
+ * Whether an edit is permanent depends only on when it is made. An edit made
+ * during a run (from an update function or a global event) applies to that run
+ * only: it sets the *dirty* flag, and `reset()` restores the baseline of a
+ * dirty layer and clears the flag. An edit made between runs becomes the new
+ * baseline.
+ *
+ * ### Contact tracing
+ *
+ * `enable_tracing()` makes the layer keep a log of its contacts (a
+ * `ContactTracing`): every contact the layer samples, with a carrier, is
+ * recorded under the carrier, with the day. The log starts empty at every run
+ * and keeps the last `max_contacts` contacts of each agent. Tracing is off by
+ * default, and it is a setting, not an edit: it lasts across runs whenever it
+ * is turned on or off.
+ *
+ * @ingroup contact_layers
+ */
+class ContactLayer {
+
+    friend class Model;
+
+private:
+
+    std::string name;
+    size_t id = 0u;          ///< Position in the model's list, set by the model
+    bool dirty = false;  ///< Edited since the baseline was set
+    bool in_run = false; ///< Set by the model while it runs
+
+    std::optional< ParamRef > weight_ref; ///< Empty: weight 1
+    uint64_t virus_mask = ~uint64_t(0);   ///< Lineages that spread here
+    size_t trace_max = 0u;   ///< Contacts kept per agent; 0: not traced
+    ContactTracing trace_log; ///< This run's contacts, if traced
+
+    /// An empty log for a run of `n` agents (the model calls it at reset).
+    void reset_tracing(size_t n)
+    {
+        if (trace_max > 0u)
+            trace_log.reset(n, trace_max);
+    }
+
+protected:
+
+    /// The model the layer belongs to (set by the model), or `nullptr`.
+    Model * model = nullptr;
+
+    /**
+     * @brief Call it from every method that edits the layer.
+     * @return `true` if the edit is to the baseline (made between runs);
+     * otherwise it marks the layer dirty and returns `false`.
+     */
+    bool edits_baseline()
+    {
+        dirty = dirty || in_run;
+        return !in_run;
+    }
+
+    /// Call it from `reset()` once the baseline has been restored.
+    void mark_clean() { dirty = false; }
+
+public:
+
+    explicit ContactLayer(std::string name_) : name(std::move(name_)) {}
+
+    /// A copy belongs to no model (see `clone()`).
+    ContactLayer(const ContactLayer & other) :
+        name(other.name), dirty(other.dirty), weight_ref(other.weight_ref),
+        virus_mask(other.virus_mask), trace_max(other.trace_max),
+        trace_log(other.trace_log) {}
+
+    ContactLayer & operator=(const ContactLayer &) = delete;
+
+    virtual ~ContactLayer() = default;
+
+    const std::string & get_name() const { return name; }
+    size_t get_id() const { return id; }
+    bool is_dirty() const { return dirty; }
+
+    /// The weight is the model parameter `param` (see the class description).
+    void set_weight(std::string param) { weight_ref.emplace(std::move(param)); }
+
+    bool has_weight() const { return weight_ref.has_value(); }
+
+    /// Current weight in `model`.
+    epiworld_double get_weight(const Model & model) const
+    {
+        return weight_ref ? (*weight_ref)(model) : 1.0;
+    }
+
+    /**
+     * @name Virus targets
+     * @brief Restrict the layer to the listed virus lineages (see
+     * `Tool::add_target()`, which these mirror). The first target turns the
+     * default (every virus) off.
+     */
+    ///@{
+    void add_virus_target(int lineage_id);
+    void add_virus_target(const Virus & v);
+    ///@}
+
+    /**
+     * @name Contact tracing
+     * @brief Keep a log of the layer's contacts (see the class description).
+     */
+    ///@{
+    /// Turn tracing on, keeping up to `max_contacts` contacts per agent.
+    void enable_tracing(size_t max_contacts = EPI_MAX_TRACKING);
+    void disable_tracing();
+    bool is_tracing() const { return trace_max > 0u; }
+    /// The log of the current run (throws if tracing is off).
+    ContactTracing & get_tracing();
+
+    /// Log that `source` (the carrier) met `contact` today, if traced.
+    void trace(size_t source, size_t contact)
+    {
+        if (trace_max > 0u)
+            trace_log.add_contact(
+                source, contact, static_cast< size_t >(model->today())
             );
     }
 
-}
+    /// Log that each of the `n` `sources` met `contact` today, if traced.
+    void trace(const size_t * sources, size_t n, size_t contact)
+    {
+        if (trace_max > 0u)
+            for (size_t k = 0u; k < n; ++k)
+                trace(sources[k], contact);
+    }
+    ///@}
 
-inline size_t AdjList::vcount() const 
+    /// Whether the virus spreads through the layer.
+    bool admits(const Virus & v) const
+    {
+        return (virus_mask & v.lineage_bit) != 0u;
+    }
+
+    /// Restore the baseline if dirty and size the buffers for a new run.
+    virtual void reset(Model & model) = 0;
+
+    /**
+     * @brief Appends to `out` the contacts of agent `agent` this step that
+     * carry a virus (repeats allowed), and reports them to the model's
+     * post-sampling callback, if there is one.
+     * @details This is the layer's part of a pull. Contacts in a state flagged
+     * in `exclude` (if not null) are skipped. Whether the contacts are able to
+     * infect (their viruses, the weight) is up to the model.
+     * @return The number of contacts appended.
+     */
+    virtual size_t sample(
+        size_t agent,
+        Model & model,
+        const std::vector< bool > * exclude,
+        std::vector< size_t > & out
+    ) = 0;
+
+    /// Rebuild what depends on the state of the population (end of each step).
+    virtual void update(Model & model) = 0;
+
+    /// Deep copy (the model's copy constructor calls it).
+    virtual std::shared_ptr< ContactLayer > clone() const = 0;
+
+    /// The layer as a network layer, or `nullptr` if it is of another kind.
+    virtual layer::Network * as_network() { return nullptr; }
+
+    /// The layer as a mixing layer, or `nullptr` if it is of another kind.
+    virtual layer::Mixing * as_mixing() { return nullptr; }
+
+    /**
+     * @brief Whether the model's queue sees this layer's contacts.
+     * @details True when a carrier can reach only agents the layer can list
+     * from the carrier's side: its ties in an undirected network, its group in
+     * a within-group mixing layer. A model with any other layer visits every
+     * agent instead of using the queue.
+     */
+    virtual bool supports_queue() const { return false; }
+
+};
+
+inline void ContactLayer::enable_tracing(size_t max_contacts)
 {
-    return N;
+    if (max_contacts == 0u)
+        throw std::invalid_argument(
+            "Contact tracing should keep at least one contact per agent."
+        );
+
+    trace_max = max_contacts;
+
+    // Turned on in a model that has agents: logs from now on
+    if (model != nullptr)
+        reset_tracing(model->size());
 }
 
-inline size_t AdjList::ecount() const 
+inline void ContactLayer::disable_tracing()
 {
-    return E;
+    trace_max = 0u;
+    trace_log = ContactTracing();
 }
 
-inline bool AdjList::is_directed() const {
+inline ContactTracing & ContactLayer::get_tracing()
+{
+    if (trace_max == 0u)
+        throw std::logic_error(
+            "The contact layer '" + name + "' is not traced; call "
+            "enable_tracing() first."
+        );
 
-    if (N == 0u)
-        throw std::logic_error("The edgelist is empty.");
-    
-    return directed;
-    
+    return trace_log;
+}
+
+inline void ContactLayer::add_virus_target(int lineage_id)
+{
+
+    const uint64_t bit = Tool::target_bit(lineage_id);
+
+    // The first target turns the default off
+    if (virus_mask == ~uint64_t(0))
+        virus_mask = 0u;
+
+    virus_mask |= bit;
+
+}
+
+inline void ContactLayer::add_virus_target(const Virus & v)
+{
+
+    if (v.get_lineage_id() < 0)
+        throw std::logic_error(
+            "The virus \"" + v.get_name() + "\" has no lineage id. Add it to "
+            "the model with Model::add_virus() before using it as a target."
+        );
+
+    add_virus_target(v.get_lineage_id());
+
 }
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -./include/epiworld/adjlist-meat.hpp-
+ End of -./include/epiworld/contactlayer-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/agentssample-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_AGENTS_BONES_HPP
+#define EPIWORLD_AGENTS_BONES_HPP
+
+/**
+ * @brief Sample of agents
+ * 
+ * A sample without replacement from the model's agents, optionally restricted
+ * to some states.
+ * 
+ */
+class AgentsSample {
+private:
+
+    size_t sample_size = 0u;
+
+    std::vector< Agent* >* agents = nullptr; ///< Pointer to sample of agents
+    size_t * agents_n = nullptr;                    ///< Size of sample of agents
+    
+    std::vector< size_t >* agents_left = nullptr;  ///< Pointer to agents left (iota)
+    size_t * agents_left_n = nullptr;               ///< Size of agents left
+
+    Model * model = nullptr; ///< Extracts runif() and the population.
+    std::vector< size_t > states = {};
+
+    void sample_n(size_t n); ///< Backbone function for sampling
+
+
+public:
+
+    // Not available (for now)
+    AgentsSample() = delete;                             ///< Default constructor
+    AgentsSample(const AgentsSample & a) = delete; ///< Copy constructor
+    AgentsSample(AgentsSample && a) = delete;      ///< Move constructor
+
+    AgentsSample(
+        Model & model_, size_t n,
+        std::vector< size_t > states_ = {},
+        bool truncate = false
+        );
+
+    ~AgentsSample();
+
+    typename std::vector< Agent * >::iterator begin();
+    typename std::vector< Agent * >::iterator end();
+
+    Agent * operator[](size_t n);
+    Agent * operator()(size_t n);
+    size_t size() const noexcept;
+
+};
+
+inline AgentsSample::AgentsSample(
+    Model & model_,
+    size_t n,
+    std::vector< size_t > states_,
+    bool truncate
+    ) {
+
+    states = states_;
+
+    if (truncate)
+    {
+        
+        if (n > model_.size())
+            n = model_.size();
+
+    } else if (n > model_.size())
+        throw std::logic_error(
+            "There are only " + std::to_string(model_.size()) + " agents. You cannot " +
+            "sample " + std::to_string(n));
+
+    sample_size   = n;
+    model         = &model_;
+
+    agents        = &model_.sampled_population;
+    agents_n      = &model_.sampled_population_n;
+
+    agents_left   = &model_.population_left;
+    agents_left_n = &model_.population_left_n;
+
+    sample_n(n);
+    
+    return; 
+
+}
+
+inline AgentsSample::~AgentsSample() {}
+
+inline size_t AgentsSample::size() const noexcept
+{ 
+    return this->sample_size;
+}
+
+inline Agent * AgentsSample::operator[](size_t i)
+{
+
+    return agents->operator[](i);
+
+}
+
+inline Agent * AgentsSample::operator()(size_t i)
+{
+
+    if (i >= this->sample_size)
+        throw std::range_error("The requested agent is out of range.");
+
+    return agents->operator[](i);
+
+}
+
+inline typename std::vector< Agent * >::iterator AgentsSample::begin()
+{
+    // Check for null pointer
+    if (agents == nullptr)
+        return typename std::vector< Agent * >::iterator{};
+    
+    return agents->begin();
+}
+
+inline typename std::vector< Agent * >::iterator AgentsSample::end()
+{
+    // Check for null pointer
+    if (agents == nullptr)
+        return typename std::vector< Agent * >::iterator{};
+    
+    // Ensure we don't go beyond the actual vector size
+    size_t actual_end = std::min(sample_size, agents->size());
+    return agents->begin() + actual_end;
+}
+
+inline void AgentsSample::sample_n(size_t n)
+{
+
+    if (states.size())
+    {
+
+        // Only the agents in the selected states can be sampled
+        agents_left->clear();
+        agents_left->reserve(model->size());
+        for (size_t a_i = 0u; a_i < model->population.size(); ++a_i)
+        {
+            size_t s = model->population[a_i].get_state();
+            if (std::find(states.begin(), states.end(), s) != states.end())
+                agents_left->push_back(a_i);
+        }
+
+    }
+    else if (model->size() != agents_left->size())
+    {
+
+        // The population changed size (or this is the first sample)
+        agents_left->resize(model->size(), 0u);
+        std::iota(agents_left->begin(), agents_left->end(), 0u);
+
+    }
+
+    // Restart the counter of agents left
+    *agents_left_n = agents_left->size();
+
+    // Making sure we have enough room for the sample of agents
+    if (agents->size() < sample_size)
+        agents->resize(sample_size, nullptr);
+
+    #ifdef EPI_DEBUG
+    std::vector< bool > __sampled(model->size(), true);
+    for (auto & a_i: *agents_left)
+        __sampled[a_i] = false;
+    #endif
+
+    for (size_t i = 0u; i < n; ++i)
+    {
+
+        // Sampling from 0 to (agents_left_n - 1)
+        size_t ith_ = static_cast<size_t>(model->runif() * ((*agents_left_n)--));
+
+        // Getting the id of the agent and adding it to the list of agents
+        size_t ith  = agents_left->operator[](ith_);
+        agents->operator[](i) = &model->population[ith];
+
+        #ifdef EPI_DEBUG
+        if (__sampled[ith])
+            throw std::logic_error("The same agent was sampled twice.");
+        else
+            __sampled[ith] = true;
+        #endif
+
+        // Updating list
+        std::swap(
+            agents_left->operator[](ith_),
+            agents_left->operator[](*agents_left_n)
+            );
+
+    }
+
+    return;
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/agentssample-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/globalevents/quarantinetrigger-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef QUARANTINETRIGGER_BONES_HPP
+#define QUARANTINETRIGGER_BONES_HPP
+
+#include <vector>
+// (already included include/epiworld/globalevents/../config.hpp)
+
+class QuarantineTrigger {
+private:
+    int _model_sim_id = -1;
+    int _day = -1;
+    std::vector< size_t > _agents_triggering_quarantine;
+    std::vector< int > _date_infectious;
+    
+    void _setup(const Model & model);
+public:
+    QuarantineTrigger() = default;
+    void add_triggering_agent(
+        const Model & model,
+        const Agent & agent,
+        int date_infectious
+    );
+
+    std::vector< size_t > & get_triggering_agents();
+    std::vector< int > & get_date_infectious();
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/globalevents/quarantinetrigger-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/globalevents/bubbles-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_GLOBALEVENTS_BUBBLES_BONES_HPP
+#define EPIWORLD_GLOBALEVENTS_BUBBLES_BONES_HPP
+
+// Standard library headers (vector, memory, string, unordered_map, utility,
+// algorithm, stdexcept) are included at global scope by epiworld.hpp; this file
+// is only ever included from within `namespace epiworld`, so it must not
+// re-include system headers here.
+// (already included include/epiworld/globalevents/../config.hpp)
+
+/**
+ * @brief Flavor of the social-bubble intervention (how bubbles are formed).
+ * @ingroup globalevents
+ *
+ * @details Both flavors produce a partition of the population into disjoint
+ * bubbles in which households are never split, and both form bubbles along
+ * *existing* contacts (see Bubbles).
+ */
+enum class BubbleFlavor {
+    /**
+     * Household-level rule: whole households bubble together, up to
+     * `group_size` households per bubble. A bubble is grown from a seed
+     * household by repeatedly absorbing a random household that is connected
+     * to it in the contact network. `group_size == 1` leaves every household
+     * on its own, i.e. a strict household-only lockdown.
+     *
+     * Models e.g. the Belgian rule of 10 May 2020 ("a household may form one
+     * fixed bubble with other households").
+     */
+    Household,
+    /**
+     * Individual-level rule: each agent nominates up to `group_size` peers
+     * among its existing contacts outside its own household. A nomination
+     * merges the two agents' households -- so a teenager choosing a partner
+     * brings both households into one bubble.
+     *
+     * Nominations are only accepted while the bubble stays within
+     * `max_households` households; this cap is what enforces the policy's
+     * exclusivity. Without it the merges percolate: with several members per
+     * household each nominating someone, the household graph becomes connected
+     * and everyone ends up in a single bubble, imposing no restriction at all.
+     *
+     * Models e.g. the Belgian rule of 19 October 2020 (`group_size == 1`, "one
+     * close contact per person").
+     */
+    Peer
+};
+
+/**
+ * @brief How a bubble is *realized*: a transmission rule, or also contacts.
+ * @ingroup globalevents
+ *
+ * @details Orthogonal to `BubbleFlavor`, which decides how households are
+ * grouped. This decides what being in a bubble together actually does.
+ */
+enum class BubbleTies {
+    /**
+     * The contact network is never modified. Being in a bubble together only
+     * means transmission between the two is left alone, while contact outside
+     * the bubble is damped by the transmission factor.
+     *
+     * This makes the policy purely subtractive, which under-states it: two
+     * households merged because one member of each happened to be tied keep
+     * exactly that one contact between them, and everybody else in the two
+     * households never meets. The same gap exists inside a household, where two
+     * members with no edge between them never meet either.
+     */
+    Existing,
+    /**
+     * The bubble is a group of a within-group mixing layer, the household
+     * layer (`Bubbles::make_layer()`). Outside the policy window each agent
+     * is in its household's group, where each pair meets with the household
+     * contact probability; while the policy is in force it is in its
+     * bubble's, where each pair meets with the bubble contact probability
+     * (households left on their own keep theirs), and it goes back when the
+     * policy lifts.
+     *
+     * This is what the modelled policy actually says -- the household you have
+     * bubbled with is a household you now see. The force of infection inside a
+     * bubble grows with its size, since every bubblemate met is an independent
+     * exposure. There is one probability per group, so housemates in a merged
+     * bubble meet at the bubble's, like the other households.
+     *
+     * Contacts *outside* the bubble (the network layers) are untouched and
+     * still damped by the transmission factor, which is what makes the bubble
+     * imperfect. A pair of bubblemates that is also tied in a network layer
+     * meets in both layers.
+     */
+    Complete
+};
+
+class Bubbles;
+
+/**
+ * @brief Tool carried by every agent under a Bubbles policy.
+ * @ingroup globalevents
+ *
+ * @details The tool does not hold the bubble partition -- it holds a pointer to
+ * the `Bubbles` intervention that owns it, resolved by name from the model the
+ * first time the tool is used. `clone_ptr()` clears that pointer, exactly as
+ * `ToolVaccine` clears its per-agent immunity, so a copy of the tool always
+ * re-resolves against the model it ends up in. Copies of a model therefore
+ * never reach into the model they were copied from, which is what lets bubble
+ * models run in parallel replicates.
+ *
+ * Users do not instantiate this directly; the intervention hands it to every
+ * agent when it sets itself up, at the start of each run.
+ *
+ */
+class BubbleTool : public Tool {
+private:
+
+    std::string _event_name;                  ///< Name of the owning intervention.
+    Bubbles * _policy = nullptr;        ///< Resolved lazily, per model.
+
+public:
+
+    BubbleTool(std::string name, std::string event_name);
+
+    /**
+     * @brief Reduction applied to an exposure of this tool's agent.
+     *
+     * `0.0` when the transmitter shares the agent's bubble (contacts inside the
+     * bubble are what the policy preserves), and `1 - f` otherwise, where `f`
+     * is the intervention's transmission factor. Outside the policy window, or
+     * before a partition exists, the reduction is `0.0`.
+     */
+    epiworld_double get_susceptibility_reduction(
+        VirusPtr & v,
+        Model * model
+    ) override;
+
+    std::unique_ptr<Tool> clone_ptr() const override;
+
+};
+
+/**
+ * @brief Social-bubble contact-restriction intervention for network models.
+ * @ingroup globalevents
+ *
+ * @details A "social bubble" policy lets people keep seeing a small, fixed set
+ * of others while cutting off the rest of their contacts. `Bubbles` implements
+ * this for models with network layers (e.g. `ModelSEIR` or `ModelSIR` with a
+ * `layer::Network`; it reads the contacts of every network layer), and is
+ * designed for the household-based rules used during COVID-19.
+ *
+ * ## How it works
+ *
+ * The intervention is a global event, so installing it is a one-liner:
+ *
+ * ```cpp
+ * model.add_globalevent(bubbles);
+ * ```
+ *
+ * Everything else happens by itself. At the start of every run -- from
+ * `Model::reset()`, so the policy is in force on day 1 -- the intervention sets
+ * itself up on the model it is running in: it registers the
+ * transmission-factor parameter, draws the bubble partition with that run's
+ * RNG, and hands a `BubbleTool` ("Social bubble") to every agent. Each
+ * replicate of `run_multiple()` -- each of which runs on its own copy of the
+ * model, possibly on its own thread -- repeats this with its own seed.
+ *
+ * By default the contacts are **not modified** (`BubbleTies::Existing`); with
+ * `BubbleTies::Complete` the bubble is also a group of the household layer,
+ * which is described under *Two ways to be in a bubble* below. Either way, when a
+ * susceptible agent `p` is exposed to an infectious neighbor, the tool
+ * identifies the transmitter through the virus (`v->get_agent()`) and compares
+ * the two agents' bubble labels:
+ *
+ * - same bubble  -> reduction `0.0`: contacts *inside* the bubble are what the
+ *                   policy preserves, so they are left untouched;
+ * - different bubbles -> reduction `1 - f`, i.e. transmission along contacts
+ *                   *outside* the bubble is scaled by the transmission factor
+ *                   `f`;
+ * - outside the policy window -> reduction `0.0`, no effect.
+ *
+ * The transmission factor `f` is how strictly the bubble is observed:
+ * `f == 0` is a perfectly efficient bubble (out-of-bubble contact is cut
+ * entirely, which is equivalent to deleting those edges), `f == 1` disables the
+ * intervention (out-of-bubble contact is as good as before), and intermediate
+ * values model a soft contact reduction -- people still meet outside their
+ * bubble, just less often or more carefully.
+ *
+ * `f` is **not** stored in the intervention: setup registers it as a model
+ * parameter (`param_name`, "Bubble transmission factor" by default) and the
+ * tool reads it from the model on every exposure. It can therefore be inspected
+ * with `model.get_param()`, changed mid-run with `model.set_param()`, or swept
+ * over in a calibration without rebuilding the intervention. The value given to
+ * the constructor is only a default: if the model already carries that
+ * parameter -- because it was set with `model.add_param()` or read from a
+ * parameter file with `model.read_params()` before the run -- the model's value
+ * is kept. Values outside `[0, 1]` are clamped.
+ *
+ * Since reductions combine as `1 - prod(1 - r_i)`, a reduction of `1.0`
+ * (`f == 0`) zeroes the transmission probability regardless of any other tools
+ * the agent carries. Contact weights are uniform in these models, so
+ * suppressing transmission on out-of-bubble contacts is equivalent to deleting
+ * those contacts, while keeping the network intact for other purposes (contact
+ * tracing, output).
+ *
+ * ## Where the state lives
+ *
+ * `Bubbles` *is* the model's global event: `add_globalevent()` hands the model a
+ * clone of it, and the bubble partition (`get_bubble_id()`) is a member of that
+ * clone. Since `Model`'s copy constructor deep-copies global events and tools,
+ * every copy of a model -- including the per-thread copies `run_multiple()`
+ * makes -- owns its partition outright, and the tool resolves to the
+ * intervention of whichever model it belongs to. Nothing is shared between
+ * models, so replicates may run on as many threads as you like.
+ *
+ * The object you construct is a template: once added to a model it is no longer
+ * connected to it, and its own `get_bubble_id()` stays empty. To look at the
+ * partition of a model that has run, ask the model for its copy:
+ *
+ * ```cpp
+ * const auto & bubble_id = Bubbles::get_from(model)->get_bubble_id();
+ * ```
+ *
+ * ## Forming bubbles (why ties matter)
+ *
+ * Households are declared with a per-agent `household_id` vector (one entry per
+ * agent, indexed by agent id). Bubbles are always:
+ *
+ * - **disjoint** -- every agent belongs to exactly one bubble;
+ * - **household-preserving** -- a household is never split; and
+ * - **connection-aware** -- bubbles only ever join households that are actually
+ *   connected in the contact network.
+ *
+ * The last point is essential, and it holds for both realizations. Under
+ * `BubbleTies::Existing` the intervention can only suppress transmission along
+ * edges that exist, so putting two households that share no contact into one
+ * bubble would change nothing at all and `group_size` would be inert. Under
+ * `BubbleTies::Complete` they would meet, but bubbling two households that have
+ * never met is not the policy being modelled: a household chooses a bubble
+ * partner it already socialises with.
+ *
+ * ## Two ways to be in a bubble
+ *
+ * `BubbleFlavor` decides *how households are grouped*. `BubbleTies` decides
+ * *what being grouped does*, and the two are independent.
+ *
+ * Under **`BubbleTies::Existing`** (the default, and the original behaviour) a
+ * bubble is only a transmission rule. This under-states the policy in a way
+ * worth being explicit about: if households `a` and `b` were merged because one
+ * member of each happened to be tied, that single contact is the only one
+ * preserved between them -- the rest of `a` never meets the rest of `b`, though
+ * the policy says the two households have bubbled. The same gap exists inside a
+ * household, whose members need not all be tied to each other.
+ *
+ * Under **`BubbleTies::Complete`** the bubble is a group of the household
+ * layer, a within-group mixing layer that `make_layer()` builds from
+ * `household_id`:
+ *
+ * ```cpp
+ * // Housemates meet every day; two members of a merged bubble, 3 days in 10
+ * bubbles.set_ties(BubbleTies::Complete, "household", 0.3);
+ * model.add_layer(bubbles.make_layer(1.0));
+ * model.add_globalevent(bubbles);
+ * ```
+ *
+ * Outside the policy window everyone meets their household, each pair with
+ * the household contact probability. While the policy is in force each agent
+ * is in its bubble's group instead, where each pair meets with the bubble
+ * contact probability; a household that bubbled with nobody keeps its own.
+ * A within-group layer has one probability per group, so in a merged bubble
+ * housemates meet at the bubble's rate too. When the bubbles are redrawn
+ * agents move to the new ones, and when the policy lifts they go back to
+ * their households (with the probabilities the layer had at reset). Moves are
+ * a layer's ordinary edits: they take effect at the end of the step, a reset
+ * puts everyone back, and a traced layer records them in its history
+ * (`groupmates_of()`). No ties are stored, and the network layers are left
+ * alone. The layer must start each run with one group per household, as
+ * `make_layer()` builds it; setup checks it.
+ *
+ * Completing a bubble **raises the force of infection inside it**: every
+ * bubblemate met is an independent exposure, so with the default (everyone,
+ * every day) a bubble of `k` agents gives each member `k - 1` chances a day;
+ * a bubble contact probability below 1 thins the meetings (the policy says
+ * the households may meet, not that they meet daily). A pair of bubblemates
+ * that is also tied in a network layer meets in both layers.
+ *
+ * Contacts *outside* the bubble are untouched by either setting: they stay in
+ * the network and are damped by `f`, which is what makes the bubble imperfect.
+ *
+ * Grouping reads the network layers only, so `BubbleFlavor` draws the same
+ * bubbles whatever `BubbleTies` says. An agent is in one group per layer, so
+ * two `Complete` policies on one model (household bubbles and school bubbles,
+ * say) each need their own layer; sharing one is an error. `Complete` runs
+ * within `Model::run()` (or `run_multiple()`): a move outside a run would edit
+ * the layer's baseline.
+ *
+ * ### Matching a policy
+ *
+ * These are the closest settings for two styles of rule used during
+ * COVID-19, not exact matches:
+ *
+ * | Policy style                                       | Settings                                       |
+ * |----------------------------------------------------|------------------------------------------------|
+ * | Households join one or a few others (New Zealand;  | `Household`, `group_size` = households per     |
+ * | UK support bubbles; Belgium, May 2020)             | bubble, `Complete`                             |
+ * | One close contact per person (Belgium, Oct. 2020)  | `Peer`, `max_households = 2` (the default),    |
+ * |                                                    | `Existing`                                     |
+ *
+ * The second is an approximation. `Peer` commits whole households, so with
+ * `max_households = 2` one accepted choice pairs two households and the other
+ * members of either can choose no one else (`group_size` then has no effect;
+ * see *The algorithms*). Under `Existing` every tie between the two households
+ * is spared, not only the chosen one. The model therefore gives a household
+ * one partner household where the rule gives each person their own contact. A
+ * larger `max_households` lets more members choose, at the cost of larger
+ * bubbles. `Peer` with `Complete` has both households meet in full: more
+ * contact than the rule allows, but still allowed, for the case where a
+ * person brings their household along.
+ *
+ * ## The algorithms
+ *
+ * Both rules start from the **household contact graph**: one node per
+ * household, with an edge between two households whenever at least one member
+ * of the first is connected to a member of the second in the network layers.
+ * All random draws use the model's RNG, so a run is reproducible from its
+ * seed.
+ *
+ * **`BubbleFlavor::Household`** -- grow bubbles from seed households:
+ *
+ * 1. Visit households in random order.
+ * 2. Skip a household if it already belongs to a bubble; otherwise open a new
+ *    bubble containing it, and set the *frontier* to its unassigned neighbours
+ *    in the household contact graph.
+ * 3. While the bubble holds fewer than `group_size` households and the frontier
+ *    is not empty, draw a household from the frontier at random, add it to the
+ *    bubble, and extend the frontier with that household's unassigned
+ *    neighbours. A household that is tied to several members of the bubble
+ *    appears in the frontier more than once and is correspondingly more likely
+ *    to be drawn, so stronger ties are favoured.
+ * 4. Stop when no unassigned neighbour remains, even if the bubble is smaller
+ *    than `group_size`.
+ *
+ * Each bubble is therefore a *connected* subgraph of the household contact
+ * graph -- not necessarily a clique, so with `group_size > 2` two households in
+ * one bubble need not be tied to each other directly. Because a household with
+ * no available partner is left on its own, the number of bubbles is at least
+ * `ceil(n_households / group_size)`. Cost is linear in the number of edges.
+ *
+ * **`BubbleFlavor::Peer`** -- agents choose peers from those still available:
+ *
+ * Households are kept in a disjoint-set (union-find) structure that also tracks
+ * how many households each bubble holds, so a bubble that is full can be
+ * recognised at once.
+ *
+ * 1. Visit the agents in random order.
+ * 2. Skip an agent whose household is already in a full bubble -- it has left
+ *    the pool and can neither choose nor be chosen.
+ * 3. Otherwise, repeatedly draw one of the agent's contacts outside its own
+ *    household, at random and without replacement, until the agent has made
+ *    `group_size` successful choices or has no contact left that its bubble can
+ *    still take in. A draw is accepted when the two households are in different
+ *    bubbles **and** the merged bubble would hold at most `max_households`
+ *    households; otherwise that contact is simply unavailable and the agent
+ *    draws again. Accepting a draw merges the two households (household
+ *    commitment), and the agent stops once its bubble is full.
+ *
+ * The cap is what makes the rule work. Without it the merges percolate: with a
+ * few members per household each choosing someone, the household graph becomes
+ * connected and every household lands in one giant bubble -- no restriction at
+ * all.
+ *
+ * Note that `max_households` is the effective dial on bubble size, while
+ * `group_size` rarely binds: because a choice by *any* member commits the whole
+ * household, the members of one household together tend to fill its bubble
+ * regardless of how many choices each of them is allowed. With
+ * `max_households == 2`, in particular, one accepted choice fills the bubble and
+ * `group_size` has no effect at all. Households whose every contact was taken
+ * first remain on their own.
+ *
+ * ## Scheduling
+ *
+ * `start_day` is the first day the policy applies; `end_day` is the (exclusive)
+ * day it lifts, or `< 0` to never lift. With `rewire_every > 0` the partition is
+ * re-randomised every that-many days, modelling policies whose bubbles change
+ * over time (e.g. contacts renewed weekly); `0` keeps a fixed bubble.
+ *
+ * The initial partition is drawn when the intervention sets itself up, at reset
+ * time, so it is redrawn for each replicate of `run_multiple()` using that
+ * replicate's seed and is already in force on day 1. Re-randomisations are
+ * applied by the intervention itself (a daily global event) and, since global
+ * events run after each day's transitions, take effect the following step.
+ *
+ * ## Example
+ *
+ * ```cpp
+ * epimodels::ModelSEIR model("flu", 10000, 0.01, 0.1, 4.5, 1.0/7.0);
+ * model.add_layer(layer::network(
+ *     "contacts", graph::smallworld(8, 0.05)
+ * ));
+ *
+ * std::vector< size_t > household_id(10000);
+ * for (size_t i = 0u; i < 10000; ++i)
+ *     household_id[i] = i / 3;             // households of three
+ *
+ * // Two households per bubble from day 10, halving out-of-bubble transmission.
+ * Bubbles bubbles(
+ *     household_id, BubbleFlavor::Household,
+ *     2,      // group_size
+ *     0.5,    // transmission_factor (default of the model parameter)
+ *     10      // start_day
+ * );
+ * model.add_globalevent(bubbles);
+ *
+ * // The factor lives in the model, so it can be changed without touching the
+ * // intervention. Setting it before the run overrides the default above.
+ * model.add_param(0.25, "Bubble transmission factor", true);
+ *
+ * model.run(100, 1231);
+ *
+ * // The partition belongs to the model, not to `bubbles`.
+ * const auto & bubble_id = Bubbles::get_from(model)->get_bubble_id();
+ * ```
+ *
+ * To have those two households actually meet -- every member of one meeting
+ * every member of the other, every day -- make the bubble a group of the
+ * household layer:
+ *
+ * ```cpp
+ * bubbles.set_ties(BubbleTies::Complete, "household");
+ * model.add_layer(bubbles.make_layer());
+ * model.add_globalevent(bubbles);
+ * ```
+ *
+ * A household-only lockdown in which the household meets in full, and everyone
+ * else is reachable only through an imperfectly observed bubble, is
+ * `group_size == 1` with a non-zero factor:
+ *
+ * ```cpp
+ * Bubbles household_only(
+ *     household_id, BubbleFlavor::Household,
+ *     1,      // group_size: nobody bubbles with another household
+ *     0.15,   // but the bubble leaks: 15% of out-of-bubble transmission remains
+ *     0, -1, 0, "Social bubble", 2u, "Bubble transmission factor",
+ *     BubbleTies::Complete, "household"
+ * );
+ * ```
+ *
+ * @note Both rules produce *exclusive* bubbles, which is what the modelled
+ * policies prescribe. A rule that instead grants each person a personal budget
+ * of contacts that need be neither mutual nor exclusive (e.g. "up to ten
+ * different people a week") is not a partition of the population and cannot be
+ * expressed this way.
+ *
+ * @note Not yet modelled: fixed out-of-bubble "sport partners", travel between
+ * regions, and caps on the number of individuals (as opposed to households) a
+ * bubble may contain.
+ *
+ */
+class Bubbles final : public GlobalEvent {
+private:
+
+    std::vector< size_t > household; ///< Household of each agent, 0..n_households - 1.
+    size_t n_households;
+    BubbleFlavor flavor;
+    size_t group_size;               ///< households per bubble (Household) or max peers (Peer).
+    size_t max_households;           ///< cap on households per bubble (Peer only).
+    epiworld_double transmission_factor; ///< initial value of the model parameter, in [0, 1].
+    int start_day;
+    int end_day;
+    int rewire_every;
+    std::string param_name;          ///< model parameter holding the transmission factor.
+    BubbleTies ties;                 ///< whether bubblemates meet in a layer.
+    std::string layer;               ///< the household layer of `BubbleTies::Complete`.
+    double bubble_contact_prob;      ///< daily meeting probability in a merged bubble.
+
+    /// The household layer of `BubbleTies::Complete` (throws if there is none).
+    layer::Mixing & bubble_layer(Model * model) const;
+
+    // Per-model state. Copied with the intervention, so each model (including
+    // each per-thread copy made by run_multiple) owns its own partition.
+    std::vector< int > bubble_id;    ///< Per-agent bubble label; -1 = unassigned.
+
+    std::vector< double > home_prob; ///< Contact probability of each group at reset.
+    int placed_epoch = -1;           ///< Partition agents are in (-1: their homes).
+    int model_id   = -1;             ///< Sim id this intervention was set up for.
+    int last_epoch = -1;             ///< Rewiring epoch the current partition was computed for.
+
+    /// @name The two grouping rules.
+    ///@{
+    void partition_household(Model * model);
+    void partition_peer(Model * model);
+    ///@}
+
+    /**
+     * @brief Install the intervention on the model it is running in.
+     *
+     * @details Called from `reset()`, i.e. once per run and once per replicate
+     * of `run_multiple()`. It registers the transmission-factor parameter
+     * (keeping any value the model already has), draws the epoch-0 partition
+     * with the run's RNG, and gives the bubble tool to every agent.
+     *
+     * @param model Model the intervention belongs to.
+     * @throws std::length_error if `household_id` does not have exactly one
+     *         entry per agent.
+     */
+    void _setup(Model * model);
+
+    /**
+     * @brief Moves agents in the household layer to match the policy as of
+     *        the next simulation step.
+     *
+     * @details Into their bubbles when the policy is about to apply (or the
+     * partition was redrawn), back to their households when it is about to
+     * lapse. Nothing under `BubbleTies::Existing`.
+     */
+    void sync_groups(Model * model);
+
+public:
+
+    /**
+     * @brief Configure a social-bubble policy.
+     *
+     * @param household_id Household label of each agent, indexed by agent id.
+     *        Its length must equal the number of agents in the model. Labels are
+     *        arbitrary (they need not be consecutive); agents sharing a label
+     *        form a household and are always placed in the same bubble.
+     * @param flavor Whether bubbles are chosen by households or by individuals
+     *        (see `BubbleFlavor`).
+     * @param group_size For `Household`, the maximum number of households per
+     *        bubble (`1` = strict household-only lockdown). For `Peer`, the
+     *        maximum number of external peers each agent may pick.
+     * @param transmission_factor Initial value of the model parameter
+     *        `param_name`: the multiplier applied to transmission between
+     *        agents of *different* bubbles, in `[0, 1]`. `0.0` (the default) is
+     *        a perfectly efficient bubble -- contact outside it is cut
+     *        entirely; `0.5` halves out-of-bubble transmission (a soft contact
+     *        reduction); and `1.0` turns the intervention off. Transmission
+     *        within a bubble is never altered. The value is stored in the model
+     *        (see `deploy()`), not here, so it can be changed at any time with
+     *        `model.set_param(param_name, ...)`.
+     * @param start_day First day on which the policy applies.
+     * @param end_day Day on which the policy is lifted (exclusive). Use a
+     *        negative value for a policy that never ends. Must be greater than
+     *        `start_day`.
+     * @param rewire_every Re-randomise the bubbles every this-many days, for
+     *        policies whose contacts change over time. `0` keeps the bubbles
+     *        fixed for the whole intervention.
+     * @param name Name given to the tool and to the intervention's global
+     *        event; the tool finds its policy by this name, and `get_from()`
+     *        looks it up on a model with it.
+     * @param max_households **`Peer` flavor only**: the largest number of
+     *        households a bubble may contain. A nomination that would exceed it
+     *        is declined, which is what stops one household's choices from
+     *        chaining into the next (see `BubbleFlavor::Peer`). The default of
+     *        `2` represents two households joined by a close contact. Ignored by
+     *        the `Household` flavor, where `group_size` already is the cap.
+     * @param param_name Name of the model parameter that holds the transmission
+     *        factor. Give two interventions deployed on the same model
+     *        different names if they are to be dialled independently.
+     * @param ties Whether the bubble is only a transmission rule
+     *        (`BubbleTies::Existing`, the default) or also a group of the
+     *        household layer, where bubblemates meet every day
+     *        (`BubbleTies::Complete`). See `BubbleTies`.
+     * @param layer Name of the household layer of `BubbleTies::Complete`
+     *        (required then; see `make_layer()`).
+     * @param bubble_contact_prob With `BubbleTies::Complete`, the probability
+     *        that two members of a bubble that merged households meet on a
+     *        given day, in `[0, 1]`.
+     *
+     * @throws std::range_error if `transmission_factor` or
+     *         `bubble_contact_prob` is outside `[0, 1]`, if
+     *         `group_size` is zero for the `Household` flavor, if
+     *         `max_households` is less than 2 for the `Peer` flavor, or if
+     *         `end_day` is non-negative and not greater than `start_day`.
+     */
+    Bubbles(
+        std::vector< size_t > household_id,
+        BubbleFlavor flavor,
+        size_t group_size,
+        epiworld_double transmission_factor = 0.0,
+        int start_day = 0,
+        int end_day = -1,
+        int rewire_every = 0,
+        std::string name = "Social bubble",
+        size_t max_households = 2u,
+        std::string param_name = "Bubble transmission factor",
+        BubbleTies ties = BubbleTies::Existing,
+        std::string layer = "",
+        double bubble_contact_prob = 1.0
+    );
+
+    /**
+     * @brief The model's copy of the intervention.
+     *
+     * @param model Model the intervention was added to.
+     * @param name Name it was added under.
+     * @return Pointer to the model's own intervention, or `nullptr` if the
+     *         model has no global event by that name, or it is not a `Bubbles`.
+     */
+    static Bubbles * get_from(
+        Model & model,
+        const std::string & name = "Social bubble"
+    );
+
+    /**
+     * @brief Recompute the partition using the model's RNG.
+     *
+     * Called when the intervention sets itself up (at reset) and at each
+     * rewiring epoch. Rarely needed directly.
+     */
+    void compute_partition(Model * model);
+
+    /**
+     * @brief Current bubble label of every agent, indexed by agent id.
+     *
+     * Two agents in the same bubble transmit as they would without the policy;
+     * transmission between labels is scaled by the transmission factor.
+     * Populated at the start of each run, and only on the model's own copy of
+     * the intervention -- see `get_from()`.
+     */
+    const std::vector< int > & get_bubble_id() const;
+
+    /// @brief The rule used to form bubbles.
+    BubbleFlavor get_flavor() const;
+
+    /// @brief Whether bubblemates meet in the household layer.
+    BubbleTies get_ties() const;
+
+    /**
+     * @brief Choose how the bubble is realized. See `BubbleTies`.
+     *
+     * Set it before the run; the intervention reads it when it sets itself up.
+     * Remember that the model owns its own copy once the intervention has been
+     * added, so set this on the object you are about to add, or on the model's
+     * copy via `get_from()`.
+     *
+     * @param layer Name of the household layer of `BubbleTies::Complete`
+     *        (required then; see `make_layer()`).
+     * @param bubble_contact_prob The probability that two members of a bubble
+     *        that merged households meet on a given day, in `[0, 1]`.
+     */
+    void set_ties(
+        BubbleTies ties,
+        std::string layer = "",
+        double bubble_contact_prob = 1.0
+    );
+
+    /**
+     * @brief The household layer of `BubbleTies::Complete`, to add to the
+     *        model with `Model::add_layer()`.
+     *
+     * @details A within-group mixing layer named as in `set_ties()`, with one
+     * group per household (from `household_id`), in which each pair meets
+     * with probability `household_contact_prob` a day; the policy moves agents
+     * to their bubble's group while it is in force (see `BubbleTies`). The
+     * layer can be changed further before it is added (e.g.,
+     * `enable_tracing()`).
+     *
+     * @param household_contact_prob The probability that two housemates meet
+     *        on a given day (`1`: every day).
+     * @throws std::logic_error if the layer has no name.
+     */
+    std::shared_ptr< layer::Mixing > make_layer(
+        double household_contact_prob = 1.0
+    ) const;
+
+    /**
+     * @brief Name of the model parameter holding the transmission factor.
+     *
+     * Use it with `model.get_param()` / `model.set_param()` to read or change
+     * how leaky the bubbles are, including in the middle of a run.
+     */
+    const std::string & get_param_name() const;
+
+    /// @brief True when the policy applies on the given day.
+    bool is_active(int today) const;
+
+    /**
+     * @brief Rewiring epoch the current partition was computed for.
+     *
+     * `0` for the partition drawn at setup, incrementing every `rewire_every`
+     * days while the policy is active. `-1` before the first partition.
+     */
+    int get_last_epoch() const;
+
+    /**
+     * @brief Reduction applied to an exposure between two agents.
+     *
+     * The tool's side of the intervention; see `BubbleTool`.
+     */
+    epiworld_double susceptibility_reduction(
+        const Agent * p,
+        const Agent * transmitter,
+        Model * model
+    ) const;
+
+    /**
+     * @brief Installs the intervention on the model, once per run.
+     *
+     * Called by `Model::reset()`; see `_setup()`. This is what makes adding the
+     * intervention to a model the only step there is.
+     */
+    void reset(Model * model) override;
+
+    /// @brief Re-randomises the partition at rewiring epochs, and keeps the
+    /// household layer of a `Complete` bubble in step with the policy.
+    void operator()(Model * model, int day) override;
+
+    std::unique_ptr< GlobalEvent > clone_ptr() const override;
+
+};
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/globalevents/bubbles-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
 
+    // Classes with their member functions (they come before the other
+    // member functions, which use them), and the graphs they build on
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -6932,10 +8621,8 @@ inline bool AdjList::is_directed() const {
 #ifndef EPIWORLD_RANDGRA
 #define EPIWORLD_RANDGRA
 
-template<typename TSeq>
 class Model;
 
-template<typename TSeq>
 class Agent;
 
 class AdjList;
@@ -6970,11 +8657,10 @@ inline size_t pick_cumulative(
  * would create self-ties or repeated ties. A network layer is rewired with
  * `graph::rewire_degseq()` instead.
  */
-template<typename TSeq>
 inline void rewire_degseq_rows(
     std::vector< std::vector< int > > & rows,
     bool directed,
-    Model<TSeq> & model,
+    Model & model,
     epiworld_double proportion
     )
 {
@@ -7140,7 +8826,6 @@ static constexpr long long BB_FPU_THRESHOLD = 200;
  * Reference: V. Batagelj and U. Brandes, "Efficient generation of large
  * random networks," Physical Review E, vol. 71, no. 3, 2005.
  *
- * @tparam TSeq Type of the sequence (template parameter of the model).
  * @param n Number of nodes.
  * @param p Edge probability, in [0, 1].
  * @param directed Whether the graph is directed.
@@ -7148,12 +8833,11 @@ static constexpr long long BB_FPU_THRESHOLD = 200;
  * @return An AdjList representing the generated network.
  * @throws std::range_error if `p` is not in [0, 1].
  */
-template<typename TSeq>
 inline AdjList rgraph_bernoulli(
     epiworld_fast_uint n,
     epiworld_double p,
     bool directed,
-    Model<TSeq> & model
+    Model & model
 ) {
 
     // Written so that NaN fails too
@@ -7282,56 +8966,6 @@ inline AdjList rgraph_bernoulli(
 
 }
 
-template<typename TSeq>
-inline AdjList rgraph_bernoulli2(
-    epiworld_fast_uint n,
-    epiworld_double p,
-    bool directed,
-    Model<TSeq> & model
-) {
-
-    std::vector< int > source;
-    std::vector< int > target;
-
-    // Checking the density (how many)
-    std::binomial_distribution<> d(
-        n * (n - 1.0) / (directed ? 1.0 : 2.0),
-        p
-    );
-
-    // Need to compensate for the possible number of diagonal
-    // elements sampled. If n * n, then each diag element has
-    // 1/(n^2) chance of sampling
-
-    epiworld_fast_uint m = d(model.get_rand_endgine());
-
-    source.resize(m);
-    target.resize(m);
-
-    double n2 = static_cast<double>(n * n);
-
-    int loc,row,col;
-    for (epiworld_fast_uint i = 0u; i < m; ++i)
-    {
-        loc = floor(model.runif() * n2);
-        col = floor(static_cast<double>(loc)/static_cast<double>(n));
-        row = loc - row * n;
-
-        // Undirected needs to swap
-        if (!directed && (col > row))
-            std::swap(col, row);
-
-        source[i] = row;
-        target[i] = col;
-
-    }
-
-    AdjList al(source, target, static_cast<int>(n), directed);
-
-    return al;
-
-}
-
 inline AdjList rgraph_ring_lattice(
     epiworld_fast_uint n,
     epiworld_fast_uint k,
@@ -7371,7 +9005,6 @@ inline AdjList rgraph_ring_lattice(
 /**
  * @brief Smallworld network (Watts-Strogatz)
  *
- * @tparam TSeq
  * @param n
  * @param k
  * @param p
@@ -7379,13 +9012,12 @@ inline AdjList rgraph_ring_lattice(
  * @param model
  * @return AdjList
  */
-template<typename TSeq>
 inline AdjList rgraph_smallworld(
     epiworld_fast_uint n,
     epiworld_fast_uint k,
     epiworld_double p,
     bool directed,
-    Model<TSeq> & model
+    Model & model
 ) {
 
     // Creating the ring lattice
@@ -7429,19 +9061,17 @@ inline AdjList rgraph_smallworld(
  * Since block sizes and number of connections between blocks are fixed,
  * this routine is fully deterministic.
  *
- * @tparam TSeq
  * @param n Size of the network
  * @param blocksize Size of the block.
  * @param ncons Number of connections between blocks
  * @param model A model
  * @return AdjList
  */
-template<typename TSeq>
 inline AdjList rgraph_blocked(
     epiworld_fast_uint n,
     epiworld_fast_uint blocksize,
     epiworld_fast_uint ncons,
-    Model<TSeq>&
+    Model&
 ) {
 
     std::vector< int > source_;
@@ -7540,7 +9170,6 @@ inline AdjList rgraph_blocked(
  * Reference: V. Batagelj and U. Brandes, "Efficient generation of large
  * random networks," Physical Review E, vol. 71, no. 3, 2005.
  *
- * @tparam TSeq Type of the sequence (template parameter of the model).
  * @param block_sizes A vector of size \f$K\f$ indicating the number of agents
  *   per block. The total number of agents is \f$\sum_k \text{block\_sizes}[k]\f$.
  * @param mixing_matrix A vector of size \f$K \times K\f$ representing the
@@ -7558,12 +9187,11 @@ inline AdjList rgraph_blocked(
  * @throws std::range_error If any mixing matrix entry is negative or if
  *   \f$M(g, h) / n_h > 1\f$ for any pair of blocks.
  */
-template<typename TSeq>
 inline AdjList rgraph_sbm(
     const std::vector< size_t > & block_sizes,
     const std::vector< double > & mixing_matrix,
     bool row_major,
-    Model<TSeq> & model
+    Model & model
 ) {
 
     size_t n_blocks = block_sizes.size();
@@ -7871,195 +9499,2513 @@ inline AdjList rgraph_sbm(
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -./include/epiworld/queue-bones.hpp-
+ Start of -./include/epiworld/layer-mixing.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_QUEUE_BONES_HPP
-#define EPIWORLD_QUEUE_BONES_HPP
+#ifndef EPIWORLD_LAYER_MIXING_HPP
+#define EPIWORLD_LAYER_MIXING_HPP
+
+namespace layer {
+
+class Mixing;
 
 /**
- * @brief Controls which agents are verified at each step
- * 
- * @details The idea is that only agents who are either in
- * an infected state or have an infected neighbor should be
- * checked. Otherwise it makes no sense (no chance to recover
- * or capture the disease).
- * 
- * **Implementation details:**
- * <a href="../impl/queueing-system.md">Queueing System</a>
- * 
- * @tparam TSeq 
+ * @brief A mixing layer (see `Mixing`).
+ * @param name Name of the layer (unique in a model).
+ * @ingroup contact_layers
  */
-template<typename TSeq>
-class Queue
+std::shared_ptr< Mixing > mixing(std::string name);
+
+/**
+ * @brief Contact layer with mixing: contacts drawn fresh every step, by group.
+ *
+ * @details Created with `layer::mixing()`. Every agent of a group takes part
+ * in the mixing (the contacts are spread over all of them), and the agents in
+ * the model's infectious states transmit (`Model::set_infectious_states()`).
+ * The quarantine model takes its isolated agents out of the mixing altogether
+ * (see `Model::set_excluded_states()`).
+ *
+ * ### Groups
+ *
+ * The layer owns the grouping, set with `set_groups()` before the first run:
+ * - `assign::labels(v)`, one group per agent (or -1, which leaves the agent
+ *   out of the layer): the grouping is *fixed*;
+ * - any other `Assign` (e.g., `assign::counts({{0, 300}, {1, 700}})`), drawn
+ *   at every reset: each run (and each replicate of `run_multiple()`) then
+ *   gets its own draw, from its own seed, as a network layer from a `graph::`
+ *   generator does. See `assign.hpp`.
+ *
+ * ### Contacts: a matrix or a probability per pair
+ *
+ * The contacts are given in one of two ways:
+ * - `set_contact_matrix()`: contacts across groups, for a few groups that meet
+ *   each other (age groups in public spaces). Entry `(g, h)` is the expected
+ *   number of contacts per day of an agent in `g` with agents in `h`. With
+ *   `set_contact_rate(param)`, the contacts are the model parameter `param`
+ *   times the matrix, so a global event or a calibration can change them
+ *   (one group and a 1 x 1 matrix of 1: everyone meets "Contact rate" others
+ *   a day, at random).
+ * - `set_contact_prob()`: contacts within groups only, for many small groups
+ *   (households, classrooms, transit trips). Each member meets each other
+ *   member of its group with probability `q` per day, whatever the size of the
+ *   group; `q = 1` makes every group a clique (everyone meets everyone, every
+ *   day), with no ties stored. One number sets the same `q` for every group.
+ *   It needs the grouping from `set_groups()`.
+ *
+ * Setting one between runs drops the other. A within-group layer is seen by
+ * the model's queue (an infectious agent reaches only its own group), and
+ * `members_of()` lists a group.
+ *
+ * ### Sampling
+ *
+ * Each step, `update()` rebuilds the pool of infectious agents of each group,
+ * and the number of agents in the mixing per group, without scanning the
+ * population: infectious agents are the carriers in infectious states, from
+ * the model's per-state index (walked in ascending id order), and the counts
+ * are the group sizes minus the few agents in excluded states.
+ *
+ * `sample()` then meets each infectious agent of a group `g` with a
+ * probability `p` per pair, independently: it draws a binomial number of
+ * contacts over the infectious agents of `g` and picks that many *distinct*
+ * ones (a partial shuffle of the pool), skipping the agent itself. With
+ * `p = 1` it takes them all, with no random draws. Within groups, the only
+ * group is the agent's own and `p = q[g]`. With a matrix, `p = min(1,
+ * rate * contact_matrix(group of agent, g) / others(g))`, where `rate` is the
+ * contact-rate parameter (1 without one) and `others(g)` is the number of
+ * agents of `g` in the mixing other than the agent itself: the contacts per
+ * day stay as the matrix says when agents are excluded.
+ *
+ * ### Edits
+ *
+ * `set_group()`, `set_contact_matrix()` and `set_contact_prob()` called
+ * during a run apply to that run only: they set the dirty flag, and the next
+ * `reset()` restores the baseline. A move made during a step takes effect at
+ * the end of the step, with the pools (the agents of the step sample from the
+ * grouping it started with). Called between runs, they set the baseline (so a
+ * calibration can reuse one model). `set_groups()` sets the baseline grouping
+ * and can only be called between runs.
+ *
+ * ### History (traced within-group layers)
+ *
+ * A within-group layer with tracing on (`enable_tracing()`) keeps, for the
+ * current run, the history of who was in which group and who was absent (in
+ * an excluded state), day by day: `groupmates_of(agent, d1, d2, out)` lists
+ * who shared a group with `agent`, both present, between days `d1` and `d2`, with
+ * the days they shared. With `q = 1` that is exactly who the agent met; with
+ * `q < 1`, who it could have met (contact tracing by membership: "notify the
+ * household"). A move or an absence is recorded when it takes effect (the end
+ * of the step, so the next day); leaving the layer (`NO_GROUP`) is a move like
+ * any other. Agents that never change group or presence add nothing to the
+ * history. Editing the grouping between runs drops it.
+ *
+ * @ingroup contact_layers
+ */
+class Mixing : public ContactLayer
 {
-    friend class Model<TSeq>;
+public:
+
+    /// Group of the agents that are not in the layer.
+    static constexpr size_t NO_GROUP = std::numeric_limits< size_t >::max();
 
 private:
 
-    /**
-     * @brief Count of ego's neighbors in queue (including ego)
-     */
-    std::vector< epiworld_fast_int > active;
+    /// A grouping drawn at every reset (see `set_groups()`)
+    struct Grouping {
+        size_t n_groups;
+        std::function< std::vector< size_t >(Model &) > draw;
+    };
+
+    std::optional< ParamRef > rate_ref; ///< Empty: rate 1
+
+    // Grouping
+    std::vector< size_t > groups;          ///< Group of each agent
+    std::vector< size_t > groups_baseline; ///< Fixed, or this run's draw
+    Grouping grouping{0u, nullptr};        ///< Empty draw: fixed groups
+    size_t n_groups = 0u;
+    bool explicit_groups = false; ///< Set by set_groups()
+    bool layout_stale = true;     ///< Group sizes and pool offsets to rebuild
+    std::vector< size_t > group_size; ///< Agents in each group
+
+    std::vector< double > contact_matrix;          ///< Column-major
+    std::vector< double > contact_matrix_baseline; ///< Set between runs
+    std::vector< double > contact_prob;          ///< Within-group `q`, per group
+    std::vector< double > contact_prob_baseline; ///< Set between runs (one entry: every group)
+
+    std::vector< std::vector< size_t > > members; ///< Agents of each group
+
+    /// Moves made during a step (agent, group), applied by `update()`
+    std::vector< std::pair< size_t, size_t > > moves;
+
+    // History of the run (traced within-group layers, see groupmates_of())
+
+    /// From day `from` on, the agent is in `group`, present or absent.
+    struct Spell {
+        int from;
+        bool present;
+        size_t group;
+    };
+
+    /// An agent left a group on day `day` (its first day elsewhere).
+    struct Departure {
+        int day;
+        size_t agent;
+    };
+
+    bool history = false; ///< Kept this run, and still valid
+    /// Per agent, its spells in order (sized only with a history)
+    std::vector< std::vector< Spell > > spells_of;
+    /// Per group, the departures in order (sized only with a history)
+    std::vector< std::vector< Departure > > departures;
+    std::vector< bool > absent;       ///< Per agent, in an excluded state
+    std::vector< size_t > absent_ids; ///< The agents flagged in `absent`
+    /// The step's movers and their group before it (scratch of `update()`)
+    std::vector< std::pair< size_t, size_t > > moved_from;
+
+    /// Records the agent's group and presence from tomorrow on.
+    void record(size_t agent_id, size_t old_group, int today);
+    void clear_history();
+
+    /// Calls `f(group, first, last)` for each span of days in `[a, b]` that
+    /// the agent spent in a group, present.
+    template<typename F>
+    void spells(size_t agent_id, int a, int b, F f) const;
+
+    /// The day the agent last left group `g` (it is no longer there).
+    int last_departure(size_t agent_id, size_t g) const;
+
+    std::vector< size_t > pool;      ///< Infectious agents, partitioned by group
+    std::vector< size_t > offsets;   ///< Where each group starts in `pool`
+    std::vector< size_t > counts;    ///< Infectious agents per group
+    std::vector< size_t > n_available; ///< Agents in the mixing, per group
+
+    std::vector< uint64_t > marks;   ///< Bitset used to order the pool
+    std::vector< size_t > ordered;   ///< Infectious ids (ascending), scratch
 
     /**
-     * @brief Outstanding `Everyone` registrations per agent.
-     *
-     * @details `active[i]` is `everyone[i]` plus the sum of `everyone[j]` over
-     * the agents `j` whose neighbor lists contain `i`, in every network layer
-     * of the model (`operator+=` credits the agents in the registered agent's
-     * own lists). In an undirected network those are `i`'s neighbors; in a
-     * directed one they are the agents that list `i`. So this is what a tie is worth to the far end of
-     * it: adding an edge next to a registered agent is a `+everyone[]`
-     * over there, and removing one is the mirror (see `notify_edge_added`).
-     *
-     * Keeping the count explicit -- rather than inferring "is this agent
-     * contributing?" from whether it carries a virus -- means the bookkeeping
-     * stays right no matter what registered the agent: a virus, a tool, or an
-     * explicit queue argument to `Agent::change_state`.
+     * @brief How many agents of a group an agent meets in a day: the draw of
+     * `Model::rbinom(n, p)` (same distribution, same random numbers), with
+     * its parameters set once a day instead of at every draw.
      */
-    std::vector< epiworld_fast_int > everyone;
+    struct DailyDraw {
+        int n = 0;      ///< Infectious agents of the group
+        double p = 0.0; ///< Probability of meeting each
+        bool poisson = false;
+        std::poisson_distribution<>::param_type pois;
+        std::binomial_distribution<>::param_type binom;
+        void set(int n_, double p_);
+        int operator()(Model & model) const;
+    };
 
-    /**
-     * @brief One bit per agent: bit `i` is set iff `active[i] != 0`.
-     *
-     * @details This is what lets `Model::update_state()` visit only the agents
-     * in the queue, in ascending id order, without scanning the whole
-     * population: it walks the set bits (see `for_each_nonzero`). Every change
-     * to `active` goes through `shift()`, which keeps the two in step.
-     */
-    std::vector< uint64_t > bits;
+    /// With a contact matrix: entry `own * n_groups + g` is the draw of an
+    /// agent of group `own` (in the mixing) from group `g`, set by `update()`.
+    std::vector< DailyDraw > daily;
+    void daily_build(const Model & model);
 
-    Model<TSeq> * model = nullptr;
-    int n_in_queue = 0;
+    void rebuild_layout();
+    void rebuild_members();
+    void move(size_t agent_id, size_t group, bool notify_queue);
+    void check_agent(size_t agent_id) const;
+    void check_group(size_t group) const;
 
-    /// @brief Adds `n` to `active[id]`, keeping `n_in_queue` and `bits` in step.
-    void shift(size_t id, epiworld_fast_int n);
+    /// Meets `n_met` distinct infectious agents of group `g`.
+    void draw(size_t g, size_t n_met, size_t agent, Model & model,
+        std::vector< size_t > & out);
 
-    /// @brief Whether the counters have been sized to cover these two agents.
-    bool tracks(size_t a, size_t b) const;
+protected:
 
-    /// @brief Adds `n` to the counts of `id`'s neighbors in every network
-    /// and of its group-mates in every within-group mixing layer.
-    void shift_neighbors(size_t id, epiworld_fast_int n);
+    // Created with layer::mixing()
+    explicit Mixing(std::string name) : ContactLayer(std::move(name)) {}
 
-    // Auxiliary variable that checks how many steps
-    // left are there
-    // int n_steps_left;
-    // bool queuing_started   = false;
+    friend std::shared_ptr< Mixing > mixing(std::string);
+
+    // Reads the groups unchecked (as the ties of a network layer)
+    friend class epiworld::Queue;
 
 public:
 
-    void operator+=(Agent<TSeq> * p);
-    void operator-=(Agent<TSeq> * p);
+    /**
+     * @brief Sets the grouping of the layer (between runs only).
+     * @param a Who is in which group: each agent's label is its group, in
+     * `[0, n_groups_)`, or none (out of the layer). With `assign::labels()`
+     * the grouping is fixed (and `set_group()` between runs edits it);
+     * otherwise it is drawn again at every reset, e.g.,
+     * `assign::counts({{0, 300}, {1, 700}})`. See `assign.hpp`.
+     * @param n_groups_ Number of groups (the contact matrix is
+     * `n_groups x n_groups`).
+     */
+    void set_groups(Assign a, size_t n_groups_);
+
+    /// Group of an agent (`NO_GROUP` if it is not in the layer).
+    size_t get_group(size_t agent_id) const
+    {
+        check_agent(agent_id);
+        return groups[agent_id];
+    }
+
+    /// Whether the agent takes part in the layer (valid after `reset()`).
+    bool in_layer(size_t agent_id) const { return groups[agent_id] != NO_GROUP; }
 
     /**
-     * @brief How many registrations cover agent `i` (itself or a neighbor).
-     *
-     * @details Read-only: the count must only change through `+=`, `-=` and
-     * the edge notifications, which keep the ordered set of queued agents in
-     * step with it.
+     * @brief Moves an agent to another group (`NO_GROUP` takes it out of the
+     * layer).
+     * @details Like every change made during a step, it is in force for the
+     * contacts of the next step: the move waits for the end of the step, when
+     * the pools are rebuilt (until then, `get_group()` gives the old group).
      */
-    epiworld_fast_int operator[](epiworld_fast_uint i) const;
+    void set_group(size_t agent_id, size_t group);
+
+    size_t get_n_groups() const { return n_groups; }
 
     /**
-     * @brief Calls `f(i)` for every agent with a non-zero count, in ascending
-     * id order.
-     *
-     * @details Costs O(N / 64 + number of queued agents), instead of a scan of
-     * the whole population. The count of an agent is read when the walk
-     * reaches it, so if `f` changes the queue (e.g., a state function that
-     * adds a tie), agents further ahead see the change -- exactly what a plain
-     * `for (i = 0; i < N; ++i) if (queue[i] ...)` loop would do.
+     * @brief Sets the contact matrix.
+     * @param cmat Column-major `n_groups x n_groups` matrix: entry `(i, j)`
+     * is the expected number of contacts per day that an agent in group `i` has
+     * with agents in group `j`.
      */
-    template< typename F >
-    void for_each_nonzero(F && f);
+    void set_contact_matrix(std::vector< double > cmat);
+
+    const std::vector< double > & get_contact_matrix() const
+    {
+        return contact_matrix;
+    }
 
     /**
-     * @name Keep the queue in step with a change to the contact network
-     *
-     * @details The queue counts, for every agent, how many of its neighbors are
-     * registered as active. That count is built when an agent is registered
-     * (`operator+=`) and unwound when it is deregistered (`operator-=`), both
-     * walking the agent's neighbors *as they are at that moment*. Changing the
-     * network in between would leave the two walks disagreeing, and an agent
-     * whose count drifted to zero is silently skipped by
-     * `Model::update_state()`.
-     *
-     * This keeps the counts exact as the change happens, in constant time: an
-     * agent that gains a tie to another hands it whatever it contributes, and
-     * one that loses the tie takes it back.
-     *
-     * @param a,b The two ends of the tie that was just added or removed.
-     * @param da,db How `a`'s list changed (`+1` gained `b`, `-1` lost it, `0`
-     * unchanged), and `b`'s.
+     * @brief The contacts are the model parameter `param` times the contact
+     * matrix (read at the end of every step, after the global events, so a
+     * change to the parameter applies from the next step).
+     * @details For a layer with a contact matrix only; `reset()` throws for a
+     * layer with contact probabilities.
      */
-    void notify_ties_changed(size_t a, int da, size_t b, int db);
+    void set_contact_rate(std::string param) { rate_ref.emplace(std::move(param)); }
+
+    bool has_contact_rate() const { return rate_ref.has_value(); }
+
+    /// The contact rate: the value of the `set_contact_rate()` parameter (1
+    /// without one).
+    double get_contact_rate(const Model & model) const
+    {
+        return rate_ref ? (*rate_ref)(model) : 1.0;
+    }
 
     /**
-     * @brief Keep the queue in step with `layer::Network::swap_ties()`.
-     *
-     * @details `a`'s tie to `b` and `c`'s tie to `d` traded ends: (a-b), (c-d)
-     * became (a-d), (c-b). Nobody's degree changed, only whose registrations
-     * reach whom: `b` now gets what `c` contributes instead of what `a` does,
-     * and `d` the reverse. In an undirected network the other ends traded too,
-     * so `a` gets what `d` contributes instead of `b`, and `c` the reverse.
-     * Four shifts, whatever the degrees.
-     *
-     * In a directed network only `a`'s and `c`'s lists change, and the queue
-     * follows each agent's own list (`operator+=`), so only `b`'s and `d`'s
-     * counts change.
-     *
-     * @param a,c The agents whose neighbors were swapped.
-     * @param b,d Their neighbors before the swap (`b` was `a`'s, `d` was `c`'s).
-     * @param directed Whether only `a`'s and `c`'s lists changed.
+     * @brief Sets the probability that two members of a group meet on a given
+     * day (contacts within groups only).
+     * @param q One probability per group, or a single one for every group;
+     * `1` makes the groups cliques (everyone meets everyone, every day).
      */
-    void notify_edges_swapped(
-        size_t a,
-        size_t b,
-        size_t c,
-        size_t d,
-        bool directed
-    );
+    void set_contact_prob(std::vector< double > q);
+    void set_contact_prob(double q)
+    {
+        set_contact_prob(std::vector< double >{q});
+    }
+
+    /// The within-group contact probabilities (one per group after `reset()`;
+    /// empty with a contact matrix).
+    const std::vector< double > & get_contact_prob() const
+    {
+        return contact_prob;
+    }
+
+    /// Whether the layer mixes within groups only (`set_contact_prob()`).
+    bool within_groups() const { return !contact_prob_baseline.empty(); }
+
+    /// The agents of group `g`, in no particular order (valid after `reset()`).
+    const std::vector< size_t > & members_of(size_t g) const
+    {
+        check_group(g);
+        return members[g];
+    }
+
+    /// A groupmate of an agent over a window of days (see `groupmates_of()`).
+    struct Groupmate {
+        size_t agent;
+        int last_day; ///< The last day they shared a group, both present
+        int n_days;   ///< The days they shared a group, both present
+    };
 
     /**
-     * @brief Keep the queue in step with an agent changing groups in a
-     * within-group mixing layer.
-     *
-     * @details A group works like a clique of ties for the queue: `a` leaving
-     * `from` is a tie lost to each of its members, and joining `to` a tie
-     * gained to each (`from` still lists `a`, `to` does not yet).
-     *
-     * @param a The agent that moved.
-     * @param from,to Members of its old and new groups (`nullptr`: none).
+     * @brief Who shared a group with `agent`, both present, between days `d1`
+     * and `d2` (traced within-group layers; see the class description).
+     * @details One entry per groupmate, however many times either moved or
+     * was absent in between. Days before day 1 (when contacts start) and after
+     * today (not known yet) are left out. The history is that of the current (or last) run, and covers it
+     * whole: tracing turned on during a run starts it at the next one.
+     * @throws std::logic_error Without a history (see the class description).
+     * @param out Replaced by the groupmates, in ascending id order (a vector
+     * reused across calls allocates nothing once it has grown).
      */
-    void notify_group_changed(
-        size_t a,
-        const std::vector< size_t > * from,
-        const std::vector< size_t > * to
-    );
+    void groupmates_of(
+        size_t agent_id,
+        int d1,
+        int d2,
+        std::vector< Groupmate > & out
+    ) const;
 
-    // void initialize(Model<TSeq> * m, Agent<TSeq> * p);
-    void reset();
+    layer::Mixing * as_mixing() override { return this; }
 
-    bool operator==(const Queue<TSeq> & other) const;
-    bool operator!=(const Queue<TSeq> & other) const {return !operator==(other);};
+    /// Within groups only: a carrier reaches only its own group.
+    bool supports_queue() const override { return within_groups(); }
 
-    static const int NoOne    = 0;
-    static const int OnlySelf = 1;
-    static const int Everyone = 2;
+    /**
+     * @brief Restores the baseline and sizes all buffers for the model (the
+     * first `update()`, on day 0, builds the pools).
+     */
+    void reset(Model & model) override;
+
+    /**
+     * @brief Rebuilds the infectious pools and the available counts from the
+     * current state of the model (once per step).
+     */
+    void update(Model & model) override;
+
+    std::shared_ptr< ContactLayer > clone() const override
+    {
+        return std::make_shared< Mixing >(*this);
+    }
+
+    /**
+     * @brief Samples the infectious contacts of `agent` (none if it is not in
+     * the layer), appending them to `out`.
+     * @details `exclude` is ignored: the pools hold the agents in the model's
+     * infectious states only. See `ContactLayer::sample()`.
+     */
+    size_t sample(
+        size_t agent,
+        Model & model,
+        const std::vector< bool > * exclude,
+        std::vector< size_t > & out
+    ) override;
+
+    /// Number of infectious agents in a group.
+    size_t get_n_infectious(size_t group) const { return counts[group]; }
 
 };
 
-template<typename TSeq>
-inline void Queue<TSeq>::shift(size_t id, epiworld_fast_int n)
+inline std::shared_ptr< Mixing > mixing(std::string name)
+{
+    return std::shared_ptr< Mixing >(new Mixing(std::move(name)));
+}
+
+inline void Mixing::set_groups(Assign a, size_t n_groups_)
+{
+
+    if (!this->edits_baseline())
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': set_groups() sets the "
+            "baseline and cannot be called during a run; use set_group()."
+        );
+
+    if (!a.is_set())
+        throw std::invalid_argument(
+            "Mixing layer '" + this->get_name() + "': empty grouping."
+        );
+
+    // A label is a group, or none
+    const std::string lname = this->get_name();
+    auto to_groups = [lname, n_groups_](const std::vector< int > & labels) {
+        std::vector< size_t > g(labels.size(), NO_GROUP);
+        for (size_t i = 0u; i < labels.size(); ++i)
+        {
+            if (labels[i] == -1)
+                continue;
+            if ((labels[i] < 0) || (static_cast< size_t >(labels[i]) >= n_groups_))
+                throw std::range_error(
+                    "Mixing layer '" + lname + "': the label " +
+                    std::to_string(labels[i]) + " is not a group (" +
+                    std::to_string(n_groups_) + " groups; a grouping gives "
+                    "each agent a group, e.g., assign::counts({{0, n}, ...}))."
+                );
+            g[i] = static_cast< size_t >(labels[i]);
+        }
+        return g;
+    };
+
+    n_groups        = n_groups_;
+    explicit_groups = true;
+    layout_stale    = true;
+
+    if (const auto * fixed = a.get_fixed())
+    {
+        groups_baseline = to_groups(*fixed);
+        groups          = groups_baseline;
+        grouping        = {0u, nullptr};
+        rebuild_members();
+    }
+    else
+    {
+        // Drawn at every reset; everyone can be in a group
+        grouping = {
+            n_groups_,
+            [a, to_groups](Model & model) -> std::vector< size_t > {
+                const std::vector< char > everyone(model.size(), 1);
+                return to_groups(a.draw(model, everyone));
+            }
+        };
+        groups_baseline.clear();
+        groups.clear();
+    }
+
+    clear_history();
+
+}
+
+inline void Mixing::check_agent(size_t agent_id) const
+{
+    if (agent_id >= groups.size())
+        throw std::range_error(
+            "Mixing layer '" + this->get_name() + "': agent " +
+            std::to_string(agent_id) + " is out of range (the layer has " +
+            std::to_string(groups.size()) + " agents; was it reset?)."
+        );
+}
+
+inline void Mixing::check_group(size_t group) const
+{
+    if (group >= n_groups)
+        throw std::range_error(
+            "Mixing layer '" + this->get_name() + "': group " +
+            std::to_string(group) + " is out of range (" +
+            std::to_string(n_groups) + " groups)."
+        );
+}
+
+inline void Mixing::set_group(size_t agent_id, size_t group)
+{
+
+    check_agent(agent_id);
+    if (group != NO_GROUP)
+        check_group(group);
+
+    // During a run, the move waits for the end of the step (see update())
+    if (!this->edits_baseline())
+    {
+        moves.emplace_back(agent_id, group);
+        return;
+    }
+
+    if (grouping.draw)
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': its grouping is drawn "
+            "at every reset, so a move between runs would be lost; move "
+            "agents during a run, or set fixed groups with set_groups()."
+        );
+
+    groups_baseline[agent_id] = group;
+    move(agent_id, group, false);
+    clear_history();
+
+}
+
+inline void Mixing::move(
+    size_t agent_id,
+    size_t group,
+    bool notify_queue
+)
+{
+
+    const size_t old = groups[agent_id];
+    if (old == group)
+        return;
+
+    // During a run, the queue follows the move (it sees within-group layers)
+    if (notify_queue && (this->model != nullptr) && within_groups())
+        this->model->group_member_moved(
+            agent_id,
+            old   == NO_GROUP ? nullptr : &members[old],
+            group == NO_GROUP ? nullptr : &members[group]
+        );
+
+    if (old != NO_GROUP)
+    {
+        auto & m = members[old];
+        auto it = std::find(m.begin(), m.end(), agent_id);
+        *it = m.back();
+        m.pop_back();
+    }
+
+    if (group != NO_GROUP)
+        members[group].push_back(agent_id);
+
+    groups[agent_id] = group;
+    layout_stale = true;
+
+}
+
+inline void Mixing::set_contact_matrix(std::vector< double > cmat)
+{
+
+    for (double c : cmat)
+        if (c < 0.0)
+            throw std::range_error(
+                "Mixing layer '" + this->get_name() + "': the contact matrix "
+                "must be non-negative (" + std::to_string(c) + " < 0)."
+            );
+
+    // Between runs, the size is checked by reset() (the grouping may not be
+    // set yet); during a run, the grouping and the form are fixed
+    if (this->edits_baseline())
+    {
+        contact_matrix_baseline = cmat;
+        contact_prob_baseline.clear();
+    }
+    else if (within_groups())
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': the layer mixes within "
+            "groups (set_contact_prob()); a contact matrix can only replace "
+            "the contact probabilities between runs."
+        );
+    else if (cmat.size() != n_groups * n_groups)
+        throw std::length_error(
+            "Mixing layer '" + this->get_name() + "': the contact matrix has " +
+            std::to_string(cmat.size()) + " entries, but the layer has " +
+            std::to_string(n_groups) + " groups."
+        );
+
+    contact_matrix = std::move(cmat);
+
+}
+
+inline void Mixing::set_contact_prob(std::vector< double > q)
+{
+
+    if (q.empty())
+        throw std::length_error(
+            "Mixing layer '" + this->get_name() + "': set_contact_prob() needs "
+            "at least one probability."
+        );
+
+    for (double x : q)
+        if (!((x >= 0.0) && (x <= 1.0)))
+            throw std::range_error(
+                "Mixing layer '" + this->get_name() + "': contact probabilities "
+                "must be in [0, 1] (" + std::to_string(x) + ")."
+            );
+
+    // Between runs, the size is checked by reset(); during a run, the
+    // grouping and the form are fixed
+    if (this->edits_baseline())
+    {
+        contact_prob_baseline = q;
+        contact_matrix_baseline.clear();
+    }
+    else
+    {
+
+        if (!within_groups())
+            throw std::logic_error(
+                "Mixing layer '" + this->get_name() + "': the layer has a "
+                "contact matrix; contact probabilities can only replace it "
+                "between runs."
+            );
+
+        // A copy: assign() may free the element before reading it
+        if (q.size() == 1u)
+            q.assign(n_groups, double(q[0u]));
+        else if (q.size() != n_groups)
+            throw std::length_error(
+                "Mixing layer '" + this->get_name() + "': " +
+                std::to_string(q.size()) + " contact probabilities, but the "
+                "layer has " + std::to_string(n_groups) + " groups."
+            );
+
+    }
+
+    contact_prob = std::move(q);
+
+}
+
+inline void Mixing::rebuild_members()
+{
+
+    members.assign(n_groups, {});
+    for (size_t i = 0u; i < groups.size(); ++i)
+        if (groups[i] != NO_GROUP)
+            members[groups[i]].push_back(i);
+
+}
+
+inline void Mixing::rebuild_layout()
+{
+
+    group_size.assign(n_groups, 0u);
+    for (size_t g : groups)
+        if (g != NO_GROUP)
+            ++group_size[g];
+
+    counts.assign(n_groups, 0u);
+    offsets.assign(n_groups, 0u);
+    n_available.assign(n_groups, 0u);
+
+    // Groups start where the previous one ends (at most its size)
+    for (size_t i = 1u; i < n_groups; ++i)
+        offsets[i] = offsets[i - 1u] + group_size[i - 1u];
+
+    layout_stale = false;
+
+}
+
+inline void Mixing::reset(Model & model)
+{
+
+    const size_t n = model.size();
+
+    if (!explicit_groups)
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': it has no groups; set "
+            "them with set_groups()."
+        );
+
+    // This run's draw, or the fixed groups (edits of the last run dropped)
+    if (grouping.draw)
+    {
+        groups_baseline = grouping.draw(model);
+        for (size_t g : groups_baseline)
+            if ((g != NO_GROUP) && (g >= n_groups))
+                throw std::range_error(
+                    "Mixing layer '" + this->get_name() + "': the grouping "
+                    "drew group " + std::to_string(g) + ", out of range (" +
+                    std::to_string(n_groups) + " groups)."
+                );
+    }
+
+    groups = groups_baseline;
+    if (groups.size() != n)
+        throw std::length_error(
+            "Mixing layer '" + this->get_name() + "': the grouping has " +
+            std::to_string(groups.size()) + " agents, but the model has " +
+            std::to_string(n) + "."
+        );
+
+    // Edits of the last run are dropped
+    if (within_groups())
+    {
+
+        contact_prob = contact_prob_baseline;
+        // A copy: assign() may free the element before reading it
+        if (contact_prob.size() == 1u)
+            contact_prob.assign(n_groups, double(contact_prob[0u]));
+        else if (contact_prob.size() != n_groups)
+            throw std::length_error(
+                "Mixing layer '" + this->get_name() + "': " +
+                std::to_string(contact_prob.size()) + " contact "
+                "probabilities, but the layer has " +
+                std::to_string(n_groups) + " groups."
+            );
+
+        contact_matrix.clear();
+
+        if (has_contact_rate())
+            throw std::logic_error(
+                "Mixing layer '" + this->get_name() + "': a contact rate "
+                "scales a contact matrix; this layer has contact "
+                "probabilities (within groups)."
+            );
+
+    }
+    else
+    {
+
+        contact_matrix = contact_matrix_baseline;
+        if (contact_matrix.size() != n_groups * n_groups)
+            throw std::length_error(
+                "Mixing layer '" + this->get_name() + "': the contact matrix "
+                "has " + std::to_string(contact_matrix.size()) + " entries, but "
+                "the layer has " + std::to_string(n_groups) + " groups."
+            );
+
+        contact_prob.clear();
+
+    }
+
+    rebuild_members();
+    moves.clear();
+
+    clear_history();
+    history = within_groups() && this->is_tracing();
+    if (history)
+    {
+        spells_of.resize(n);
+        departures.resize(n_groups);
+        absent.assign(n, false);
+    }
+
+    pool.assign(n, 0u);
+    ordered.clear();
+    ordered.reserve(n);
+    marks.assign((n + 63u) / 64u, 0u);
+
+    rebuild_layout();
+    this->mark_clean();
+
+}
+
+inline void Mixing::update(Model & model)
+{
+
+    // Moves made during the step; the history keeps each agent's net change
+    // (several moves of one agent in a step are one, or none if it is back)
+    moved_from.clear();
+    for (const auto & [agent_id, group] : moves)
+    {
+        if (history)
+            moved_from.emplace_back(agent_id, groups[agent_id]);
+
+        move(agent_id, group, true);
+    }
+    moves.clear();
+
+    // The first entry of each agent has its group before the step
+    std::stable_sort(
+        moved_from.begin(), moved_from.end(),
+        [](const auto & x, const auto & y) { return x.first < y.first; }
+    );
+    for (size_t i = 0u; i < moved_from.size(); ++i)
+    {
+        const auto & [agent_id, old] = moved_from[i];
+        if ((i > 0u) && (moved_from[i - 1u].first == agent_id))
+            continue;
+
+        if (groups[agent_id] != old)
+            record(agent_id, old, model.today());
+    }
+
+    if (layout_stale)
+        rebuild_layout();
+
+    const size_t ns = static_cast< size_t >(model.nstates);
+    const auto & not_infectious = model.state_not_infectious;
+
+    std::fill(counts.begin(), counts.end(), 0u);
+
+    // Marking the carriers in infectious states; walking the bitset gives
+    // ascending ids. States without carriers (e.g., the susceptible) are
+    // skipped without a scan.
+    for (size_t s = 0u; s < ns; ++s)
+    {
+        if ((model.state_carriers[s] == 0u) ||
+            (!not_infectious.empty() && not_infectious[s]))
+            continue;
+
+        for (size_t id : model.state_index_members(s))
+            if (model.agent_carrier[id])
+                marks[id >> 6] |= (uint64_t(1) << (id & 63u));
+    }
+
+    ordered.clear();
+    for (size_t w = 0u; w < marks.size(); ++w)
+    {
+        uint64_t word = marks[w];
+        marks[w] = 0u;
+        while (word != 0u)
+        {
+            ordered.push_back((w << 6) + epi_ctz64(word));
+            word &= (word - 1u);
+        }
+    }
+
+    // Placing them in their group (agents out of the layer are not in the mixing)
+    for (size_t id : ordered)
+    {
+        const size_t g = groups[id];
+        if (g == NO_GROUP)
+            continue;
+
+        pool[offsets[g] + counts[g]++] = id;
+    }
+
+    // In the mixing = group size - agents in excluded states
+    for (size_t g = 0u; g < n_groups; ++g)
+        n_available[g] = group_size[g];
+
+    // Back from an excluded state
+    if (history)
+    {
+        size_t k = 0u;
+        for (size_t id : absent_ids)
+        {
+            if (model.state_excluded[model.agent_state[id]])
+                absent_ids[k++] = id;
+            else
+            {
+                absent[id] = false;
+                record(id, NO_GROUP, model.today());
+            }
+        }
+        absent_ids.resize(k);
+    }
+
+    for (size_t s = 0u; s < ns; ++s)
+    {
+        if (!model.state_excluded[s])
+            continue;
+
+        for (size_t id : model.state_index_members(s))
+        {
+            if (history && !absent[id])
+            {
+                absent[id] = true;
+                absent_ids.push_back(id);
+                record(id, NO_GROUP, model.today());
+            }
+
+            const size_t g = groups[id];
+            if (g == NO_GROUP)
+                continue;
+
+            if (n_available[g] > 0u)
+                --n_available[g];
+        }
+    }
+
+    if (!within_groups())
+        daily_build(model);
+
+}
+
+inline void Mixing::record(size_t agent_id, size_t old_group, int today)
+{
+
+    const size_t g = groups[agent_id];
+    spells_of[agent_id].push_back({today + 1, !absent[agent_id], g});
+
+    // Absences do not change the members
+    if ((old_group != NO_GROUP) && (old_group != g))
+        departures[old_group].push_back({today + 1, agent_id});
+
+}
+
+inline void Mixing::clear_history()
+{
+    history = false;
+    // Freed, not just emptied: an untraced layer holds nothing
+    std::vector< std::vector< Spell > >().swap(spells_of);
+    std::vector< std::vector< Departure > >().swap(departures);
+    std::vector< bool >().swap(absent);
+    absent_ids.clear();
+}
+
+template<typename F>
+inline void Mixing::spells(size_t agent_id, int a, int b, F f) const
+{
+
+    // Walking back from the last spell, each one holding until the next
+    int end = b + 1;
+    const auto & sp = spells_of[agent_id];
+    for (auto s = sp.rbegin(); (s != sp.rend()) && (end > a); ++s)
+    {
+        const int first = std::max(s->from, a);
+        if (s->present && (s->group != NO_GROUP) && (first < end))
+            f(s->group, first, end - 1);
+
+        end = std::min(end, s->from);
+    }
+
+    // Before its first change, the agent is where the run started
+    if ((end > a) && (groups_baseline[agent_id] != NO_GROUP))
+        f(groups_baseline[agent_id], a, end - 1);
+
+}
+
+inline int Mixing::last_departure(size_t agent_id, size_t g) const
+{
+
+    // The spell after its last one in g (none: it left its starting group)
+    const auto & sp = spells_of[agent_id];
+    for (size_t k = sp.size() - 1u; k > 0u; --k)
+        if (sp[k - 1u].group == g)
+            return sp[k].from;
+
+    return sp[0u].from;
+
+}
+
+inline void Mixing::groupmates_of(
+    size_t agent_id,
+    int d1,
+    int d2,
+    std::vector< Groupmate > & out
+) const
+{
+
+    check_agent(agent_id);
+    if (!history)
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': " + (
+                (this->is_tracing() && within_groups()) ?
+                "no history. It covers whole runs: tracing was turned on, "
+                "or the grouping edited, after the last run started; the "
+                "next run keeps one." :
+                "groupmates_of() needs a traced layer (enable_tracing() "
+                "before the run) with contact probabilities (within groups)."
+            )
+        );
+
+    // Contacts start on day 1 (day 0 is the initial state)
+    d1 = std::max(d1, 1);
+    d2 = std::min(d2, this->model->today());
+
+    // One entry per shared span, merged per groupmate below
+    out.clear();
+    spells(agent_id, d1, d2, [&](size_t g, int a, int b) {
+
+        auto shared = [&](size_t other) {
+            spells(other, a, b, [&](size_t h, int first, int last) {
+                if (h == g)
+                    out.push_back({other, last, last - first + 1});
+            });
+        };
+
+        // The members now
+        for (size_t other : members[g])
+            if (other != agent_id)
+                shared(other);
+
+        // Those who left after day a, each once: at its last departure
+        const auto & left = departures[g];
+        for (auto d = left.rbegin(); (d != left.rend()) && (d->day > a); ++d)
+            if (
+                (d->agent != agent_id) && (groups[d->agent] != g) &&
+                (last_departure(d->agent, g) == d->day)
+            )
+                shared(d->agent);
+
+    });
+
+    std::sort(out.begin(), out.end(), [](const auto & x, const auto & y) {
+        return x.agent < y.agent;
+    });
+
+    size_t k = 0u;
+    for (size_t i = 0u; i < out.size(); ++i)
+    {
+        if ((k > 0u) && (out[k - 1u].agent == out[i].agent))
+        {
+            out[k - 1u].last_day = std::max(out[k - 1u].last_day, out[i].last_day);
+            out[k - 1u].n_days  += out[i].n_days;
+        }
+        else
+            out[k++] = out[i];
+    }
+    out.resize(k);
+
+}
+
+inline void Mixing::DailyDraw::set(int n_, double p_)
+{
+
+    n = n_;
+    p = p_;
+    poisson = false;
+
+    if ((n == 0) || (p <= 0.0) || (p >= 1.0))
+        return;
+
+    // The same choice as Model::rbinom(n, p)
+    #ifdef EPI_FAST_BINOM
+    if ((p <= 0.01) && (static_cast< double >(n) * p * p <= 0.1))
+    {
+        poisson = true;
+        pois = std::poisson_distribution<>::param_type(static_cast< double >(n) * p);
+        return;
+    }
+    #endif
+
+    binom = std::binomial_distribution<>::param_type(n, p);
+
+}
+
+inline int Mixing::DailyDraw::operator()(Model & model) const
+{
+
+    if ((n == 0) || (p <= 0.0))
+        return 0;
+
+    // Everyone, with no random draws
+    if (p >= 1.0)
+        return n;
+
+    if (poisson)
+        return std::min(model.rpoissd(*model.engine, pois), n);
+
+    return model.rbinomd(*model.engine, binom);
+
+}
+
+inline void Mixing::daily_build(const Model & model)
+{
+
+    // The contact rate scales the whole matrix
+    const double scale = get_contact_rate(model);
+
+    daily.resize(n_groups * n_groups);
+    for (size_t own = 0u; own < n_groups; ++own)
+    {
+
+        // Column of the group: entry (own, g) is rate[g * n_groups]
+        const double * rate = contact_matrix.data() + own;
+        for (size_t g = 0u; g < n_groups; ++g)
+        {
+
+            // In its own group, an agent's contacts are the others
+            const size_t others = n_available[g] - ((g == own) ? 1u : 0u);
+            const double p = (others == 0u || n_available[g] == 0u) ? 0.0 :
+                std::min(
+                    1.0,
+                    scale * rate[g * n_groups] / static_cast< double >(others)
+                );
+
+            daily[own * n_groups + g].set(static_cast< int >(counts[g]), p);
+
+        }
+
+    }
+
+}
+
+inline void Mixing::draw(
+    size_t g,
+    size_t n_met,
+    size_t agent,
+    Model & model,
+    std::vector< size_t > & out
+)
+{
+
+    const size_t n_pool = counts[g];
+
+    // A binomial number of distinct agents is the same as meeting each one
+    // independently with probability p; with p = 1 (a clique) it is everyone,
+    // with no draws. A partial shuffle of the pool puts the ones met first.
+    size_t * first = pool.data() + offsets[g];
+    for (size_t s = 0u; s < n_met; ++s)
+    {
+
+        if (n_met < n_pool)
+        {
+            size_t which = s + static_cast< size_t >(
+                model.runif() * static_cast< double >(n_pool - s)
+            );
+
+            // Correcting overflow error
+            if (which >= n_pool)
+                which = n_pool - 1u;
+
+            std::swap(first[s], first[which]);
+        }
+
+        const size_t id = first[s];
+
+        #ifdef EPI_DEBUG
+        if (model.get_agent(id).get_virus() == nullptr)
+            throw std::logic_error(
+                "The agent is not infected, but it should be."
+            );
+        #endif
+
+        // Can't meet itself
+        if (id != agent)
+            out.push_back(id);
+
+    }
+
+}
+
+inline size_t Mixing::sample(
+    size_t agent,
+    Model & model,
+    const std::vector< bool > *,
+    std::vector< size_t > & out
+)
+{
+
+    if (!in_layer(agent))
+        return 0u;
+
+    const size_t first = out.size();
+
+    const size_t own = groups[agent];
+
+    if (within_groups())
+    {
+        // Only the agent's own group
+        const double q = contact_prob[own];
+        const size_t n_pool = counts[own];
+        if ((n_pool > 0u) && (q > 0.0))
+            draw(
+                own,
+                (q < 1.0) ?
+                    static_cast< size_t >(model.rbinom(static_cast< int >(n_pool), q)) :
+                    n_pool,
+                agent, model, out
+            );
+    }
+    else if (!model.state_excluded[model.agent_state[agent]])
+    {
+
+        // The day's draws of the agent's group (see update())
+        const DailyDraw * day = daily.data() + own * n_groups;
+        for (size_t g = 0u; g < n_groups; ++g)
+        {
+            const int n_met = day[g](model);
+            if (n_met > 0)
+                draw(g, static_cast< size_t >(n_met), agent, model, out);
+        }
+
+    }
+    else
+    {
+
+        // An excluded agent is not one of the others of its group (it rarely
+        // samples: its state usually has no sampler)
+        const double scale = get_contact_rate(model);
+        const double * rate = contact_matrix.data() + own;
+        for (size_t g = 0u; g < n_groups; ++g)
+        {
+            const size_t n_pool = counts[g];
+            const double p = (n_available[g] == 0u) ? 0.0 : std::min(
+                1.0,
+                scale * rate[g * n_groups] / static_cast< double >(n_available[g])
+            );
+            if ((n_pool == 0u) || (p <= 0.0))
+                continue;
+
+            draw(
+                g,
+                (p < 1.0) ?
+                    static_cast< size_t >(model.rbinom(static_cast< int >(n_pool), p)) :
+                    n_pool,
+                agent, model, out
+            );
+        }
+
+    }
+
+    // Reporting the interactions, only if somebody listens
+    const size_t n_sampled = out.size() - first;
+    this->trace(out.data() + first, n_sampled, agent);
+    if (model.has_post_sampling())
+        model.register_sampled_contacts(
+            out.data() + first, n_sampled, static_cast< int >(agent)
+        );
+
+    return n_sampled;
+
+}
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/layer-mixing.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/layer-network.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_LAYER_NETWORK_HPP
+#define EPIWORLD_LAYER_NETWORK_HPP
+
+namespace layer {
+
+/**
+ * @brief Contact layer with explicit ties (a network).
+ *
+ * @details The contacts of an agent in this layer are its ties. A network
+ * layer is created with `layer::network()`, either from a graph, which is then
+ * *fixed*, or from a *generator*, a function that receives the model and
+ * returns a graph, which the layer calls at every reset: each run (and each
+ * replicate of `run_multiple()`) then gets its own draw, from its own seed.
+ * The `graph::` functions return generators; any function
+ * `AdjList(Model &)` is one.
+ *
+ * ### Ties and their order
+ *
+ * Each agent's ties are kept in the order they were added (a graph is loaded
+ * with each agent's ties in ascending id order, without repeats), and that
+ * order is load-bearing: the single draw that picks the infector walks the
+ * contacts in this order, so whichever agent sits at a given position is the
+ * one recorded. Adding or removing a tie never permutes the others. Agents with
+ * more than `EPI_NEIGHBOR_INDEX_THRESHOLD` ties also get a position index, so
+ * that looking a tie up is not a scan.
+ *
+ * ### Edits
+ *
+ * `add_edge()`, `rm_edge()` and the rewiring function are the only way to
+ * change the ties, and they keep the model's queue and agents-by-state index in
+ * step, so they are safe at any point of a run. An edit made during a run
+ * applies to that run only: the next reset restores a fixed graph, and redraws
+ * a generated one. An edit made between runs changes a fixed graph for the runs
+ * that follow; a generated graph is redrawn anyway.
+ *
+ * ### Rewiring
+ *
+ * `set_rewiring()` gives the layer a function that is called at the end of
+ * every step (not on day 0), after the global events, with the layer and the
+ * model; `graph::rewire_degseq()` returns the degree-preserving one.
+ *
+ * @ingroup contact_layers
+ */
+class Network : public ContactLayer
+{
+    friend class epiworld::Model;
+    friend class epiworld::Queue;
+
+public:
+
+    /// Returns the graph of a run (called at every reset).
+    using Generator = std::function< AdjList(Model &) >;
+
+    /// Changes the ties at the end of each step.
+    using Rewiring = std::function< void(Network &, Model &) >;
+
+private:
+
+    Generator generator; ///< Empty for a fixed graph
+    Rewiring rewiring;
+    bool directed = false;
+
+    std::vector< std::vector< size_t > > ties; ///< Neighbors of each agent
+
+    /// Position of each neighbor, only for agents with many ties
+    std::unordered_map< size_t, std::unordered_map< size_t, size_t > > index;
+
+    // The fixed graph the next reset restores, one row per agent; empty until
+    // the first edit
+    std::vector< size_t > baseline_start;
+    std::vector< size_t > baseline_ids;
+    bool baseline_stale = false; ///< Edited between runs
+
+    void set_graph(const AdjList & graph);
+    void capture_baseline();
+    void restore_baseline();
+    void build_index(size_t i);
+    size_t find(size_t i, size_t j) const; ///< Position of `j` in `ties[i]`
+    bool append(size_t i, size_t j, bool check);
+    void erase_at(size_t i, size_t pos);
+    void check_endpoints(size_t i, size_t j) const;
+    void edit();
+
+protected:
+
+    // Created with layer::network()
+    Network(std::string name, const AdjList & graph);
+    Network(std::string name, Generator generator);
+
+    friend std::shared_ptr< Network > network(std::string, const AdjList &);
+
+    friend std::shared_ptr< Network > network(
+        std::string, Network::Generator
+    );
+
+public:
+
+    size_t size() const { return ties.size(); } ///< Number of agents
+    bool is_directed() const { return directed; }
+
+    /// Number of ties of agent `i` (in a directed network, the ties it keeps).
+    size_t get_degree(size_t i) const { return ties[i].size(); }
+
+    /**
+     * @brief The neighbors of agent `i`, without allocating.
+     * @details In order (see the class description). The view is invalidated by
+     * any change to the agent's ties. The layer must belong to a model.
+     */
+    NeighborsView neighbors_view(size_t i);
+
+    /**
+     * @name Edit the ties
+     *
+     * @details Undirected ties only, changed at both ends: `add_edge()` and
+     * `rm_edge()` throw in a directed network.
+     *
+     * @return Whether a tie was added (removed).
+     * @throws std::range_error if an id is out of range.
+     * @throws std::logic_error if `i == j` or the network is directed.
+     */
+    ///@{
+    bool add_edge(size_t i, size_t j);
+    bool rm_edge(size_t i, size_t j);
+    ///@}
+
+    /// Whether `i` and `j` are tied (in a directed network, whether `i -> j`).
+    bool has_edge(size_t i, size_t j) const;
+
+    /**
+     * @brief Swaps two ties: `j`, `i`'s neighbor at position `pos_i`, and `l`,
+     * `k`'s neighbor at position `pos_k`, trade places.
+     *
+     * @details (i-j), (k-l) become (i-l), (k-j); in an undirected network the
+     * other ends follow. No degree changes. Used by rewiring functions.
+     * @throws std::range_error if an id or a position is out of range.
+     * @throws std::logic_error if the network is undirected and the ties share
+     * an endpoint (`i`, `j`, `k` and `l` must be four different agents).
+     */
+    void swap_ties(size_t i, size_t pos_i, size_t k, size_t pos_k);
+
+    /// Sets the function that rewires the ties at the end of each step.
+    void set_rewiring(Rewiring fun) { rewiring = std::move(fun); }
+    bool has_rewiring() const { return static_cast< bool >(rewiring); }
+
+    /**
+     * @brief The ties as an edge list.
+     * @details Each undirected tie once (`source <= target`); each directed
+     * tie as kept by its source. The vectors are appended to.
+     */
+    void get_edgelist(
+        std::vector< int > & source,
+        std::vector< int > & target
+    ) const;
+
+    /// Writes the edge list (see `get_edgelist()`) to a file.
+    void write_edgelist(const std::string & fn) const;
+
+    /**
+     * @brief The neighbors of `agent` that carry a virus, written to `out`
+     * (room for `get_degree(agent)` entries).
+     * @details Neighbors in a state flagged in `exclude` (if not null) are
+     * skipped. With `Record`, each contact is reported to the model's
+     * post-sampling callback.
+     * @return The number of contacts written.
+     */
+    template< bool Record >
+    size_t pull(
+        size_t agent,
+        Model & model,
+        const std::vector< bool > * exclude,
+        size_t * out
+    ) const;
+
+    /// The network's part of a pull (see `ContactLayer::sample()`).
+    size_t sample(
+        size_t agent,
+        Model & model,
+        const std::vector< bool > * exclude,
+        std::vector< size_t > & out
+    ) override
+    {
+
+        const size_t first = out.size();
+        out.resize(first + ties[agent].size());
+
+        // The recording path is chosen once per call, not per contact
+        const size_t n = model.post_sampling_on ?
+            pull<true>(agent, model, exclude, out.data() + first) :
+            pull<false>(agent, model, exclude, out.data() + first);
+
+        out.resize(first + n);
+        this->trace(out.data() + first, n, agent);
+        return n;
+
+    }
+
+    void reset(Model & model) override;
+    void update(Model & model) override;
+
+    layer::Network * as_network() override { return this; }
+
+    /// An undirected network: a carrier's ties are its contacts' ties too.
+    bool supports_queue() const override { return !directed; }
+
+    std::shared_ptr< ContactLayer > clone() const override
+    {
+        return std::make_shared< Network >(*this);
+    }
+
+};
+
+/**
+ * @brief A fixed network layer (see `Network`).
+ * @param name Name of the layer (unique in a model).
+ * @param graph The ties; its number of vertices must match the model's
+ * population. Directed if the graph is.
+ * @ingroup contact_layers
+ */
+inline std::shared_ptr< Network > network(
+    std::string name,
+    const AdjList & graph
+)
+{
+    return std::shared_ptr< Network >(
+        new Network(std::move(name), graph)
+    );
+}
+
+/**
+ * @brief A network layer drawn at every reset (see `Network`).
+ * @param name Name of the layer (unique in a model).
+ * @param generator Called with the model at every reset; the graph it returns
+ * must have one vertex per agent.
+ * @ingroup contact_layers
+ */
+inline std::shared_ptr< Network > network(
+    std::string name,
+    Network::Generator generator
+)
+{
+    return std::shared_ptr< Network >(
+        new Network(std::move(name), std::move(generator))
+    );
+}
+
+inline Network::Network(std::string name, const AdjList & graph) :
+    ContactLayer(std::move(name))
+{
+    set_graph(graph);
+}
+
+inline Network::Network(std::string name, Generator generator_) :
+    ContactLayer(std::move(name)),
+    generator(std::move(generator_))
+{
+    if (!generator)
+        throw std::invalid_argument(
+            "Network layer '" + this->get_name() + "': empty generator."
+        );
+}
+
+inline void Network::set_graph(const AdjList & graph)
+{
+
+    const size_t n = graph.vcount();
+
+    // AdjList::is_directed() throws on a graph with no vertices
+    directed = (n > 0u) && graph.is_directed();
+
+    // Each row of the graph (sorted, without repeats) becomes its agent's
+    // ties. Resizing rather than reassigning keeps the rows' memory from one
+    // draw of a generator to the next.
+    const auto & start = graph.get_start();
+    const auto & ids = graph.get_ids();
+
+    ties.resize(n);
+    index.clear();
+    for (size_t i = 0u; i < n; ++i)
+    {
+
+        ties[i].assign(
+            ids.begin() + static_cast< std::ptrdiff_t >(start[i]),
+            ids.begin() + static_cast< std::ptrdiff_t >(start[i + 1u])
+        );
+
+        if (ties[i].size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
+            build_index(i);
+
+    }
+
+}
+
+inline void Network::capture_baseline()
+{
+
+    const size_t n = ties.size();
+    baseline_start.assign(n + 1u, 0u);
+    for (size_t i = 0u; i < n; ++i)
+        baseline_start[i + 1u] = baseline_start[i] + ties[i].size();
+
+    baseline_ids.resize(baseline_start[n]);
+    for (size_t i = 0u; i < n; ++i)
+        std::copy(
+            ties[i].begin(), ties[i].end(),
+            baseline_ids.begin() + static_cast< std::ptrdiff_t >(baseline_start[i])
+        );
+
+}
+
+inline void Network::restore_baseline()
+{
+
+    const size_t n = baseline_start.size() - 1u;
+    ties.resize(n);
+    index.clear();
+    for (size_t i = 0u; i < n; ++i)
+    {
+
+        ties[i].assign(
+            baseline_ids.begin() + static_cast< std::ptrdiff_t >(baseline_start[i]),
+            baseline_ids.begin() + static_cast< std::ptrdiff_t >(baseline_start[i + 1u])
+        );
+
+        if (ties[i].size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
+            build_index(i);
+
+    }
+
+}
+
+inline void Network::build_index(size_t i)
+{
+
+    auto & pos = index[i];
+    pos.clear();
+    pos.reserve(ties[i].size());
+    for (size_t k = 0u; k < ties[i].size(); ++k)
+        pos[ties[i][k]] = k;
+
+}
+
+inline size_t Network::find(size_t i, size_t j) const
+{
+
+    const auto & row = ties[i];
+
+    if (row.size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
+    {
+        const auto & pos = index.at(i);
+        auto it = pos.find(j);
+        return (it == pos.end()) ? row.size() : it->second;
+    }
+
+    for (size_t k = 0u; k < row.size(); ++k)
+        if (row[k] == j)
+            return k;
+
+    return row.size();
+
+}
+
+inline bool Network::append(size_t i, size_t j, bool check)
+{
+
+    if (check && (find(i, j) != ties[i].size()))
+        return false;
+
+    ties[i].push_back(j);
+
+    if (ties[i].size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
+    {
+        auto it = index.find(i);
+        if (it == index.end())
+            build_index(i);
+        else
+            it->second[j] = ties[i].size() - 1u;
+    }
+
+    return true;
+
+}
+
+inline void Network::erase_at(size_t i, size_t pos)
+{
+
+    auto & row = ties[i];
+    row.erase(row.begin() + static_cast< std::ptrdiff_t >(pos));
+
+    // Everything after `pos` shifted down by one, so the index has to follow.
+    // Moving the last tie into the hole would be O(1) but would permute the
+    // others, and their order decides which infector the draw picks.
+    if (row.size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
+        build_index(i);
+    else
+        index.erase(i);
+
+}
+
+inline void Network::check_endpoints(size_t i, size_t j) const
+{
+
+    if ((i >= ties.size()) || (j >= ties.size()))
+        throw std::range_error(
+            "Network layer '" + this->get_name() + "': agent ids must be below " +
+            std::to_string(ties.size()) + "; got " + std::to_string(i) +
+            " and " + std::to_string(j) + "."
+        );
+
+    if (i == j)
+        throw std::logic_error(
+            "Network layer '" + this->get_name() + "': an agent cannot be tied "
+            "to itself (agent " + std::to_string(i) + ")."
+        );
+
+    if (directed)
+        throw std::logic_error(
+            "Network layer '" + this->get_name() + "': add_edge() and rm_edge() "
+            "change both ends of a tie, which is not meaningful in a directed "
+            "network."
+        );
+
+}
+
+inline void Network::edit()
+{
+
+    // A fixed graph keeps a copy to restore, taken before its first edit, so
+    // that a graph never edited is held once
+    if (!generator && baseline_start.empty())
+        capture_baseline();
+
+    // Between runs, a fixed graph is edited from its baseline: the edits of the
+    // last run are dropped first, and the next reset takes the result as the
+    // new baseline.
+    const bool dirty = this->is_dirty();
+    if (!this->edits_baseline() || generator)
+        return;
+
+    if (dirty)
+    {
+        restore_baseline();
+        this->mark_clean();
+    }
+
+    baseline_stale = true;
+
+}
+
+inline NeighborsView Network::neighbors_view(size_t i)
+{
+
+    if (this->model == nullptr)
+        throw std::logic_error(
+            "Network layer '" + this->get_name() + "': neighbors_view() needs "
+            "the layer to be added to a model."
+        );
+
+    if (i >= ties.size())
+        throw std::range_error(
+            "Network layer '" + this->get_name() + "': agent " +
+            std::to_string(i) + " is out of range."
+        );
+
+    const auto & row = ties[i];
+    return NeighborsView(
+        row.empty() ? nullptr : row.data(), row.size(),
+        &this->model->get_agents()
+    );
+
+}
+
+inline bool Network::add_edge(size_t i, size_t j)
+{
+
+    check_endpoints(i, j);
+    edit();
+
+    // Two statements, so that the second end is visited even when the first
+    // already had the tie
+    const bool here  = append(i, j, true);
+    const bool there = append(j, i, true);
+
+    if (!here && !there)
+        return false;
+
+    if (this->model != nullptr)
+        this->model->network_tie_changed(i, here ? 1 : 0, j, there ? 1 : 0);
+
+    return true;
+
+}
+
+inline bool Network::rm_edge(size_t i, size_t j)
+{
+
+    check_endpoints(i, j);
+    edit();
+
+    const size_t pos_i = find(i, j);
+    const size_t pos_j = find(j, i);
+    const bool rm_i = pos_i != ties[i].size();
+    const bool rm_j = pos_j != ties[j].size();
+
+    // Nothing to unwind if the two were never tied
+    if (!rm_i && !rm_j)
+        return false;
+
+    if (rm_i)
+        erase_at(i, pos_i);
+
+    if (rm_j)
+        erase_at(j, pos_j);
+
+    if (this->model != nullptr)
+        this->model->network_tie_changed(i, rm_i ? -1 : 0, j, rm_j ? -1 : 0);
+
+    return true;
+
+}
+
+inline bool Network::has_edge(size_t i, size_t j) const
+{
+
+    if ((i >= ties.size()) || (j >= ties.size()))
+        throw std::range_error(
+            "Network layer '" + this->get_name() + "': agent ids must be below " +
+            std::to_string(ties.size()) + "; got " + std::to_string(i) +
+            " and " + std::to_string(j) + "."
+        );
+
+    return find(i, j) != ties[i].size();
+
+}
+
+inline void Network::swap_ties(
+    size_t i,
+    size_t pos_i,
+    size_t k,
+    size_t pos_k
+)
+{
+
+    if ((i >= ties.size()) || (k >= ties.size()))
+        throw std::range_error(
+            "Network layer '" + this->get_name() + "': agent ids must be below " +
+            std::to_string(ties.size()) + "."
+        );
+
+    if (pos_i >= ties[i].size())
+        throw std::range_error(
+            "The tie you want to swap is out of range. Agent " +
+            std::to_string(i) + " only has " + std::to_string(ties[i].size()) +
+            " ties."
+        );
+
+    if (pos_k >= ties[k].size())
+        throw std::range_error(
+            "The tie you want to swap is out of range. Agent " +
+            std::to_string(k) + " only has " + std::to_string(ties[k].size()) +
+            " ties."
+        );
+
+    const size_t j = ties[i][pos_i];
+    const size_t l = ties[k][pos_k];
+
+    // The other ends follow in an undirected network, so ties that share an
+    // agent would write into the rows being swapped (and leave self-ties)
+    if (!directed && ((i == k) || (j == l) || (i == l) || (k == j)))
+        throw std::logic_error(
+            "Network layer '" + this->get_name() + "': swap_ties() needs four "
+            "different agents in an undirected network; the ties (" +
+            std::to_string(i) + "-" + std::to_string(j) + ") and (" +
+            std::to_string(k) + "-" + std::to_string(l) + ") share one."
+        );
+
+    edit();
+
+    std::swap(ties[i][pos_i], ties[k][pos_k]);
+
+    if (!directed)
+    {
+
+        // The two agents that were swapped away have to be told: the one that
+        // pointed back at `i` now points at `k`, and vice versa. Positions are
+        // looked up rather than cached, so ties can be edited without a
+        // back-pointer table going stale.
+        const size_t back_j = find(j, i);
+        const size_t back_l = find(l, k);
+
+        #ifdef EPI_DEBUG
+        if ((back_j >= ties[j].size()) || (back_l >= ties[l].size()))
+            throw std::logic_error(
+                "[epi-debug] swap_ties: the tie is not reciprocated.");
+        #endif
+
+        ties[j][back_j] = k;
+        ties[l][back_l] = i;
+
+        // Four lists may have changed. Rebuilding is O(degree), the same order
+        // as the swap itself, and sidesteps the aliasing cases (an agent on
+        // both sides of the swap) that piecemeal updates get wrong.
+        for (size_t a : {i, k, j, l})
+            if (ties[a].size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
+                build_index(a);
+
+    }
+    else
+    {
+
+        for (size_t a : {i, k})
+            if (ties[a].size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
+                build_index(a);
+
+    }
+
+    // Nobody's degree changed; only the queue needs to follow
+    if (this->model != nullptr)
+        this->model->network_ties_swapped(i, j, k, l, directed);
+
+}
+
+inline void Network::get_edgelist(
+    std::vector< int > & source,
+    std::vector< int > & target
+) const
+{
+
+    for (size_t i = 0u; i < ties.size(); ++i)
+        for (size_t j : ties[i])
+            if (directed || (i <= j))
+            {
+                source.push_back(static_cast< int >(i));
+                target.push_back(static_cast< int >(j));
+            }
+
+}
+
+inline void Network::write_edgelist(const std::string & fn) const
+{
+
+    std::ofstream efile(fn, std::ios_base::out);
+    efile << "source target\n";
+
+    for (size_t i = 0u; i < ties.size(); ++i)
+        for (size_t j : ties[i])
+            if (directed || (i <= j))
+                efile << i << " " << j << "\n";
+
+}
+
+template< bool Record >
+inline size_t Network::pull(
+    size_t agent,
+    Model & model,
+    const std::vector< bool > * exclude,
+    size_t * out
+) const
+{
+
+    size_t n = 0u;
+    const auto & row = ties[agent];
+
+    // During a run, most neighbors do not carry a virus. The model's compact
+    // per-agent flag rules them out reading one byte each instead of loading
+    // the neighbor's `Agent`; the contacts kept, and their order, are the same.
+    const char * carrier = model.get_agent_carrier();
+    auto & agents = model.get_agents();
+
+    for (size_t j : row)
+    {
+
+        if ((carrier != nullptr) && (carrier[j] == 0))
+            continue;
+
+        auto & neighbor = agents[j];
+
+        if ((exclude != nullptr) && (*exclude)[neighbor.get_state()])
+            continue;
+
+        if (neighbor.get_virus() == nullptr)
+            continue;
+
+        // The post-sampling callback sees every eligible contact
+        if constexpr (Record)
+            model.register_sampled_contact(j, agent);
+
+        out[n++] = j;
+
+    }
+
+    return n;
+
+}
+
+inline void Network::reset(Model & model)
+{
+
+    if (generator)
+        set_graph(generator(model));
+    else if (this->is_dirty())
+        restore_baseline();
+    else if (baseline_stale)
+        capture_baseline(); // Edits made between runs become the baseline
+
+    baseline_stale = false;
+
+    if (ties.size() != model.size())
+        throw std::length_error(
+            "Network layer '" + this->get_name() + "': the graph has " +
+            std::to_string(ties.size()) + " vertices, but the model has " +
+            std::to_string(model.size()) + " agents."
+        );
+
+    this->mark_clean();
+
+}
+
+inline void Network::update(Model & model)
+{
+
+    // Day 0 is recorded, not stepped: rewiring starts at the end of day 1
+    if (rewiring && (model.today() > 0))
+        rewiring(*this, model);
+
+}
+
+}
+
+/**
+ * @brief Rewires a share of a network layer's ties, keeping every degree.
+ *
+ * @details Picks two agents with probability proportional to their degree and
+ * one tie of each, uniformly, and swaps them (`layer::Network::swap_ties()`),
+ * skipping swaps that would create self-ties or repeated ties;
+ * `floor(proportion * sum of degrees)` attempts. Use it through
+ * `graph::rewire_degseq()`.
+ */
+inline void rewire_degseq(
+    layer::Network & net,
+    Model & model,
+    epiworld_double proportion
+)
+{
+
+    const size_t n = net.size();
+
+    #ifdef EPI_DEBUG
+    std::vector< size_t > degree0(n);
+    for (size_t i = 0u; i < n; ++i)
+        degree0[i] = net.get_degree(i);
+    #endif
+
+    // Agents with ties, weighted by degree
+    std::vector< size_t > non_isolates;
+    std::vector< epiworld_double > weights;
+    epiworld_double nedges = 0.0;
+
+    for (size_t i = 0u; i < n; ++i)
+    {
+        if (net.get_degree(i) > 0u)
+        {
+            non_isolates.push_back(i);
+            epiworld_double wtemp = static_cast< epiworld_double >(net.get_degree(i));
+            weights.push_back(wtemp);
+            nedges += wtemp;
+        }
+    }
+
+    if (non_isolates.size() == 0u)
+        throw std::logic_error("The graph is completely disconnected.");
+
+    // Cumulative probs
+    weights[0u] /= nedges;
+    for (size_t i = 1u; i < non_isolates.size(); ++i)
+    {
+         weights[i] /= nedges;
+         weights[i] += weights[i - 1u];
+    }
+
+    const size_t N = non_isolates.size();
+    int nrewires = floor(proportion * nedges);
+    while (nrewires-- > 0)
+    {
+
+        // Picking egos
+        int id0 = static_cast< int >(pick_cumulative(weights, model.runif()));
+        int id1 = static_cast< int >(pick_cumulative(weights, model.runif()));
+
+        // Correcting for under or overflow.
+        if (id1 == id0)
+            id1++;
+
+        if (id1 >= static_cast< int >(N))
+            id1 = 0;
+
+        const size_t a0 = non_isolates[id0];
+        const size_t a1 = non_isolates[id1];
+
+        // Picking alters (relative location in their lists), uniformly
+        const size_t id01 = model.runif_index(net.get_degree(a0));
+        const size_t id11 = model.runif_index(net.get_degree(a1));
+
+        const size_t alter0 = net.neighbors_view(a0).id(id01);
+        const size_t alter1 = net.neighbors_view(a1).id(id11);
+
+        // After the swap a0 is tied to alter1 and a1 to alter0. Skip swaps of
+        // the same alter, and those that would tie an agent to itself or
+        // repeat a tie.
+        if ((alter0 == alter1) || (alter0 == a1) || (alter1 == a0))
+            continue;
+
+        if (net.has_edge(a0, alter1) || net.has_edge(a1, alter0))
+            continue;
+
+        net.swap_ties(a0, id01, a1, id11);
+
+    }
+
+    #ifdef EPI_DEBUG
+    for (size_t i = 0u; i < n; ++i)
+        if (degree0[i] != net.get_degree(i))
+            throw std::logic_error("[epi-debug] Degree does not match after rewire_degseq.");
+    #endif
+
+}
+
+namespace graph {
+
+/**
+ * @name Network generators
+ *
+ * @details Each returns a `layer::Network::Generator`: a function that
+ * draws the graph for a model, with one vertex per agent, using the model's
+ * random numbers. The arguments are structure, used once per draw (see the
+ * contact-layers plan, point 17).
+ */
+///@{
+
+/// Small-world network: ring lattice with `k` ties per agent, rewired with
+/// probability `p` (see `rgraph_smallworld()`).
+inline typename layer::Network::Generator smallworld(
+    epiworld_fast_uint k,
+    epiworld_double p,
+    bool directed = false
+)
+{
+    return [k, p, directed](Model & model) -> AdjList {
+        return rgraph_smallworld(
+            static_cast< epiworld_fast_uint >(model.size()), k, p, directed, model
+        );
+    };
+}
+
+/// Bernoulli (Erdős–Rényi) network: each tie with probability `p` (see
+/// `rgraph_bernoulli()`).
+inline typename layer::Network::Generator bernoulli(
+    epiworld_double p,
+    bool directed = false
+)
+{
+    return [p, directed](Model & model) -> AdjList {
+        return rgraph_bernoulli(
+            static_cast< epiworld_fast_uint >(model.size()), p, directed, model
+        );
+    };
+}
+
+/// Stochastic block model (see `rgraph_sbm()`); the block sizes must add up to
+/// the model's population.
+inline typename layer::Network::Generator sbm(
+    std::vector< size_t > block_sizes,
+    std::vector< double > mixing_matrix,
+    bool row_major = true
+)
+{
+    return [block_sizes, mixing_matrix, row_major](Model & model) -> AdjList {
+        return rgraph_sbm(block_sizes, mixing_matrix, row_major, model);
+    };
+}
+
+///@}
+
+/**
+ * @brief Degree-preserving rewiring, for `layer::Network::set_rewiring()`.
+ *
+ * @details Each step, a share of the ties, read from the model parameter
+ * `param` (a proportion in `[0, 1]`), is rewired: two ties {(i, j), (k, l)}
+ * become {(i, l), (k, j)}, skipping swaps that would create self-ties or
+ * repeated ties. In a directed network only the sources' ties move, which keeps
+ * every agent's in- and out-degree.
+ */
+inline typename layer::Network::Rewiring rewire_degseq(std::string param)
+{
+    return [ref = ParamRef(std::move(param))](
+        layer::Network & net, Model & model
+    ) -> void {
+
+        const epiworld_double proportion = ref(model);
+        if ((proportion < 0.0) || (proportion > 1.0))
+            throw std::range_error(
+                "The rewiring proportion '" + ref.name() + "' must be in [0, 1]; "
+                "it is " + std::to_string(proportion) + "."
+            );
+
+        epiworld::rewire_degseq(net, model, proportion);
+
+    };
+}
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/layer-network.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/assign-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_ASSIGN_MEAT_HPP
+#define EPIWORLD_ASSIGN_MEAT_HPP
+
+// The forms of `Assign` (see assign.hpp)
+
+inline std::vector< int > Assign::draw(
+    Model & model,
+    const std::vector< char > & eligible
+) const
+{
+    if (!fun)
+        return std::vector< int >(model.size(), -1);
+    return fun(model, eligible);
+}
+
+namespace assign {
+
+namespace detail {
+
+    inline void check_share(epiworld_double p, const char * form)
+    {
+        if (!std::isfinite(p) || (p < 0.0) || (p > 1.0))
+            throw std::range_error(
+                std::string("assign::") + form + "(): a share must be within "
+                "[0, 1]; got " + std::to_string(p) + "."
+            );
+    }
+
+    inline void check_count(epiworld_double n, const char * form)
+    {
+        if (!std::isfinite(n) || (n < 0.0) || (n != std::floor(n)))
+            throw std::range_error(
+                std::string("assign::") + form + "(): a count must be a "
+                "non-negative whole number; got " + std::to_string(n) + "."
+            );
+    }
+
+    /**
+     * Label by label, in order, draws `count` agents at random from the
+     * eligible ones not yet labelled (taken in ascending id order). A count
+     * above what is left is an error.
+     */
+    inline std::vector< int > draw_counts(
+        Model & model,
+        const std::vector< char > & eligible,
+        const std::vector< std::pair< int, size_t > > & counts
+    )
+    {
+
+        std::vector< int > labels(model.size(), -1);
+        std::vector< size_t > idx;
+
+        for (const auto & c : counts)
+        {
+
+            idx.clear();
+            for (size_t i = 0u; i < labels.size(); ++i)
+                if (eligible[i] && (labels[i] == -1))
+                    idx.push_back(i);
+
+            size_t n_left = idx.size();
+            if (c.second > n_left)
+                throw std::range_error(
+                    "Cannot assign " + std::to_string(c.second) + " agents: "
+                    "only " + std::to_string(n_left) + " are eligible."
+                );
+
+            for (size_t k = 0u; k < c.second; ++k)
+            {
+                const size_t loc = model.runif_index(
+                    static_cast< uint32_t >(n_left--)
+                );
+                labels[idx[loc]] = c.first;
+                std::swap(idx[loc], idx[n_left]);
+            }
+
+        }
+
+        return labels;
+
+    }
+
+    inline size_t n_eligible(const std::vector< char > & eligible)
+    {
+        return static_cast< size_t >(
+            std::count(eligible.begin(), eligible.end(), char(1))
+        );
+    }
+
+    /// The members of each group of the mixing layer `layer`, in id order.
+    inline std::vector< std::vector< size_t > > groups_of(
+        Model & model,
+        const std::string & layer,
+        size_t n_values
+    )
+    {
+
+        auto * mix = dynamic_cast< layer::Mixing * >(&model.get_layer(layer));
+        if (mix == nullptr)
+            throw std::logic_error(
+                "The layer '" + layer + "' is not a mixing layer: it has no "
+                "groups."
+            );
+
+        if (n_values != mix->get_n_groups())
+            throw std::range_error(
+                "There are " + std::to_string(n_values) + " values, but the "
+                "layer '" + layer + "' has " +
+                std::to_string(mix->get_n_groups()) + " groups."
+            );
+
+        std::vector< std::vector< size_t > > out(n_values);
+        for (size_t g = 0u; g < n_values; ++g)
+        {
+            out[g] = mix->members_of(g);
+            std::sort(out[g].begin(), out[g].end());
+        }
+
+        return out;
+
+    }
+
+    /// In each group, draws `want[g]` of its eligible members (capped).
+    inline std::vector< int > draw_groups(
+        Model & model,
+        const std::vector< char > & eligible,
+        const std::string & layer,
+        const std::vector< epiworld_double > & values,
+        bool as_share
+    )
+    {
+
+        std::vector< int > labels(model.size(), -1);
+        const auto members = groups_of(model, layer, values.size());
+
+        std::vector< size_t > idx;
+        for (size_t g = 0u; g < values.size(); ++g)
+        {
+
+            idx.clear();
+            for (size_t i : members[g])
+                if (eligible[i])
+                    idx.push_back(i);
+
+            size_t n = idx.size();
+            const epiworld_double want = as_share ?
+                std::floor(values[g] * static_cast< epiworld_double >(n)) :
+                values[g];
+            const size_t n_draw = (want >= static_cast< epiworld_double >(n)) ?
+                n : static_cast< size_t >(want);
+
+            for (size_t k = 0u; k < n_draw; ++k)
+            {
+                const size_t loc = model.runif_index(static_cast< uint32_t >(n--));
+                labels[idx[loc]] = ANY;
+                std::swap(idx[loc], idx[n]);
+            }
+
+        }
+
+        return labels;
+
+    }
+
+} // namespace detail
+
+/// A random share of the eligible agents (`floor(p x eligible)` of them).
+inline Assign share(epiworld_double p)
+{
+    detail::check_share(p, "share");
+    return Assign([p](Model & m, const std::vector< char > & e) {
+        const size_t n = static_cast< size_t >(std::floor(
+            p * static_cast< epiworld_double >(detail::n_eligible(e))
+        ));
+        return detail::draw_counts(m, e, {{ANY, n}});
+    });
+}
+
+/// `n` eligible agents, at random.
+inline Assign count(size_t n)
+{
+    return Assign([n](Model & m, const std::vector< char > & e) {
+        return detail::draw_counts(m, e, {{ANY, n}});
+    });
+}
+
+/**
+ * @brief Several labels: label `l` goes to `floor(p x eligible)` agents,
+ * drawn in order from those not yet labelled.
+ */
+inline Assign shares(std::vector< std::pair< int, epiworld_double > > s)
+{
+    epiworld_double total = 0.0;
+    for (auto & x : s)
+    {
+        detail::check_share(x.second, "shares");
+        total += x.second;
+    }
+    if (total > 1.0 + 1e-9)
+        throw std::range_error("assign::shares(): the shares add up to more than 1.");
+
+    return Assign([s](Model & m, const std::vector< char > & e) {
+        const epiworld_double n = static_cast< epiworld_double >(
+            detail::n_eligible(e)
+        );
+        std::vector< std::pair< int, size_t > > c;
+        for (auto & x : s)
+            c.emplace_back(x.first, static_cast< size_t >(std::floor(x.second * n)));
+        return detail::draw_counts(m, e, c);
+    });
+}
+
+/// Several labels: label `l` goes to `n` agents, drawn in order.
+inline Assign counts(std::vector< std::pair< int, size_t > > c)
+{
+    return Assign([c](Model & m, const std::vector< char > & e) {
+        return detail::draw_counts(m, e, c);
+    });
+}
+
+/**
+ * @brief In each group `g` of the mixing layer `layer`, a random share `p[g]`
+ * of its eligible members (`floor(p[g] x members)`).
+ */
+inline Assign group_shares(std::string layer, std::vector< epiworld_double > p)
+{
+    if (p.empty())
+        throw std::range_error("assign::group_shares(): no shares.");
+    for (auto x : p)
+        detail::check_share(x, "group_shares");
+
+    return Assign([layer, p](Model & m, const std::vector< char > & e) {
+        return detail::draw_groups(m, e, layer, p, true);
+    });
+}
+
+/// In each group `g` of the mixing layer `layer`, `n[g]` of its eligible
+/// members at random (all of them, if fewer).
+inline Assign group_counts(std::string layer, std::vector< epiworld_double > n)
+{
+    if (n.empty())
+        throw std::range_error("assign::group_counts(): no counts.");
+    for (auto x : n)
+        detail::check_count(x, "group_counts");
+
+    return Assign([layer, n](Model & m, const std::vector< char > & e) {
+        return detail::draw_groups(m, e, layer, n, false);
+    });
+}
+
+/// The given agents (each must be eligible).
+inline Assign agents(std::vector< size_t > ids)
+{
+    auto ids_ptr = std::make_shared< const std::vector< size_t > >(std::move(ids));
+    return Assign([ids_ptr](Model & m, const std::vector< char > & e) {
+        std::vector< int > labels(m.size(), -1);
+        for (size_t i : *ids_ptr)
+        {
+            if (i >= m.size())
+                throw std::range_error(
+                    "assign::agents(): agent " + std::to_string(i) +
+                    " is out of range."
+                );
+            if (!e[i])
+                throw std::logic_error(
+                    "assign::agents(): agent " + std::to_string(i) +
+                    " cannot be given this (it is not eligible)."
+                );
+            labels[i] = ANY;
+        }
+        return labels;
+    });
+}
+
+/// `v[i]` for agent `i` (-1: none); the same every run.
+inline Assign labels(std::vector< int > v)
+{
+    auto v_ptr = std::make_shared< const std::vector< int > >(std::move(v));
+    return Assign([v_ptr](Model & m, const std::vector< char > & e) {
+        if (v_ptr->size() != m.size())
+            throw std::range_error(
+                "assign::labels(): " + std::to_string(v_ptr->size()) +
+                " labels for " + std::to_string(m.size()) + " agents."
+            );
+        for (size_t i = 0u; i < v_ptr->size(); ++i)
+            if (((*v_ptr)[i] != -1) && !e[i])
+                throw std::logic_error(
+                    "assign::labels(): agent " + std::to_string(i) +
+                    " cannot be given this (it is not eligible)."
+                );
+        return *v_ptr;
+    }, v_ptr);
+}
+
+/**
+ * @brief The same, from whole numbers of another type (e.g., the groups of a
+ * mixing layer as `size_t`); values that do not fit in an `int` (such as
+ * `layer::Mixing::NO_GROUP`) are none.
+ */
+template<
+    typename T,
+    typename = std::enable_if_t< std::is_integral_v< T > && !std::is_same_v< T, int > >
+>
+inline Assign labels(const std::vector< T > & v)
+{
+    std::vector< int > l(v.size(), -1);
+    for (size_t i = 0u; i < v.size(); ++i)
+        if (
+            (v[i] >= 0) &&
+            (static_cast< unsigned long long >(v[i]) <=
+                static_cast< unsigned long long >(std::numeric_limits< int >::max()))
+        )
+            l[i] = static_cast< int >(v[i]);
+    return labels(std::move(l));
+}
+
+/// `fun(agent, model)` for each eligible agent (-1: none).
+inline Assign by(AssignFun fun)
+{
+    return Assign([fun](Model & m, const std::vector< char > & e) {
+        std::vector< int > labels(m.size(), -1);
+        auto & pop = m.get_agents();
+        for (size_t i = 0u; i < pop.size(); ++i)
+            if (e[i])
+                labels[i] = fun(pop[i], m);
+        return labels;
+    });
+}
+
+} // namespace assign
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/assign-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/queue-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_QUEUE_MEAT_HPP
+#define EPIWORLD_QUEUE_MEAT_HPP
+
+// The member functions of `Queue` (see queue-bones.hpp)
+
+inline void Queue::shift(size_t id, epiworld_fast_int n)
 {
 
     if (n == 0)
@@ -8087,8 +12033,7 @@ inline void Queue<TSeq>::shift(size_t id, epiworld_fast_int n)
 
 }
 
-template<typename TSeq>
-inline void Queue<TSeq>::shift_neighbors(size_t id, epiworld_fast_int n)
+inline void Queue::shift_neighbors(size_t id, epiworld_fast_int n)
 {
 
     for (const auto * net : model->network_layers)
@@ -8098,7 +12043,7 @@ inline void Queue<TSeq>::shift_neighbors(size_t id, epiworld_fast_int n)
     for (const auto * mix : model->group_layers)
     {
         const size_t g = mix->groups[id];
-        if (g == layer::Mixing<TSeq>::NO_GROUP)
+        if (g == layer::Mixing::NO_GROUP)
             continue;
 
         for (size_t j : mix->members[g])
@@ -8108,8 +12053,7 @@ inline void Queue<TSeq>::shift_neighbors(size_t id, epiworld_fast_int n)
 
 }
 
-template<typename TSeq>
-inline void Queue<TSeq>::operator+=(Agent<TSeq> * p)
+inline void Queue::operator+=(Agent * p)
 {
 
     const size_t id = static_cast< size_t >(p->id);
@@ -8119,8 +12063,7 @@ inline void Queue<TSeq>::operator+=(Agent<TSeq> * p)
 
 }
 
-template<typename TSeq>
-inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
+inline void Queue::operator-=(Agent * p)
 {
 
     const size_t id = static_cast< size_t >(p->id);
@@ -8130,8 +12073,7 @@ inline void Queue<TSeq>::operator-=(Agent<TSeq> * p)
 
 }
 
-template<typename TSeq>
-inline bool Queue<TSeq>::tracks(size_t a, size_t b) const
+inline bool Queue::tracks(size_t a, size_t b) const
 {
 
     // The counters are sized by reset(), i.e. when a run starts. Editing the
@@ -8142,8 +12084,7 @@ inline bool Queue<TSeq>::tracks(size_t a, size_t b) const
 
 }
 
-template<typename TSeq>
-inline void Queue<TSeq>::notify_ties_changed(size_t a, int da, size_t b, int db)
+inline void Queue::notify_ties_changed(size_t a, int da, size_t b, int db)
 {
 
     if (!tracks(a, b))
@@ -8154,8 +12095,7 @@ inline void Queue<TSeq>::notify_ties_changed(size_t a, int da, size_t b, int db)
 
 }
 
-template<typename TSeq>
-inline void Queue<TSeq>::notify_group_changed(
+inline void Queue::notify_group_changed(
     size_t a,
     const std::vector< size_t > * from,
     const std::vector< size_t > * to
@@ -8177,8 +12117,7 @@ inline void Queue<TSeq>::notify_group_changed(
 
 }
 
-template<typename TSeq>
-inline void Queue<TSeq>::notify_edges_swapped(
+inline void Queue::notify_edges_swapped(
     size_t a,
     size_t b,
     size_t c,
@@ -8205,15 +12144,13 @@ inline void Queue<TSeq>::notify_edges_swapped(
 
 }
 
-template<typename TSeq>
-inline epiworld_fast_int Queue<TSeq>::operator[](epiworld_fast_uint i) const
+inline epiworld_fast_int Queue::operator[](epiworld_fast_uint i) const
 {
     return active[i];
 }
 
-template<typename TSeq>
 template< typename F >
-inline void Queue<TSeq>::for_each_nonzero(F && f)
+inline void Queue::for_each_nonzero(F && f)
 {
 
     const size_t nwords = bits.size();
@@ -8237,8 +12174,7 @@ inline void Queue<TSeq>::for_each_nonzero(F && f)
 
 }
 
-template<typename TSeq>
-inline void Queue<TSeq>::reset()
+inline void Queue::reset()
 {
 
     // Cleared unconditionally: counts that never went through `shift()` (or
@@ -8251,8 +12187,7 @@ inline void Queue<TSeq>::reset()
 
 }
 
-template<typename TSeq>
-inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const 
+inline bool Queue::operator==(const Queue & other) const 
 {
     if (active.size() != other.active.size())
         return false;
@@ -8279,180 +12214,2350 @@ inline bool Queue<TSeq>::operator==(const Queue<TSeq> & other) const
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -./include/epiworld/queue-bones.hpp-
+ End of -./include/epiworld/queue-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
-
 
 
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- Start of -./include/epiworld/contacttracing-bones.hpp-
+ Start of -./include/epiworld/userdata-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-#ifndef EPIWORLD_CONTACTTRACING_BONES_H
-#define EPIWORLD_CONTACTTRACING_BONES_H
+#ifndef EPIWORLD_USERDATA_MEAT_HPP
+#define EPIWORLD_USERDATA_MEAT_HPP
 
-#include <vector>
-#include <set>
-#include <map>
-#include <stdexcept>
-// (already included include/epiworld/config.hpp)
+class UserData;
 
-/**
- * @brief Represents a single contact relationship for an agent.
- * @details
- * Each instance holds the id of the contacted agent and the set of
- * simulation days on which the contact occurred.  Instances are
- * returned by `ContactTracing::get_contacts()`.
- */
-class ContactRecord
+inline UserData::UserData(std::vector< std::string > names)
 {
-private:
-    size_t m_contact_id;
-    std::set<int> m_times;
 
-public:
-    ContactRecord(size_t contact_id, std::set<int> times)
-        : m_contact_id(contact_id), m_times(std::move(times)) {}
+    k = names.size();
+    data_names = names;
 
-    /**
-     * @brief Return the id of the contacted agent.
-     */
-    size_t get_contact_id() const { return m_contact_id; }
+}
 
-    /**
-     * @brief Return the set of days on which the contact was recorded.
-     * @return A const reference to the set of simulation days.
-     */
-    const std::set<int> & get_times() const { return m_times; }
-};
-
-/** 
- * @brief Class for tracing contacts between agents
- * @details
- * The class assumes that contacts are stored in a matrix-like
- * structure, where rows are agents and columns are contacts in a 
- * column-major format. Each entry stores the id of the contact
- * and the day of the contact is stored in a parallel array.
- * 
- * The maximum number of contacts per agent is fixed at initialization
- * time. If more contacts are added, they will overwrite previous
- * contacts in a circular buffer fashion.
- * */
-class ContactTracing
+inline void UserData::add(std::vector<epiworld_double> x)
 {
-private:
 
-    std::vector< size_t > contact_matrix;
-    std::vector< size_t > contacts_per_agent;
-    std::vector< size_t > contact_date;
+    if (x.size() != k)
+        throw std::out_of_range(
+            "The size of -x-, " + std::to_string(x.size()) + ", does not match " +
+            "the number of elements registered (" + std::to_string(k));
 
-    size_t n_agents;
-    size_t max_contacts;
+    for (auto & i : x)
+        data_data.push_back(i);
 
-    // Cache: for each agent, the list of unique contacts with their dates.
-    // up_to_date[a] is false whenever add_contact(a, ...) is called, and
-    // set to true after get_contacts(a) rebuilds the cache.
-    std::vector< std::vector<ContactRecord> > cached_contacts;
-    std::vector< bool > up_to_date;
+    data_dates.push_back(model->today());
 
-    size_t get_location(size_t row, size_t col) const;
+    n++;
+    last_day = model->today();
 
-public:
+}
 
-    ContactTracing();
+inline void UserData::add(epiworld_fast_uint j, epiworld_double x)
+{
 
-    /**
-     * @brief Construct a new Contact Tracing object
-     * 
-     * @param n_agents Agents in the system, usually `Model<TSeq>::size()`.
-     * @param max_contacts Maximum number of contacts to track per agent.
-     */
-    ContactTracing(size_t n_agents, size_t max_contacts);
+    // Starting with a new day?
+    if (static_cast<int>(model->today()) != last_day)
+    {
 
-    /**
-     * @brief Add a contact between two agents at a given day.
-     * 
-     * @param agent_a Agent id (usually infectious agent)
-     * @param agent_b Agent id (usually susceptible agent)
-     * @param day Day of the contact (usually Model<TSeq>::today()).
-     */
-    void add_contact(size_t agent_a, size_t agent_b, size_t day);
+        std::vector< epiworld_double > tmp(k, 0.0);
 
-    /**
-     * @brief Get the number of contacts for an agent
-     * 
-     * @param agent Agent id
-     * @return size_t Number of contacts recorded for that agent (can be more than max_contacts)
-     */
-    size_t get_n_contacts(size_t agent); 
+        tmp[j] = x;
 
-    size_t get_max_contacts() const;
+        add(tmp);
 
-    /// Number of agents the log covers (agent ids run from 0 to this - 1).
-    size_t get_n_agents() const;
+    }
+    else
+    {
+
+        this->operator()(n - 1, j) = x;
+
+    }
+
+}
+
+inline std::vector< std::string > & UserData::get_names() 
+{
+    return data_names;
+}
+
+inline std::vector< int > & UserData::get_dates() 
+{
+    return data_dates;
+}
+
+inline std::vector< epiworld_double > & UserData::get_data() 
+{
+    return data_data;
+}
+
+inline void UserData::get_all(
+    std::vector< std::string > * names,
+    std::vector< int > * date,
+    std::vector< epiworld_double > * data
+) 
+{
     
-    /**
-     * @brief Get the contact object
-     * 
-     * @param agent Source agent (id)
-     * @param idx Index of the contact (0 to get_n_contacts(agent)-1)
-     * @return std::pair<size_t, int> with (contact_id, contact_day)
-     * @throws std::out_of_range if idx is out of range.
-     */
-    std::pair<size_t, int> get_contact(size_t agent, size_t idx);
+    if (names != nullptr)
+        names = &this->data_names;
 
-    /**
-     * @brief Reset the contact tracing data
-     * 
-     * Usually called by `Model<TSeq>::reset()`.
-     * 
-     * @param n_agents Number of agents
-     * @param max_contacts Maximum number of contacts to track per agent
-     */
-    void reset(
-        size_t n_agents,
-        size_t max_contacts
-    );
+    if (date != nullptr)
+        date = &this->data_dates;
 
-    /**
-     * @brief Get all unique contacts of an agent with the days they occurred.
-     * @details
-     * Returns a vector of `ContactRecord` objects, one per unique contacted
-     * agent.  Each record exposes:
-     *
-     * - `get_contact_id()` – the id of the other agent.
-     * - `get_times()` – the set of simulation days on which the contact was
-     *   recorded in the current (non-reset) window.
-     *
-     * The result is lazily computed on the first call after any new contact is
-     * recorded for this agent and cached until the next `add_contact()` call
-     * for the same agent.
-     *
-     * @param agent Source agent id.
-     * @return Const reference to the cached vector of ContactRecord objects.
-     */
-    const std::vector<ContactRecord> & get_contacts(size_t agent);
+    if (data != nullptr)
+        data = &this->data_data;
 
-    /**
-     * @brief Print the contacts of an agent 
-     * 
-     * @param agent Agent id
-     */
-    void print(size_t agent);
-};
+}
+
+inline epiworld_double & UserData::operator()(
+    epiworld_fast_uint i,
+    epiworld_fast_uint j
+)
+{
+
+    if (j >= k)
+        throw std::out_of_range("j cannot be greater than k - 1.");
+
+    if (i >= n)
+        throw std::out_of_range("j cannot be greater than n - 1.");
+
+    return data_data[k * i + j];
+
+}
+
+inline epiworld_double & UserData::operator()(
+    epiworld_fast_uint i,
+    std::string name
+)
+{
+    int loc = -1;
+    for (epiworld_fast_uint l = 0u; l < k; ++l)
+    {
+
+        if (name == data_names[l])
+        {
+
+            loc = l;
+            break;
+
+        }
+
+    }
+
+    if (loc < 0)
+        throw std::range_error(
+            "The variable \"" + name + "\" is not present " +
+            "in the user UserData database."
+        );
+
+    return operator()(i, static_cast<epiworld_fast_uint>(loc));
+
+}
+
+inline epiworld_fast_uint UserData::nrow() const
+{
+    return n;
+}
+
+inline epiworld_fast_uint UserData::ncol() const
+{
+    return k;
+}
+
+inline void UserData::write(std::string fn)
+{
+    std::ofstream file_ud(fn, std::ios_base::out);
+
+    // File header
+    file_ud << "\"date\"";
+    for (auto & cn : data_names)
+        file_ud << " \"" + cn + "\"";
+    file_ud << "\n";
+    
+    epiworld_fast_uint ndata = 0u;
+    for (epiworld_fast_uint i = 0u; i < n; ++i)
+    {
+        file_ud << data_dates[i];
+
+        for (epiworld_fast_uint j = 0u; j < k; ++j)
+            file_ud << " " << data_data[ndata++];
+
+        file_ud << "\n";
+    }
+
+    return;
+}
+
+inline void UserData::print() const
+{
+    // File header
+    printf_epiworld("Total records: %llu\n", n);
+    printf_epiworld("date");
+
+    for (auto & cn : data_names)
+    {
+
+        printf_epiworld(" %s", cn.c_str());
+
+    }
+
+    printf_epiworld("\n");
+    
+    epiworld_fast_uint ndata = 0u;
+    
+    for (epiworld_fast_uint i = 0u; i < n; ++i)
+    {
+
+        printf_epiworld("%i", data_dates[i]);
+
+        for (epiworld_fast_uint j = 0u; j < k; ++j)
+        {
+
+            printf_epiworld(" %.2f", data_data[ndata++]);
+
+        }
+
+        printf_epiworld("\n");
+
+    }
+
+    return;
+}
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -./include/epiworld/contacttracing-bones.hpp-
+ End of -./include/epiworld/userdata-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/hospitalizationstracker-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_HOSPITALIZATIONSTRACKER_MEAT_HPP
+#define EPIWORLD_HOSPITALIZATIONSTRACKER_MEAT_HPP
+
+
+inline void HospitalizationsTracker::reset()
+{
+    _date.clear();
+    _virus_id.clear();
+    _tool_id.clear();
+    _weight.clear();
+}
+
+inline void HospitalizationsTracker::record(
+    Agent & agent,
+    Model & model
+)
+{
+    int current_date = model.today();
+    
+    // Get the virus ID (-1 if no virus)
+    int v_id = -1;
+    auto & virus = agent.get_virus();
+    if (virus != nullptr)
+        v_id = virus->get_id();
+    
+    // Get the number of tools
+    size_t n_tools = agent.get_n_tools();
+    
+    if (n_tools == 0u)
+    {
+        // No tools: single record with tool_id = -1 and weight = 1.0
+        _date.push_back(current_date);
+        _virus_id.push_back(v_id);
+        _tool_id.push_back(-1);
+        _weight.push_back(1.0);
+    }
+    else
+    {
+        // Multiple tools: one record per tool with weight = 1/N
+        double w = 1.0 / static_cast<double>(n_tools);
+        for (size_t i = 0u; i < n_tools; ++i)
+        {
+            _date.push_back(current_date);
+            _virus_id.push_back(v_id);
+            _tool_id.push_back(agent.get_tool(static_cast<int>(i))->get_id());
+            _weight.push_back(w);
+        }
+    }
+}
+
+inline void HospitalizationsTracker::get(
+    int ndays,
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & tool_id,
+    std::vector<int> & count,
+    std::vector<double> & weight
+) const
+{
+    // Clear output vectors
+    date.clear();
+    virus_id.clear();
+    tool_id.clear();
+    count.clear();
+    weight.clear();
+    
+    if (ndays <= 0)
+        return;
+    
+    // First, aggregate by (date, virus_id, tool_id) to get count and sum of weights
+    // Key: (date, virus_id, tool_id), Value: (count, sum of weight)
+    std::map<std::tuple<int, int, int>, std::pair<int, double>> aggregated;
+    
+    // Collect unique (virus_id, tool_id) combinations
+    std::set<std::pair<int, int>> unique_combinations;
+    
+    for (size_t i = 0u; i < _date.size(); ++i)
+    {
+        auto key = std::make_tuple(_date[i], _virus_id[i], _tool_id[i]);
+        aggregated[key].first += 1;  // Count
+        aggregated[key].second += _weight[i];  // Weight
+        unique_combinations.insert(std::make_pair(_virus_id[i], _tool_id[i]));
+    }
+    
+    // If no hospitalizations occurred, still output the full time series 
+    // with a single combination (virus_id=-1, tool_id=-1) and zeros
+    if (unique_combinations.empty())
+    {
+        unique_combinations.insert(std::make_pair(-1, -1));
+    }
+    
+    // For each unique (virus_id, tool_id) combination, output all days
+    for (const auto & combo : unique_combinations)
+    {
+        int v_id = combo.first;
+        int t_id = combo.second;
+        
+        for (int d = 0; d < ndays; ++d)
+        {
+            date.push_back(d);
+            virus_id.push_back(v_id);
+            tool_id.push_back(t_id);
+            
+            // Look up the count and weight for this (date, virus_id, tool_id) combination
+            auto key = std::make_tuple(d, v_id, t_id);
+            auto it = aggregated.find(key);
+            if (it != aggregated.end())
+            {
+                count.push_back(it->second.first);
+                weight.push_back(it->second.second);
+            }
+            else
+            {
+                count.push_back(0);
+                weight.push_back(0.0);
+            }
+        }
+    }
+}
+
+inline size_t HospitalizationsTracker::size() const
+{
+    return _date.size();
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/hospitalizationstracker-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/database-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_DATABASE_MEAT_HPP
+#define EPIWORLD_DATABASE_MEAT_HPP
+
+#include <vector>
+#include <string>
+// (already included include/epiworld/config.hpp)
+// (already included include/epiworld/epiworld-macros.hpp)
+// (already included include/epiworld/misc.hpp)
+// (already included include/epiworld/database-bones.hpp)
+
+inline void DataBase::reset()
+{
+
+    // Initializing the counts
+    today_total.assign(model->nstates, 0);
+    for (auto & p : model->get_agents())
+        ++today_total[p.get_state()];
+
+    #ifdef EPI_DEBUG
+    // Only the first should be different from zero
+    {
+        int n = static_cast<int>(model->size());
+        if (today_total[0] != n)
+            throw std::runtime_error("The number of susceptible agents is not equal to the total number of agents.");
+
+        if (std::accumulate(today_total.begin(), today_total.end(), 0) != n)
+            throw std::runtime_error("The total number of agents is not equal to the sum of the number of agents in each state.");
+            
+    }
+    #endif
+
+    
+    transition_matrix.assign(model->nstates * model->nstates, 0);
+    for (size_t s = 0u; s < model->nstates; ++s)
+        transition_matrix[s + s * model->nstates] = today_total[s];
+
+    // The last run's variants go; the founders keep their ids
+    drop_variants();
+
+    hist_virus_date.clear();
+    hist_virus_id.clear();
+    hist_virus_state.clear();
+    hist_virus_counts.clear();
+
+    hist_tool_date.clear();
+    hist_tool_id.clear();
+    hist_tool_state.clear();
+    hist_tool_counts.clear();    
+
+    today_virus.resize(get_n_viruses());
+    for (auto& virus_states : today_virus)
+        virus_states.assign(model->nstates, 0);
+
+    today_tool.resize(get_n_tools());
+    for (auto& tool_states : today_tool)
+        tool_states.assign(model->nstates, 0);
+
+    hist_total_date.clear();
+    hist_total_state.clear();
+    hist_total_nviruses_active.clear();
+    hist_total_counts.clear();
+    hist_transition_matrix.clear();
+
+    transmission_date.clear();
+    transmission_virus.clear();
+    transmission_source.clear();
+    transmission_target.clear();
+    transmission_source_exposure_date.clear();
+    transmission_layer.clear();
+
+    transition_today.assign(
+        model->nh ?
+            model->nh->get_n_transitions() +
+                (model->st ? model->st->get_n_transitions() : 0u) :
+            0u,
+        0
+    );
+    hist_transition_date.clear();
+    hist_transition_id.clear();
+    hist_transition_counts.clear();
+
+    m_hospitalizations.reset();
+
+    return;
+
+}
+
+inline DataBase::DataBase(const DataBase & db) :
+    m_hospitalizations(db.m_hospitalizations),
+    n_founders(db.n_founders),
+    virus_name(db.virus_name),
+    virus_origin_date(db.virus_origin_date),
+    virus_parent_id(db.virus_parent_id),
+    tool_name(db.tool_name),
+    tool_origin_date(db.tool_origin_date),
+    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
+    today_virus(db.today_virus),
+    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
+    today_tool(db.today_tool),
+    // {Susceptible, Infected, etc.}
+    today_total(db.today_total),
+    // Totals
+    today_total_nviruses_active(db.today_total_nviruses_active),
+    sampling_freq(db.sampling_freq),
+    // Variants history
+    hist_virus_date(db.hist_virus_date),
+    hist_virus_id(db.hist_virus_id),
+    hist_virus_state(db.hist_virus_state),
+    hist_virus_counts(db.hist_virus_counts),
+    // Tools history
+    hist_tool_date(db.hist_tool_date),
+    hist_tool_id(db.hist_tool_id),
+    hist_tool_state(db.hist_tool_state),
+    hist_tool_counts(db.hist_tool_counts),
+    // Overall hist
+    hist_total_date(db.hist_total_date),
+    hist_total_nviruses_active(db.hist_total_nviruses_active),
+    hist_total_state(db.hist_total_state),
+    hist_total_counts(db.hist_total_counts),
+    hist_transition_matrix(db.hist_transition_matrix),
+    // Transmission network
+    transmission_date(db.transmission_date),
+    transmission_source(db.transmission_source),
+    transmission_target(db.transmission_target),
+    transmission_virus(db.transmission_virus),
+    transmission_source_exposure_date(db.transmission_source_exposure_date),
+    transmission_layer(db.transmission_layer),
+    transition_matrix(db.transition_matrix),
+    transition_today(db.transition_today),
+    hist_transition_date(db.hist_transition_date),
+    hist_transition_id(db.hist_transition_id),
+    hist_transition_counts(db.hist_transition_counts),
+    user_data(nullptr)
+{}
+
+// DataBase & DataBase::operator=(const DataBase & m)
+// {
+
+// }
+
+inline Model * DataBase::get_model() {
+    return model;
+}
+
+inline void DataBase::record() 
+{
+
+    ////////////////////////////////////////////////////////////////////////////
+    // DEBUGGING BLOCK
+    ////////////////////////////////////////////////////////////////////////////
+    EPI_DEBUG_SUM_INT(today_total, model->size())
+    EPI_DEBUG_ALL_NON_NEGATIVE(today_total)
+
+    #ifdef EPI_DEBUG
+    // Checking whether the sums correspond
+    std::vector< int > _today_total_cp(today_total.size(), 0);
+    for (auto & p : model->population)
+        _today_total_cp[p.get_state()]++;
+    
+    EPI_DEBUG_VECTOR_MATCH_INT(
+        _today_total_cp, today_total,
+        "Sums of __today_total_cp in database-meat.hpp"
+        )
+
+    // EPI_DEBUG only: the model's agents-by-state index (see
+    // Model::get_agents_in_state()) is maintained incrementally, event by
+    // event, so check it against the population once per step, next to the
+    // same check for today_total above. Each state's block must hold exactly
+    // the agents in that state, each agent's recorded position must be right,
+    // and the degree and carrier sums used by the transmission step must match
+    // a recount. A drift here would silently bias which agents push, or which
+    // mode "auto" picks.
+    if (model->state_index_ready)
+    {
+
+        std::vector< size_t > _deg(model->nstates, 0u);
+        std::vector< size_t > _carriers(model->nstates, 0u);
+        std::vector< size_t > _carrier_deg(model->nstates, 0u);
+        for (auto & p : model->population)
+        {
+            const size_t _d = model->network_degree(static_cast< size_t >(p.get_id()));
+            _deg[p.get_state()] += _d;
+            if (p.get_virus() != nullptr)
+            {
+                _carriers[p.get_state()]++;
+                _carrier_deg[p.get_state()] += _d;
+            }
+        }
+
+        for (size_t s = 0u; s < model->nstates; ++s)
+        {
+
+            const auto members = model->state_index_members(s);
+            if (static_cast< int >(members.size()) != today_total[s])
+                throw std::logic_error("[epi-debug] DataBase::record state index size doesn't match today_total.");
+
+            for (size_t k = 0u; k < members.size(); ++k)
+            {
+                if (model->population[members[k]].get_state() != s)
+                    throw std::logic_error("[epi-debug] DataBase::record state index lists an agent in another state.");
+                if (model->agent_state[members[k]] != s)
+                    throw std::logic_error("[epi-debug] DataBase::record agent_state is out of step.");
+                if (model->agent_carrier[members[k]] != (model->population[members[k]].get_virus() != nullptr))
+                    throw std::logic_error("[epi-debug] DataBase::record agent_carrier is out of step.");
+                if (model->state_member_pos[members[k]] != model->state_start[s] + k)
+                    throw std::logic_error("[epi-debug] DataBase::record state_member_pos is out of step.");
+            }
+
+            if (
+                (_deg[s] != model->state_degree[s]) ||
+                (_carriers[s] != model->state_carriers[s]) ||
+                (_carrier_deg[s] != model->state_carrier_degree[s])
+            )
+                throw std::logic_error("[epi-debug] DataBase::record state degree/carrier sums are out of step.");
+
+        }
+
+    }
+
+    if (model->today() == 0)
+    {
+        if (hist_total_date.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_date should be of length 0.")
+        if (hist_total_nviruses_active.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_nviruses_active should be of length 0.")
+        if (hist_total_state.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_state should be of length 0.")
+        if (hist_total_counts.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_counts should be of length 0.")
+        if (hist_virus_date.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_virus_date should be of length 0.")
+        if (hist_virus_id.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_virus_id should be of length 0.")
+        if (hist_virus_state.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_virus_state should be of length 0.")
+        if (hist_virus_counts.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_virus_counts should be of length 0.")
+        if (hist_tool_date.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_date should be of length 0.")
+        if (hist_tool_id.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_id should be of length 0.")
+        if (hist_tool_state.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_state should be of length 0.")
+        if (hist_tool_counts.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_counts should be of length 0.")
+    }
+    #endif
+    ////////////////////////////////////////////////////////////////////////////
+
+    // Only store every now and then
+    if ((model->today() % sampling_freq) == 0)
+    {
+
+        // Recording virus's history
+        for (size_t v = 0u; v < today_virus.size(); ++v)
+        {
+
+            for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
+            {
+
+                hist_virus_date.push_back(model->today());
+                hist_virus_id.push_back(static_cast< int >(v));
+                hist_virus_state.push_back(s);
+
+                #ifdef EPI_DEBUG
+                if (today_virus[v][s] < 0)
+                    throw std::logic_error(
+                        "The count of viruses in DataBase::record cannot be negative."
+                    );
+                #endif
+
+                hist_virus_counts.push_back(today_virus[v][s]);
+
+            }
+
+        }
+
+        // Recording tool's history
+        for (size_t t = 0u; t < today_tool.size(); ++t)
+        {
+
+            for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
+            {
+
+                hist_tool_date.push_back(model->today());
+                hist_tool_id.push_back(static_cast< int >(t));
+                hist_tool_state.push_back(s);
+                hist_tool_counts.push_back(today_tool[t][s]);
+
+            }
+
+        }
+
+        // Recording the overall history
+        for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
+        {
+            hist_total_date.push_back(model->today());
+            hist_total_nviruses_active.push_back(today_total_nviruses_active);
+            hist_total_state.push_back(s);
+            hist_total_counts.push_back(today_total[s]);
+        }
+
+        for (const auto& cell : transition_matrix)
+            hist_transition_matrix.push_back(cell);
+
+        for (size_t k = 0u; k < transition_today.size(); ++k)
+        {
+            hist_transition_date.push_back(model->today());
+            hist_transition_id.push_back(static_cast< int >(k));
+            hist_transition_counts.push_back(transition_today[k]);
+            transition_today[k] = 0;
+        }
+
+        // Now the diagonal must reflect the state
+        for (size_t s_i = 0u; s_i < model->nstates; ++s_i)
+        {
+
+            for (size_t s_j = 0u; s_j < model->nstates; ++s_j)
+            {
+                
+                if ((s_i != s_j) && (transition_matrix[s_i + s_j * model->nstates] > 0))
+                {
+                    transition_matrix[s_j + s_j * model->nstates] +=
+                        transition_matrix[s_i + s_j * model->nstates];
+
+                    transition_matrix[s_i + s_j * model->nstates] = 0;
+                }
+         
+            }
+
+        }
+
+        #ifdef EPI_DEBUG
+        for (size_t s_i = 0u; s_i < model->nstates; ++s_i)
+        {
+            if (transition_matrix[s_i + s_i * model->nstates] != 
+                today_total[s_i])
+                throw std::logic_error(
+                    "The diagonal of the updated transition Matrix should match the daily totals"
+                    );
+        }
+        #endif
+
+    }
+
+}
+
+inline void DataBase::drop_variants()
+{
+
+    const size_t n = n_founders;
+    if (virus_name.size() <= n)
+        return;
+
+    virus_name.resize(n);
+    virus_origin_date.resize(n);
+    virus_parent_id.resize(n);
+    today_virus.resize(n);
+    today_total_nviruses_active = static_cast< int >(n);
+
+}
+
+inline void DataBase::record_virus(Virus & v, bool founder)
+{
+
+    if (founder)
+    {
+        drop_variants();
+        ++n_founders;
+    }
+    else if (v.get_id() < 0)
+        throw std::logic_error(
+            "The virus \"" + v.get_name() + "\" mutated but is not on record."
+        );
+
+    const int parent = founder ? -99 : v.get_id();
+    const int id = static_cast< int >(virus_name.size());
+
+    virus_name.push_back(v.get_name());
+    virus_origin_date.push_back(model->today());
+    virus_parent_id.push_back(parent);
+    today_virus.push_back(std::vector< int >(model->nstates, 0));
+    today_total_nviruses_active++;
+
+    v.set_id(id);
+    v.set_date(model->today());
+
+    // A founder starts a lineage, which its mutations keep. Lineages 63 and
+    // above share the overflow bit, which tools cannot target.
+    if (founder)
+    {
+        v.lineage_id  = id;
+        v.lineage_bit = uint64_t(1) << std::min(id, 63);
+    }
+    else if (v.get_agent() != nullptr)
+    {
+        // The agent's counts move from the parent to the variant
+        const auto s = v.get_agent()->get_state();
+        today_virus[parent][s]--;
+        today_virus[id][s]++;
+    }
+
+}
+
+inline void DataBase::record_tool(Tool & t)
+{
+
+    t.set_id(static_cast< int >(tool_name.size()));
+    t.set_date(model->today());
+    tool_name.push_back(t.get_name());
+    tool_origin_date.push_back(model->today());
+    today_tool.push_back(std::vector< int >(model->nstates, 0));
+
+}
+
+inline size_t DataBase::size() const
+{
+    return virus_name.size();
+}
+
+inline void DataBase::update_state(
+        epiworld_fast_uint prev_state,
+        epiworld_fast_uint new_state,
+        bool undo
+) {
+
+    if (prev_state == new_state)
+        return; // No need to update if the state is the same
+
+    #ifdef EPI_DEBUG
+    // Checking ranges (should be within expected)
+    if ((prev_state >= model->nstates))
+        throw std::out_of_range(
+            "prev_state is out of range in DataBase::update_state"
+        );
+    if ((new_state >= model->nstates))
+        throw std::out_of_range(
+            "new_state is out of range in DataBase::update_state"
+        );
+    if (prev_state == new_state)
+        throw std::logic_error(
+            "prev_state and new_state are the same in DataBase::update_state"
+        );
+    #endif
+
+    if (undo)
+    {
+
+        today_total[prev_state]++;
+        today_total[new_state]--;
+        
+    } else {
+
+        today_total[prev_state]--;
+        today_total[new_state]++;
+
+    }
+
+    record_transition(prev_state, new_state, undo);
+    
+    return;
+}
+
+inline void DataBase::update_virus(
+        epiworld_fast_uint virus_id,
+        epiworld_fast_uint prev_state,
+        epiworld_fast_uint new_state,
+        bool undo
+) {
+
+    if (undo)
+    {
+        today_virus[virus_id][prev_state]++;
+        today_virus[virus_id][new_state]--;
+    }
+    else
+    {
+        today_virus[virus_id][prev_state]--;
+        today_virus[virus_id][new_state]++;
+    }
+
+    #ifdef EPI_DEBUG
+    if (today_virus[virus_id][prev_state] < 0)
+        throw std::logic_error("An entry in today_virus is negative.");
+    if (today_virus[virus_id][new_state] < 0)
+        throw std::logic_error("An entry in today_virus is negative (new_state).");
+    #endif
+
+    return;
+    
+}
+
+inline void DataBase::update_tool(
+        epiworld_fast_uint tool_id,
+        epiworld_fast_uint prev_state,
+        epiworld_fast_uint new_state,
+        bool undo
+) {
+
+    if (undo)
+    {
+        today_tool[tool_id][prev_state]++;
+        today_tool[tool_id][new_state]--;
+    }
+    else
+    {
+        today_tool[tool_id][prev_state]--;
+        today_tool[tool_id][new_state]++;
+    }
+
+    return;
+
+}
+
+inline void DataBase::record_transition(
+    epiworld_fast_uint from,
+    epiworld_fast_uint to,
+    bool undo
+) {
+
+    if (undo)
+    {   
+
+        transition_matrix[to * model->nstates + from]--;
+        transition_matrix[from * model->nstates + from]++;
+
+    } else {
+
+        transition_matrix[to * model->nstates + from]++;
+        transition_matrix[from * model->nstates + from]--;
+
+    }
+
+    #ifdef EPI_DEBUG
+    if (transition_matrix[from * model->nstates + from] < 0)
+        throw std::logic_error("An entry in transition matrix is negative.");
+    #endif
+
+}
+
+inline void DataBase::split_state(
+    epiworld_fast_uint state,
+    std::string & status,
+    std::string & stage
+) const
+{
+
+    if (!model->nh)
+    {
+        status = "Free";
+        stage = model->states_labels[state];
+        return;
+    }
+
+    const unsigned int c = static_cast< unsigned int >(state);
+    stage = model->nh->get_stages()[static_cast< size_t >(model->nh_stage_of(c))];
+    status = model->st ?
+        model->st->get_stages()[static_cast< size_t >(model->nh_status_of(c))] :
+        std::string("Free");
+
+}
+
+inline void DataBase::split_states(
+    const std::vector< epiworld_fast_uint > & states,
+    std::vector< std::string > * status,
+    std::vector< std::string > * stage
+) const
+{
+
+    std::string k, s;
+    if (status != nullptr)
+        status->resize(states.size());
+    if (stage != nullptr)
+        stage->resize(states.size());
+
+    for (size_t i = 0u; i < states.size(); ++i)
+    {
+        split_state(states[i], k, s);
+        if (status != nullptr)
+            (*status)[i] = k;
+        if (stage != nullptr)
+            (*stage)[i] = s;
+    }
+
+}
+
+inline int DataBase::today_total_of(
+    const std::string & name,
+    bool by_stage
+) const
+{
+
+    bool found = false;
+    int total = 0;
+    std::string k, s;
+    for (epiworld_fast_uint i = 0u; i < today_total.size(); ++i)
+    {
+        split_state(i, k, s);
+        if ((by_stage ? s : k) == name)
+        {
+            found = true;
+            total += today_total[i];
+        }
+    }
+
+    if (!found)
+        throw std::range_error(
+            "'" + name + "' is not a " + (by_stage ? "stage" : "status") +
+            " of the model."
+        );
+
+    return total;
+
+}
+
+inline int DataBase::get_today_total_stage(
+    const std::string & stage
+) const
+{
+    return today_total_of(stage, true);
+}
+
+inline int DataBase::get_today_total_status(
+    const std::string & status
+) const
+{
+    return today_total_of(status, false);
+}
+
+inline void DataBase::get_today_total(
+    std::vector< std::string > * status,
+    std::vector< std::string > * stage,
+    std::vector< int > * counts
+) const
+{
+
+    std::vector< epiworld_fast_uint > states(today_total.size());
+    for (size_t i = 0u; i < states.size(); ++i)
+        states[i] = static_cast< epiworld_fast_uint >(i);
+
+    split_states(states, status, stage);
+
+    if (counts != nullptr)
+        *counts = today_total;
+
+}
+
+inline void DataBase::get_today_virus(
+    std::vector< std::string > & status,
+    std::vector< std::string > & stage,
+    std::vector< int > & id,
+    std::vector< int > & counts
+    ) const
+{
+
+    // One row per virus and state
+    const size_t n_viruses = today_virus.size();
+    const size_t n_states = model->states_labels.size();
+
+    std::vector< epiworld_fast_uint > states;
+    states.reserve(n_viruses * n_states);
+    id.clear();
+    counts.clear();
+
+    for (epiworld_fast_uint v = 0u; v < n_viruses; ++v)
+        for (epiworld_fast_uint s = 0u; s < n_states; ++s)
+        {
+            states.push_back(s);
+            id.push_back(static_cast<int>(v));
+            counts.push_back(today_virus[v][s]);
+        }
+
+    split_states(states, &status, &stage);
+
+}
+
+inline void DataBase::get_hist_total(
+    std::vector< int > * date,
+    std::vector< std::string > * status,
+    std::vector< std::string > * stage,
+    std::vector< int > * counts
+) const
+{
+
+    if (date != nullptr)
+        *date = hist_total_date;
+
+    split_states(hist_total_state, status, stage);
+
+    if (counts != nullptr)
+        *counts = hist_total_counts;
+
+}
+
+inline void DataBase::get_hist_virus(
+    std::vector< int > & date,
+    std::vector< int > & id,
+    std::vector< std::string > & status,
+    std::vector< std::string > & stage,
+    std::vector< int > & counts
+) const {
+
+    date = hist_virus_date;
+    id = hist_virus_id;
+    split_states(hist_virus_state, &status, &stage);
+    counts = hist_virus_counts;
+
+}
+
+inline void DataBase::get_hist_tool(
+    std::vector< int > & date,
+    std::vector< int > & id,
+    std::vector< std::string > & status,
+    std::vector< std::string > & stage,
+    std::vector< int > & counts
+) const {
+
+    date = hist_tool_date;
+    id = hist_tool_id;
+    split_states(hist_tool_state, &status, &stage);
+    counts = hist_tool_counts;
+
+}
+
+inline void DataBase::get_today_transition_matrix(
+    std::vector< int > & counts
+) const
+{
+
+    counts = transition_matrix;
+
+    return;
+
+}
+
+inline void DataBase::get_hist_transition_matrix(
+    std::vector< std::string > & status_from,
+    std::vector< std::string > & stage_from,
+    std::vector< std::string > & status_to,
+    std::vector< std::string > & stage_to,
+    std::vector< int > & date,
+    std::vector< int > & counts,
+    bool skip_zeros
+) const
+{
+
+    size_t n = this->hist_transition_matrix.size();
+
+    std::vector< epiworld_fast_uint > from, to;
+    from.reserve(n);
+    to.reserve(n);
+    date.clear();
+    counts.clear();
+    date.reserve(n);
+    counts.reserve(n);
+
+    size_t n_states = model->nstates;
+    size_t n_steps  = model->get_ndays();
+
+    // If n is zero, then we are done
+    if (n == 0u)
+    {
+        split_states(from, &status_from, &stage_from);
+        split_states(to, &status_to, &stage_to);
+        return;
+    }
+
+    for (size_t step = 0u; step <= n_steps; ++step) // The final step counts
+    {
+        for (size_t j = 0u; j < n_states; ++j) // Column major storage
+        {
+            for (size_t i = 0u; i < n_states; ++i)
+            {
+                // Retrieving the value of the day
+                int v = hist_transition_matrix[
+                    step * n_states * n_states + // Day of the data
+                    j * n_states +               // Column (to)
+                    i                            // Row (from)
+                    ];
+
+                // If we are skipping the zeros and it is zero, then don't save
+                if (skip_zeros && v == 0)
+                    continue;
+                                
+                from.push_back(static_cast< epiworld_fast_uint >(i));
+                to.push_back(static_cast< epiworld_fast_uint >(j));
+                date.push_back(hist_total_date[step * n_states]);
+                counts.push_back(v);
+
+            }
+
+        }
+    }
+
+    split_states(from, &status_from, &stage_from);
+    split_states(to, &status_to, &stage_to);
+
+
+}
+
+
+inline void DataBase::get_active_cases(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & count
+) const 
+{
+
+    // Extracting useful sizes
+    size_t n_days    = model->get_ndays() + 1u; // Including day 0
+    size_t n_viruses = model->get_n_viruses();
+    
+    // Making room
+    date.assign(n_days * n_viruses, 0);
+    virus_id.assign(n_days * n_viruses, 0);
+    count.assign(n_days * n_viruses, 0);
+
+    for (size_t i = 0u; i < hist_virus_id.size(); ++i)
+    {
+
+        // With more viruses, there are more days
+        auto location = hist_virus_date[i] + hist_virus_id[i] * n_days;
+
+        date[location] = hist_virus_date[i];
+        virus_id[location] = hist_virus_id[i];
+        count[location] += hist_virus_counts[i];
+
+    }
+
+    return;
+    
+}
+
+inline void DataBase::get_outbreak_size(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & outbreak_size
+) const 
+{
+
+    // Extracting useful sizes
+    size_t n_days    = model->get_ndays() + 1u; // Including day 0
+    size_t n_viruses = model->get_n_viruses();
+    
+    // Making room
+    date.assign(n_days * n_viruses, 0);
+    std::iota(date.begin(), date.end(), 0);
+
+    virus_id.assign(n_days * n_viruses, 0);
+    for (size_t v = 0u; v < n_viruses; ++v)
+        for (size_t d = 0u; d < n_days; ++d)
+            virus_id[d + v * n_days] = static_cast<int>(v);
+
+    outbreak_size.assign(n_days * n_viruses, 0);
+
+    // With more viruses, there are more days;
+    for (size_t i = 0u; i < transmission_date.size(); ++i)
+    {
+        outbreak_size[
+            transmission_date[i] + transmission_virus[i] * n_days
+        ] += 1;
+    }
+
+    // Now, we generate the cumulative sum
+    for (size_t v = 0u; v < n_viruses; ++v)
+    {
+        for (size_t d = 1u; d < n_days; ++d)
+        {
+            auto location = d + v * n_days;
+            outbreak_size[location] += outbreak_size[location - 1u];
+        }
+    }
+
+    return;
+    
+}
+
+inline void DataBase::get_transmissions(
+    std::vector<int> & date,
+    std::vector<int> & source,
+    std::vector<int> & target,
+    std::vector<int> & virus,
+    std::vector<int> & source_exposure_date,
+    std::vector<int> & layer
+) const 
+{
+
+    size_t nevents = transmission_date.size();
+
+    date.resize(nevents);
+    source.resize(nevents);
+    target.resize(nevents);
+    virus.resize(nevents);
+    source_exposure_date.resize(nevents);
+    layer.resize(nevents);
+
+    get_transmissions(
+        date.data(),
+        source.data(),
+        target.data(),
+        virus.data(),
+        source_exposure_date.data(),
+        layer.data()
+    );
+
+}
+
+inline void DataBase::get_transmissions(
+    int * date,
+    int * source,
+    int * target,
+    int * virus,
+    int * source_exposure_date,
+    int * layer
+) const 
+{
+
+    size_t nevents = transmission_date.size();
+
+    for (size_t i = 0u; i < nevents; ++i)
+    {
+
+        *(date + i) = transmission_date.at(i);
+        *(source + i) = transmission_source.at(i);
+        *(target + i) = transmission_target.at(i);
+        *(virus + i) = transmission_virus.at(i);
+        *(source_exposure_date + i) = transmission_source_exposure_date.at(i);
+        *(layer + i) = transmission_layer.at(i);
+
+    }
+
+}
+
+inline RunOutputs DataBase::get_run_outputs(
+    const std::vector< std::string > & whats
+) const
+{
+
+    // Names of the viruses, given their ids
+    auto vnames = [this](const std::vector< int > & ids) {
+        std::vector< std::string > names;
+        names.reserve(ids.size());
+        for (auto i : ids)
+            names.push_back(virus_name[i]);
+        return names;
+    };
+
+    // Names of the layers, given their ids ("" for -1: not from a contact)
+    auto lnames = [this](const std::vector< int > & ids) {
+        std::vector< std::string > names;
+        names.reserve(ids.size());
+        for (auto i : ids)
+            names.push_back(
+                i < 0 ? std::string() :
+                model->get_layer(static_cast< size_t >(i)).get_name()
+            );
+        return names;
+    };
+
+    // The status and stage columns of a vector of states
+    auto add_pairs = [this](
+        OutputTable & t,
+        const std::vector< epiworld_fast_uint > & states,
+        const std::string & prefix
+    ) {
+        std::vector< std::string > status, stage;
+        split_states(states, &status, &stage);
+        t.add(prefix + "status", status);
+        t.add(prefix + "stage", stage);
+    };
+
+    RunOutputs out;
+
+    for (const auto & what : whats)
+    {
+
+        OutputTable t;
+
+        if (what == "virus_info")
+        {
+            std::vector< int > id(virus_name.size());
+            std::iota(id.begin(), id.end(), 0);
+            t.add("virus_id", id);
+            t.add("virus", virus_name);
+            t.add("date_recorded", virus_origin_date);
+            t.add("parent", virus_parent_id);
+        }
+        else if (what == "virus_hist")
+        {
+            t.add("date", hist_virus_date);
+            t.add("virus_id", hist_virus_id);
+            t.add("virus", vnames(hist_virus_id));
+            add_pairs(t, hist_virus_state, "");
+            t.add("n", hist_virus_counts);
+        }
+        else if (what == "tool_info")
+        {
+            std::vector< int > id(tool_name.size());
+            std::iota(id.begin(), id.end(), 0);
+            t.add("id", id);
+            t.add("tool_name", tool_name);
+            t.add("date_recorded", tool_origin_date);
+        }
+        else if (what == "tool_hist")
+        {
+            t.add("date", hist_tool_date);
+            t.add("id", hist_tool_id);
+            add_pairs(t, hist_tool_state, "");
+            t.add("n", hist_tool_counts);
+        }
+        else if (what == "total_hist")
+        {
+            t.add("date", hist_total_date);
+            t.add("nviruses", hist_total_nviruses_active);
+            add_pairs(t, hist_total_state, "");
+            t.add("counts", hist_total_counts);
+        }
+        else if (what == "transmission")
+        {
+            t.add("date", transmission_date);
+            t.add("virus_id", transmission_virus);
+            t.add("virus", vnames(transmission_virus));
+            t.add("source_exposure_date", transmission_source_exposure_date);
+            t.add("source", transmission_source);
+            t.add("target", transmission_target);
+            t.add("layer_id", transmission_layer);
+            t.add("layer", lnames(transmission_layer));
+        }
+        else if (what == "transition")
+        {
+            std::vector< int > date, counts;
+            std::vector< epiworld_fast_uint > from, to;
+            int ns = model->nstates;
+            for (int i = 0; i <= model->today(); ++i)
+                for (int f = 0; f < ns; ++f)
+                    for (int s = 0; s < ns; ++s)
+                    {
+                        int n = hist_transition_matrix[i * (ns * ns) + s * ns + f];
+                        if (n == 0)
+                            continue;
+                        date.push_back(i);
+                        from.push_back(static_cast< epiworld_fast_uint >(f));
+                        to.push_back(static_cast< epiworld_fast_uint >(s));
+                        counts.push_back(n);
+                    }
+            t.add("date", date);
+            add_pairs(t, from, "from_");
+            add_pairs(t, to, "to_");
+            t.add("counts", counts);
+        }
+        else if (what == "reproductive")
+        {
+            std::vector< int > id, source, date, rt;
+            for (const auto & m : get_reproductive_number())
+            {
+                id.push_back(m.first[0u]);
+                source.push_back(m.first[1u]);
+                date.push_back(m.first[2u]);
+                rt.push_back(m.second);
+            }
+            t.add("virus_id", id);
+            t.add("virus", vnames(id));
+            t.add("source", source);
+            t.add("source_exposure_date", date);
+            t.add("rt", rt);
+        }
+        else if (what == "generation")
+        {
+            std::vector< int > agent, virus, time, gentime;
+            get_generation_time(agent, virus, time, gentime);
+            t.add("virus", virus);
+            t.add("source", agent);
+            t.add("source_exposure_date", time);
+            t.add("gentime", gentime);
+        }
+        else if (what == "active_cases" || what == "outbreak_size")
+        {
+            std::vector< int > date, id, n;
+            if (what == "active_cases")
+                get_active_cases(date, id, n);
+            else
+                get_outbreak_size(date, id, n);
+
+            // Skipping the zeros
+            std::vector< int > date_, id_, n_;
+            for (size_t i = 0u; i < n.size(); ++i)
+                if (n[i] > 0)
+                {
+                    date_.push_back(date[i]);
+                    id_.push_back(id[i]);
+                    n_.push_back(n[i]);
+                }
+
+            t.add("date", date_);
+            t.add("virus_id", id_);
+            t.add("virus", vnames(id_));
+            t.add(what, n_);
+        }
+        else if (what == "hospitalizations")
+        {
+            std::vector< int > date, id, tool, count;
+            std::vector< double > weight;
+            get_hospitalizations(date, id, tool, count, weight);
+
+            // Skipping the zeros
+            std::vector< int > date_, id_, tool_, count_;
+            std::vector< double > weight_;
+            for (size_t i = 0u; i < date.size(); ++i)
+                if (count[i] > 0 || weight[i] > 0.0)
+                {
+                    date_.push_back(date[i]);
+                    id_.push_back(id[i]);
+                    tool_.push_back(tool[i]);
+                    count_.push_back(count[i]);
+                    weight_.push_back(weight[i]);
+                }
+
+            t.add("date", date_);
+            t.add("virus_id", id_);
+            t.add("tool_id", tool_);
+            t.add("count", count_);
+            t.add("weight", weight_);
+        }
+        else
+        {
+            std::string valid;
+            for (const auto & n : run_output_names())
+                valid += " \"" + n + "\"";
+            throw std::invalid_argument(
+                "Unknown output \"" + what + "\". Valid outputs are:" + valid + "."
+            );
+        }
+
+        out[what] = std::move(t);
+
+    }
+
+    return out;
+
+}
+
+inline void DataBase::write_data(
+    std::string fn_virus_info,
+    std::string fn_virus_hist,
+    std::string fn_tool_info,
+    std::string fn_tool_hist,
+    std::string fn_total_hist,
+    std::string fn_transmission,
+    std::string fn_transition,
+    std::string fn_reproductive_number,
+    std::string fn_generation_time,
+    std::string fn_active_cases,
+    std::string fn_outbreak_size,
+    std::string fn_hospitalizations
+) const
+{
+
+    // Same order as run_output_names()
+    const std::vector< std::string > fns = {
+        fn_virus_info, fn_virus_hist, fn_tool_info, fn_tool_hist,
+        fn_total_hist, fn_transmission, fn_transition,
+        fn_reproductive_number, fn_generation_time, fn_active_cases,
+        fn_outbreak_size, fn_hospitalizations
+    };
+
+    std::vector< std::string > whats;
+    for (size_t i = 0u; i < fns.size(); ++i)
+        if (fns[i] != "")
+            whats.push_back(run_output_names()[i]);
+
+    auto out = get_run_outputs(whats);
+
+    for (size_t i = 0u; i < fns.size(); ++i)
+        if (fns[i] != "")
+            write_table(fns[i], out.at(run_output_names()[i]));
+
+}
+
+inline void DataBase::record_transmission(
+    int i,
+    int j,
+    int virus,
+    int i_expo_date,
+    int layer
+) {
+
+    transmission_date.push_back(model->today());
+    transmission_source.push_back(i);
+    transmission_target.push_back(j);
+    transmission_virus.push_back(virus);
+    transmission_source_exposure_date.push_back(i_expo_date);
+    transmission_layer.push_back(layer);
+
+}
+
+inline size_t DataBase::get_n_viruses() const
+{
+    return virus_name.size();
+}
+
+inline size_t DataBase::get_n_tools() const
+{
+    return tool_name.size();
+}
+
+
+inline void DataBase::set_user_data(
+    std::vector< std::string > names
+)
+{
+    user_data = UserData(names);
+    user_data.model = model;
+}
+
+inline void DataBase::add_user_data(
+    std::vector< epiworld_double > x
+)
+{
+
+    user_data.add(x);
+
+}
+
+inline void DataBase::add_user_data(
+    epiworld_fast_uint k,
+    epiworld_double x
+)
+{
+
+    user_data.add(k, x);
+
+}
+
+inline UserData & DataBase::get_user_data()
+{
+    return user_data;
+}
+
+inline MapVec_type<int,int> DataBase::get_reproductive_number()
+const {
+
+    // Checking size
+    MapVec_type<int,int> map;
+
+    // Number of digits of maxid
+    for (size_t i = 0u; i < transmission_date.size(); ++i)
+    {
+        // Fabricating id
+        std::vector< int > h = {
+            transmission_virus[i],
+            transmission_source[i],
+            transmission_source_exposure_date[i]
+        };
+
+        // Adding to counter
+        if (map.find(h) == map.end())
+            map[h] = 1;
+        else
+            map[h]++;
+
+        // The target is added
+        std::vector< int > h_target = {
+            transmission_virus[i],
+            transmission_target[i],
+            transmission_date[i]
+        };
+
+        map[h_target] = 0;
+        
+    }
+
+    return map;
+
+}
+
+inline void DataBase::get_reproductive_number(
+    std::string fn
+) const {
+
+    write_table(fn, get_run_outputs({"reproductive"}).at("reproductive"));
+
+}
+
+inline std::vector< epiworld_double > DataBase::get_transition_probability(
+    bool print,
+    bool normalize
+) const {
+
+    const auto& states_labels = model->states_labels;
+    size_t n_state = states_labels.size();
+    size_t n_days   = model->get_ndays();
+    std::vector< epiworld_double > res(n_state * n_state, 0.0);
+    std::vector< epiworld_double > rowsums(n_state, 0.0);
+
+    for (size_t t = 0; t < n_days; ++t)
+    {
+
+        for (size_t s_i = 0; s_i < n_state; ++s_i)
+        {
+
+            for (size_t s_j = 0u; s_j < n_state; ++s_j)
+            {
+                res[s_i + s_j * n_state] += (
+                    hist_transition_matrix[
+                        s_i + s_j * n_state +
+                        t * (n_state * n_state)
+                    ]
+                );
+                
+                rowsums[s_i] += hist_transition_matrix[
+                    s_i + s_j * n_state +
+                    t * (n_state * n_state)
+                ];
+            
+            }
+
+        }
+
+    }
+
+    if (normalize)
+    {
+        for (size_t s_i = 0; s_i < n_state; ++s_i)
+        {
+            // Nothing to normalize if the row is zero
+            if (rowsums[s_i] == 0)
+                continue;
+
+            for (size_t s_j = 0; s_j < n_state; ++s_j)
+                res[s_i + s_j * n_state] /= rowsums[s_i];
+        }
+    }
+
+    if (print)
+    {   
+
+        size_t nchar = 0u;
+        for (auto & l : states_labels)
+            if (l.length() > nchar)
+                nchar = l.length();
+
+        std::string fmt = " - %-" + std::to_string(nchar) + "s";
+
+        std::string fmt_entry = " % 4.2f";
+        if (!normalize)
+        {
+            nchar = 0u;
+            for (auto & l: res)
+            {
+                std::string tmp = std::to_string(l);
+                if (tmp.length() > nchar)
+                    nchar = tmp.length();
+            }
+
+            fmt_entry = " % " + std::to_string(nchar) + ".0f";
+        } 
+
+        
+        printf_epiworld("\nTransition Probabilities:\n");
+        for (size_t s_i = 0u; s_i < n_state; ++s_i)
+        {
+            printf_epiworld(fmt.c_str(), states_labels[s_i].c_str());
+            for (size_t s_j = 0u; s_j < n_state; ++s_j)
+            {
+                if (
+                    std::isnan(res[s_i + s_j * n_state]) ||
+                    (res[s_i + s_j * n_state] < 1e-10)
+                )
+                {
+                    printf_epiworld("     -");
+                } else {
+                    printf_epiworld(
+                        fmt_entry.c_str(), res[s_i + s_j * n_state]
+                    );
+                }
+            }
+            printf_epiworld("\n");
+        }
+
+        printf_epiworld("\n");
+
+    }
+
+    return res;
+
+
+} 
+
+#define VECT_MATCH(a, b, c) \
+    EPI_DEBUG_FAIL_AT_TRUE(a.size() != b.size(), c) \
+    for (size_t __i = 0u; __i < a.size(); ++__i) \
+    {\
+        EPI_DEBUG_FAIL_AT_TRUE(a[__i] != b[__i], c) \
+    }
+
+inline bool DataBase::operator==(const DataBase & other) const
+{
+    VECT_MATCH(
+        virus_name,
+        other.virus_name,
+        "DataBase:: virus_name[i] don't match"
+    )
+
+    VECT_MATCH(
+        virus_origin_date,
+        other.virus_origin_date,
+        "DataBase:: virus_origin_date[i] don't match"
+    )
+
+    VECT_MATCH(
+        virus_parent_id,
+        other.virus_parent_id,
+        "DataBase:: virus_parent_id[i] don't match"
+    )
+
+    VECT_MATCH(
+        tool_name,
+        other.tool_name,
+        "DataBase:: tool_name[i] don't match"
+    )
+
+    VECT_MATCH(
+        tool_origin_date,
+        other.tool_origin_date,
+        "DataBase:: tool_origin_date[i] don't match"
+    )
+
+    
+    EPI_DEBUG_FAIL_AT_TRUE(
+        sampling_freq != other.sampling_freq,
+        "DataBase:: sampling_freq don't match."
+    )
+
+    // Variants history
+    VECT_MATCH(
+        hist_virus_date,
+        other.hist_virus_date,
+        "DataBase:: hist_virus_date[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_virus_id,
+        other.hist_virus_id,
+        "DataBase:: hist_virus_id[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_virus_state,
+        other.hist_virus_state,
+        "DataBase:: hist_virus_state[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_virus_counts,
+        other.hist_virus_counts,
+        "DataBase:: hist_virus_counts[i] don't match"
+    )
+
+    // Tools history
+    VECT_MATCH(
+        hist_tool_date,
+        other.hist_tool_date,
+        "DataBase:: hist_tool_date[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_tool_id,
+        other.hist_tool_id,
+        "DataBase:: hist_tool_id[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_tool_state,
+        other.hist_tool_state,
+        "DataBase:: hist_tool_state[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_tool_counts,
+        other.hist_tool_counts,
+        "DataBase:: hist_tool_counts[i] don't match"
+    )
+
+    // Overall hist
+    VECT_MATCH(
+        hist_total_date,
+        other.hist_total_date,
+        "DataBase:: hist_total_date[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_total_nviruses_active,
+        other.hist_total_nviruses_active,
+        "DataBase:: hist_total_nviruses_active[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_total_state,
+        other.hist_total_state,
+        "DataBase:: hist_total_state[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_total_counts,
+        other.hist_total_counts,
+        "DataBase:: hist_total_counts[i] don't match"
+    )
+
+    VECT_MATCH(
+        hist_transition_matrix,
+        other.hist_transition_matrix,
+        "DataBase:: hist_transition_matrix[i] don't match"
+    )
+
+    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_virus.size() != other.today_virus.size(),
+        "DataBase:: today_virus.size() don't match."
+    )
+    
+    for (size_t i = 0u; i < today_virus.size(); ++i)
+    {
+        VECT_MATCH(
+            today_virus[i], other.today_virus[i],
+            "DataBase:: today_virus[i] don't match"
+            )
+    }
+
+    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_tool.size() != other.today_tool.size(),
+        "DataBase:: today_tool.size() don't match."
+    )
+    
+    for (size_t i = 0u; i < today_tool.size(); ++i)
+    {
+        VECT_MATCH(
+            today_tool[i], other.today_tool[i],
+            "DataBase:: today_tool[i] don't match"
+            )
+    }
+
+    // {Susceptible, Infected, etc.}
+    VECT_MATCH(
+        today_total, other.today_total,
+        "DataBase:: today_total[i] don't match"
+        )
+
+    // Totals
+    EPI_DEBUG_FAIL_AT_TRUE(
+        today_total_nviruses_active != other.today_total_nviruses_active,
+        "DataBase:: today_total_nviruses_active don't match."
+    )
+
+    // Transmission network
+    VECT_MATCH( ///< Date of the transmission eve
+        transmission_date,
+        other.transmission_date,
+        "DataBase:: transmission_date[i] don't match"
+    )
+
+    VECT_MATCH( ///< Id of the sour
+        transmission_source,
+        other.transmission_source,
+        "DataBase:: transmission_source[i] don't match"
+    )
+
+    VECT_MATCH( ///< Id of the targ
+        transmission_target,
+        other.transmission_target,
+        "DataBase:: transmission_target[i] don't match"
+    )
+
+    VECT_MATCH( ///< Id of the varia
+        transmission_virus,
+        other.transmission_virus,
+        "DataBase:: transmission_virus[i] don't match"
+    )
+
+    VECT_MATCH( ///< Date when the source acquired the varia
+        transmission_source_exposure_date,
+        other.transmission_source_exposure_date,
+        "DataBase:: transmission_source_exposure_date[i] don't match"
+    )
+
+    VECT_MATCH(
+        transmission_layer,
+        other.transmission_layer,
+        "DataBase:: transmission_layer[i] don't match"
+    )
+
+    VECT_MATCH(
+        transition_matrix,
+        other.transition_matrix,
+        "DataBase:: transition_matrix[i] don't match"
+    )
+
+    return true;
+
+}
+
+inline void DataBase::get_generation_time(
+    std::vector< int > & agent_id,
+    std::vector< int > & virus_id,
+    std::vector< int > & time,
+    std::vector< int > & gentime
+) const {
+    
+    size_t nevents = transmission_date.size();
+
+    agent_id.reserve(nevents);
+    virus_id.reserve(nevents);
+    time.reserve(nevents);
+    gentime.reserve(nevents);
+
+    // Iterating through the individuals
+    for (size_t i = 0u; i < nevents; ++i)
+    {
+        int agent_id_i = transmission_target[i];
+        agent_id.push_back(agent_id_i);
+        virus_id.push_back(transmission_virus[i]);
+        time.push_back(transmission_date[i]);
+
+        bool found = false;
+        for (size_t j = i; j < nevents; ++j)
+        {
+
+            if (transmission_source[j] == agent_id_i)
+            {
+                gentime.push_back(transmission_date[j] - time[i]);
+                found = true;
+                break;
+            }
+
+        }
+
+        // If there's no transmission, we set the generation time to
+        // minus 1;
+        if (!found)
+            gentime.push_back(-1);
+
+    }
+
+    agent_id.shrink_to_fit();
+    virus_id.shrink_to_fit();
+    time.shrink_to_fit();
+    gentime.shrink_to_fit();
+
+    return;
+
+}
+
+inline void DataBase::get_generation_time(
+    std::string fn
+) const
+{
+
+    write_table(fn, get_run_outputs({"generation"}).at("generation"));
+
+}
+
+inline void DataBase::record_hospitalization(Agent & agent)
+{
+    m_hospitalizations.record(agent, *model);
+}
+
+inline void DataBase::get_hospitalizations(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & tool_id,
+    std::vector<int> & count,
+    std::vector<double> & weight
+) const
+{
+    // Get the number of days from the model and add 1 since days are 0-indexed
+    // today() returns the last day, so we need today() + 1 for the full count
+    int ndays = model->today() + 1;
+    m_hospitalizations.get(ndays, date, virus_id, tool_id, count, weight);
+}
+
+#undef VECT_MATCH
+
+inline void DataBase::get_hist_transitions(
+    std::vector< int > & date,
+    std::vector< std::string > & transition,
+    std::vector< int > & counts
+) const
+{
+
+    if (!model->nh)
+        throw std::logic_error(
+            "get_hist_transitions() needs a model with a natural history."
+        );
+
+    date = hist_transition_date;
+    counts = hist_transition_counts;
+    // Stage transitions first, then the status ones
+    const int n_stage = static_cast< int >(model->nh->get_n_transitions());
+    transition.resize(hist_transition_id.size());
+    for (size_t k = 0u; k < hist_transition_id.size(); ++k)
+    {
+        const int t = hist_transition_id[k];
+        transition[k] = (t < n_stage) ?
+            model->nh->get_transition(t).name :
+            model->st->get_transition(t - n_stage).name;
+    }
+
+}
+
+inline void SaverMemory::operator()(size_t sim_id, Model * model) const
+{
+    auto out = model->get_db().get_run_outputs(state->whats);
+    if (sim_id >= state->runs.size())
+        state->runs.resize(sim_id + 1u);
+    state->runs[sim_id] = std::move(out);
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/database-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/adjlist-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_ADJLIST_MEAT_HPP
+#define EPIWORLD_ADJLIST_MEAT_HPP
+
+#include <vector>
+#include <algorithm>
+#include <numeric>
+#include <string>
+#include <stdexcept>
+#include <fstream>
+// (already included include/epiworld/config.hpp)
+// (already included include/epiworld/adjlist-bones.hpp)
+
+inline AdjList::AdjList(
+    const std::vector< int > & source,
+    const std::vector< int > & target,
+    int size,
+    bool directed
+) : directed(directed) {
+
+    if (size < 0)
+        throw std::length_error(
+            "The size of the network cannot be negative (" +
+            std::to_string(size) + ")."
+            );
+
+    if (source.size() != target.size())
+        throw std::length_error(
+            "source and target must have the same length (" +
+            std::to_string(source.size()) + " vs " +
+            std::to_string(target.size()) + ")."
+            );
+
+    N = size;
+    E = source.size();
+    int max_id = size - 1;
+
+    // Counting sort of the tie ends by vertex: first the size of each row (an
+    // undirected tie counts in both), then the rows themselves
+    start.assign(N + 1u, 0u);
+    for (size_t m = 0u; m < source.size(); ++m)
+    {
+
+        int i = source[m];
+        int j = target[m];
+
+        if ((i < 0) || (i > max_id))
+            throw std::range_error(
+                "The source["+std::to_string(m)+"] = " + std::to_string(i) +
+                " is above the max_id " + std::to_string(max_id)
+                );
+
+        if ((j < 0) || (j > max_id))
+            throw std::range_error(
+                "The target["+std::to_string(m)+"] = " + std::to_string(j) +
+                " is above the max_id " + std::to_string(max_id)
+                );
+
+        start[i + 1]++;
+        if (!directed)
+            start[j + 1]++;
+
+    }
+
+    std::partial_sum(start.begin(), start.end(), start.begin());
+
+    ids.resize(start[N]);
+    std::vector< size_t > next(start.begin(), start.end() - 1);
+    for (size_t m = 0u; m < source.size(); ++m)
+    {
+        ids[next[source[m]]++] = target[m];
+        if (!directed)
+            ids[next[target[m]]++] = source[m];
+    }
+
+    // Each row sorted and without repeats, moved down over the repeats
+    // dropped before it
+    size_t kept = 0u;
+    for (size_t i = 0u; i < N; ++i)
+    {
+
+        auto first = ids.begin() + static_cast< std::ptrdiff_t >(start[i]);
+        auto last  = ids.begin() + static_cast< std::ptrdiff_t >(start[i + 1u]);
+
+        std::sort(first, last);
+        last = std::unique(first, last);
+
+        start[i] = kept;
+        for (auto it = first; it != last; ++it)
+            ids[kept++] = *it;
+
+    }
+
+    start[N] = kept;
+    ids.resize(kept);
+
+    return;
+
+}
+
+inline void AdjList::read_edgelist(
+    std::string fn,
+    int size,
+    int skip,
+    bool directed
+) {
+
+    int i,j;
+    std::ifstream filei(fn);
+
+    if (!filei)
+        throw std::logic_error("The file " + fn + " was not found.");
+
+    int linenum = 0;
+    std::vector< int > source_;
+    std::vector< int > target_;
+
+    source_.reserve(1e5);
+    target_.reserve(1e5);
+
+    int max_id = size - 1;
+
+    while (!filei.eof())
+    {
+
+        if (linenum++ < skip)
+            continue;
+
+        filei >> i >> j;
+
+        // Looking for exceptions
+        if (filei.bad())
+            throw std::logic_error(
+                "I/O error while reading the file " +
+                fn
+            );
+
+        if (filei.fail())
+            break;
+
+        if (i > max_id)
+            throw std::range_error(
+                "The source["+std::to_string(linenum)+"] = " + std::to_string(i) +
+                " is above the max_id " + std::to_string(max_id)
+                );
+
+        if (j > max_id)
+            throw std::range_error(
+                "The target["+std::to_string(linenum)+"] = " + std::to_string(j) +
+                " is above the max_id " + std::to_string(max_id)
+                );
+
+        source_.push_back(i);
+        target_.push_back(j);
+
+    }
+
+    // Now using the right constructor
+    *this = AdjList(source_, target_, size, directed);
+
+    return;
+
+}
+
+inline std::vector< int > AdjList::operator()(
+    epiworld_fast_uint i
+    ) const {
+
+    if (i >= N)
+        throw std::range_error(
+            "The vertex id " + std::to_string(i) + " is not in the network."
+            );
+
+    return std::vector< int >(
+        ids.begin() + static_cast< std::ptrdiff_t >(start[i]),
+        ids.begin() + static_cast< std::ptrdiff_t >(start[i + 1u])
+    );
+
+}
+
+inline void AdjList::print(epiworld_fast_uint limit) const {
+
+    printf_epiworld("Nodeset:\n");
+    for (epiworld_fast_uint i = 0u; (i < N) && (i <= limit); ++i)
+    {
+
+        printf_epiworld("  % 3i: {", static_cast<int>(i));
+        for (size_t k = start[i]; k < start[i + 1u]; ++k)
+        {
+            printf_epiworld("%s%i", (k > start[i]) ? ", " : "", ids[k]);
+        }
+        printf_epiworld("}\n");
+
+    }
+
+    if (limit < N)
+    {
+        printf_epiworld(
+            "  (... skipping %i records ...)\n",
+            static_cast<int>(N - limit)
+            );
+    }
+
+}
+
+inline size_t AdjList::vcount() const 
+{
+    return N;
+}
+
+inline size_t AdjList::ecount() const 
+{
+    return E;
+}
+
+inline bool AdjList::is_directed() const {
+
+    if (N == 0u)
+        throw std::logic_error("The edgelist is empty.");
+    
+    return directed;
+    
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/adjlist-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -8616,399 +14721,6 @@ inline void ContactTracing::print(size_t agent)
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/contactlayer-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_CONTACTLAYER_BONES_HPP
-#define EPIWORLD_CONTACTLAYER_BONES_HPP
-
-/**
- * @file contactlayer-bones.hpp
- * @brief Base class of the contact layers of a model.
- *
- * @details A *contact layer* is one source of contacts of a model: it answers
- * "whom did agent `i` contact this step?". A model owns any number of them (see
- * `Model::add_layer()`), and none are implied: a model without layers has no
- * transmission through contacts.
- *
- * The model drives the life cycle of its layers:
- *
- * - `reset()` at the start of `Model::reset()`, before anything is distributed
- *   (viruses, tools, the global events' set-up), so that those see
- *   the run's contacts. A layer restores its baseline if it was edited during
- *   the previous run (see `is_dirty()`), or draws a new one, and sizes its
- *   per-run buffers.
- * - `update()` at the end of every step, including day 0 (at the start of
- *   `Model::next()`): after the agents' update functions, the global events
- *   and rewiring, so that whatever changed during a step (states, edits of the
- *   layer) is in force for the next step's contacts.
- * - `clone()` whenever the model is copied (`run_multiple()` copies models),
- *   so replicates never share layer state.
- *
- * ### Ownership
- *
- * Layers are created as shared pointers (`layer::network()`,
- * `layer::mixing()`; `std::make_shared` for a layer type of your own), and
- * `Model::add_layer()` shares the pointer: the model and whoever else holds it
- * see the same layer, so an edit made through either is an edit of the model.
- * A layer belongs to one model at most. A copy of the model clones its layers
- * (the pointers held outside keep pointing at the original's), and a layer
- * outlives its model only detached from it. A copy of a layer is detached too.
- *
- * ### Weight and viruses
- *
- * `set_weight()` makes the layer's contacts count more or less than the others':
- * the odds of infection through the layer are multiplied by the weight (a
- * model parameter, read at every step; 1 if none is set; 0 turns the layer
- * off). `add_virus_target()` restricts the layer to some viruses, as tools are
- * restricted; by default every virus spreads through every layer.
- *
- * ### Edits and the dirty flag
- *
- * Whether an edit is permanent depends only on when it is made. An edit made
- * during a run (from an update function or a global event) applies to that run
- * only: it sets the *dirty* flag, and `reset()` restores the baseline of a
- * dirty layer and clears the flag. An edit made between runs becomes the new
- * baseline.
- *
- * ### Contact tracing
- *
- * `enable_tracing()` makes the layer keep a log of its contacts (a
- * `ContactTracing`): every contact the layer samples, with a carrier, is
- * recorded under the carrier, with the day. The log starts empty at every run
- * and keeps the last `max_contacts` contacts of each agent. Tracing is off by
- * default, and it is a setting, not an edit: it lasts across runs whenever it
- * is turned on or off.
- *
- * @ingroup contact_layers
- */
-template<typename TSeq>
-class ContactLayer {
-
-    friend class Model<TSeq>;
-
-private:
-
-    std::string name;
-    size_t id = 0u;          ///< Position in the model's list, set by the model
-    bool dirty = false;  ///< Edited since the baseline was set
-    bool in_run = false; ///< Set by the model while it runs
-
-    std::optional< ParamRef > weight_ref; ///< Empty: weight 1
-    uint64_t virus_mask = ~uint64_t(0);   ///< Lineages that spread here
-    size_t trace_max = 0u;   ///< Contacts kept per agent; 0: not traced
-    ContactTracing trace_log; ///< This run's contacts, if traced
-
-    /// An empty log for a run of `n` agents (the model calls it at reset).
-    void reset_tracing(size_t n)
-    {
-        if (trace_max > 0u)
-            trace_log.reset(n, trace_max);
-    }
-
-protected:
-
-    /// The model the layer belongs to (set by the model), or `nullptr`.
-    Model<TSeq> * model = nullptr;
-
-    /**
-     * @brief Call it from every method that edits the layer.
-     * @return `true` if the edit is to the baseline (made between runs);
-     * otherwise it marks the layer dirty and returns `false`.
-     */
-    bool edits_baseline()
-    {
-        dirty = dirty || in_run;
-        return !in_run;
-    }
-
-    /// Call it from `reset()` once the baseline has been restored.
-    void mark_clean() { dirty = false; }
-
-public:
-
-    explicit ContactLayer(std::string name_) : name(std::move(name_)) {}
-
-    /// A copy belongs to no model (see `clone()`).
-    ContactLayer(const ContactLayer<TSeq> & other) :
-        name(other.name), dirty(other.dirty), weight_ref(other.weight_ref),
-        virus_mask(other.virus_mask), trace_max(other.trace_max),
-        trace_log(other.trace_log) {}
-
-    ContactLayer<TSeq> & operator=(const ContactLayer<TSeq> &) = delete;
-
-    virtual ~ContactLayer() = default;
-
-    const std::string & get_name() const { return name; }
-    size_t get_id() const { return id; }
-    bool is_dirty() const { return dirty; }
-
-    /// The weight is the model parameter `param` (see the class description).
-    void set_weight(std::string param) { weight_ref.emplace(std::move(param)); }
-
-    bool has_weight() const { return weight_ref.has_value(); }
-
-    /// Current weight in `model`.
-    epiworld_double get_weight(const Model<TSeq> & model) const
-    {
-        return weight_ref ? (*weight_ref)(model) : 1.0;
-    }
-
-    /**
-     * @name Virus targets
-     * @brief Restrict the layer to the listed virus lineages (see
-     * `Tool::add_target()`, which these mirror). The first target turns the
-     * default (every virus) off.
-     */
-    ///@{
-    void add_virus_target(int lineage_id);
-    void add_virus_target(const Virus<TSeq> & v);
-    ///@}
-
-    /**
-     * @name Contact tracing
-     * @brief Keep a log of the layer's contacts (see the class description).
-     */
-    ///@{
-    /// Turn tracing on, keeping up to `max_contacts` contacts per agent.
-    void enable_tracing(size_t max_contacts = EPI_MAX_TRACKING);
-    void disable_tracing();
-    bool is_tracing() const { return trace_max > 0u; }
-    /// The log of the current run (throws if tracing is off).
-    ContactTracing & get_tracing();
-
-    /// Log that `source` (the carrier) met `contact` today, if traced.
-    void trace(size_t source, size_t contact)
-    {
-        if (trace_max > 0u)
-            trace_log.add_contact(
-                source, contact, static_cast< size_t >(model->today())
-            );
-    }
-
-    /// Log that each of the `n` `sources` met `contact` today, if traced.
-    void trace(const size_t * sources, size_t n, size_t contact)
-    {
-        if (trace_max > 0u)
-            for (size_t k = 0u; k < n; ++k)
-                trace(sources[k], contact);
-    }
-    ///@}
-
-    /// Whether the virus spreads through the layer.
-    bool admits(const Virus<TSeq> & v) const
-    {
-        return (virus_mask & v.lineage_bit) != 0u;
-    }
-
-    /// Restore the baseline if dirty and size the buffers for a new run.
-    virtual void reset(Model<TSeq> & model) = 0;
-
-    /**
-     * @brief Appends to `out` the contacts of agent `agent` this step that
-     * carry a virus (repeats allowed), and reports them to the model's
-     * post-sampling callback, if there is one.
-     * @details This is the layer's part of a pull. Contacts in a state flagged
-     * in `exclude` (if not null) are skipped. Whether the contacts are able to
-     * infect (their viruses, the weight) is up to the model.
-     * @return The number of contacts appended.
-     */
-    virtual size_t sample(
-        size_t agent,
-        Model<TSeq> & model,
-        const std::vector< bool > * exclude,
-        std::vector< size_t > & out
-    ) = 0;
-
-    /// Rebuild what depends on the state of the population (end of each step).
-    virtual void update(Model<TSeq> & model) = 0;
-
-    /// Deep copy (the model's copy constructor calls it).
-    virtual std::shared_ptr< ContactLayer<TSeq> > clone() const = 0;
-
-    /// The layer as a network layer, or `nullptr` if it is of another kind.
-    virtual layer::Network<TSeq> * as_network() { return nullptr; }
-
-    /// The layer as a mixing layer, or `nullptr` if it is of another kind.
-    virtual layer::Mixing<TSeq> * as_mixing() { return nullptr; }
-
-    /**
-     * @brief Whether the model's queue sees this layer's contacts.
-     * @details True when a carrier can reach only agents the layer can list
-     * from the carrier's side: its ties in an undirected network, its group in
-     * a within-group mixing layer. A model with any other layer visits every
-     * agent instead of using the queue.
-     */
-    virtual bool supports_queue() const { return false; }
-
-};
-
-template<typename TSeq>
-inline void ContactLayer<TSeq>::enable_tracing(size_t max_contacts)
-{
-    if (max_contacts == 0u)
-        throw std::invalid_argument(
-            "Contact tracing should keep at least one contact per agent."
-        );
-
-    trace_max = max_contacts;
-
-    // Turned on in a model that has agents: logs from now on
-    if (model != nullptr)
-        reset_tracing(model->size());
-}
-
-template<typename TSeq>
-inline void ContactLayer<TSeq>::disable_tracing()
-{
-    trace_max = 0u;
-    trace_log = ContactTracing();
-}
-
-template<typename TSeq>
-inline ContactTracing & ContactLayer<TSeq>::get_tracing()
-{
-    if (trace_max == 0u)
-        throw std::logic_error(
-            "The contact layer '" + name + "' is not traced; call "
-            "enable_tracing() first."
-        );
-
-    return trace_log;
-}
-
-template<typename TSeq>
-inline void ContactLayer<TSeq>::add_virus_target(int lineage_id)
-{
-
-    const uint64_t bit = Tool<TSeq>::target_bit(lineage_id);
-
-    // The first target turns the default off
-    if (virus_mask == ~uint64_t(0))
-        virus_mask = 0u;
-
-    virus_mask |= bit;
-
-}
-
-template<typename TSeq>
-inline void ContactLayer<TSeq>::add_virus_target(const Virus<TSeq> & v)
-{
-
-    if (v.get_lineage_id() < 0)
-        throw std::logic_error(
-            "The virus \"" + v.get_name() + "\" has no lineage id. Add it to "
-            "the model with Model::add_virus() before using it as a target."
-        );
-
-    add_virus_target(v.get_lineage_id());
-
-}
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/contactlayer-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/globalevent-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_GLOBALEVENT_BONES_HPP
-#define EPIWORLD_GLOBALEVENT_BONES_HPP
-
-#include <string>
-// (already included include/epiworld/config.hpp)
-
-/**
- * @brief Template for a Global Event
- * @details Global events are functions that Model<TSeq> executes
- * at the end of a day.
- * 
- */
-template<typename TSeq>
-class GlobalEvent
-{
-private:
-    GlobalFun<TSeq> fun = nullptr;
-    std::string name = "A global action";
-    int day = -99;
-public:
-
-    GlobalEvent() {};
-
-    /**
-     * @brief Construct a new Global Event object
-     * 
-     * @param fun A function that takes a Model<TSeq> * as argument and returns void.
-     * @param name A descriptive name for the action.
-     * @param day The day when the action will be executed. If negative, it will be executed every day.
-     */
-    GlobalEvent(GlobalFun<TSeq> fun, std::string name, int day = -99);
-    
-    virtual ~GlobalEvent() = default;
-
-    virtual void operator()(Model<TSeq> * m, int day);
-
-    /**
-     * @brief Prepare the event for a run.
-     *
-     * @details Called by `Model::reset()` at the end of every reset, i.e. once
-     * per run and once per replicate of `Model::run_multiple()`, with the run's
-     * RNG already seeded and the agents, tools, and viruses distributed. Events
-     * that need to set themselves up on the model they are running in -- the
-     * moment before day 1 -- do it here; the default does nothing.
-     *
-     * @param m The model the event belongs to.
-     */
-    virtual void reset(Model<TSeq> * m);
-
-    void set_name(std::string name);
-    std::string get_name() const;
-
-    void set_day(int day);
-    int get_day() const;
-    
-    void print() const;
-
-    // Comparison operators
-    bool operator==(const GlobalEvent<TSeq> & other) const;
-    bool operator!=(const GlobalEvent<TSeq> & other) const;
-
-    virtual std::unique_ptr<GlobalEvent<TSeq>> clone_ptr() const;
-
-};
-
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/globalevent-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -9024,9 +14736,8 @@ public:
 #include <memory>
 // (already included include/epiworld/globalevent-bones.hpp)
 
-template<typename TSeq>
-inline GlobalEvent<TSeq>::GlobalEvent(
-    GlobalFun<TSeq> fun,
+inline GlobalEvent::GlobalEvent(
+    GlobalFun fun,
     std::string name,
     int day
     )
@@ -9036,8 +14747,7 @@ inline GlobalEvent<TSeq>::GlobalEvent(
     this->day = day;
 }
 
-template<typename TSeq>
-inline void GlobalEvent<TSeq>::operator()(Model<TSeq> * m, int day)
+inline void GlobalEvent::operator()(Model * m, int day)
 {   
     
     if (this->fun == nullptr)
@@ -9051,38 +14761,32 @@ inline void GlobalEvent<TSeq>::operator()(Model<TSeq> * m, int day)
 
 }
 
-template<typename TSeq>
-inline void GlobalEvent<TSeq>::reset(Model<TSeq> *)
+inline void GlobalEvent::reset(Model *)
 {
     return;
 }
 
-template<typename TSeq>
-inline void GlobalEvent<TSeq>::set_name(std::string name)
+inline void GlobalEvent::set_name(std::string name)
 {
     this->name = name;
 }
 
-template<typename TSeq>
-inline std::string GlobalEvent<TSeq>::get_name() const
+inline std::string GlobalEvent::get_name() const
 {
     return this->name;
 }
 
-template<typename TSeq>
-inline void GlobalEvent<TSeq>::set_day(int day)
+inline void GlobalEvent::set_day(int day)
 {
     this->day = day;
 }
 
-template<typename TSeq>
-inline int GlobalEvent<TSeq>::get_day() const
+inline int GlobalEvent::get_day() const
 {
     return this->day;
 }
 
-template<typename TSeq>
-inline void GlobalEvent<TSeq>::print() const
+inline void GlobalEvent::print() const
 {
     printf_epiworld(
         "Global action: %s\n"
@@ -9092,22 +14796,19 @@ inline void GlobalEvent<TSeq>::print() const
         );
 }
 
-template<typename TSeq>
-inline bool GlobalEvent<TSeq>::operator==(const GlobalEvent<TSeq> & other) const
+inline bool GlobalEvent::operator==(const GlobalEvent & other) const
 {
     return (this->name == other.name) && (this->day == other.day);
 }
 
-template<typename TSeq>
-inline bool GlobalEvent<TSeq>::operator!=(const GlobalEvent<TSeq> & other) const
+inline bool GlobalEvent::operator!=(const GlobalEvent & other) const
 {
     return !(*this == other);
 }
 
-template<typename TSeq>
-inline std::unique_ptr<GlobalEvent<TSeq>> GlobalEvent<TSeq>::clone_ptr() const
+inline std::unique_ptr<GlobalEvent> GlobalEvent::clone_ptr() const
 {
-    return std::make_unique<GlobalEvent<TSeq>>(*this);
+    return std::make_unique<GlobalEvent>(*this);
 }
 
 #endif
@@ -9115,3171 +14816,6 @@ inline std::unique_ptr<GlobalEvent<TSeq>> GlobalEvent<TSeq>::clone_ptr() const
 ////////////////////////////////////////////////////////////////////////////////
 
  End of -./include/epiworld/globalevent-meat.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/model-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_MODEL_BONES_HPP
-#define EPIWORLD_MODEL_BONES_HPP
-
-#include <memory>
-#include <vector>
-#include <functional>
-#include <string>
-#include <map>
-// (already included include/epiworld/config.hpp)
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/naturalhistory-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_NATURALHISTORY_BONES_HPP
-#define EPIWORLD_NATURALHISTORY_BONES_HPP
-
-/**
- * @file naturalhistory-bones.hpp
- * @brief The natural history of a disease: its stages and the declared
- * transitions between them (see `natural-history.md`).
- *
- * @details A natural history is a small graph. Its nodes are **stages**
- * (susceptible, latent, infectious, recovered, ...) and its edges are
- * **transitions**, each of one kind:
- *
- * - `infection()`: by contact, drawn from the model's layers (or a custom
- *   sampler). Taking it gives the agent the virus.
- * - `rate()`: a daily probability. The rates out of a stage compete: one
- *   draw (`roulette()`) picks one of them, or none.
- * - `after()`: a duration, drawn when the agent enters the stage. It is a
- *   deadline: the agent leaves on the update of the day it falls, unless a
- *   rate fired first.
- * - `external()`: fired by code, through `Model::fire()`.
- *
- * A stage is a **carrier** (its agents hold the virus) and may be
- * **infectious** (they transmit; this implies carrier). Entering a
- * non-carrier stage releases the virus. There are no fixed roles: a stage is
- * susceptible because an infection transition leaves it, and a death is a
- * stage with contact weight 0 and no exits.
- *
- * Every number a transition uses is a `Value`: a number, a model parameter
- * (by name) or a function. A number given directly becomes a model parameter
- * when the natural history is set on a model.
- */
-
-class Nodes;
-
-template<typename TSeq>
-class NaturalHistory;
-
-template<typename TSeq>
-class TransitionRef;
-
-/// Flags of a stage (see `NaturalHistory::add_stage()`).
-namespace stage {
-    constexpr unsigned int carrier    = 1u;      ///< Agents in it hold the virus
-    constexpr unsigned int infectious = 1u | 2u; ///< They transmit (implies carrier)
-}
-
-/// Which tool effect a rate takes (see `TransitionRef::effect()`).
-enum class Effect : uint8_t {
-    none,     ///< No tool effect
-    recovery, ///< `p` becomes `1 - (1 - p) * (1 - recovery enhancer)`
-    death     ///< `p` becomes `p * (1 - death reduction)`
-};
-
-/// One or more stages (an `int` or a list of them).
-class Nodes {
-public:
-    std::vector< int > ids;
-    Nodes(int id) : ids({id}) {}
-    Nodes(std::initializer_list< int > l) : ids(l) {}
-    Nodes(std::vector< int > v) : ids(std::move(v)) {}
-};
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using ValueFun = std::function< epiworld_double(Agent<TSeq> &, Model<TSeq> &) >;
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using DurationFun = std::function< int(Agent<TSeq> &, Model<TSeq> &) >;
-
-/// A custom infection sampler: the virus the agent catches, or `nullptr`.
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using InfectionSampler = std::function< Virus<TSeq> * (Agent<TSeq> &, Model<TSeq> &) >;
-
-/**
- * @brief A number a transition uses: a constant, a model parameter, or a
- * function.
- * @details
- * - `Value(0.1)`: a number. When the natural history is set on a model, it
- *   becomes a model parameter (named after the transition).
- * - `Value("Recovery rate")`: a model parameter, by name.
- * - `Value::inverse("Days")`, `Value::complement("p")`: `1 / p`, `1 - p`.
- * - `Value(fun)`: `fun(agent, model)`.
- *
- * A parameter is read through the agent's virus, so a variant can point it to
- * another parameter (`Virus::use_param()`).
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Value {
-public:
-    enum class Kind : uint8_t { none, number, param, inverse, complement, fun };
-
-private:
-    Kind kind = Kind::none;
-    epiworld_double number = 0.0;
-    ParamRef param = ParamRef("");
-    ValueFun<TSeq> fun = nullptr;
-
-    friend class NaturalHistory<TSeq>;
-
-public:
-    Value() = default;
-    /// A number (any arithmetic type, whatever `epiworld_double` is)
-    template<
-        typename T,
-        typename std::enable_if< std::is_arithmetic< T >::value, int >::type = 0
-    >
-    Value(T x) : kind(Kind::number), number(static_cast< epiworld_double >(x)) {}
-    Value(const char * name) : kind(Kind::param), param(std::string(name)) {}
-    Value(std::string name) : kind(Kind::param), param(std::move(name)) {}
-    Value(ValueFun<TSeq> f) : kind(Kind::fun), fun(std::move(f)) {}
-
-    static Value inverse(std::string name);    ///< `1 / parameter`
-    static Value complement(std::string name); ///< `1 - parameter`
-
-    Kind get_kind() const { return kind; }
-    bool is_set() const { return kind != Kind::none; }
-
-    /// The parameter's name ("" for a function).
-    const std::string & get_param_name() const { return param.name(); }
-
-    /// The value for this agent (its virus may redirect the parameter).
-    epiworld_double eval(Agent<TSeq> & agent, Model<TSeq> & model) const;
-
-    /// The same, with the parameter redirected by `virus` (e.g., the
-    /// infector's, for a probability of infection).
-    epiworld_double eval(
-        Agent<TSeq> & agent,
-        const Virus<TSeq> * virus,
-        Model<TSeq> & model
-    ) const;
-};
-
-/**
- * @brief How many days a stage lasts, drawn when the agent enters it.
- * @details Always a whole number of days, at least one.
- * - `fixed(p)`: `p`, rounded.
- * - `geometric(mean)`: a geometric number of days with that mean (the same as
- *   leaving each day with probability `1 / mean`).
- * - `lognormal(mean, sd)`, `gamma(mean, sd)`: the mean and standard deviation
- *   of the duration, in days. A standard deviation of zero is fixed.
- * - `fun`: `fun(agent, model)`.
- *
- * `since(s)` counts the duration from the day the agent entered stage `s`
- * (in the same infection), instead of the day it entered this stage.
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Duration {
-public:
-    enum class Kind : uint8_t { none, fixed, geometric, lognormal, gamma, fun };
-
-private:
-    Kind kind = Kind::none;
-    Value<TSeq> mean;
-    Value<TSeq> sd;
-    DurationFun<TSeq> fun = nullptr;
-    int anchor = -1;
-
-    friend class NaturalHistory<TSeq>;
-
-public:
-    Duration() = default;
-    Duration(DurationFun<TSeq> f) : kind(Kind::fun), fun(std::move(f)) {}
-
-    static Duration fixed(Value<TSeq> days);
-    static Duration geometric(Value<TSeq> mean);
-    static Duration lognormal(Value<TSeq> mean, Value<TSeq> sd);
-    static Duration gamma(Value<TSeq> mean, Value<TSeq> sd);
-
-    /// Counts from the day the agent entered stage `s` in this infection.
-    Duration since(int s) const;
-
-    Kind get_kind() const { return kind; }
-    int get_anchor() const { return anchor; }
-
-    /// Draws a number of days (at least one).
-    int draw(Agent<TSeq> & agent, Model<TSeq> & model) const;
-};
-
-/// The kind of a transition (see `naturalhistory-bones.hpp`).
-enum class TransitionKind : uint8_t { infection, rate, after, external };
-
-/**
- * @brief A declared transition: from a set of stages to a stage (or a branch
- * of stages), of one kind.
- */
-template<typename TSeq>
-struct Transition {
-    std::string name;
-    TransitionKind kind;
-    std::vector< int > from;
-    int to = -1;
-
-    /// A branch: the target is drawn among these, with these probabilities.
-    std::vector< int > branch_to;
-    std::vector< Value<TSeq> > branch_prob;
-
-    Value<TSeq> value;          ///< infection (per contact) and rate
-    Duration<TSeq> duration;    ///< after
-    Effect effect = Effect::none;
-    InfectionSampler<TSeq> sampler = nullptr; ///< infection only (optional)
-
-    /// A status transition: only for agents in one of these stages (empty: any)
-    std::vector< int > when;
-};
-
-/**
- * @brief Refines a transition just declared (chainable); converts to its id.
- */
-template<typename TSeq>
-class TransitionRef {
-private:
-    NaturalHistory<TSeq> * nh;
-    int id;
-
-public:
-    TransitionRef(NaturalHistory<TSeq> * nh_, int id_) : nh(nh_), id(id_) {}
-
-    /// The transition's id for `Model::fire()` and reactions: a stage
-    /// transition's own index, or, for a status transition, `-2 - index`.
-    operator int() const { return nh->status_chart ? (-2 - id) : id; }
-    int get_id() const { return static_cast< int >(*this); }
-
-    TransitionRef & name(std::string n);     ///< Default: "From -> To"
-    TransitionRef & effect(Effect e);        ///< The tool effect a rate takes
-
-    /// The target is drawn among `targets`, with their probabilities.
-    TransitionRef & to(std::vector< std::pair< int, Value<TSeq> > > targets);
-
-    /// A custom infection sampler (infection transitions only; C++ only).
-    TransitionRef & sampler(InfectionSampler<TSeq> f);
-
-    /// A status transition: only for agents in these stages (read at the
-    /// start of the day).
-    TransitionRef & when(Nodes stages);
-};
-
-/**
- * @brief What the engine needs about a stage, derived from the declarations.
- */
-struct StageInfo {
-    int infection = -1;           ///< The infection transition out of it
-    std::vector< int > rates;     ///< Its rate transitions, in order
-    int after = -1;               ///< Its duration transition
-    bool needs_visit = false;     ///< Has a rate or a duration
-    bool pushable = false;        ///< Its only drawn exit is a default infection
-};
-
-/**
- * @brief The natural history of a disease: stages and declared transitions.
- * @details It is built on the virus (`Virus::add_stage()` and the others),
- * and the model takes its stages from `Model::add_virus()`. The first stage
- * is where agents start. Example (SIR):
- *
- * @code{.cpp}
- * Virus<> flu("Flu");
- * int S = flu.add_stage("Susceptible");
- * int I = flu.add_stage("Infected", stage::infectious);
- * int R = flu.add_stage("Recovered");
- * flu.infection(S, I, "Transmission rate");
- * flu.rate(I, R, "Recovery rate").effect(Effect::recovery);
- * model.add_virus(flu, assign::share(0.01));
- * @endcode
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class NaturalHistory {
-protected:
-    std::string name;
-    std::vector< std::string > stage_labels;
-    std::vector< unsigned int > stage_flags;
-    std::vector< epiworld_double > stage_contact;
-    std::vector< Transition<TSeq> > transitions;
-
-    // Derived by finalize()
-    std::vector< StageInfo > stages;
-    bool finalized = false;
-
-    friend class TransitionRef<TSeq>;
-    friend class Model<TSeq>;
-    bool status_chart = false; ///< See `Statuses`
-
-    int add_transition(Transition<TSeq> t);
-    void check_stage(int s, const char * what) const;
-
-    /// Checks the declarations and derives `stages`; turns numbers into model
-    /// parameters, named after `owner` (the virus) and the transition.
-    void finalize(Model<TSeq> & model, const std::string & owner);
-
-public:
-    explicit NaturalHistory(std::string name_);
-
-    /// Adds a stage; returns its id. Flags: `stage::carrier`, `stage::infectious`.
-    int add_stage(std::string label, unsigned int flags = 0u);
-
-    /// Contact weight of a stage (default 1). 0 takes its agents out of every
-    /// layer: they are not met and do not transmit.
-    void set_contact(int s, epiworld_double weight);
-
-    TransitionRef<TSeq> infection(Nodes from, int to, Value<TSeq> per_contact);
-    TransitionRef<TSeq> rate(Nodes from, int to, Value<TSeq> daily_probability);
-    TransitionRef<TSeq> after(int from, int to, Duration<TSeq> d);
-    TransitionRef<TSeq> external(Nodes from, int to, std::string label);
-
-    const std::string & get_name() const { return name; }
-    size_t get_n_stages() const { return stage_labels.size(); }
-    size_t get_n_transitions() const { return transitions.size(); }
-    const std::vector< std::string > & get_stages() const { return stage_labels; }
-    const Transition<TSeq> & get_transition(int id) const { return transitions.at(id); }
-
-    bool is_carrier(int s) const { return (stage_flags.at(s) & stage::carrier) != 0u; }
-    bool is_infectious(int s) const { return (stage_flags.at(s) & 2u) != 0u; }
-    epiworld_double get_contact(int s) const { return stage_contact.at(s); }
-
-    /// The stage's id, by label (throws if absent).
-    int stage_id(std::string_view label) const;
-
-    /// The transition's id, by name (throws if absent).
-    int transition_id(std::string_view label) const;
-
-    /// Whether `s` is one of the transition's sources.
-    bool is_source(int transition, int s) const;
-
-    /**
-     * @brief Whether `other` has the same structure: the same stages (labels,
-     * flags, contact weights) and the same transitions (names, kinds,
-     * sources and targets). Their values may differ.
-     */
-    bool same_structure(const NaturalHistory<TSeq> & other) const;
-
-    /// What the engine derived about stage `s` (once added to a model).
-    const StageInfo & get_stage_info(int s) const { return stages.at(s); }
-};
-
-/**
- * @brief The statuses of a model: where agents are (free, quarantined,
- * isolated, hospitalized), and the transitions between them.
- * @details The same vocabulary as a natural history (`rate()`, `after()`,
- * `external()`), without infections or carriers. A status transition can be
- * restricted to agents in some stages (`TransitionRef::when()`); a duration
- * can count from a stage's entry (`Duration::since()`). A status with contact
- * weight 0 takes its agents out of every layer. The first status is where
- * agents start. Set on a model with `Model::set_statuses()`; a model without
- * statuses has one, "Free".
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Statuses : public NaturalHistory<TSeq> {
-public:
-    Statuses() : NaturalHistory<TSeq>("Statuses") { this->status_chart = true; }
-
-    /// Adds a status; returns its id.
-    int add_status(std::string label) { return this->add_stage(std::move(label)); }
-
-    TransitionRef<TSeq> infection(Nodes, int, Value<TSeq>) = delete;
-};
-
-/**
- * @brief What a reaction responds to (see `Model::react()`).
- * @details `Trigger::entered(s)`: an agent enters stage `s`;
- * `Trigger::fired(t)`: transition `t` is applied. `.was({statuses})`: only if
- * the agent's status at the start of the day was one of these.
- */
-struct Trigger {
-    enum class Kind : uint8_t { entered, fired } kind = Kind::entered;
-    int target = -1;
-    std::vector< int > was_status; ///< Empty: any status
-
-    static Trigger entered(int stage) { return {Kind::entered, stage, {}}; }
-    static Trigger fired(int transition) { return {Kind::fired, transition, {}}; }
-    Trigger was(std::vector< int > statuses) const
-    {
-        Trigger t(*this);
-        t.was_status = std::move(statuses);
-        return t;
-    }
-};
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/naturalhistory-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/agent-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_PERSON_BONES_HPP
-#define EPIWORLD_PERSON_BONES_HPP
-
-template<typename TSeq>
-class Model;
-
-template<typename TSeq>
-class Virus;
-
-template<typename TSeq>
-class Viruses;
-
-template<typename TSeq>
-class Viruses_const;
-
-template<typename TSeq>
-class Tool;
-
-
-template<typename TSeq>
-class Queue;
-
-template<typename TSeq>
-struct Event;
-
-template<typename TSeq>
-class AgentsSample;
-
-/**
- * @brief Non-allocating range over an agent's neighbors in a network layer.
- *
- * @details It iterates the agent's neighbor ids in place and resolves each one
- * against the model's population as it goes, so a loop over the neighbors does
- * not allocate:
- *
- * ```cpp
- * for (auto * neighbor : net.neighbors_view(p->get_id()))
- *     ...
- * ```
- *
- * The order is the layer's tie order (see `layer::Network`). The view borrows
- * from the layer and the model, so it must not outlive either, and it is
- * invalidated by anything that changes the agent's ties.
- *
- * @tparam TSeq Sequence type (should match `TSeq` across the model)
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class NeighborsView {
-private:
-
-    const size_t * first = nullptr;
-    size_t n = 0u;
-    std::vector< Agent<TSeq> > * pop = nullptr;
-
-public:
-
-    class iterator {
-
-        friend class NeighborsView<TSeq>;
-
-        const size_t * ptr = nullptr;
-        std::vector< Agent<TSeq> > * pop = nullptr;
-
-        iterator(const size_t * ptr, std::vector< Agent<TSeq> > * pop) :
-            ptr(ptr), pop(pop) {}
-
-    public:
-
-        Agent<TSeq> * operator*() const { return &pop->operator[](*ptr); }
-        iterator & operator++() { ++ptr; return *this; }
-        bool operator!=(const iterator & other) const { return ptr != other.ptr; }
-        bool operator==(const iterator & other) const { return ptr == other.ptr; }
-
-    };
-
-    NeighborsView() = default;
-
-    NeighborsView(
-        const size_t * first,
-        size_t n,
-        std::vector< Agent<TSeq> > * pop
-    ) : first(first), n(n), pop(pop) {}
-
-    // The size is carried rather than derived as `last - first`: an agent with
-    // no ties has nothing to point at, and subtracting two null pointers is
-    // undefined behaviour (they point into no array).
-    iterator begin() const { return iterator(first, pop); }
-    iterator end() const { return iterator(first + n, pop); }
-
-    size_t size() const { return n; }
-    bool empty() const { return n == 0u; }
-
-    /// Id of the `k`-th neighbor, without touching the neighbor's `Agent`.
-    /// @throws std::out_of_range if `k >= size()`.
-    size_t id(size_t k) const
-    {
-        if (k >= n)
-            throw std::out_of_range("NeighborsView::id(): index out of range.");
-        return first[k];
-    }
-
-    /// The `k`-th neighbor.
-    /// @throws std::out_of_range if `k >= size()`.
-    Agent<TSeq> * agent(size_t k) const
-    {
-        if (k >= n)
-            throw std::out_of_range("NeighborsView::agent(): index out of range.");
-        return &pop->operator[](first[k]);
-    }
-
-    /// The ids of the `size()` neighbors, in order (like `std::vector::data()`:
-    /// only valid for indices below `size()`; `nullptr` when there are none).
-    /// For scans that must not touch the neighbors' `Agent`s.
-    const size_t * ids() const { return first; }
-
-};
-
-/**
- * @brief Agent (agents)
- * 
- * @tparam TSeq Sequence type (should match `TSeq` across the model)
- */
-template<typename TSeq>
-class Agent {
-    friend class Model<TSeq>;
-    friend class Virus<TSeq>;
-    friend class Tool<TSeq>;
-    friend class Queue<TSeq>;
-    friend class AgentsSample<TSeq>;
-    friend class DataBase<TSeq>;
-    friend class layer::Network<TSeq>;
-protected:
-
-    unsigned int state = 0u;
-    unsigned int state_prev = 0u; ///< For accounting, if need to undo a change.
-    
-    int state_last_changed = -1; ///< Last time the agent was updated.
-    int id = -1;
-    
-    VirusPtr<TSeq> virus = nullptr;
-
-    std::vector< ToolPtr<TSeq> > tools;
-
-    void reset(); ///< Resets the agent to the initial state (no virus, no tools, state 0.)
-
-    /**
-     * @name The engine's changes (with the target state and queue)
-     * @details -99 means the default: no change of state (tools), the
-     * infection's target (a virus given from outside).
-     */
-    ///@{
-    void add_tool(
-        Model<TSeq> & model,
-        const Tool<TSeq> & tool,
-        epiworld_fast_int state_new,
-        epiworld_fast_int queue
-        );
-
-    void set_virus(
-        Model<TSeq> & model,
-        const Virus<TSeq> & virus,
-        epiworld_fast_int state_new,
-        epiworld_fast_int queue
-        );
-
-    void rm_tool(
-        Model<TSeq> & model,
-        epiworld_fast_uint tool_idx,
-        epiworld_fast_int state_new,
-        epiworld_fast_int queue
-    );
-
-    void rm_tool(
-        Model<TSeq> & model,
-        ToolPtr<TSeq> & tool,
-        epiworld_fast_int state_new,
-        epiworld_fast_int queue
-    );
-
-    void rm_virus(
-        Model<TSeq> & model,
-        epiworld_fast_int state_new,
-        epiworld_fast_int queue
-    );
-
-    void change_state(
-        Model<TSeq> & model,
-        epiworld_fast_uint new_state,
-        epiworld_fast_int queue = 0
-        );
-
-    /// The engine's index of the agent's stage and status (see
-    /// `Model::get_stage()` and `Model::get_status()`).
-    unsigned int get_state() const;
-    unsigned int get_state_prev() const;
-    ///@}
-
-public:
-
-    Agent() = default;
-    Agent(Agent<TSeq> && p);
-    Agent(const Agent<TSeq> & p);
-    Agent<TSeq> & operator=(const Agent<TSeq> & other_agent);
-    ~Agent();
-
-    /**
-     * @name Add/Remove Virus/Tool
-     *
-     * Any of these is ultimately reflected at the end of the iteration. A
-     * virus given to an agent takes it through the infection transition out
-     * of its stage (see `NaturalHistory`); moving an agent otherwise is done
-     * with `Model::fire()`.
-     *
-     * @param tool Tool to add
-     * @param virus Virus to add
-     */
-    ///@{
-    void add_tool(Model<TSeq> & model, const Tool<TSeq> & tool);
-    void set_virus(Model<TSeq> & model, const Virus<TSeq> & virus);
-    void rm_tool(Model<TSeq> & model, epiworld_fast_uint tool_idx);
-    void rm_tool(Model<TSeq> & model, ToolPtr<TSeq> & tool);
-    void rm_agent_by_virus(Model<TSeq> & model) = delete; ///< Agent removed by virus
-    ///@}
-    
-    /**
-     * @name Get the rates (multipliers) for the agent
-     * 
-     * @param v A pointer to a virus.
-     * @return epiworld_double 
-     */
-    ///@{
-    epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> & v, Model<TSeq> & model);
-    epiworld_double get_transmission_reduction(VirusPtr<TSeq> & v, Model<TSeq> & model);
-    epiworld_double get_recovery_enhancer(VirusPtr<TSeq> & v, Model<TSeq> & model);
-    epiworld_double get_death_reduction(VirusPtr<TSeq> & v, Model<TSeq> & model);
-    ///@}
-
-    int get_id() const; ///< Id of the individual
-
-    VirusPtr<TSeq> & get_virus();
-    const VirusPtr<TSeq> & get_virus() const;
-
-    ToolPtr<TSeq> & get_tool(int i);
-    ToolPtr<TSeq> & get_tool(std::string name);
-
-    std::vector<ToolPtr<TSeq>> get_tools();
-    const std::vector<ToolPtr<TSeq>> get_tools() const;
-    size_t get_n_tools() const noexcept;
-
-    /// @brief Applies the virus' mutation function (throws if the agent has no virus).
-    void mutate_virus(Model<TSeq> & model);
-
-    /// The last day the agent's stage or status changed.
-    int get_state_last_changed() const;
-
-
-    bool has_tool(epiworld_fast_uint t) const;
-    bool has_tool(std::string_view name) const;
-    bool has_tool(const Tool<TSeq> & t) const;
-    bool has_virus(epiworld_fast_uint t) const;
-    bool has_virus(std::string_view name) const;
-    bool has_virus(const Virus<TSeq> & v) const;
-
-    void print(Model<TSeq> & model, bool compressed = false) const;
-
-    /**
-     * @brief Access the j-th column of the agent
-     * 
-     * If an external array has been specified, then these two
-     * functions can be used to access additional agent's features 
-     * not included in the model.
-     * 
-     * @param j 
-     * @param model Reference to the Model
-     * @return double& 
-     */
-    ///@{
-    double & operator()(size_t j, Model<TSeq> & model);
-    double operator()(size_t j, const Model<TSeq> & model) const;
-    ///@}
-
-    bool operator==(const Agent<TSeq> & other) const;
-    bool operator!=(const Agent<TSeq> & other) const {return !operator==(other);};
-
-};
-
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/agent-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/virus-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_VIRUS_HPP
-#define EPIWORLD_VIRUS_HPP
-
-template<typename TSeq>
-class Agent;
-
-template<typename TSeq>
-class Virus;
-
-template<typename TSeq>
-class Model;
-
-template<typename TSeq>
-class Tool;
-
-/**
- * @brief Virus
- * 
- * @tparam TSeq 
- * @details
- * A virus is identified by its id, which the model assigns: `Model::add_virus()`
- * records a new variant (the founder of a lineage), and so does every
- * mutation (a child of the variant it changed). Tools can reduce what a
- * virus does, so its effects are a function of the agent.
- */
-template<typename TSeq>
-class Virus {
-    friend class Agent<TSeq>;
-    friend class Model<TSeq>;
-    friend class DataBase<TSeq>;
-    friend class Tool<TSeq>;
-    friend class ContactLayer<TSeq>;
-private:
-    
-    Agent<TSeq> * agent = nullptr;
-
-
-    std::string virus_name = "unknown virus";
-    int date = -99;
-    int id   = -99;    
-    int lineage_id = -99; ///< Id of the founding virus (kept across mutations).
-    uint64_t lineage_bit = uint64_t(1) << 63; ///< Bit matched against Tool::target_mask.
-    MutFun<TSeq>          mutation                 = nullptr;
-
-    /// Parameters this variant reads in place of others (see `use_param()`)
-    std::vector< std::pair< ParamRef, ParamRef > > param_redirects;
-
-    /// Its natural history (shared by its copies; copied on the first edit)
-    std::shared_ptr< NaturalHistory<TSeq> > nh_def = nullptr;
-    NaturalHistory<TSeq> & nh_edit();
-        
-public:
-
-    #ifdef EPI_DEBUG_VIRUS
-    static std::atomic<int> counter_construct;          // Default and parameterized constructors
-    static std::atomic<int> counter_copy_construct;     // Copy constructor
-    static std::atomic<int> counter_move_construct;     // Move constructor
-    static std::atomic<int> counter_copy_assign;        // Copy assignment
-    static std::atomic<int> counter_move_assign;        // Move assignment
-    static std::atomic<int> counter_destruct;           // Destructor
-    #endif
-
-    Virus();
-
-    Virus(std::string name = "unknown virus");
-    
-    
-    #ifdef EPI_DEBUG_VIRUS
-    
-    // Copy and move operations for debugging
-    Virus(const Virus<TSeq>& other);                    // Copy constructor
-    Virus(Virus<TSeq>&& other) noexcept;                // Move constructor
-    Virus<TSeq>& operator=(const Virus<TSeq>& other);   // Copy assignment
-    Virus<TSeq>& operator=(Virus<TSeq>&& other) noexcept; // Move assignment
-
-    ~Virus();
-    #endif
-    
-    /**
-     * @brief Mutation
-     * @details The function returns `true` when it changed the virus (it may
-     * change its name or, with `use_param()`, the parameters it reads). The
-     * model then records the virus as a new variant: a new id, whose parent is
-     * the id it had, in the same lineage. Each mutation is a new variant, even
-     * if two of them made the same change.
-     */
-    ///@{
-    void mutate(Model<TSeq> * model);
-    void set_mutation(MutFun<TSeq> fun);
-    ///@}
-    
-    
-    Agent<TSeq> * get_agent();
-    void set_agent(Agent<TSeq> * p);
-    
-    void set_date(int d);
-    int get_date() const;
-
-    void set_id(int idx);
-    int get_id() const;
-
-    /**
-     * @brief Id of the virus lineage
-     * 
-     * The id assigned to the founding virus when it was added to the model
-     * (see `Model::add_virus()`). Mutations change the virus id but keep
-     * the lineage id, so all variants of a virus share it. Tools target
-     * viruses by lineage (see `Tool::add_target()`).
-     * 
-     * @return int The lineage id (-99 if the virus has not been recorded).
-     */
-    int get_lineage_id() const;
-
-    void set_name(std::string name);
-    std::string get_name() const;
-
-    bool operator==(const Virus<TSeq> & other) const;
-    bool operator!=(const Virus<TSeq> & other) const {return !operator==(other);};
-
-    void print() const;
-
-
-    /**
-     * @name Natural history
-     * @brief The disease's stages and the transitions between them, declared
-     * on the virus (see `NaturalHistory` for each method).
-     * @details `Model::add_virus()` gives the model the virus's stages (its
-     * states). A copy of the virus (a strain, or a variant from a mutation)
-     * keeps the natural history; it can read other parameters with
-     * `use_param()`. The viruses of one model share their stages.
-     */
-    ///@{
-    int add_stage(std::string label, unsigned int flags = 0u);
-    void set_contact(int s, epiworld_double weight);
-    TransitionRef<TSeq> infection(Nodes from, int to, Value<TSeq> per_contact);
-    TransitionRef<TSeq> rate(Nodes from, int to, Value<TSeq> daily_probability);
-    TransitionRef<TSeq> after(int from, int to, Duration<TSeq> d);
-    TransitionRef<TSeq> external(Nodes from, int to, std::string label);
-
-    /// The natural history (`nullptr` if the virus has none).
-    const NaturalHistory<TSeq> * get_natural_history() const { return nh_def.get(); }
-    ///@}
-
-    /**
-     * @brief This variant reads the model parameter `replacement` wherever a
-     * transition of the natural history reads `param`.
-     * @details Every parameter lives in the model; a variant changes a value
-     * by pointing to another parameter (e.g., `"Recovery rate (Delta)"`).
-     */
-    void use_param(std::string param, std::string replacement);
-
-    /// The parameter this variant reads in place of `id`.
-    ParamId param_redirect(ParamId id, const Model<TSeq> & model) const;
-
-    /// Throws if a parameter it reads (see `use_param()`) is not in `model`.
-    void check_params(const Model<TSeq> & model) const;
-
-    virtual ~Virus() = default;
-    virtual std::unique_ptr<Virus<TSeq>> clone_ptr() const;
-
-};
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/virus-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/viruses-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_VIRUSES_BONES_HPP
-#define EPIWORLD_VIRUSES_BONES_HPP
-
-template<typename TSeq>
-class Virus;
-
-template<typename TSeq>
-class Agent;
-
-/**
- * @brief Set of viruses (useful for building iterators)
- * 
- * @tparam TSeq 
- */
-template<typename TSeq>
-class Viruses {
-    friend class Virus<TSeq>;
-    friend class Agent<TSeq>;
-private:
-    std::vector< VirusPtr<TSeq> > * dat;
-    const epiworld_fast_uint * n_viruses;
-
-public:
-
-    Viruses() = delete;
-    Viruses(Agent<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
-
-    typename std::vector< VirusPtr<TSeq> >::iterator begin();
-    typename std::vector< VirusPtr<TSeq> >::iterator end();
-
-    VirusPtr<TSeq> & operator()(size_t i);
-    VirusPtr<TSeq> & operator[](size_t i);
-
-    size_t size() const noexcept;
-
-    void print() const noexcept;
-
-};
-
-template<typename TSeq>
-inline typename std::vector< VirusPtr<TSeq> >::iterator Viruses<TSeq>::begin()
-{
-
-    if (*n_viruses == 0u)
-        return dat->end();
-    
-    return dat->begin();
-}
-
-template<typename TSeq>
-inline typename std::vector< VirusPtr<TSeq> >::iterator Viruses<TSeq>::end()
-{
-    
-    #ifdef EPI_DEBUG
-    if (dat->size() < *n_viruses)
-        throw EPI_DEBUG_ERROR(std::logic_error, "Viruses:: The end of the virus is out of range");
-    #endif 
-
-    return begin() + *n_viruses;
-}
-
-template<typename TSeq>
-inline VirusPtr<TSeq> & Viruses<TSeq>::operator()(size_t i)
-{
-
-    if (i >= *n_viruses)
-        throw std::range_error("Virus index out of range.");
-
-    return dat->operator[](i);
-
-}
-
-template<typename TSeq>
-inline VirusPtr<TSeq> & Viruses<TSeq>::operator[](size_t i)
-{
-
-    return dat->operator[](i);
-
-}
-
-template<typename TSeq>
-inline size_t Viruses<TSeq>::size() const noexcept 
-{
-    return *n_viruses;
-}
-
-template<typename TSeq>
-inline void Viruses<TSeq>::print() const noexcept
-{
-
-    if (*n_viruses == 0u)
-    {
-        printf_epiworld("List of viruses (none)\n");
-        return;
-    }
-
-    printf_epiworld("List of viruses (%i): ", *n_viruses);
-
-    // Printing the name of each virus separated by a comma
-    for (size_t i = 0u; i < *n_viruses; ++i)
-    {
-        if (i == *n_viruses - 1u)
-        {
-            printf_epiworld("%s", dat->operator[](i)->get_name().c_str());
-        } else 
-        {
-            printf_epiworld("%s, ", dat->operator[](i)->get_name().c_str());
-        }
-    }
-    
-    printf_epiworld("\n");
-
-}
-
-/**
- * @brief Set of Viruses (const) (useful for iterators)
- * 
- * @tparam TSeq 
- */
-template<typename TSeq>
-class Viruses_const {
-    friend class Virus<TSeq>;
-    friend class Agent<TSeq>;
-private:
-    const std::vector< VirusPtr<TSeq> > * dat;
-    const epiworld_fast_uint * n_viruses;
-
-public:
-
-    Viruses_const() = delete;
-    Viruses_const(const Agent<TSeq> & p) : dat(&p.viruses), n_viruses(&p.n_viruses) {};
-
-    typename std::vector< VirusPtr<TSeq> >::const_iterator begin() const;
-    typename std::vector< VirusPtr<TSeq> >::const_iterator end() const;
-
-    const VirusPtr<TSeq> & operator()(size_t i);
-    const VirusPtr<TSeq> & operator[](size_t i);
-
-    size_t size() const noexcept;
-
-    void print() const noexcept;
-
-};
-
-template<typename TSeq>
-inline typename std::vector< VirusPtr<TSeq> >::const_iterator Viruses_const<TSeq>::begin() const {
-
-    if (*n_viruses == 0u)
-        return dat->end();
-    
-    return dat->begin();
-}
-
-template<typename TSeq>
-inline typename std::vector< VirusPtr<TSeq> >::const_iterator Viruses_const<TSeq>::end() const {
-
-    #ifdef EPI_DEBUG
-    if (dat->size() < *n_viruses)
-        throw EPI_DEBUG_ERROR(std::logic_error, "Viruses_const:: The end of the virus is out of range");
-    #endif 
-    return begin() + *n_viruses;
-}
-
-template<typename TSeq>
-inline const VirusPtr<TSeq> & Viruses_const<TSeq>::operator()(size_t i)
-{
-
-    if (i >= *n_viruses)
-        throw std::range_error("Virus index out of range.");
-
-    return dat->operator[](i);
-
-}
-
-template<typename TSeq>
-inline const VirusPtr<TSeq> & Viruses_const<TSeq>::operator[](size_t i)
-{
-
-    return dat->operator[](i);
-
-}
-
-template<typename TSeq>
-inline size_t Viruses_const<TSeq>::size() const noexcept 
-{
-    return *n_viruses;
-}
-
-template<typename TSeq>
-inline void Viruses_const<TSeq>::print() const noexcept
-{
-
-    if (*n_viruses == 0u)
-    {
-        printf_epiworld("List of viruses (none)\n");
-        return;
-    }
-
-    printf_epiworld("List of viruses (%i): ", *n_viruses);
-
-    // Printing the name of each virus separated by a comma
-    for (size_t i = 0u; i < *n_viruses; ++i)
-    {
-        if (i == *n_viruses - 1u)
-        {
-            printf_epiworld("%s", dat->operator[](i)->get_name().c_str());
-        } else
-        {
-            printf_epiworld("%s, ", dat->operator[](i)->get_name().c_str());
-        }
-    }
-    
-    printf_epiworld("\n");
-
-}
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/viruses-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/tool-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_TOOL_BONES_HPP
-#define EPIWORLD_TOOL_BONES_HPP
-
-template<typename TSeq>
-class Virus;
-
-template<typename TSeq>
-class Agent;
-
-template<typename TSeq>
-class Model;
-
-template<typename TSeq>
-class Tool;
-
-/**
- * @brief Tools for defending the agent against the virus
- * 
- * @tparam TSeq Type of sequence
- */
-template<typename TSeq> 
-class Tool {
-    friend class Agent<TSeq>;
-    friend class Model<TSeq>;
-protected:
-
-    Agent<TSeq> * agent = nullptr;
-    int pos_in_agent        = -99; ///< Location in the agent
-
-    int date = -99;
-    int id   = -99;
-    std::string tool_name;
-    
-
-    ToolFun<TSeq> susceptibility_reduction = nullptr;
-    ToolFun<TSeq> transmission_reduction   = nullptr;
-    ToolFun<TSeq> recovery_enhancer        = nullptr;
-    ToolFun<TSeq> death_reduction          = nullptr;
-
-
-    /// Bitmask of targeted virus lineages (all ones: every virus).
-    uint64_t target_mask = ~uint64_t(0);
-
-
-    void set_agent(Agent<TSeq> * p, size_t idx);
-
-public:
-
-    /// Bit of a virus lineage in a target mask (contact layers use it too).
-    static uint64_t target_bit(int lineage_id); ///< Throws for ids out of range.
-
-    Tool();
-    Tool(std::string name = "unknown tool");
-
-    virtual ~Tool() = default;
-
-
-    /**
-     * @name Get and set the tool functions
-     * 
-     * @param v The virus over which to operate
-     * @param fun the function to be used
-     * 
-     * @return epiworld_double 
-     */
-    ///@{
-    virtual epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> & v, Model<TSeq> * model);
-    virtual epiworld_double get_transmission_reduction(VirusPtr<TSeq> & v, Model<TSeq> * model);
-    virtual epiworld_double get_recovery_enhancer(VirusPtr<TSeq> & v, Model<TSeq> * model);
-    virtual epiworld_double get_death_reduction(VirusPtr<TSeq> & v, Model<TSeq> * model);
-    
-    virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
-    virtual void set_transmission_reduction_fun(ToolFun<TSeq> fun);
-    virtual void set_recovery_enhancer_fun(ToolFun<TSeq> fun);
-    virtual void set_death_reduction_fun(ToolFun<TSeq> fun);
-
-    virtual void set_susceptibility_reduction(std::string param);
-    virtual void set_transmission_reduction(std::string param);
-    virtual void set_recovery_enhancer(std::string param);
-    virtual void set_death_reduction(std::string param);
-
-    // Deleting pointer versions to avoid mistakes
-    virtual void set_susceptibility_reduction(epiworld_double * prob) = delete;
-    virtual void set_transmission_reduction(epiworld_double * prob) = delete;
-    virtual void set_recovery_enhancer(epiworld_double * prob) = delete;
-    virtual void set_death_reduction(epiworld_double * prob) = delete;
-
-    virtual void set_susceptibility_reduction(epiworld_double prob);
-    virtual void set_transmission_reduction(epiworld_double prob);
-    virtual void set_recovery_enhancer(epiworld_double prob);
-    virtual void set_death_reduction(epiworld_double prob);
-    ///@}
-
-    /**
-     * @name Virus targets
-     * 
-     * @details
-     * By default, a tool acts on every virus. Adding targets restricts the
-     * tool (all four effects: susceptibility and transmission reduction,
-     * recovery enhancer, and death reduction) to the listed virus lineages.
-     * A lineage is a virus added with `Model::add_virus()` together with all
-     * of its mutations, so a tool targeting a virus also acts on its
-     * variants. Lineage ids are the virus ids assigned by
-     * `Model::add_virus()`; only lineages 0 to 62 can be targeted.
-     * 
-     * @param lineage_id Id of the virus lineage (see
-     * `Virus::get_lineage_id()`).
-     * @param v A virus already added to the model.
-     */
-    ///@{
-    void add_target(int lineage_id);
-    void add_target(const Virus<TSeq> & v);
-    void set_targets(const std::vector< int > & lineage_ids);
-    std::vector< int > get_targets() const; ///< Empty if the tool acts on every virus.
-    void clear_targets();
-    bool targets(const Virus<TSeq> & v) const;
-    ///@}
-
-    void set_name(std::string name);
-    virtual std::string get_name() const;
-
-    Agent<TSeq> * get_agent();
-    int get_id() const;
-    void set_id(int id);
-    void set_date(int d);
-    int get_date() const;
-
-
-    bool operator==(const Tool<TSeq> & other) const;
-    bool operator!=(const Tool<TSeq> & other) const {return !operator==(other);};
-
-    void print() const;
-
-
-    virtual std::unique_ptr<Tool<TSeq>> clone_ptr() const; 
-
-};
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/tool-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-// (already included include/epiworld/database-bones.hpp)
-// (already included include/epiworld/queue-bones.hpp)
-// (already included include/epiworld/globalevent-bones.hpp)
-// (already included include/epiworld/contacttracing-bones.hpp)
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/postsampling-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_POSTSAMPLING_BONES_HPP
-#define EPIWORLD_POSTSAMPLING_BONES_HPP
-
-#include <cstdint>
-#include <cstddef>
-#include <functional>
-#include <vector>
-
-template<typename TSeq> class Agent;
-template<typename TSeq> class Model;
-
-/**
- * @brief Read-only view of the agents one infectious agent was in contact with.
- *
- * @details Passed to a `PostSamplingFun`. It points into the model's scratch
- * storage, so it is valid only during the callback: do not keep it (copy the
- * ids if you need them later). The contacts are a multiset: repeated contacts
- * appear repeatedly, and contacts that did not transmit are included. The
- * order of the contacts within the view is unspecified.
- */
-class SampledContactsView {
-private:
-    const uint32_t * first = nullptr;
-    size_t n = 0u;
-public:
-    SampledContactsView() = default;
-    SampledContactsView(const uint32_t * first_, size_t n_) : first(first_), n(n_) {}
-    const uint32_t * begin() const { return first; }
-    const uint32_t * end() const { return first + n; }
-    size_t size() const { return n; }
-    bool empty() const { return n == 0u; }
-    size_t operator[](size_t i) const { return first[i]; }
-};
-
-/**
- * @brief Callback run after the contacts of a step were sampled.
- *
- * @details Called once per infectious agent that had at least one sampled
- * contact in the step, in ascending order of the agent's id, after all the
- * susceptible agents were updated and right before the events are applied.
- * The agents still have the state they had when the contacts were sampled;
- * events the callback queues are applied in the same step.
- *
- * Arguments: the infectious agent, the ids of the agents it was in contact
- * with (see `SampledContactsView`), and the model.
- */
-template<typename TSeq>
-using PostSamplingFun = std::function<
-    void(Agent<TSeq> *, const SampledContactsView &, Model<TSeq> *)
->;
-
-/**
- * @brief Model-local storage used to batch sampled contacts.
- *
- * @details Pairs `(infectious, contacted)` are appended while sampling and
- * grouped by infectious agent once, at the end of the sampling phase. Lengths
- * are cleared, not released, between steps. Copies of a model start with empty
- * scratch (nothing is shared or copied); the model sizes `counts` for its
- * population the first time it needs it (see `Model::post_sampling_dispatch()`).
- */
-struct PostSamplingScratch {
-
-    std::vector< uint32_t > pairs;    ///< Flat: infectious, contacted, ...
-    std::vector< uint32_t > grouped;  ///< Contacted ids, by infectious agent
-    std::vector< uint32_t > touched;  ///< Distinct infectious ids (sorted)
-    std::vector< size_t > starts;     ///< [touched] Where the batch starts
-    std::vector< uint32_t > counts;   ///< [agent] Zero between steps
-
-    PostSamplingScratch() = default;
-    PostSamplingScratch(const PostSamplingScratch &) {}
-    PostSamplingScratch & operator=(const PostSamplingScratch &) { reset(0u); return *this; }
-
-    /// Empties the batch and restores the invariant of `counts` (all zero).
-    void clear()
-    {
-        for (auto id : touched)
-            counts[id] = 0u;
-        pairs.clear();
-        grouped.clear();
-        touched.clear();
-        starts.clear();
-    }
-
-    /// Sizes the storage for a population (call at reset).
-    void reset(size_t n_agents)
-    {
-        pairs.clear();
-        grouped.clear();
-        touched.clear();
-        starts.clear();
-        counts.assign(n_agents, 0u);
-    }
-
-};
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/postsampling-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -include/epiworld/assign.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_ASSIGN_HPP
-#define EPIWORLD_ASSIGN_HPP
-
-/**
- * @file assign.hpp
- * @brief How agents get something at the start of each run: a virus (and the
- * stage it puts them in), a tool, an initial stage, or a group of a mixing
- * layer. One vocabulary for all of them.
- *
- * @details An `Assign` gives each eligible agent a **label**, or none (-1),
- * drawn with the model's random numbers when a run starts:
- *
- * | Form | Labels |
- * |---|---|
- * | `assign::share(p)`, `assign::count(n)` | A random share (or number) of the eligible agents |
- * | `assign::shares({{l, p}, ...})`, `assign::counts({{l, n}, ...})` | Several labels: each takes its share (or number) of the eligible agents, in order, from those left |
- * | `assign::group_shares(layer, {p_g})`, `assign::group_counts(layer, {n_g})` | A share (or number) of each group of a mixing layer |
- * | `assign::agents(ids)` | The given agents |
- * | `assign::labels(v)` | `v[i]` for agent `i` (-1: none); the same every run |
- * | `assign::by(fun)` | `fun(agent, model)` for each eligible agent |
- *
- * What a label means, and who is eligible, depends on the use:
- *
- * | Use | Label | Eligible |
- * |---|---|---|
- * | `Model::add_virus(v, a)` | The stage the agent starts in (a carrier stage); a form without labels uses the infection's target | Agents without a virus whose stage can be infected |
- * | `Model::add_tool(t, a)` | -- (has the tool) | Everyone |
- * | `Model::set_initial(a)` | A stage without the virus | Agents left without a virus, in the first stage |
- * | `layer::Mixing::set_groups(a, n)` | A group, in `[0, n)` | Everyone |
- *
- * The placements are made in this order at every reset: the layers (so a
- * placement can use their groups), the viruses, the tools, the initial
- * stages, then the global events' set-up. The random forms are drawn again in
- * each run; `agents()` and `labels()` are fixed.
- */
-
-template<typename TSeq>
-class Assign;
-
-namespace assign {
-    /// The label of the forms that give none: the use's default (see above)
-    constexpr int ANY = -2;
-}
-
-/// A function that gives an agent's label (-1: none).
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-using AssignFun = std::function< int(Agent<TSeq> &, Model<TSeq> &) >;
-
-/**
- * @brief Gives each eligible agent a label, or none (see `assign.hpp`).
- * @details Default-constructed, it gives no one anything.
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Assign {
-public:
-    /// The labels of the agents (-1: none), given who is eligible.
-    using DrawFun = std::function<
-        std::vector< int >(Model<TSeq> &, const std::vector< char > &)
-    >;
-
-private:
-    DrawFun fun = nullptr;
-    std::shared_ptr< const std::vector< int > > fixed_labels = nullptr;
-
-public:
-    Assign() = default;
-    explicit Assign(
-        DrawFun f,
-        std::shared_ptr< const std::vector< int > > fixed_ = nullptr
-    ) : fun(std::move(f)), fixed_labels(std::move(fixed_)) {}
-
-    /// The labels, if they are the same every run (`assign::labels()`).
-    const std::vector< int > * get_fixed() const { return fixed_labels.get(); }
-
-    /// Whether it gives anyone anything.
-    bool is_set() const { return static_cast< bool >(fun); }
-
-    /**
-     * @brief The labels of the agents of `model` (-1: none).
-     * @param eligible One entry per agent: whether it can be given a label.
-     * @throws std::logic_error if the form names an agent that is not
-     * eligible.
-     */
-    std::vector< int > draw(Model<TSeq> & model, const std::vector< char > & eligible) const
-    {
-        if (!fun)
-            return std::vector< int >(model.size(), -1);
-        return fun(model, eligible);
-    }
-};
-
-namespace assign {
-
-namespace detail {
-
-    inline void check_share(epiworld_double p, const char * form)
-    {
-        if (!std::isfinite(p) || (p < 0.0) || (p > 1.0))
-            throw std::range_error(
-                std::string("assign::") + form + "(): a share must be within "
-                "[0, 1]; got " + std::to_string(p) + "."
-            );
-    }
-
-    inline void check_count(epiworld_double n, const char * form)
-    {
-        if (!std::isfinite(n) || (n < 0.0) || (n != std::floor(n)))
-            throw std::range_error(
-                std::string("assign::") + form + "(): a count must be a "
-                "non-negative whole number; got " + std::to_string(n) + "."
-            );
-    }
-
-    /**
-     * Label by label, in order, draws `count` agents at random from the
-     * eligible ones not yet labelled (taken in ascending id order). A count
-     * above what is left is an error.
-     */
-    template<typename TSeq>
-    inline std::vector< int > draw_counts(
-        Model<TSeq> & model,
-        const std::vector< char > & eligible,
-        const std::vector< std::pair< int, size_t > > & counts
-    )
-    {
-
-        std::vector< int > labels(model.size(), -1);
-        std::vector< size_t > idx;
-
-        for (const auto & c : counts)
-        {
-
-            idx.clear();
-            for (size_t i = 0u; i < labels.size(); ++i)
-                if (eligible[i] && (labels[i] == -1))
-                    idx.push_back(i);
-
-            size_t n_left = idx.size();
-            if (c.second > n_left)
-                throw std::range_error(
-                    "Cannot assign " + std::to_string(c.second) + " agents: "
-                    "only " + std::to_string(n_left) + " are eligible."
-                );
-
-            for (size_t k = 0u; k < c.second; ++k)
-            {
-                const size_t loc = model.runif_index(
-                    static_cast< uint32_t >(n_left--)
-                );
-                labels[idx[loc]] = c.first;
-                std::swap(idx[loc], idx[n_left]);
-            }
-
-        }
-
-        return labels;
-
-    }
-
-    template<typename TSeq>
-    inline size_t n_eligible(const std::vector< char > & eligible)
-    {
-        return static_cast< size_t >(
-            std::count(eligible.begin(), eligible.end(), char(1))
-        );
-    }
-
-    /// The members of each group of the mixing layer `layer`, in id order.
-    template<typename TSeq>
-    inline std::vector< std::vector< size_t > > groups_of(
-        Model<TSeq> & model,
-        const std::string & layer,
-        size_t n_values
-    )
-    {
-
-        auto * mix = dynamic_cast< layer::Mixing<TSeq> * >(&model.get_layer(layer));
-        if (mix == nullptr)
-            throw std::logic_error(
-                "The layer '" + layer + "' is not a mixing layer: it has no "
-                "groups."
-            );
-
-        if (n_values != mix->get_n_groups())
-            throw std::range_error(
-                "There are " + std::to_string(n_values) + " values, but the "
-                "layer '" + layer + "' has " +
-                std::to_string(mix->get_n_groups()) + " groups."
-            );
-
-        std::vector< std::vector< size_t > > out(n_values);
-        for (size_t g = 0u; g < n_values; ++g)
-        {
-            out[g] = mix->members_of(g);
-            std::sort(out[g].begin(), out[g].end());
-        }
-
-        return out;
-
-    }
-
-    /// In each group, draws `want[g]` of its eligible members (capped).
-    template<typename TSeq>
-    inline std::vector< int > draw_groups(
-        Model<TSeq> & model,
-        const std::vector< char > & eligible,
-        const std::string & layer,
-        const std::vector< epiworld_double > & values,
-        bool as_share
-    )
-    {
-
-        std::vector< int > labels(model.size(), -1);
-        const auto members = groups_of(model, layer, values.size());
-
-        std::vector< size_t > idx;
-        for (size_t g = 0u; g < values.size(); ++g)
-        {
-
-            idx.clear();
-            for (size_t i : members[g])
-                if (eligible[i])
-                    idx.push_back(i);
-
-            size_t n = idx.size();
-            const epiworld_double want = as_share ?
-                std::floor(values[g] * static_cast< epiworld_double >(n)) :
-                values[g];
-            const size_t n_draw = (want >= static_cast< epiworld_double >(n)) ?
-                n : static_cast< size_t >(want);
-
-            for (size_t k = 0u; k < n_draw; ++k)
-            {
-                const size_t loc = model.runif_index(static_cast< uint32_t >(n--));
-                labels[idx[loc]] = ANY;
-                std::swap(idx[loc], idx[n]);
-            }
-
-        }
-
-        return labels;
-
-    }
-
-} // namespace detail
-
-/// A random share of the eligible agents (`floor(p x eligible)` of them).
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline Assign<TSeq> share(epiworld_double p)
-{
-    detail::check_share(p, "share");
-    return Assign<TSeq>([p](Model<TSeq> & m, const std::vector< char > & e) {
-        const size_t n = static_cast< size_t >(std::floor(
-            p * static_cast< epiworld_double >(detail::n_eligible<TSeq>(e))
-        ));
-        return detail::draw_counts(m, e, {{ANY, n}});
-    });
-}
-
-/// `n` eligible agents, at random.
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline Assign<TSeq> count(size_t n)
-{
-    return Assign<TSeq>([n](Model<TSeq> & m, const std::vector< char > & e) {
-        return detail::draw_counts(m, e, {{ANY, n}});
-    });
-}
-
-/**
- * @brief Several labels: label `l` goes to `floor(p x eligible)` agents,
- * drawn in order from those not yet labelled.
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline Assign<TSeq> shares(std::vector< std::pair< int, epiworld_double > > s)
-{
-    epiworld_double total = 0.0;
-    for (auto & x : s)
-    {
-        detail::check_share(x.second, "shares");
-        total += x.second;
-    }
-    if (total > 1.0 + 1e-9)
-        throw std::range_error("assign::shares(): the shares add up to more than 1.");
-
-    return Assign<TSeq>([s](Model<TSeq> & m, const std::vector< char > & e) {
-        const epiworld_double n = static_cast< epiworld_double >(
-            detail::n_eligible<TSeq>(e)
-        );
-        std::vector< std::pair< int, size_t > > c;
-        for (auto & x : s)
-            c.emplace_back(x.first, static_cast< size_t >(std::floor(x.second * n)));
-        return detail::draw_counts(m, e, c);
-    });
-}
-
-/// Several labels: label `l` goes to `n` agents, drawn in order.
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline Assign<TSeq> counts(std::vector< std::pair< int, size_t > > c)
-{
-    return Assign<TSeq>([c](Model<TSeq> & m, const std::vector< char > & e) {
-        return detail::draw_counts(m, e, c);
-    });
-}
-
-/**
- * @brief In each group `g` of the mixing layer `layer`, a random share `p[g]`
- * of its eligible members (`floor(p[g] x members)`).
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline Assign<TSeq> group_shares(std::string layer, std::vector< epiworld_double > p)
-{
-    if (p.empty())
-        throw std::range_error("assign::group_shares(): no shares.");
-    for (auto x : p)
-        detail::check_share(x, "group_shares");
-
-    return Assign<TSeq>([layer, p](Model<TSeq> & m, const std::vector< char > & e) {
-        return detail::draw_groups(m, e, layer, p, true);
-    });
-}
-
-/// In each group `g` of the mixing layer `layer`, `n[g]` of its eligible
-/// members at random (all of them, if fewer).
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline Assign<TSeq> group_counts(std::string layer, std::vector< epiworld_double > n)
-{
-    if (n.empty())
-        throw std::range_error("assign::group_counts(): no counts.");
-    for (auto x : n)
-        detail::check_count(x, "group_counts");
-
-    return Assign<TSeq>([layer, n](Model<TSeq> & m, const std::vector< char > & e) {
-        return detail::draw_groups(m, e, layer, n, false);
-    });
-}
-
-/// The given agents (each must be eligible).
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline Assign<TSeq> agents(std::vector< size_t > ids)
-{
-    auto ids_ptr = std::make_shared< const std::vector< size_t > >(std::move(ids));
-    return Assign<TSeq>([ids_ptr](Model<TSeq> & m, const std::vector< char > & e) {
-        std::vector< int > labels(m.size(), -1);
-        for (size_t i : *ids_ptr)
-        {
-            if (i >= m.size())
-                throw std::range_error(
-                    "assign::agents(): agent " + std::to_string(i) +
-                    " is out of range."
-                );
-            if (!e[i])
-                throw std::logic_error(
-                    "assign::agents(): agent " + std::to_string(i) +
-                    " cannot be given this (it is not eligible)."
-                );
-            labels[i] = ANY;
-        }
-        return labels;
-    });
-}
-
-/// `v[i]` for agent `i` (-1: none); the same every run.
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline Assign<TSeq> labels(std::vector< int > v)
-{
-    auto v_ptr = std::make_shared< const std::vector< int > >(std::move(v));
-    return Assign<TSeq>([v_ptr](Model<TSeq> & m, const std::vector< char > & e) {
-        if (v_ptr->size() != m.size())
-            throw std::range_error(
-                "assign::labels(): " + std::to_string(v_ptr->size()) +
-                " labels for " + std::to_string(m.size()) + " agents."
-            );
-        for (size_t i = 0u; i < v_ptr->size(); ++i)
-            if (((*v_ptr)[i] != -1) && !e[i])
-                throw std::logic_error(
-                    "assign::labels(): agent " + std::to_string(i) +
-                    " cannot be given this (it is not eligible)."
-                );
-        return *v_ptr;
-    }, v_ptr);
-}
-
-/**
- * @brief The same, from whole numbers of another type (e.g., the groups of a
- * mixing layer as `size_t`); values that do not fit in an `int` (such as
- * `layer::Mixing::NO_GROUP`) are none.
- */
-template<
-    typename TSeq = EPI_DEFAULT_TSEQ,
-    typename T,
-    typename = std::enable_if_t< std::is_integral_v< T > && !std::is_same_v< T, int > >
->
-inline Assign<TSeq> labels(const std::vector< T > & v)
-{
-    std::vector< int > l(v.size(), -1);
-    for (size_t i = 0u; i < v.size(); ++i)
-        if (
-            (v[i] >= 0) &&
-            (static_cast< unsigned long long >(v[i]) <=
-                static_cast< unsigned long long >(std::numeric_limits< int >::max()))
-        )
-            l[i] = static_cast< int >(v[i]);
-    return labels<TSeq>(std::move(l));
-}
-
-/// `fun(agent, model)` for each eligible agent (-1: none).
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline Assign<TSeq> by(AssignFun<TSeq> fun)
-{
-    return Assign<TSeq>([fun](Model<TSeq> & m, const std::vector< char > & e) {
-        std::vector< int > labels(m.size(), -1);
-        auto & pop = m.get_agents();
-        for (size_t i = 0u; i < pop.size(); ++i)
-            if (e[i])
-                labels[i] = fun(pop[i], m);
-        return labels;
-    });
-}
-
-} // namespace assign
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/assign.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-
-template<typename TSeq>
-class AgentsSample;
-
-class AdjList;
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
-    std::string fmt = "%03lu-episimulation.csv",
-    bool total_hist = true,
-    bool virus_info = false,
-    bool virus_hist = false,
-    bool tool_info = false,
-    bool tool_hist = false,
-    bool transmission = false,
-    bool transition = false,
-    bool reproductive = false,
-    bool generation = false,
-    bool active_cases = false,
-    bool outbreak_size = false,
-    bool hospitalizations = false
-    );
-
-// template<typename TSeq>
-// class VirusPtr;
-
-// template<typename TSeq>
-// class ToolPtr;
-
-/**
- * @brief Read-only view of a contiguous run of agent ids.
- *
- * @details Returned by `Model::get_agents_in_state()`. It points into the
- * model's index, so it is invalidated by the next step (or anything else that
- * moves agents between states).
- */
-class AgentIdsView {
-private:
-    const size_t * first = nullptr;
-    size_t n = 0u;
-public:
-    AgentIdsView() = default;
-    AgentIdsView(const size_t * first_, size_t n_) : first(first_), n(n_) {}
-    const size_t * begin() const { return first; }
-    const size_t * end() const { return first + n; }
-    size_t size() const { return n; }
-    bool empty() const { return n == 0u; }
-    size_t operator[](size_t i) const { return first[i]; }
-};
-
-/**
- * @brief Core class of epiworld.
- *
- * The model class provides the wrapper that puts together `Agent`, `Virus`, and
- * `Tools`.
- *
- * @tparam TSeq Type of sequence. In principle, users can build models in which
- * virus and human sequence is represented as numeric vectors (if needed.)
- */
-template<typename TSeq>
-class Model {
-    friend class Agent<TSeq>;
-    friend class AgentsSample<TSeq>;
-    friend class DataBase<TSeq>;
-    friend class Queue<TSeq>;
-    friend class layer::Network<TSeq>;
-    friend class layer::Mixing<TSeq>;
-
-protected:
-
-    std::string name = ""; ///< Name of the model
-
-    DataBase<TSeq> db = DataBase<TSeq>(*this);
-
-    std::vector< Agent<TSeq> > population = {};
-
-    /**
-     * @brief Creates the population: `n` agents, in the baseline state.
-     * @details The models' constructors call it; the population is set once,
-     * when the model is built (a different size is a different model).
-     */
-    void set_population_size(size_t n);
-
-    /**
-     * @name Auxiliary variables for AgentsSample<TSeq> iterators
-     *
-     * @details These variables+objects are used by the AgentsSample<TSeq>
-     * class for building efficient iterators over agents. The idea is to
-     * reduce the memory allocation, so only during the first call of
-     * AgentsSample<TSeq>::AgentsSample(Model<TSeq>) these vectors are allocated.
-     */
-    ///@{
-    std::vector< Agent<TSeq> * > sampled_population;
-    size_t sampled_population_n = 0u;
-    std::vector< size_t > population_left;
-    size_t population_left_n = 0u;
-    ///@}
-
-    /**
-     * @name Agents features
-     *
-     * @details Optionally, a model can include an external data source
-     * pointing to agents information. The data can then be access through
-     * the `Agent::operator()` method.
-     *
-     */
-    ///@{
-    double * agents_data = nullptr;
-    size_t agents_data_ncols = 0u;
-    ///@}
-
-    std::vector< VirusPtr<TSeq> > viruses = {};
-    std::vector< ToolPtr<TSeq> > tools = {};
-    std::vector< Assign<TSeq> > virus_assign = {}; ///< [virus] Who gets it at each reset
-    std::vector< Assign<TSeq> > tool_assign = {};  ///< [tool] Who gets it at each reset
-
-    std::shared_ptr< epi_xoshiro256ss > engine = std::make_shared< epi_xoshiro256ss >();
-
-    epiworld_double runifd_a = 0.0;
-    epiworld_double runifd_b = 1.0;
-    std::normal_distribution<>       rnormd      =
-        std::normal_distribution<>(0.0);
-    std::gamma_distribution<>        rgammad     =
-        std::gamma_distribution<>();
-    std::lognormal_distribution<>    rlognormald =
-        std::lognormal_distribution<>();
-    std::exponential_distribution<>  rexpd       =
-        std::exponential_distribution<>();
-    std::binomial_distribution<> rbinomd         =
-        std::binomial_distribution<>();
-    int rbinomd_n = 1;
-    epiworld_double rbinomd_fast_lambda = 0.0;
-    bool rbinomd_use_poisson = false;
-    std::negative_binomial_distribution<> rnbinomd =
-        std::negative_binomial_distribution<>();
-    std::geometric_distribution<> rgeomd          =
-        std::geometric_distribution<>();
-    std::poisson_distribution<> rpoissd           =
-        std::poisson_distribution<>();
-
-    // Parameter values, by position, and each name's position. Parameters are
-    // never removed, so positions (ParamId) stay valid. The comparator is
-    // transparent (std::less<>) so names can be looked up as
-    // std::string_view without building a std::string.
-    std::vector< epiworld_double > param_values;
-    std::map<std::string, size_t, std::less<> > param_index;
-    uint32_t param_layout_id = new_param_layout_id();
-    epiworld_fast_uint ndays = 0;
-    Progress pb;
-
-    std::vector< UpdateFun<TSeq> >    state_fun = {};                  ///< Functions to update states
-    std::vector< std::string >        states_labels = {};              ///< Labels of the states
-
-    epiworld_fast_uint nstates = 0u;
-
-    bool verbose     = true;
-    int current_date = 0;
-
-    // True while run() is driving the day loop, so get_ndays() is the run's
-    // actual horizon. Not copied: a copy of the model is not in a run.
-    bool running = false;
-
-    void set_running(bool value); ///< Also tells the layers (see `ContactLayer`)
-
-    void dist_tools();
-    void dist_virus();
-
-    std::chrono::time_point<std::chrono::steady_clock> time_start;
-    std::chrono::time_point<std::chrono::steady_clock> time_end;
-
-    // std::chrono::milliseconds
-    std::chrono::duration<epiworld_double,std::micro> time_elapsed =
-        std::chrono::duration<epiworld_double,std::micro>::zero();
-    epiworld_fast_uint n_replicates = 0u;
-    int last_seed = 0;
-    void chrono_start();
-    void chrono_end();
-
-    std::vector<GlobalEventPtr<TSeq>> globalevents;
-
-    /// Contact layers (see `add_layer()`), deep-copied with the model
-    std::vector< std::shared_ptr< ContactLayer<TSeq> > > layers;
-
-    /**
-     * @name Network layers
-     *
-     * @details The network layers among `layers`, in order. Susceptible agents
-     * pull from all of them, the queue and pushing follow all of their ties,
-     * and the agents-by-state index counts an agent's ties across them (its
-     * degree).
-     */
-    ///@{
-    std::vector< layer::Network<TSeq> * > network_layers;
-    std::vector< layer::Mixing<TSeq> * > group_layers; ///< Within-group mixing layers (the queue follows them)
-    std::vector< size_t > layer_contacts; ///< Scratch of `sample_virus()`
-    bool pull_only = false; ///< See `has_pull_only_layer()`
-    bool queue_blind = false; ///< See `has_queue_blind_layer()`
-    int sampled_layer = -1; ///< See `take_sampled_layer()`
-
-    /// Adds the exposures of `contacts` to the arrays; returns their number.
-    size_t add_exposures(
-        Agent<TSeq> * agent,
-        const ContactLayer<TSeq> * layer,
-        const size_t * contacts,
-        size_t n,
-        size_t n_exposures
-    );
-
-    /// One draw over the first `n_exposures` exposures.
-    Virus<TSeq> * draw_exposure(size_t n_exposures);
-    void layers_attach(); ///< Points the layers at this model, lists the networks
-    void layers_classify(); ///< Sets `pull_only`, `queue_blind` and `group_layers`
-    void layers_detach(); ///< Leaves the layers without a model (they may outlive it)
-    void add_layer_ptr(std::shared_ptr< ContactLayer<TSeq> > layer);
-    size_t network_degree(size_t id) const; ///< Ties of agent `id`, all networks
-
-    /**
-     * Whether some layer's contacts are not seen from both ends or not by the
-     * queue: a directed network (a tie is kept by its source only) or a layer
-     * that is not a network. The model then pulls, and visits every agent
-     * instead of using the queue.
-     */
-    bool has_pull_only_layer() const { return pull_only; }
-
-    /**
-     * Whether some layer's contacts are not seen by the queue (see
-     * `ContactLayer::supports_queue()`): a directed network, or a mixing layer
-     * with a contact matrix. The model then visits every agent.
-     */
-    bool has_queue_blind_layer() const { return queue_blind; }
-
-    /// Agent `i` moved from `from` to `to` in a within-group mixing layer.
-    void group_member_moved(
-        size_t i,
-        const std::vector< size_t > * from,
-        const std::vector< size_t > * to
-    );
-
-    /// A network layer changed the ties of `i` and `j` by `di` and `dj`.
-    void network_tie_changed(size_t i, int di, size_t j, int dj);
-
-    /// A network layer swapped two ties (see `layer::Network::swap_ties()`).
-    void network_ties_swapped(
-        size_t i, size_t j, size_t k, size_t l, bool directed
-    );
-    ///@}
-
-    Queue<TSeq> queue;
-    bool use_queuing   = true;
-    size_t sim_id = 0u;
-    void set_sim_id(size_t id);
-
-    PostSamplingFun<TSeq> post_sampling_fun = nullptr; ///< See set_post_sampling()
-    bool post_sampling_on = false;                     ///< post_sampling_fun is set
-    PostSamplingScratch post_sampling_scratch;         ///< Never copied
-    void post_sampling_dispatch();
-    void post_sampling_prepare_scratch(); ///< Sizes the scratch for the population
-
-    /**
-     * @name Agents by state
-     *
-     * @details All agent ids live in one array, `state_order`, grouped by
-     * state: the agents in state `s` are `state_order[state_start[s]]` up to
-     * (not including) `state_order[state_start[s + 1]]`, in no particular
-     * order, and `state_member_pos[i]` is where agent `i` sits. One contiguous
-     * block of N ids, whatever the number of states. Moving an agent from
-     * state `a` to state `b` walks it across the blocks in between, one swap
-     * per block boundary: O(|a - b|).
-     *
-     * Per state, the index also keeps the sum of the members' degrees, how
-     * many of them carry a virus, and the sum of those carriers' degrees.
-     *
-     * Built in `reset()` and kept current in `events_run()` -- the only place
-     * where an agent's state or virus changes during a run -- and by the
-     * network layers' edits. The degree sums let the transmission step
-     * compare the cost of pushing and pulling in O(number of states).
-     */
-    ///@{
-    std::vector< size_t > state_order;       ///< [N] Agent ids, grouped by state
-    std::vector< size_t > state_start;       ///< [nstates + 1] Where each state's block starts
-    std::vector< size_t > state_member_pos;  ///< [agent] Position in state_order
-    std::vector< unsigned int > agent_state;    ///< [agent] Copy of Agent::state, compact for scans
-    std::vector< char > agent_carrier;          ///< [agent] 1 if Agent::virus is set, compact for scans
-    std::vector< size_t > state_degree;
-    std::vector< size_t > state_carriers;
-    std::vector< size_t > state_carrier_degree;
-    bool state_index_ready = false;
-
-    void state_index_build();
-    void state_index_update(Agent<TSeq> * p, unsigned int state_old, bool had_virus);
-    void state_index_move(size_t id, unsigned int state_old, unsigned int state_new);
-    AgentIdsView state_index_members(size_t state) const;
-    void state_index_degree(size_t id, int delta);
-    ///@}
-
-    /**
-     * @name Infectious and excluded states
-     * @details Derived from the natural history and the statuses (see
-     * `nh_build_states()`). The per-state masks are built at `reset()`.
-     */
-    ///@{
-    std::vector< int > infectious_states;     ///< Empty: every state
-    std::vector< int > excluded_states;
-    std::vector< bool > state_not_infectious; ///< [state] Empty if every state is infectious
-    std::vector< char > state_excluded;       ///< [state]
-    void state_masks_build();
-    ///@}
-
-    /**
-     * @name Network transmission
-     *
-     * @details See `set_transmission_mode()` and
-     * `model-meat-transmission.hpp`. The push scratch space is per model and
-     * is not copied: a copy sizes its own the first time it pushes.
-     */
-    ///@{
-    TransmissionMode transmission_mode = TransmissionMode::automatic;
-    TransmissionMode transmission_mode_last = TransmissionMode::pull;
-    double transmission_kappa = EPI_DEFAULT_TRANSMISSION_KAPPA;
-
-    struct PushTarget {
-        size_t id;
-        double odds;                // Sum of p / (1 - p) over the contacts
-        unsigned int n_certain;     // Contacts with p >= 1
-        Virus<TSeq> * candidate;    // Infector's virus drawn so far
-        int layer;                  // Layer of the candidate's contact
-    };
-
-    std::vector< char > push_pushable;       ///< [state] Infected by a default infection only
-    std::vector< char > push_source_ok;      ///< [state] Infectious, and some state is pushable
-    std::vector< int >  push_slot;           ///< [agent] Index in push_targets, or -1
-    std::vector< PushTarget > push_targets;
-    std::vector< uint64_t > push_visit;      ///< [agent bit] To update after a push
-    std::vector< uint64_t > push_sources;    ///< [agent bit] Carriers that push this step
-
-    bool transmission_prepare();
-    bool transmission_choose_push() const;
-    void transmission_push();
-    template<bool Record> void transmission_push_impl();
-    void transmission_update_others();
-    ///@}
-
-    /**
-     * @name Natural history
-     *
-     * @details See `naturalhistory-bones.hpp`. The first virus with a natural
-     * history installs it (`add_virus()`); the model's copy of that virus
-     * shares it. It is shared by the model's copies (it does not change once
-     * installed); what it stores per agent is the model's, and is reset with
-     * it.
-     */
-    ///@{
-    std::shared_ptr< const NaturalHistory<TSeq> > nh = nullptr;
-    std::vector< int > nh_until;    ///< [agent] Day the stage's duration ends
-    std::vector< int > nh_entered;  ///< [agent * stage] Day entered, this infection (-1: not)
-    std::vector< int > nh_episode;  ///< [agent] Infections so far
-    std::vector< char > nh_queue;   ///< [stage] Queue mode: 0 none, 1 self, 2 everyone
-    Assign<TSeq> nh_initial;        ///< See set_initial()
-    int nh_pending = -1;            ///< Transition of the next event (see _add_event())
-
-    /// Event: a seeded infection, and an initial placement (status transitions
-    /// are `-2 - index`, see `TransitionRef`)
-    static constexpr int NH_SEED = std::numeric_limits< int >::min();
-    static constexpr int NH_INITIAL = std::numeric_limits< int >::min() + 1;
-
-    /// The statuses (`nullptr`: one status, "Free")
-    std::shared_ptr< const Statuses<TSeq> > st = nullptr;
-    std::vector< int > nh_status_until; ///< [agent] Day the status's duration ends
-    std::vector< int > nh_status_since; ///< [agent] Day the status was entered
-    std::vector< int > nh_status_sod;   ///< [agent] Status at the start of the day it last changed
-
-    struct Reaction {
-        Trigger on;
-        int transition;                          ///< Fired, or (-1) ...
-        std::function< void(Agent<TSeq> &, Model<TSeq> &) > fun; ///< ... called
-    };
-    std::vector< Reaction > nh_reactions;
-
-    size_t nh_nstatus() const { return st ? st->get_n_stages() : 1u; }
-    int nh_stage_of(unsigned int cell) const { return static_cast< int >(cell / nh_nstatus()); }
-    int nh_status_of(unsigned int cell) const { return static_cast< int >(cell % nh_nstatus()); }
-    unsigned int nh_cell(int stage, int status) const
-    {
-        return static_cast< unsigned int >(stage) * static_cast< unsigned int >(nh_nstatus()) +
-            static_cast< unsigned int >(status);
-    }
-    static bool nh_is_status_tr(int t) { return (t <= -2) && (t > NH_INITIAL); }
-    static int nh_status_tr(int t) { return -2 - t; }
-    int nh_db_id(int t) const
-    {
-        return nh_is_status_tr(t) ?
-            static_cast< int >(nh->get_n_transitions()) + nh_status_tr(t) : t;
-    }
-    void nh_build_states();
-    void nh_react(Agent<TSeq> & p, int transition, int stage_old);
-    bool nh_removed(int stage) const;
-
-    void nh_install(std::shared_ptr< NaturalHistory<TSeq> > def);
-    void nh_reset();
-    void nh_step(Agent<TSeq> & p);
-
-    /// The natural history whose values apply to `p`: its virus's, or (no
-    /// virus) the model's
-    const NaturalHistory<TSeq> & nh_of(const Agent<TSeq> & p) const
-    {
-        const auto & v = p.get_virus();
-        return (v && v->nh_def) ? *v->nh_def : *nh;
-    }
-    void nh_propose(int transition, Agent<TSeq> & p, Virus<TSeq> * virus = nullptr);
-    void nh_enter(Agent<TSeq> & p, unsigned int state_old, int transition);
-    void nh_queue_move(Agent<TSeq> & p, unsigned int state_old);
-    void nh_initial_place();
-    epiworld_double nh_infection_prob(Agent<TSeq> & target, const Virus<TSeq> & v);
-    ///@}
-
-    /**
-     * @brief Variables used to keep track of the events
-     * to be made regarding viruses.
-     */
-    std::vector< Event<TSeq> > events = {};
-    epiworld_fast_uint nactions = 0u;
-
-    /**
-     * @brief Construct a new Event object
-     *
-     * @param agent_ Agent over which the action will be called
-     * @param virus_ Virus pointer included in the action
-     * @param tool_ Tool pointer included in the action
-     * @param new_state_ New state of the agent
-     * @param queue_ Change in the queue
-      * @param action_ Action to execute when processing the event
-     */
-    void _add_event(
-        Agent<TSeq> * agent_,
-        VirusPtr<TSeq> virus_,
-        ToolPtr<TSeq> tool_,
-        epiworld_fast_int new_state_,
-        epiworld_fast_int queue_,
-        EventAction action_,
-        int layer_ = -1
-        );
-
-    /**
-     * @name Default event handlers
-     *
-     * These member functions implement the default behavior for each
-     * event action (add/remove virus or tool, or change state).
-     */
-    ///@{
-    void _event_add_virus(Event<TSeq> & a);
-    void _event_add_tool(Event<TSeq> & a);
-    void _event_rm_virus(Event<TSeq> & a);
-    void _event_rm_tool(Event<TSeq> & a);
-    void _event_change_state(Event<TSeq> & a);
-    ///@}
-
-    /**
-     * @name Tool Mixers
-     *
-     * These functions combine the effects tools have to deliver
-     * a single effect. For example, wearing a mask, been vaccinated,
-     * and the immune system combine together to jointly reduce
-     * the susceptibility for a given virus.
-     *
-     */
-    virtual epiworld_double susceptibility_reduction_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
-    );
-    virtual epiworld_double transmission_reduction_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
-    );
-    virtual epiworld_double recovery_enhancer_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
-    );
-    virtual epiworld_double death_reduction_mixer(
-        Agent<TSeq> * agent, VirusPtr<TSeq> & virus
-    );
-
-    /**
-     * @brief Advanced usage: Makes a copy of data and returns it as undeleted pointer
-     *
-     * @param copy
-     */
-    virtual std::unique_ptr<Model<TSeq>> clone_ptr();
-
-    /// For the models built on this class, which set their population.
-    Model();
-
-public:
-
-    /**
-     * @name Scratch arrays for sampling exposures
-     * @details Update functions store each exposure's probability in
-     * `array_double_tmp` and its virus in `array_virus_tmp`, then draw with
-     * `roulette()`, which uses two doubles per exposure. An agent can have any
-     * number of exposures across its layers, so call `reserve_tmp()` before
-     * storing them.
-     */
-    ///@{
-    std::vector< epiworld_double > array_double_tmp =
-        std::vector< epiworld_double >(1024u * 2u);
-    std::vector< Virus<TSeq> * > array_virus_tmp =
-        std::vector< Virus<TSeq> * >(1024u);
-    std::vector< int > array_layer_tmp =
-        std::vector< int >(1024u); ///< Layer of each exposure
-
-    /// Makes room for `n` exposures in the scratch arrays.
-    void reserve_tmp(size_t n);
-    ///@}
-
-    /// A model with `n` agents.
-    explicit Model(size_t n);
-    Model(const Model<TSeq> & m);
-    Model(Model<TSeq> && m);
-    Model<TSeq> & operator=(const Model<TSeq> & m);
-
-    virtual ~Model() { layers_detach(); };
-
-    DataBase<TSeq> & get_db();
-    const DataBase<TSeq> & get_db() const;
-    epiworld_double operator()(std::string_view pname) const;
-
-    size_t size() const;
-
-    /**
-     * @name Random number generation
-     *
-     * @param eng Random number generator
-     * @param s Seed
-     */
-    ///@{
-    void set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng);
-    std::shared_ptr< epi_xoshiro256ss > & get_rand_endgine();
-    void seed(size_t s);
-    void set_rand_norm(epiworld_double mean, epiworld_double sd);
-    void set_rand_unif(epiworld_double a, epiworld_double b);
-    void set_rand_exp(epiworld_double lambda);
-    void set_rand_gamma(epiworld_double alpha, epiworld_double beta);
-    void set_rand_lognormal(epiworld_double mean, epiworld_double shape);
-    void set_rand_binom(int n, epiworld_double p);
-    void set_rand_nbinom(int n, epiworld_double p);
-    void set_rand_geom(epiworld_double p);
-    void set_rand_poiss(epiworld_double lambda);
-    epiworld_double rnorm();
-    epiworld_double rnorm(epiworld_double mean, epiworld_double sd);
-    epiworld_double rgamma();
-    epiworld_double rgamma(epiworld_double alpha, epiworld_double beta);
-    epiworld_double rexp();
-    epiworld_double rexp(epiworld_double lambda);
-    epiworld_double rlognormal();
-    epiworld_double rlognormal(epiworld_double mean, epiworld_double shape);
-
-    /**
-     * @brief Draw from the currently configured uniform distribution.
-     * @return A random draw from the configured uniform distribution.
-     * @details
-     * These uniform draws make use of Lemire's algorithm for fast
-     * uniform integer generation, which is both faster and more accurate than
-     * the common `std::uniform_int_distribution` approach.
-     * 
-     * 
-     * Lemire, D. (2019). Fast Random Integer Generation in an Interval.
-     * ACM Trans. Model. Comput. Simul., 29(1), 3:1-3:12.
-     * <https://doi.org/10.1145/3230636>
-     */
-    epiworld_double runif();
-    epiworld_double runif(epiworld_double a, epiworld_double b);
-    int runif_int(int a, int b);
-    uint32_t runif_index(uint32_t n);
-    /**
-     * @brief Draw from the currently configured binomial distribution.
-     * @details When `EPI_FAST_BINOM` is enabled (default), this uses
-     * `rpoiss(lambda)` with `lambda = n * p` after `set_rand_binom(n, p)` in the
-     * rare-event regime `p <= 0.01` and `n * p * p <= 0.1`. Define
-     * `EPI_NO_FAST_BINOM` before including epiworld to disable this behavior.
-     * @return A random draw from the configured binomial distribution, or from
-     * its Poisson approximation when the fast path is active.
-     */
-    int rbinom();
-    /**
-     * @brief Draw from a binomial distribution with parameters `n` and `p`.
-     * @details When `EPI_FAST_BINOM` is enabled (default), this uses
-     * `rpoiss(lambda)` with `lambda = n * p` in the rare-event regime
-     * `p <= 0.01` and `n * p * p <= 0.1`. This preserves the mean and is often
-     * substantially faster in practice while remaining very accurate in that
-     * region. Define `EPI_NO_FAST_BINOM` before including epiworld to disable
-     * this behavior and force the exact binomial draw.
-     * @param n Number of trials.
-     * @param p Success probability.
-     * @return A random draw from the binomial distribution, or from its
-     * Poisson approximation when the fast path is active.
-     */
-    int rbinom(int n, epiworld_double p);
-    int rnbinom();
-    int rnbinom(int n, epiworld_double p);
-    int rgeom();
-    int rgeom(epiworld_double p);
-    int rpoiss();
-    int rpoiss(epiworld_double lambda);
-    ///@}
-
-    /**
-     * @brief Sample from a set of probabilities stored in array_double_tmp.
-     * @details Uses a cumulative probability approach: draws a uniform random
-     * number and walks through array_double_tmp[0..n-1], accumulating
-     * probabilities until the draw is exceeded. If no event fires, returns n
-     * (meaning "none of the above").
-     * @param n Number of probability entries in array_double_tmp to consider.
-     * @return Index in [0, n] of the sampled event (n = no event).
-     */
-    size_t sample_from_probs(size_t n);
-
-    /**
-     * @name Add Virus/Tool to the model
-     *
-     * This is done before the model has been initialized.
-     *
-     * @param v Virus to be added
-     * @param t Tool to be added
-     * @param preval Initial prevalence (initial state.) It can be
-     * specified as a proportion (between zero and one,) or an integer
-     * indicating number of individuals.
-     */
-    ///@{
-    /**
-     * @brief Adds a virus, and who gets it at the start of each run.
-     * @details `a` gives each agent without a virus whose stage can be
-     * infected a label: the stage it starts in (a carrier stage), or, for the
-     * forms without labels (e.g., `assign::share()`), the infection's target.
-     * By default, no one gets it (see `assign.hpp`).
-     *
-     * Each call records a new variant, the founder of a lineage, whose id is
-     * the number of viruses added before it (adding the same virus twice
-     * records two; a removed virus keeps its record, so ids do not move).
-     * Mutations during a run add variants after them, which the next run
-     * (or the next `add_virus()`) drops.
-     */
-    void add_virus(const Virus<TSeq> & v, Assign<TSeq> a = Assign<TSeq>());
-
-    /// Adds a tool, and who gets it at the start of each run (default: no one).
-    void add_tool(const Tool<TSeq> & t, Assign<TSeq> a = Assign<TSeq>());
-
-    /// Replaces who gets virus `id` (e.g., the virus of a built-in model).
-    void assign_virus(size_t id, Assign<TSeq> a);
-
-    /// Replaces who gets tool `id`.
-    void assign_tool(size_t id, Assign<TSeq> a);
-
-    void rm_virus(size_t virus_pos);
-    void rm_tool(size_t tool_pos);
-    ///@}
-
-    /**
-     * @name Accessing population of the model
-     */
-    ///@{
-    std::vector< Agent<TSeq> > & get_agents(); ///< Returns a reference to the vector of agents.
-
-    Agent<TSeq> & get_agent(size_t i);
-
-    std::vector< epiworld_fast_uint > get_agents_states() const; ///< Returns a vector with the states of the agents.
-
-    std::vector< Viruses_const<TSeq> > get_agents_viruses() const; ///< Returns a const vector with the viruses of the agents.
-
-    std::vector< Viruses<TSeq> > get_agents_viruses(); ///< Returns a vector with the viruses of the agents.
-
-
-
-    /**
-     * @name Functions to run the model
-     *
-     * @param seed Seed to be used for Pseudo-RNG.
-     * @param ndays Number of days (steps) of the simulation.
-     * @param fun In the case of `run_multiple`, a function that is called
-     * after each experiment.
-     *
-     */
-    ///@{
-    void update_state();
-    void mutate_virus();
-    virtual void next();
-    virtual Model<TSeq> & run(
-        epiworld_fast_uint ndays,
-        int seed = -1
-    ); ///< Runs the simulation (after initialization)
-    Model<TSeq> & run_multiple( ///< Multiple runs of the simulation
-        epiworld_fast_uint ndays,
-        epiworld_fast_uint nexperiments,
-        int seed_ = -1,
-        std::function<void(size_t,Model<TSeq>*)> fun = make_save_run<TSeq>(),
-        bool reset = true,
-        bool verbose = true,
-        int nthreads = 1
-        );
-    ///@}
-
-    size_t get_n_viruses() const; ///< Number of viruses in the model
-    size_t get_n_tools() const; ///< Number of tools in the model
-    epiworld_fast_uint get_ndays() const;
-
-    /**
-     * @brief True while `run()` is driving the day loop.
-     *
-     * @details It is set from just before `reset()` until the last day is
-     * done, so global events (including their `reset()`) can rely on
-     * `get_ndays()` being the run's horizon -- even when it is zero. It is
-     * false when the day loop is driven by hand (`reset()`, then the steps
-     * called directly), where `get_ndays()` means nothing.
-     */
-    bool is_running() const;
-    epiworld_fast_uint get_n_replicates() const;
-    size_t get_sim_id() const;
-    void set_ndays(epiworld_fast_uint ndays);
-    bool get_verbose() const;
-    Model<TSeq> & verbose_off();
-    Model<TSeq> & verbose_on();
-    int today() const; ///< The current time of the model
-
-
-    /**
-     * @brief Wrapper of `DataBase::write_data`
-     *
-     * @param fn_virus_info Filename. Information about the virus.
-     * @param fn_virus_hist Filename. History of the virus.
-     * @param fn_tool_info Filename. Information about the tool.
-     * @param fn_tool_hist Filename. History of the tool.
-     * @param fn_total_hist   Filename. Aggregated history (state)
-     * @param fn_transmission Filename. Transmission history.
-     * @param fn_transition   Filename. Markov transition history.
-     * @param fn_reproductive_number Filename. Case by case reproductive number
-     * @param fn_generation_time Filename. Generation time data.
-     * @param fn_active_cases Filename. Active cases data.
-     * @param fn_outbreak_size Filename. Outbreak size data.
-     * @param fn_hospitalizations Filename. Hospitalization data.
-     */
-    void write_data(
-        std::string fn_virus_info,
-        std::string fn_virus_hist,
-        std::string fn_tool_info,
-        std::string fn_tool_hist,
-        std::string fn_total_hist,
-        std::string fn_transmission,
-        std::string fn_transition,
-        std::string fn_reproductive_number,
-        std::string fn_generation_time,
-        std::string fn_active_cases,
-        std::string fn_outbreak_size,
-        std::string fn_hospitalizations
-        ) const;
-
-
-    /**
-     * @brief Copy of the model parameters, by name.
-     * @details To change a parameter, use `set_param()`.
-     */
-    std::map<std::string, epiworld_double> params() const;
-
-    /**
-     * @brief Reset the model
-     *
-     * @details Resetting the model will:
-     * - clear the database
-     * - reset the contact layers (see `ContactLayer`)
-     * - re-distribute tools
-     * - re-distribute viruses
-     * - set the date to 0
-     *
-     */
-    virtual void reset();
-    const Model<TSeq> & print(bool lite = false) const;
-
-    /**
-     * @brief The number of the engine's states: one per pair of stage (of the
-     * virus's natural history) and status (of the model's statuses), stage
-     * major (`state = stage * n_statuses + status`). Use `get_stage()` and
-     * `get_status()` for an agent's.
-     */
-    size_t get_n_states() const;
-
-    /**
-     * @name Natural history
-     * @brief The disease's stages and the declared transitions between them.
-     */
-    ///@{
-
-    /// The natural history of the model's viruses (`nullptr` if none has one).
-    const NaturalHistory<TSeq> * get_natural_history() const { return nh.get(); }
-
-    /**
-     * @brief Fires a declared transition on an agent, applied at the end of
-     * the step (or of the global event).
-     * @details Nothing happens if, when it is applied, the agent is not in one
-     * of the transition's sources. An infection is not fired: seed instead.
-     * @return Whether the agent was in a source when fired.
-     */
-    bool fire(int transition, Agent<TSeq> & agent);
-
-    /**
-     * @brief Places agents left without a virus in stages at the start of
-     * each run (e.g., `assign::shares({{R, 0.1}})`: 10% Recovered).
-     * @details The labels are stages without the virus; the eligible agents
-     * are those left without a virus, in the first stage. Replaces what was
-     * set before.
-     */
-    void set_initial(Assign<TSeq> a);
-
-    /// Day agent `id` entered `stage` in its current (or last) infection (-1: not).
-    int get_stage_entered(size_t id, int stage) const;
-
-    /// Day agent `id`'s stage duration ends (`INT_MAX`: none).
-    int get_stage_until(size_t id) const;
-
-    /// Infections agent `id` has had in the current run.
-    int get_episode(size_t id) const;
-
-    /// The stage and the status of an agent.
-    int get_stage(const Agent<TSeq> & agent) const;
-    int get_status(const Agent<TSeq> & agent) const;
-
-    /**
-     * @brief Sets the model's statuses (see `Statuses`): where agents are,
-     * and the transitions between them. Between runs only.
-     */
-    void set_statuses(Statuses<TSeq> s);
-
-    /// The statuses (`nullptr` if the model has one, "Free").
-    const Statuses<TSeq> * get_statuses() const { return st.get(); }
-
-    /**
-     * @brief When `on` happens to an agent, fire `transition` on it (or call
-     * `fun`), in the same step.
-     * @details Reactions link the axes: e.g., entering Rash fires
-     * "Quarantined -> Isolated". Within a day, stage changes apply first, then
-     * status changes, then reactions (which see the resulting status; `.was()`
-     * reads the one at the start of the day).
-     */
-    void react(Trigger on, int transition);
-    void react(Trigger on, std::function< void(Agent<TSeq> &, Model<TSeq> &) > fun);
-
-    /// A transition's id (stage or status), by name.
-    int transition_id(std::string_view name) const;
-    ///@}
-
-    /**
-     * @brief Ids of the agents currently in a state.
-     *
-     * @details The list is kept up to date as the model runs, so looking up
-     * who is in a state costs nothing (no scan of the population). The ids are
-     * in no particular order. The index is built when a run starts, so this is
-     * available once `run()` (or `run_multiple()`) has been called, and it
-     * reflects the model at its current step.
-     *
-     * @param state The state code.
-     * @return A view of the ids (iterable, with `size()` and `[]`); it is
-     * invalidated by the next step.
-     * @throws std::logic_error if the model has not been run yet (or its
-     * population changed since).
-     * @throws std::range_error if `state` is not a state of the model.
-     */
-    AgentIdsView get_agents_in_state(epiworld_fast_uint state) const;
-
-    /**
-     * @brief One flag per agent: 1 if the agent carries a virus.
-     * @details A compact copy of "has a virus", one byte per agent, so a scan
-     * of an agent's neighbors can rule most of them out without loading their
-     * `Agent` (a cache miss each). It is kept current from the moment a run
-     * starts. Returns `nullptr` before that (and after the population
-     * changes): callers then have to look at the agents.
-     */
-    const char * get_agent_carrier() const
-    {
-        return state_index_ready ? agent_carrier.data() : nullptr;
-    }
-
-    /**
-     * @brief Draws the virus, if any, that infects `agent` from its contacts.
-     * @details This is where contacts become an infection. Every contact that
-     * carries a virus is an exposure with probability
-     * `(1 - susceptibility reduction of agent) * probability of infecting *
-     * (1 - transmission reduction of the contact)`, and one draw
-     * (`roulette()`) picks at most one infector. A contact listed twice is
-     * two exposures.
-     * With a `layer`, the probabilities follow its weight and the viruses it
-     * admits (see `ContactLayer`), and the layer is recorded as the one of the
-     * transmission.
-     * @param agent Agent without a virus.
-     * @param contacts Ids of the contacts.
-     * @param n Number of contacts.
-     * @param layer The layer the contacts came from (none: weight 1, any
-     * virus, no layer recorded).
-     * @return The virus transmitted, or `nullptr` if none is.
-     */
-    Virus<TSeq> * sample_virus(
-        Agent<TSeq> * agent,
-        const size_t * contacts,
-        size_t n,
-        const ContactLayer<TSeq> * layer = nullptr
-    );
-
-    /**
-     * @brief The layer of the last transmission drawn by `sample_virus()`
-     * (-1 if none), which the next `Agent::set_virus()` records and clears.
-     */
-    int take_sampled_layer()
-    {
-        const int layer = sampled_layer;
-        sampled_layer = -1;
-        return layer;
-    }
-
-    /**
-     * @brief Draws the virus, if any, that `agent` catches from its contacts
-     * in the model's layers.
-     * @details The contacts that carry a virus, layer by layer in the order
-     * the layers were added and each layer in its own order, are all
-     * exposures of one draw (`sample_virus(agent, contacts, n, layer)` adds
-     * them). Only contacts in an infectious stage (`stage::infectious`) are
-     * sources. This is what a default infection does; a pushing step
-     * (networks only) gives the same distribution.
-     * @throws std::logic_error if `agent` carries a virus.
-     */
-    Virus<TSeq> * sample_virus(Agent<TSeq> * agent);
-
-    /**
-     * @name Network transmission mode
-     *
-     * @details Stages whose only drawn exit is a default infection (no
-     * custom sampler) can be updated by pulling (each
-     * susceptible agent scans its neighbors) or by pushing (each agent with a
-     * virus adds its infection odds to its susceptible neighbors). Both give
-     * the same distribution of who gets infected, and by whom; only the random
-     * number stream differs. See `TransmissionMode`.
-     *
-     * With `"auto"` (the default) the model estimates the cost of each step,
-     * as the ties to scan plus a fixed price per agent visited
-     * (`EPI_TRANSMISSION_AGENT_COST` ties), for the carriers that can transmit
-     * (push) and for the susceptible agents (pull). It pushes whenever the
-     * push cost is no more than `kappa` times the pull cost, and pulls
-     * otherwise; `kappa` only matters in this mode. The choice depends only on
-     * the model's state, never on the queueing system, so turning queuing on or
-     * off leaves results unchanged. A `kappa` below 1 makes pushing harder to
-     * choose (it favors pulling); the default, 0.5, is below 1 because the
-     * queue spares a pull the susceptibles with no infectious neighbor, which
-     * the costs do not see. It was fitted together with the per-agent price
-     * with `examples/20-transmission-benchmark`.
-     *
-     * Directed networks, and states with other update functions, always pull.
-     * Set `"pull"` to reproduce the random streams of epiworld <= 0.15.
-     *
-     * @param mode `"auto"`, `"push"`, or `"pull"` (or the enum).
-     * @param kappa Relative cost threshold used by `"auto"`: a finite,
-     * non-negative number (default `EPI_DEFAULT_TRANSMISSION_KAPPA`, 0.5).
-     * @throws std::invalid_argument for an unknown mode.
-     * @throws std::range_error for a negative or infinite `kappa`.
-     */
-    ///@{
-    Model<TSeq> & set_transmission_mode(
-        TransmissionMode mode,
-        double kappa = EPI_DEFAULT_TRANSMISSION_KAPPA
-    );
-    Model<TSeq> & set_transmission_mode(
-        std::string_view mode,
-        double kappa = EPI_DEFAULT_TRANSMISSION_KAPPA
-    );
-    TransmissionMode get_transmission_mode() const;
-    /// The mode used in the most recent step (`push` or `pull`).
-    TransmissionMode get_last_transmission_mode() const;
-    /// The threshold used by `"auto"`.
-    double get_transmission_kappa() const;
-
-    /**
-     * @brief The sums `"auto"` compares to choose between push and pull.
-     * @details Totals over the states that can be sources of infection (the
-     * carriers) and over the states updated by the default susceptible sampler
-     * (the susceptibles), as they stand now. All zero before the model has run.
-     */
-    struct TransmissionSums {
-        size_t carrier_degree;      ///< Sum of the carriers' degrees
-        size_t susceptible_degree;  ///< Sum of the susceptibles' degrees
-        size_t carriers;            ///< Number of carriers that can transmit
-        size_t susceptibles;        ///< Number of susceptible agents
-    };
-    TransmissionSums get_transmission_sums() const;
-    ///@}
-
-
-    /**
-     * @name Setting and accessing parameters from the model
-     *
-     * @details Parameters are stored in a vector, in the order they were
-     * added, with a map from each name to its position. Lookups by name take
-     * the name as a `std::string_view` (no allocation) and search the map once.
-     * Unknown names throw.
-     *
-     * Code that reads parameters for many agents every day can skip the
-     * search:
-     *
-     * - `get_param_id()` returns the position (`ParamId`) of a parameter, and
-     *   `par_at()` / `set_param_at()` read and write by position. Positions
-     *   are valid for the model and all its copies.
-     * - `ParamRef` (and the `EPI_PAR(model, "name")` macro) resolves a name
-     *   once per model layout and caches the position, so it is safe to use
-     *   with any model.
-     *
-     * The `par()` function members are aliases for `get_param()`.
-     *
-     * In the case of the function `read_params`, users can pass a file
-     * listing parameters to be included in the model. Each line in the
-     * file should have the following structure:
-     *
-     * ```
-     * [name of parameter 1]: [value in double]
-     * [name of parameter 2]: [value in double]
-     * ...
-     * ```
-     *
-     * The only condition for parameter names is that these do not include
-     * a colon.
-     *
-     *
-     * @param initial_val
-     * @param pname Name of the parameter to add or to fetch
-     * @param fn Path to the file containing parameters
-     * @return The current value of the parameter
-     * in the model.
-     *
-     */
-    ///@{
-    epiworld_double add_param(
-        epiworld_double initial_val, std::string pname, bool overwrite = false
-    );
-    Model<TSeq> & read_params(std::string fn, bool overwrite = false);
-    epiworld_double get_param(std::string_view pname) const;
-    bool has_param(std::string_view pname) const;
-    void set_param(std::string_view pname, epiworld_double val);
-    epiworld_double par(std::string_view pname) const;
-    ParamId get_param_id(std::string_view pname) const;
-    epiworld_double par_at(ParamId id) const;
-    void set_param_at(ParamId id, epiworld_double val);
-    size_t get_n_params() const { return param_values.size(); };
-    uint32_t get_param_layout_id() const { return param_layout_id; };
-    ///@}
-
-    void get_elapsed(
-        std::string unit = "auto",
-        epiworld_double * last_elapsed = nullptr,
-        epiworld_double * total_elapsed = nullptr,
-        std::string * unit_abbr = nullptr,
-        bool print = true
-    ) const;
-
-    /**
-     * @name Set the user data object
-     *
-     * @param names string vector with the names of the variables.
-     */
-    ///[@
-    void set_user_data(std::vector< std::string > names);
-    void add_user_data(epiworld_fast_uint j, epiworld_double x);
-    void add_user_data(std::vector< epiworld_double > x);
-    UserData<TSeq> & get_user_data();
-    ///@}
-
-    /**
-     * @brief Set a global action
-     *
-     * @param fun A function to be called on the prescribed date
-     * @param name Name of the action.
-     * @param date Integer indicating when the function is called (see details)
-     *
-     * @details When date is less than zero, then the function is called
-     * at the end of every day. Otherwise, the function will be called only
-     * at the end of the indicated date.
-     */
-    void add_globalevent(
-        std::function<void(Model<TSeq>*)> fun,
-        std::string name = "A global action",
-        int date = -99
-        );
-
-    void add_globalevent(
-        GlobalEvent<TSeq> & action
-    );
-
-    GlobalEvent<TSeq> & get_globalevent(std::string name); ///< Retrieve a global action by name
-    GlobalEvent<TSeq> & get_globalevent(size_t i); ///< Retrieve a global action by index
-    bool has_globalevent(std::string_view name) const; ///< Whether a global action by that name exists
-    size_t get_n_globalevents() const; ///< Number of global actions registered
-
-    void rm_globalevent(std::string name); ///< Remove a global action by name
-    void rm_globalevent(size_t i); ///< Remove a global action by index
-
-    void run_globalevents();
-
-    /**
-     * @name Contact layers
-     * @brief Sources of contacts of the model (see `ContactLayer`).
-     * @{
-     */
-
-    /**
-     * @brief Adds a contact layer to the model.
-     * @details The model shares the layer with the caller (an edit through
-     * `layer` is an edit of the model's layer), resets it at the start of
-     * `reset()`, updates it at the end of every step, and clones it when the
-     * model is copied (see `ContactLayer`). Layers are added between runs only
-     * (a layer that should act only part of the time is added up front and
-     * edited, e.g., by a global event).
-     * @param layer The layer (e.g., from `layer::network()`). Its name must not
-     * be in use by another layer, and it must not belong to another model.
-     * @return A reference to the layer, as its own type.
-     */
-    template<typename TLayer>
-    TLayer & add_layer(std::shared_ptr< TLayer > layer)
-    {
-        TLayer * ptr = layer.get();
-        add_layer_ptr(std::move(layer));
-        return *ptr;
-    }
-
-    size_t get_n_layers() const; ///< Number of contact layers
-    bool has_layer(std::string_view name) const; ///< Whether a layer by that name exists
-    size_t get_layer_id(std::string_view name) const; ///< Id of a layer by name (throws if absent)
-    ContactLayer<TSeq> & get_layer(size_t id); ///< Retrieve a layer by id
-    ContactLayer<TSeq> & get_layer(std::string_view name); ///< Retrieve a layer by name
-
-    /// Retrieve a layer as its own type (unchecked cast; ids are cheaper than names)
-    template<typename TLayer>
-    TLayer & get_layer_as(size_t id)
-    {
-        return static_cast< TLayer & >(get_layer(id));
-    }
-
-    template<typename TLayer>
-    TLayer & get_layer_as(std::string_view name)
-    {
-        return static_cast< TLayer & >(get_layer(name));
-    }
-
-    /// Calls `update()` on every layer (done by `next()` at the end of each step)
-    void update_layers();
-
-    /// The network layers of the model, in the order they were added.
-    const std::vector< layer::Network<TSeq> * > & get_network_layers() const
-    {
-        return network_layers;
-    }
-
-    /** @} */
-
-    void clear_state_set();
-
-    /**
-     * @name Queuing system
-     * @details When queueing is on, the model will keep track of which agents
-     * are either in risk of exposure or exposed. This then is used at each
-     * step to act only on the aforementioned agents.
-     *
-     */
-    ////@{
-    void queuing_on(); ///< Activates the queuing system (default.)
-    Model<TSeq> & queuing_off(); ///< Deactivates the queuing system.
-    bool is_queuing_on() const; ///< Query if the queuing system is on.
-    Queue<TSeq> & get_queue(); ///< Retrieve the `Queue` object.
-    ///@}
-
-    /**
-     * @name Post-sampling callback
-     * @details A callback that receives, for each infectious agent, the agents
-     * it was in contact with during the step (see `PostSamplingFun`). The
-     * models whose samplers report contacts (network pull and push, the
-     * mixing models) collect them only while a callback is installed;
-     * otherwise the cost is one check per sampling operation (per step in a
-     * push). Pull and push report the same contacts. The callback is kept by
-     * copies of the model, including the ones `run_multiple()` makes.
-     *
-     * Installing a callback replaces the previous one. Contact tracing does
-     * not use it: a layer keeps its own log (`ContactLayer::enable_tracing()`).
-     */
-    ///@{
-    Model<TSeq> & set_post_sampling(PostSamplingFun<TSeq> fun); ///< Install a callback (an empty function clears it).
-    Model<TSeq> & clear_post_sampling(); ///< Remove the callback.
-    bool has_post_sampling() const { return post_sampling_on; } ///< Is a callback installed?
-
-    /// Reports that `infectious_id` was in contact with `contacted_id`. Samplers
-    /// call it, only if `has_post_sampling()`.
-    void register_sampled_contact(size_t infectious_id, size_t contacted_id);
-
-    /// Same, for several infectious agents in contact with `contacted_id`.
-    void register_sampled_contacts(
-        const size_t * infectious_ids, size_t n, size_t contacted_id
-    );
-    ///@}
-
-    const std::vector< VirusPtr<TSeq> > & get_viruses() const;
-    const std::vector< ToolPtr<TSeq> > & get_tools() const;
-    Virus<TSeq> & get_virus(size_t id);
-    Virus<TSeq> & get_virus(std::string_view name);
-    Tool<TSeq> & get_tool(size_t id);
-    Tool<TSeq> & get_tool(std::string_view name);
-
-    bool has_virus(std::string_view name) const;
-    bool has_tool(std::string_view name) const;
-
-    /**
-     * @brief Set the agents data object
-     *
-     * @details The data should be an array with the data stored in a
-     * column major order, i.e., by column.
-     *
-     * @param data_ Pointer to the first element of an array of size
-     * `size() * ncols_`.
-     * @param ncols_ Number of features included in the data.
-     *
-     */
-    void set_agents_data(double * data_, size_t ncols_);
-    double * get_agents_data();
-    size_t get_agents_data_ncols() const;
-
-    /**
-     * @brief Set the name object
-     *
-     * @param name
-     */
-    void set_name(std::string name);
-    std::string get_name() const;
-
-    bool operator==(const Model<TSeq> & other) const;
-    bool operator!=(const Model<TSeq> & other) const {return !operator==(other);};
-
-    /**
-     * @brief Executes the stored action
-     *
-     * @param model_ Model over which it will be executed.
-     */
-    void events_run();
-
-    /**
-     * @brief Draws a mermaid diagram of the model.
-     * @param model The model to draw.
-     * @param fn_output The name of the file to write the diagram.
-     * If empty, the diagram will be printed to the standard output.
-     * @param self Whether to allow self-transitions.
-     */
-    void draw(
-        DiagramType diagram_type = DiagramType::Mermaid,
-        const std::string & fn_output = "",
-        bool self = false
-    );
-
-    /**
-     * @brief Record a hospitalization event for an agent.
-     * 
-     * @param agent Reference to the agent being hospitalized.
-     * 
-     * @details
-     * This is a wrapper for `DataBase::record_hospitalization()`.
-     * For each hospitalization, the method records:
-     * - The current date from the model
-     * - The virus ID from the agent's virus
-     * - For each tool the agent has, a separate record with weight = 1/N
-     *   where N is the number of tools
-     * - If the agent has no tools, a single record with tool_id = -1 and
-     *   weight = 1.0
-     */
-    void record_hospitalization(Agent<TSeq> & agent);
-
-    /**
-     * @brief Get the full time series of hospitalization data.
-     * 
-     * @param date Output vector for dates.
-     * @param virus_id Output vector for virus IDs.
-     * @param tool_id Output vector for tool IDs.
-     * @param count Output vector for counts (number of hospitalized individuals).
-     * @param weight Output vector for summed weights (fractional contribution
-     *   based on tool distribution).
-     * 
-     * @details
-     * This is a wrapper for `DataBase::get_hospitalizations()`.
-     * Returns the full time series of hospitalization data. For each unique 
-     * (virus_id, tool_id) combination observed, returns an entry for every 
-     * day from 0 to ndays-1.
-     * 
-     * The `count` vector contains the actual number of individuals hospitalized 
-     * for that (date, virus_id, tool_id) combination. This is useful for 
-     * answering questions like "how many total people were hospitalized?" 
-     * regardless of their tools.
-     * 
-     * The `weight` vector contains fractional contributions: if an agent has N 
-     * tools, each tool gets weight = 1/N. Summing weights across all tool_ids 
-     * for a given date and virus_id gives the total number of hospitalizations.
-     */
-    void get_hospitalizations(
-        std::vector<int> & date,
-        std::vector<int> & virus_id,
-        std::vector<int> & tool_id,
-        std::vector<int> & count,
-        std::vector<double> & weight
-    ) const;
-
-
-};
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/model-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -12300,39 +14836,33 @@ public:
 // (already included include/epiworld/rng-utils.hpp)
 // (already included include/epiworld/model-bones.hpp)
 
-template<typename TSeq>
-inline void Model<TSeq>::set_rand_gamma(epiworld_double alpha, epiworld_double beta)
+inline void Model::set_rand_gamma(epiworld_double alpha, epiworld_double beta)
 {
     rgammad = std::gamma_distribution<>(alpha,beta);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_rand_norm(epiworld_double mean, epiworld_double sd)
+inline void Model::set_rand_norm(epiworld_double mean, epiworld_double sd)
 {
     rnormd  = std::normal_distribution<>(mean, sd);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_rand_unif(epiworld_double a, epiworld_double b)
+inline void Model::set_rand_unif(epiworld_double a, epiworld_double b)
 {
     runifd_a = a;
     runifd_b = b;
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_rand_lognormal(epiworld_double mean, epiworld_double shape)
+inline void Model::set_rand_lognormal(epiworld_double mean, epiworld_double shape)
 {
     rlognormald  = std::lognormal_distribution<>(mean, shape);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_rand_exp(epiworld_double lambda)
+inline void Model::set_rand_exp(epiworld_double lambda)
 {
     rexpd  = std::exponential_distribution<>(lambda);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_rand_binom(int n, epiworld_double p)
+inline void Model::set_rand_binom(int n, epiworld_double p)
 {
     rbinomd  = std::binomial_distribution<>(n, p);
     rbinomd_n = n;
@@ -12350,51 +14880,43 @@ inline void Model<TSeq>::set_rand_binom(int n, epiworld_double p)
 #endif
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_rand_nbinom(int n, epiworld_double p)
+inline void Model::set_rand_nbinom(int n, epiworld_double p)
 {
     rnbinomd  = std::negative_binomial_distribution<>(n, p);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_rand_geom(epiworld_double p)
+inline void Model::set_rand_geom(epiworld_double p)
 {
     rgeomd  = std::geometric_distribution<>(p);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_rand_poiss(epiworld_double lambda)
+inline void Model::set_rand_poiss(epiworld_double lambda)
 {
     rpoissd  = std::poisson_distribution<>(lambda);
 }
 
-template<typename TSeq>
-inline std::shared_ptr< epi_xoshiro256ss > & Model<TSeq>::get_rand_endgine()
+inline std::shared_ptr< epi_xoshiro256ss > & Model::get_rand_endgine()
 {
     return engine;
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng)
+inline void Model::set_rand_engine(std::shared_ptr< epi_xoshiro256ss > & eng)
 {
     engine = eng;
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::runif() {
+inline epiworld_double Model::runif() {
     // CHECK_INIT()
     epiworld_double res = runif_epi(*engine);
     return res * (runifd_b - runifd_a) + runifd_a;
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::runif_int(int a, int b) {
+inline int Model::runif_int(int a, int b) {
     // CHECK_INIT()
     return a + runif_index(static_cast<uint32_t>(b - a + 1));
 }
 
-template<typename TSeq>
-inline uint32_t Model<TSeq>::runif_index(uint32_t n) {
+inline uint32_t Model::runif_index(uint32_t n) {
 
     // If asking for a 0-range, return 0 to prevent division by zero in the bias check
     if (n == 0) return 0;
@@ -12422,31 +14944,26 @@ inline uint32_t Model<TSeq>::runif_index(uint32_t n) {
     return static_cast<uint32_t>(m >> 32);
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::runif(epiworld_double a, epiworld_double b) {
+inline epiworld_double Model::runif(epiworld_double a, epiworld_double b) {
     // CHECK_INIT()
     return runif_epi(*engine) * (b - a) + a;
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::rnorm() {
+inline epiworld_double Model::rnorm() {
     // CHECK_INIT()
     return rnormd(*engine);
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::rnorm(epiworld_double mean, epiworld_double sd) {
+inline epiworld_double Model::rnorm(epiworld_double mean, epiworld_double sd) {
     // CHECK_INIT()
     return rnormd(*engine) * sd + mean;
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::rgamma() {
+inline epiworld_double Model::rgamma() {
     return rgammad(*engine);
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_double beta) {
+inline epiworld_double Model::rgamma(epiworld_double alpha, epiworld_double beta) {
 
     return rgammad(
         *engine,
@@ -12455,13 +14972,11 @@ inline epiworld_double Model<TSeq>::rgamma(epiworld_double alpha, epiworld_doubl
 
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::rexp() {
+inline epiworld_double Model::rexp() {
     return rexpd(*engine);
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::rexp(epiworld_double lambda) {
+inline epiworld_double Model::rexp(epiworld_double lambda) {
 
     return rexpd(
         *engine,
@@ -12470,13 +14985,11 @@ inline epiworld_double Model<TSeq>::rexp(epiworld_double lambda) {
 
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::rlognormal() {
+inline epiworld_double Model::rlognormal() {
     return rlognormald(*engine);
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_double shape) {
+inline epiworld_double Model::rlognormal(epiworld_double mean, epiworld_double shape) {
 
     return rlognormald(
         *engine,
@@ -12484,8 +14997,7 @@ inline epiworld_double Model<TSeq>::rlognormal(epiworld_double mean, epiworld_do
     );
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::rbinom() {
+inline int Model::rbinom() {
 #ifdef EPI_FAST_BINOM
     if (rbinomd_use_poisson)
     {
@@ -12496,8 +15008,7 @@ inline int Model<TSeq>::rbinom() {
     return rbinomd(*engine);
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::rbinom(int n, epiworld_double p) {
+inline int Model::rbinom(int n, epiworld_double p) {
 
     if (n == 0 || p == 0.0)
         return 0;
@@ -12520,13 +15031,11 @@ inline int Model<TSeq>::rbinom(int n, epiworld_double p) {
 
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::rnbinom() {
+inline int Model::rnbinom() {
     return rnbinomd(*engine);
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::rnbinom(int n, epiworld_double p) {
+inline int Model::rnbinom(int n, epiworld_double p) {
 
     return rnbinomd(
         *engine,
@@ -12534,13 +15043,11 @@ inline int Model<TSeq>::rnbinom(int n, epiworld_double p) {
     );
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::rgeom() {
+inline int Model::rgeom() {
     return rgeomd(*engine);
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::rgeom(epiworld_double p) {
+inline int Model::rgeom(epiworld_double p) {
 
     return rgeomd(
         *engine,
@@ -12549,13 +15056,11 @@ inline int Model<TSeq>::rgeom(epiworld_double p) {
 
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::rpoiss() {
+inline int Model::rpoiss() {
     return rpoissd(*engine);
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::rpoiss(epiworld_double lambda) {
+inline int Model::rpoiss(epiworld_double lambda) {
 
     return rpoissd(
         *engine,
@@ -12564,8 +15069,7 @@ inline int Model<TSeq>::rpoiss(epiworld_double lambda) {
 
 }
 
-template<typename TSeq>
-inline size_t Model<TSeq>::sample_from_probs(size_t n) {
+inline size_t Model::sample_from_probs(size_t n) {
 
     epiworld_double p_total = runif();
     size_t ans;
@@ -12579,8 +15083,7 @@ inline size_t Model<TSeq>::sample_from_probs(size_t n) {
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::reserve_tmp(size_t n) {
+inline void Model::reserve_tmp(size_t n) {
 
     if (n <= array_virus_tmp.size())
         return;
@@ -12593,8 +15096,7 @@ inline void Model<TSeq>::reserve_tmp(size_t n) {
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::seed(size_t s) {
+inline void Model::seed(size_t s) {
 
     this->engine->seed(s);
 
@@ -12609,6 +15111,137 @@ inline void Model<TSeq>::seed(size_t s) {
     rnbinomd.reset();
     rgeomd.reset();
     rpoissd.reset();
+
+}
+
+/**
+ * @brief Conditional Weighted Sampling
+ *
+ * @details
+ * The sampling function will draw one of `{-1, 0,...,probs.size() - 1}` in a
+ * weighted fashion. The probabilities are drawn given that either one or none
+ * of the cases is drawn; in the latter returns -1.
+ *
+ * @param probs Vector of probabilities.
+ * @param m A `Model`. This is used to draw random uniform numbers.
+ * @return int If -1 then it means that none got sampled, otherwise the index
+ * of the entry that got drawn.
+ */
+template<typename TDbl = epiworld_double>
+inline int roulette(
+    const std::vector< TDbl > & probs,
+    Model * m
+    )
+{
+
+    // Step 1: a probability of 1 is a certain event; if there are any, one of
+    // them is drawn uniformly. (This used to test `> 1 - 1e-100`, which is
+    // `> 1` in floating point, so p == 1 fell through to 0/0 below and the
+    // last entry won regardless.)
+    std::vector< int > certain_infection;
+    for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
+        if (probs[p] >= 1.0)
+            certain_infection.push_back(static_cast<int>(p));
+
+    TDbl r = static_cast<TDbl>(m->runif());
+    if (certain_infection.size() > 0)
+        return certain_infection[std::floor(r * certain_infection.size())];
+
+    // Step 2: the odds r_p = p / (1 - p) and their sum R. Then
+    // P(none) = 1 / (1 + R) and P(p) = r_p / (1 + R), the same as normalizing
+    // by prod(1 - p), which underflows to 0 with many entries (0/0 weights).
+    std::vector< TDbl > odds(probs.size());
+    TDbl odds_total = 0.0;
+    for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
+    {
+        odds[p] = probs[p] / (1.0 - probs[p]);
+        odds_total += odds[p];
+    }
+
+    // Step 3: Roulette
+    TDbl cumsum = 1.0 / (1.0 + odds_total);
+    if (r < cumsum)
+        return -1;
+
+    for (epiworld_fast_uint p = 0u; p < probs.size(); ++p)
+    {
+        // If it yield here, then bingo, the individual will acquire the disease
+        cumsum += odds[p] / (1.0 + odds_total);
+        if (r < cumsum)
+            return static_cast<int>(p);
+
+    }
+
+    #ifdef EPI_DEBUG
+    printf_epiworld("[epi-debug] roulette::cumsum = %.4f\n", cumsum);
+    #endif
+
+    return static_cast<int>(probs.size() - 1u);
+
+}
+
+inline int roulette(std::vector< double > & probs, Model * m)
+{
+    return roulette<double>(probs, m);
+}
+
+inline int roulette(std::vector< float > & probs, Model * m)
+{
+    return roulette<float>(probs, m);
+}
+
+
+inline int roulette(
+    epiworld_fast_uint nelements,
+    Model * m
+    )
+{
+
+    if ((nelements * 2) > m->array_double_tmp.size())
+    {
+        throw std::logic_error(
+            "Trying to sample from more data than there is in roulette!" +
+            std::to_string(nelements) + " vs " +
+            std::to_string(m->array_double_tmp.size())
+            );
+    }
+
+    auto & tmp = m->array_double_tmp;
+
+    // Step 1: certain events (p >= 1; see the vector version), drawn uniformly
+    epiworld_fast_uint ncertain = 0u;
+    for (epiworld_fast_uint p = 0u; p < nelements; ++p)
+        if (tmp[p] >= 1.0)
+            tmp[nelements + ncertain++] = p;
+
+    epiworld_double r = m->runif();
+    if (ncertain > 0u)
+        return tmp[nelements + std::floor(ncertain * r)];
+
+    // Step 2: the odds and their sum, normalized by 1 + sum (see the vector
+    // version; prod(1 - p) underflows with many exposures)
+    epiworld_double odds_total = 0.0;
+    for (epiworld_fast_uint p = 0u; p < nelements; ++p)
+    {
+        tmp[nelements + p] = tmp[p] / (1.0 - tmp[p]);
+        odds_total += tmp[nelements + p];
+    }
+
+    // Step 3: Roulette
+    epiworld_double cumsum = 1.0 / (1.0 + odds_total);
+    if (r < cumsum)
+        return -1;
+
+    for (epiworld_fast_uint p = 0u; p < nelements; ++p)
+    {
+        // If it yield here, then bingo, the individual will acquire the disease
+        cumsum += tmp[nelements + p] / (1.0 + odds_total);
+        if (r < cumsum)
+            return static_cast<int>(p);
+
+    }
+
+    return static_cast<int>(nelements - 1u);
 
 }
 
@@ -12658,10 +15291,9 @@ inline void Model<TSeq>::seed(size_t s) {
  * @brief Function factory for saving model runs
  *
  * @details This function is the default behavior of the `run_multiple`
- * member of `Model<TSeq>`. By default only the total history (
+ * member of `Model`. By default only the total history (
  * case counts by unit of time.)
  *
- * @tparam TSeq
  * @param fmt
  * @param total_hist
  * @param virus_info
@@ -12670,10 +15302,9 @@ inline void Model<TSeq>::seed(size_t s) {
  * @param tool_hist
  * @param transmission
  * @param transition
- * @return std::function<void(size_t,Model<TSeq>*)>
+ * @return std::function<void(size_t,Model*)>
  */
-template<typename TSeq>
-inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
+inline std::function<void(size_t,Model*)> make_save_run(
     std::string fmt,
     bool total_hist,
     bool virus_info,
@@ -12711,8 +15342,8 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
         if (what_to_save[i])
             whats.push_back(run_output_names()[i]);
 
-    std::function<void(size_t,Model<TSeq>*)> saver = [fmt,whats](
-        size_t niter, Model<TSeq> * m
+    std::function<void(size_t,Model*)> saver = [fmt,whats](
+        size_t niter, Model * m
     ) -> void {
 
         auto out = m->get_db().get_run_outputs(whats);
@@ -12730,11 +15361,10 @@ inline std::function<void(size_t,Model<TSeq>*)> make_save_run(
 }
 
 
-template<typename TSeq>
-inline void Model<TSeq>::_add_event(
-    Agent<TSeq> * agent_,
-    VirusPtr<TSeq> virus_,
-    ToolPtr<TSeq> tool_,
+inline void Model::_add_event(
+    Agent * agent_,
+    VirusPtr virus_,
+    ToolPtr tool_,
     epiworld_fast_int new_state_,
     epiworld_fast_int queue_,
     EventAction action_,
@@ -12752,7 +15382,7 @@ inline void Model<TSeq>::_add_event(
     {
 
         events.emplace_back(
-            Event<TSeq>(
+            Event(
                 agent_, virus_, tool_, new_state_, queue_, action_,
                 layer_
             ));
@@ -12762,7 +15392,7 @@ inline void Model<TSeq>::_add_event(
     else
     {
 
-        Event<TSeq> & A = events.at(nactions - 1u);
+        Event & A = events.at(nactions - 1u);
 
         A.agent      = std::move(agent_);
         A.virus      = std::move(virus_);
@@ -12779,8 +15409,7 @@ inline void Model<TSeq>::_add_event(
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::state_index_build()
+inline void Model::state_index_build()
 {
 
     const size_t ns = static_cast< size_t >(nstates);
@@ -12834,8 +15463,7 @@ inline void Model<TSeq>::state_index_build()
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::state_index_move(
+inline void Model::state_index_move(
     size_t id,
     unsigned int state_old,
     unsigned int state_new
@@ -12887,8 +15515,7 @@ inline void Model<TSeq>::state_index_move(
 
 }
 
-template<typename TSeq>
-inline AgentIdsView Model<TSeq>::state_index_members(size_t state) const
+inline AgentIdsView Model::state_index_members(size_t state) const
 {
     const size_t from = state_start[state];
     return AgentIdsView(
@@ -12896,9 +15523,8 @@ inline AgentIdsView Model<TSeq>::state_index_members(size_t state) const
     );
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::state_index_update(
-    Agent<TSeq> * p,
+inline void Model::state_index_update(
+    Agent * p,
     unsigned int state_old,
     bool had_virus
 )
@@ -12940,8 +15566,7 @@ inline void Model<TSeq>::state_index_update(
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::state_index_degree(size_t id, int delta)
+inline void Model::state_index_degree(size_t id, int delta)
 {
 
     if (!state_index_ready || (delta == 0))
@@ -12956,8 +15581,7 @@ inline void Model<TSeq>::state_index_degree(size_t id, int delta)
 
 }
 
-template<typename TSeq>
-inline AgentIdsView Model<TSeq>::get_agents_in_state(
+inline AgentIdsView Model::get_agents_in_state(
     epiworld_fast_uint state
 ) const
 {
@@ -12978,15 +15602,14 @@ inline AgentIdsView Model<TSeq>::get_agents_in_state(
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::events_run()
+inline void Model::events_run()
 {
     // Making the call
     size_t nevents_tmp = 0;
     while (nevents_tmp < nactions)
     {
 
-        Event<TSeq> & a = events[nevents_tmp++];
+        Event & a = events[nevents_tmp++];
 
         // A declared transition applies only if the agent is still in one of
         // its sources (it may have moved earlier in the same pass). Its event
@@ -13026,7 +15649,7 @@ inline void Model<TSeq>::events_run()
         // first: a handler can schedule more events (e.g., a virus's
         // post-recovery hook adding a tool), which may grow `events` and leave
         // `a` dangling.
-        Agent<TSeq> * p = a.agent;
+        Agent * p = a.agent;
         const epiworld_fast_int new_state = a.new_state;
         const epiworld_fast_int queue_change = a.queue;
         const unsigned int state_old = p->state;
@@ -13163,15 +15786,15 @@ inline void Model<TSeq>::events_run()
         if (use_queuing && queue_change != -99)
         {
 
-            if (queue_change == Queue<TSeq>::Everyone)
+            if (queue_change == Queue::Everyone)
                 queue += p;
-            else if (queue_change == -Queue<TSeq>::Everyone)
+            else if (queue_change == -Queue::Everyone)
                 queue -= p;
-            else if (queue_change == Queue<TSeq>::OnlySelf)
+            else if (queue_change == Queue::OnlySelf)
                 queue.shift(static_cast< size_t >(p->get_id()), 1);
-            else if (queue_change == -Queue<TSeq>::OnlySelf)
+            else if (queue_change == -Queue::OnlySelf)
                 queue.shift(static_cast< size_t >(p->get_id()), -1);
-            else if (queue_change != Queue<TSeq>::NoOne)
+            else if (queue_change != Queue::NoOne)
                 throw std::logic_error(
                     "The proposed queue change is not valid. Queue values can be {-2, -1, 0, 1, 2}."
                     );
@@ -13190,15 +15813,13 @@ inline void Model<TSeq>::events_run()
 /**
  * @name Default function for combining susceptibility_reduction levels
  *
- * @tparam TSeq
  * @param pt
  * @return epiworld_double
  */
 ///@{
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::susceptibility_reduction_mixer(
-    Agent<TSeq>* p,
-    VirusPtr<TSeq> & v
+inline epiworld_double Model::susceptibility_reduction_mixer(
+    Agent* p,
+    VirusPtr & v
 )
 {
     epiworld_double total = 1.0;
@@ -13214,10 +15835,9 @@ inline epiworld_double Model<TSeq>::susceptibility_reduction_mixer(
 
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::transmission_reduction_mixer(
-    Agent<TSeq>* p,
-    VirusPtr<TSeq> & v
+inline epiworld_double Model::transmission_reduction_mixer(
+    Agent* p,
+    VirusPtr & v
 )
 {
     epiworld_double total = 1.0;
@@ -13233,10 +15853,9 @@ inline epiworld_double Model<TSeq>::transmission_reduction_mixer(
 
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::recovery_enhancer_mixer(
-    Agent<TSeq>* p,
-    VirusPtr<TSeq> & v
+inline epiworld_double Model::recovery_enhancer_mixer(
+    Agent* p,
+    VirusPtr & v
 )
 {
     epiworld_double total = 1.0;
@@ -13252,10 +15871,9 @@ inline epiworld_double Model<TSeq>::recovery_enhancer_mixer(
 
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::death_reduction_mixer(
-    Agent<TSeq>* p,
-    VirusPtr<TSeq> & v
+inline epiworld_double Model::death_reduction_mixer(
+    Agent* p,
+    VirusPtr & v
 ) {
 
     epiworld_double total = 1.0;
@@ -13272,11 +15890,10 @@ inline epiworld_double Model<TSeq>::death_reduction_mixer(
 }
 ///@}
 
-template<typename TSeq>
-inline std::unique_ptr<Model<TSeq>> Model<TSeq>::clone_ptr()
+inline std::unique_ptr<Model> Model::clone_ptr()
 {
     // Everything is copied
-    auto ptr = std::make_unique<Model<TSeq>>(*this);
+    auto ptr = std::make_unique<Model>(*this);
 
     #ifdef EPI_DEBUG
     if (*this != *ptr)
@@ -13286,8 +15903,7 @@ inline std::unique_ptr<Model<TSeq>> Model<TSeq>::clone_ptr()
     return ptr;
 }
 
-template<typename TSeq>
-inline Model<TSeq>::Model()
+inline Model::Model()
 {
     db.model = this;
     db.user_data = this;
@@ -13295,14 +15911,12 @@ inline Model<TSeq>::Model()
         queue.model = this;
 }
 
-template<typename TSeq>
-inline Model<TSeq>::Model(size_t n) : Model()
+inline Model::Model(size_t n) : Model()
 {
     set_population_size(n);
 }
 
-template<typename TSeq>
-inline Model<TSeq>::Model(const Model<TSeq> & model) :
+inline Model::Model(const Model & model) :
     name(model.name),
     db(model.db),
     population(model.population),
@@ -13375,15 +15989,15 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
     // Deep-copy model-level objects so clones can run independently in parallel.
     viruses.reserve(model.viruses.size());
     for (const auto & v : model.viruses)
-        viruses.emplace_back(std::shared_ptr<Virus<TSeq>>(v->clone_ptr()));
+        viruses.emplace_back(std::shared_ptr<Virus>(v->clone_ptr()));
 
     tools.reserve(model.tools.size());
     for (const auto & t : model.tools)
-        tools.emplace_back(std::shared_ptr<Tool<TSeq>>(t->clone_ptr()));
+        tools.emplace_back(std::shared_ptr<Tool>(t->clone_ptr()));
 
     globalevents.reserve(model.globalevents.size());
     for (const auto & ge : model.globalevents)
-        globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
+        globalevents.emplace_back(std::shared_ptr<GlobalEvent>(ge->clone_ptr()));
 
     layers.reserve(model.layers.size());
     for (const auto & layer : model.layers)
@@ -13396,8 +16010,7 @@ inline Model<TSeq>::Model(const Model<TSeq> & model) :
 
 }
 
-template<typename TSeq>
-inline Model<TSeq>::Model(Model<TSeq> && model) :
+inline Model::Model(Model && model) :
     name(std::move(model.name)),
     db(std::move(model.db)),
     population(std::move(model.population)),
@@ -13478,8 +16091,7 @@ inline Model<TSeq>::Model(Model<TSeq> && model) :
 
 }
 
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
+inline Model & Model::operator=(const Model & m)
 {
     if (this == &m)
         return *this;
@@ -13495,12 +16107,12 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     viruses.clear();
     viruses.reserve(m.viruses.size());
     for (const auto & v : m.viruses)
-        viruses.emplace_back(std::shared_ptr<Virus<TSeq>>(v->clone_ptr()));
+        viruses.emplace_back(std::shared_ptr<Virus>(v->clone_ptr()));
 
     tools.clear();
     tools.reserve(m.tools.size());
     for (const auto & t : m.tools)
-        tools.emplace_back(std::shared_ptr<Tool<TSeq>>(t->clone_ptr()));
+        tools.emplace_back(std::shared_ptr<Tool>(t->clone_ptr()));
 
     virus_assign = m.virus_assign;
     tool_assign = m.tool_assign;
@@ -13522,7 +16134,7 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
     globalevents.clear();
     globalevents.reserve(m.globalevents.size());
     for (const auto & ge : m.globalevents)
-        globalevents.emplace_back(std::shared_ptr<GlobalEvent<TSeq>>(ge->clone_ptr()));
+        globalevents.emplace_back(std::shared_ptr<GlobalEvent>(ge->clone_ptr()));
 
     layers_detach();
     layers.clear();
@@ -13591,33 +16203,28 @@ inline Model<TSeq> & Model<TSeq>::operator=(const Model<TSeq> & m)
 
 }
 
-template<typename TSeq>
-inline DataBase<TSeq> & Model<TSeq>::get_db()
+inline DataBase & Model::get_db()
 {
     return db;
 }
 
-template<typename TSeq>
-inline const DataBase<TSeq> & Model<TSeq>::get_db() const
+inline const DataBase & Model::get_db() const
 {
     return db;
 }
 
 
-template<typename TSeq>
-inline std::vector<Agent<TSeq>> & Model<TSeq>::get_agents()
+inline std::vector<Agent> & Model::get_agents()
 {
     return population;
 }
 
-template<typename TSeq>
-inline Agent<TSeq> & Model<TSeq>::get_agent(size_t i)
+inline Agent & Model::get_agent(size_t i)
 {
     return population[i];
 }
 
-template<typename TSeq>
-inline std::vector< epiworld_fast_uint > Model<TSeq>::get_agents_states() const
+inline std::vector< epiworld_fast_uint > Model::get_agents_states() const
 {
     std::vector< epiworld_fast_uint > states(population.size());
     for (size_t i = 0u; i < population.size(); ++i)
@@ -13626,34 +16233,8 @@ inline std::vector< epiworld_fast_uint > Model<TSeq>::get_agents_states() const
     return states;
 }
 
-template<typename TSeq>
-inline std::vector< Viruses_const<TSeq> > Model<TSeq>::get_agents_viruses() const
-{
 
-    std::vector< Viruses_const<TSeq> > viruses(population.size());
-    for (size_t i = 0u; i < population.size(); ++i)
-        viruses[i] = population[i].get_virus();
-
-    return viruses;
-
-}
-
-// Same as before, but the non const version
-template<typename TSeq>
-inline std::vector< Viruses<TSeq> > Model<TSeq>::get_agents_viruses()
-{
-
-    std::vector< Viruses<TSeq> > viruses(population.size());
-    for (size_t i = 0u; i < population.size(); ++i)
-        viruses[i] = population[i].get_virus();
-
-    return viruses;
-
-}
-
-
-template<typename TSeq>
-inline void Model<TSeq>::set_population_size(size_t n)
+inline void Model::set_population_size(size_t n)
 {
 
     population.clear();
@@ -13667,8 +16248,7 @@ inline void Model<TSeq>::set_population_size(size_t n)
 }
 
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::operator()(std::string_view pname) const {
+inline epiworld_double Model::operator()(std::string_view pname) const {
 
     const auto iter = param_index.find(pname);
     if (iter == param_index.end())
@@ -13680,13 +16260,11 @@ inline epiworld_double Model<TSeq>::operator()(std::string_view pname) const {
 
 }
 
-template<typename TSeq>
-inline size_t Model<TSeq>::size() const {
+inline size_t Model::size() const {
     return population.size();
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::dist_virus()
+inline void Model::dist_virus()
 {
 
     // Who can get a virus: no virus, and (with a natural history) a stage
@@ -13702,7 +16280,7 @@ inline void Model<TSeq>::dist_virus()
                 (!nh || (nh->stages[static_cast< size_t >(nh_stage_of(p.state))].infection >= 0));
 
         const std::vector< int > labels = virus_assign[k].draw(*this, eligible);
-        const Virus<TSeq> & v = *viruses[k];
+        const Virus & v = *viruses[k];
 
         for (size_t i = 0u; i < labels.size(); ++i)
         {
@@ -13726,7 +16304,7 @@ inline void Model<TSeq>::dist_virus()
                         "a carrier stage of the natural history."
                     );
                 nh_pending = NH_SEED;
-                population[i].set_virus(*this, v, label, Queue<TSeq>::NoOne);
+                population[i].set_virus(*this, v, label, Queue::NoOne);
             }
             nh_pending = -1;
 
@@ -13738,8 +16316,7 @@ inline void Model<TSeq>::dist_virus()
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::dist_tools()
+inline void Model::dist_tools()
 {
 
     // Everyone can get a tool
@@ -13760,23 +16337,20 @@ inline void Model<TSeq>::dist_tools()
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::chrono_start() {
+inline void Model::chrono_start() {
     time_start = std::chrono::steady_clock::now();
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::chrono_end() {
+inline void Model::chrono_end() {
     time_end = std::chrono::steady_clock::now();
     time_elapsed += (time_end - time_start);
     n_replicates++;
 }
 
 
-template<typename TSeq>
-inline void Model<TSeq>::add_virus(
-    const Virus<TSeq> & v,
-    Assign<TSeq> a
+inline void Model::add_virus(
+    const Virus & v,
+    Assign a
     )
 {
 
@@ -13798,7 +16372,7 @@ inline void Model<TSeq>::add_virus(
     if (v.nh_def)
     {
 
-        auto def = std::make_shared< NaturalHistory<TSeq> >(*v.nh_def);
+        auto def = std::make_shared< NaturalHistory >(*v.nh_def);
         def->finalize(*this, v.get_name());
 
         if (!nh)
@@ -13816,25 +16390,23 @@ inline void Model<TSeq>::add_virus(
     }
 
     db.record_virus(*cloned, true);
-    viruses.push_back(std::shared_ptr<Virus<TSeq>>(std::move(cloned)));
+    viruses.push_back(std::shared_ptr<Virus>(std::move(cloned)));
     virus_assign.push_back(std::move(a));
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::add_tool(const Tool<TSeq> & t, Assign<TSeq> a)
+inline void Model::add_tool(const Tool & t, Assign a)
 {
 
     // The model keeps its own copy (of the derived class, if any)
     auto cloned = t.clone_ptr();
     db.record_tool(*cloned);
-    tools.push_back(std::shared_ptr<Tool<TSeq>>(std::move(cloned)));
+    tools.push_back(std::shared_ptr<Tool>(std::move(cloned)));
     tool_assign.push_back(std::move(a));
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::assign_virus(size_t id, Assign<TSeq> a)
+inline void Model::assign_virus(size_t id, Assign a)
 {
     if (id >= viruses.size())
         throw std::range_error(
@@ -13844,8 +16416,7 @@ inline void Model<TSeq>::assign_virus(size_t id, Assign<TSeq> a)
     virus_assign[id] = std::move(a);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::assign_tool(size_t id, Assign<TSeq> a)
+inline void Model::assign_tool(size_t id, Assign a)
 {
     if (id >= tools.size())
         throw std::range_error(
@@ -13855,8 +16426,7 @@ inline void Model<TSeq>::assign_tool(size_t id, Assign<TSeq> a)
     tool_assign[id] = std::move(a);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::rm_virus(size_t virus_pos)
+inline void Model::rm_virus(size_t virus_pos)
 {
 
     if (viruses.size() <= virus_pos)
@@ -13879,8 +16449,7 @@ inline void Model<TSeq>::rm_virus(size_t virus_pos)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::rm_tool(size_t tool_pos)
+inline void Model::rm_tool(size_t tool_pos)
 {
 
     if (tools.size() <= tool_pos)
@@ -13911,8 +16480,7 @@ inline void Model<TSeq>::rm_tool(size_t tool_pos)
 
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::today() const {
+inline int Model::today() const {
 
     if (ndays == 0)
       return 0;
@@ -13920,8 +16488,7 @@ inline int Model<TSeq>::today() const {
     return this->current_date;
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::next() {
+inline void Model::next() {
 
     #ifdef EPI_DEBUG
     // Checking all the agents have proper states
@@ -13964,8 +16531,7 @@ inline void Model<TSeq>::next() {
     return ;
 }
 
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::run(
+inline Model & Model::run(
     epiworld_fast_uint ndays,
     int seed
 )
@@ -13994,8 +16560,8 @@ inline Model<TSeq> & Model<TSeq>::run(
     // From here on get_ndays() is the run's horizon (see is_running()). The
     // guard clears the flag however the run ends, exceptions included.
     struct RunningGuard {
-        Model<TSeq> & model;
-        explicit RunningGuard(Model<TSeq> & m) : model(m) { model.set_running(true); }
+        Model & model;
+        explicit RunningGuard(Model & m) : model(m) { model.set_running(true); }
         ~RunningGuard() { model.set_running(false); }
     } running_guard(*this);
 
@@ -14049,12 +16615,11 @@ inline Model<TSeq> & Model<TSeq>::run(
 
 }
 
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::run_multiple(
+inline Model & Model::run_multiple(
     epiworld_fast_uint ndays,
     epiworld_fast_uint nexperiments,
     int seed_,
-    std::function<void(size_t,Model<TSeq>*)> fun,
+    std::function<void(size_t,Model*)> fun,
     bool reset,
     bool verbose,
     #ifdef _OPENMP
@@ -14100,7 +16665,7 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
     omp_set_num_threads(nthreads);
 
     // Generating copies of the model (done serially to avoid races on original)
-    std::vector< std::unique_ptr< Model<TSeq> > > these;
+    std::vector< std::unique_ptr< Model > > these;
 
     for (size_t i = 1u; i < static_cast<size_t>(nthreads); ++i)
     {
@@ -14148,7 +16713,7 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
         // of run ids, the remainder going to the first threads.
         auto iam = static_cast<size_t>(omp_get_thread_num());
         auto nteam = static_cast<size_t>(omp_get_num_threads());
-        Model<TSeq> * model_ptr = iam == 0 ? this : &(*these[iam - 1u]);
+        Model * model_ptr = iam == 0 ? this : &(*these[iam - 1u]);
 
         size_t base_replicates = nexperiments / nteam;
         size_t remainder = nexperiments % nteam;
@@ -14259,8 +16824,7 @@ inline Model<TSeq> & Model<TSeq>::run_multiple(
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::update_state() {
+inline void Model::update_state() {
 
     // Susceptible states using the default sampler can be updated by pushing
     // infection odds from the carriers (see model-meat-transmission.hpp) --
@@ -14329,8 +16893,7 @@ inline void Model<TSeq>::update_state() {
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::mutate_virus() {
+inline void Model::mutate_virus() {
 
     // Checking if any virus has mutation
     size_t nmutates = 0u;
@@ -14372,70 +16935,58 @@ inline void Model<TSeq>::mutate_virus() {
 
 }
 
-template<typename TSeq>
-inline size_t Model<TSeq>::get_n_viruses() const {
+inline size_t Model::get_n_viruses() const {
     return db.size();
 }
 
-template<typename TSeq>
-inline size_t Model<TSeq>::get_n_tools() const {
+inline size_t Model::get_n_tools() const {
     return tools.size();
 }
 
-template<typename TSeq>
-inline epiworld_fast_uint Model<TSeq>::get_ndays() const {
+inline epiworld_fast_uint Model::get_ndays() const {
     return ndays;
 }
 
-template<typename TSeq>
-inline bool Model<TSeq>::is_running() const {
+inline bool Model::is_running() const {
     return running;
 }
 
-template<typename TSeq>
-inline epiworld_fast_uint Model<TSeq>::get_n_replicates() const
+inline epiworld_fast_uint Model::get_n_replicates() const
 {
     return n_replicates;
 }
 
-template<typename TSeq>
-inline size_t Model<TSeq>::get_sim_id() const
+inline size_t Model::get_sim_id() const
 {
     return sim_id;
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_sim_id(size_t id)
+inline void Model::set_sim_id(size_t id)
 {
     sim_id = id;
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_ndays(epiworld_fast_uint ndays) {
+inline void Model::set_ndays(epiworld_fast_uint ndays) {
     this->ndays = ndays;
 }
 
-template<typename TSeq>
-inline bool Model<TSeq>::get_verbose() const {
+inline bool Model::get_verbose() const {
     return verbose;
 }
 
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::verbose_on() {
+inline Model & Model::verbose_on() {
     verbose = true;
     return *this;
 }
 
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::verbose_off() {
+inline Model & Model::verbose_off() {
     verbose = false;
     return *this;
 }
 
 
 
-template<typename TSeq>
-inline void Model<TSeq>::write_data(
+inline void Model::write_data(
     std::string fn_virus_info,
     std::string fn_virus_hist,
     std::string fn_tool_info,
@@ -14463,8 +17014,7 @@ inline void Model<TSeq>::write_data(
 }
 
 
-template<typename TSeq>
-inline std::map<std::string, epiworld_double> Model<TSeq>::params() const
+inline std::map<std::string, epiworld_double> Model::params() const
 {
     std::map<std::string, epiworld_double> res;
     for (const auto & p : param_index)
@@ -14472,8 +17022,7 @@ inline std::map<std::string, epiworld_double> Model<TSeq>::params() const
     return res;
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::reset() {
+inline void Model::reset() {
 
 
     // Restablishing people
@@ -14584,8 +17133,7 @@ inline void Model<TSeq>::reset() {
 #ifndef EPIWORLD_MODEL_MEAT_PRINT_HPP
 #define EPIWORLD_MODEL_MEAT_PRINT_HPP
 
-template<typename TSeq>
-inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
+inline const Model & Model::print(bool lite) const
 {
 
     // Horizontal line
@@ -14910,14 +17458,12 @@ inline const Model<TSeq> & Model<TSeq>::print(bool lite) const
 
 
 
-template<typename TSeq>
-inline size_t Model<TSeq>::get_n_states() const
+inline size_t Model::get_n_states() const
 {
     return nstates;
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::add_param(
+inline epiworld_double Model::add_param(
     epiworld_double initial_value,
     std::string pname,
     bool overwrite
@@ -14940,8 +17486,7 @@ inline epiworld_double Model<TSeq>::add_param(
 
 }
 
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::read_params(std::string fn, bool overwrite)
+inline Model & Model::read_params(std::string fn, bool overwrite)
 {
 
     auto params_map = read_yaml<epiworld_double>(fn);
@@ -14953,8 +17498,7 @@ inline Model<TSeq> & Model<TSeq>::read_params(std::string fn, bool overwrite)
 
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::get_param(std::string_view pname) const
+inline epiworld_double Model::get_param(std::string_view pname) const
 {
     const auto iter = param_index.find(pname);
     if (iter == param_index.end())
@@ -14965,14 +17509,12 @@ inline epiworld_double Model<TSeq>::get_param(std::string_view pname) const
     return param_values[iter->second];
 }
 
-template<typename TSeq>
-inline bool Model<TSeq>::has_param(std::string_view pname) const
+inline bool Model::has_param(std::string_view pname) const
 {
     return param_index.find(pname) != param_index.end();
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_param(std::string_view pname, epiworld_double value)
+inline void Model::set_param(std::string_view pname, epiworld_double value)
 {
     auto iter = param_index.find(pname);
     if (iter == param_index.end())
@@ -14986,8 +17528,7 @@ inline void Model<TSeq>::set_param(std::string_view pname, epiworld_double value
 
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::par(std::string_view pname) const
+inline epiworld_double Model::par(std::string_view pname) const
 {
     const auto iter = param_index.find(pname);
     if (iter == param_index.end())
@@ -14997,8 +17538,7 @@ inline epiworld_double Model<TSeq>::par(std::string_view pname) const
     return param_values[iter->second];
 }
 
-template<typename TSeq>
-inline ParamId Model<TSeq>::get_param_id(std::string_view pname) const
+inline ParamId Model::get_param_id(std::string_view pname) const
 {
     const auto iter = param_index.find(pname);
     if (iter == param_index.end())
@@ -15008,8 +17548,7 @@ inline ParamId Model<TSeq>::get_param_id(std::string_view pname) const
     return ParamId{iter->second};
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::par_at(ParamId id) const
+inline epiworld_double Model::par_at(ParamId id) const
 {
     if (id.idx >= param_values.size())
         throw std::out_of_range(
@@ -15020,8 +17559,7 @@ inline epiworld_double Model<TSeq>::par_at(ParamId id) const
     return param_values[id.idx];
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_param_at(ParamId id, epiworld_double value)
+inline void Model::set_param_at(ParamId id, epiworld_double value)
 {
     if (id.idx >= param_values.size())
         throw std::out_of_range(
@@ -15038,8 +17576,7 @@ inline void Model<TSeq>::set_param_at(ParamId id, epiworld_double value)
         elapsed_total = std::chrono::duration_cast<std::chrono:: tunit>(time_elapsed).count(); \
         abbr_unit     = txtunit;}
 
-template<typename TSeq>
-inline void Model<TSeq>::get_elapsed(
+inline void Model::get_elapsed(
     std::string unit,
     epiworld_double * last_elapsed,
     epiworld_double * total_elapsed,
@@ -15110,53 +17647,46 @@ inline void Model<TSeq>::get_elapsed(
     }
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_user_data(std::vector< std::string > names)
+inline void Model::set_user_data(std::vector< std::string > names)
 {
     db.set_user_data(names);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::add_user_data(epiworld_fast_uint j, epiworld_double x)
+inline void Model::add_user_data(epiworld_fast_uint j, epiworld_double x)
 {
     db.add_user_data(j, x);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::add_user_data(std::vector<epiworld_double> x)
+inline void Model::add_user_data(std::vector<epiworld_double> x)
 {
     db.add_user_data(x);
 }
 
-template<typename TSeq>
-inline UserData<TSeq> & Model<TSeq>::get_user_data()
+inline UserData & Model::get_user_data()
 {
     return db.get_user_data();
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::add_globalevent(
-    std::function<void(Model<TSeq>*)> fun,
+inline void Model::add_globalevent(
+    std::function<void(Model*)> fun,
     std::string name,
     int date
 )
 {
-    auto event = GlobalEvent<TSeq>(fun, name, date);
+    auto event = GlobalEvent(fun, name, date);
     add_globalevent(event);
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::add_globalevent(
-    GlobalEvent<TSeq> & action
+inline void Model::add_globalevent(
+    GlobalEvent & action
 )
 {
     auto ptr = action.clone_ptr();
-    globalevents.push_back(GlobalEventPtr<TSeq>(std::move(ptr)));
+    globalevents.push_back(GlobalEventPtr(std::move(ptr)));
 }
 
-template<typename TSeq>
-GlobalEvent<TSeq> & Model<TSeq>::get_globalevent(
+inline GlobalEvent & Model::get_globalevent(
     std::string name
 )
 {
@@ -15169,8 +17699,7 @@ GlobalEvent<TSeq> & Model<TSeq>::get_globalevent(
 
 }
 
-template<typename TSeq>
-inline bool Model<TSeq>::has_globalevent(std::string_view name) const
+inline bool Model::has_globalevent(std::string_view name) const
 {
     for (const auto & a : globalevents)
         if (a->get_name() == name)
@@ -15178,8 +17707,7 @@ inline bool Model<TSeq>::has_globalevent(std::string_view name) const
     return false;
 }
 
-template<typename TSeq>
-GlobalEvent<TSeq> & Model<TSeq>::get_globalevent(
+inline GlobalEvent & Model::get_globalevent(
     size_t index
 )
 {
@@ -15192,8 +17720,7 @@ GlobalEvent<TSeq> & Model<TSeq>::get_globalevent(
 }
 
 // Remove implementation
-template<typename TSeq>
-inline void Model<TSeq>::rm_globalevent(
+inline void Model::rm_globalevent(
     std::string name
 )
 {
@@ -15212,8 +17739,7 @@ inline void Model<TSeq>::rm_globalevent(
 }
 
 // Same as above, but the index implementation
-template<typename TSeq>
-inline void Model<TSeq>::rm_globalevent(
+inline void Model::rm_globalevent(
     size_t index
 )
 {
@@ -15225,14 +17751,12 @@ inline void Model<TSeq>::rm_globalevent(
 
 }
 
-template<typename TSeq>
-inline size_t Model<TSeq>::get_n_globalevents() const
+inline size_t Model::get_n_globalevents() const
 {
     return globalevents.size();
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::run_globalevents()
+inline void Model::run_globalevents()
 {
 
     // An infection added by an event is not one drawn from a layer
@@ -15246,9 +17770,8 @@ inline void Model<TSeq>::run_globalevents()
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::add_layer_ptr(
-    std::shared_ptr< ContactLayer<TSeq> > layer
+inline void Model::add_layer_ptr(
+    std::shared_ptr< ContactLayer > layer
 )
 {
 
@@ -15278,14 +17801,12 @@ inline void Model<TSeq>::add_layer_ptr(
 
 }
 
-template<typename TSeq>
-inline size_t Model<TSeq>::get_n_layers() const
+inline size_t Model::get_n_layers() const
 {
     return layers.size();
 }
 
-template<typename TSeq>
-inline bool Model<TSeq>::has_layer(std::string_view name) const
+inline bool Model::has_layer(std::string_view name) const
 {
     for (const auto & layer : layers)
         if (layer->get_name() == name)
@@ -15294,8 +17815,7 @@ inline bool Model<TSeq>::has_layer(std::string_view name) const
     return false;
 }
 
-template<typename TSeq>
-inline size_t Model<TSeq>::get_layer_id(std::string_view name) const
+inline size_t Model::get_layer_id(std::string_view name) const
 {
     for (const auto & layer : layers)
         if (layer->get_name() == name)
@@ -15306,8 +17826,7 @@ inline size_t Model<TSeq>::get_layer_id(std::string_view name) const
     );
 }
 
-template<typename TSeq>
-inline ContactLayer<TSeq> & Model<TSeq>::get_layer(size_t id)
+inline ContactLayer & Model::get_layer(size_t id)
 {
     if (id >= layers.size())
         throw std::out_of_range(
@@ -15318,29 +17837,25 @@ inline ContactLayer<TSeq> & Model<TSeq>::get_layer(size_t id)
     return *layers[id];
 }
 
-template<typename TSeq>
-inline ContactLayer<TSeq> & Model<TSeq>::get_layer(std::string_view name)
+inline ContactLayer & Model::get_layer(std::string_view name)
 {
     return *layers[get_layer_id(name)];
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_running(bool value)
+inline void Model::set_running(bool value)
 {
     running = value;
     for (auto & layer : layers)
         layer->in_run = value;
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::update_layers()
+inline void Model::update_layers()
 {
     for (auto & layer : layers)
         layer->update(*this);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::layers_attach()
+inline void Model::layers_attach()
 {
 
     network_layers.clear();
@@ -15356,8 +17871,7 @@ inline void Model<TSeq>::layers_attach()
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::layers_detach()
+inline void Model::layers_detach()
 {
 
     for (auto & layer : layers)
@@ -15371,8 +17885,7 @@ inline void Model<TSeq>::layers_detach()
 
 }
 
-template<typename TSeq>
-inline size_t Model<TSeq>::network_degree(size_t id) const
+inline size_t Model::network_degree(size_t id) const
 {
 
     size_t deg = 0u;
@@ -15384,8 +17897,7 @@ inline size_t Model<TSeq>::network_degree(size_t id) const
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::layers_classify()
+inline void Model::layers_classify()
 {
 
     pull_only = false;
@@ -15404,8 +17916,7 @@ inline void Model<TSeq>::layers_classify()
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::network_tie_changed(
+inline void Model::network_tie_changed(
     size_t i, int di,
     size_t j, int dj
 )
@@ -15421,8 +17932,7 @@ inline void Model<TSeq>::network_tie_changed(
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::network_ties_swapped(
+inline void Model::network_ties_swapped(
     size_t i, size_t j,
     size_t k, size_t l,
     bool directed
@@ -15435,8 +17945,7 @@ inline void Model<TSeq>::network_ties_swapped(
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::group_member_moved(
+inline void Model::group_member_moved(
     size_t i,
     const std::vector< size_t > * from,
     const std::vector< size_t > * to
@@ -15448,45 +17957,38 @@ inline void Model<TSeq>::group_member_moved(
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::queuing_on()
+inline void Model::queuing_on()
 {
     use_queuing = true;
 }
 
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::queuing_off()
+inline Model & Model::queuing_off()
 {
     use_queuing = false;
     return *this;
 }
 
-template<typename TSeq>
-inline bool Model<TSeq>::is_queuing_on() const
+inline bool Model::is_queuing_on() const
 {
     return use_queuing;
 }
 
-template<typename TSeq>
-inline Queue<TSeq> & Model<TSeq>::get_queue()
+inline Queue & Model::get_queue()
 {
     return queue;
 }
 
-template<typename TSeq>
-inline const std::vector< VirusPtr<TSeq> > & Model<TSeq>::get_viruses() const
+inline const std::vector< VirusPtr > & Model::get_viruses() const
 {
     return viruses;
 }
 
-template<typename TSeq>
-const std::vector< ToolPtr<TSeq> > & Model<TSeq>::get_tools() const
+inline const std::vector< ToolPtr > & Model::get_tools() const
 {
     return tools;
 }
 
-template<typename TSeq>
-inline Virus<TSeq> & Model<TSeq>::get_virus(size_t id)
+inline Virus & Model::get_virus(size_t id)
 {
 
     if (viruses.size() <= id)
@@ -15496,8 +17998,7 @@ inline Virus<TSeq> & Model<TSeq>::get_virus(size_t id)
 
 }
 
-template<typename TSeq>
-inline Virus<TSeq> & Model<TSeq>::get_virus(std::string_view name)
+inline Virus & Model::get_virus(std::string_view name)
 {
 
     for (auto & v : viruses)
@@ -15508,8 +18009,7 @@ inline Virus<TSeq> & Model<TSeq>::get_virus(std::string_view name)
 
 }
 
-template<typename TSeq>
-inline Tool<TSeq> & Model<TSeq>::get_tool(size_t id)
+inline Tool & Model::get_tool(size_t id)
 {
 
     if (tools.size() <= id)
@@ -15519,8 +18019,7 @@ inline Tool<TSeq> & Model<TSeq>::get_tool(size_t id)
 
 }
 
-template<typename TSeq>
-inline Tool<TSeq> & Model<TSeq>::get_tool(std::string_view name)
+inline Tool & Model::get_tool(std::string_view name)
 {
     for (auto & t : tools)
         if (t->get_name() == name)
@@ -15530,8 +18029,7 @@ inline Tool<TSeq> & Model<TSeq>::get_tool(std::string_view name)
 
 }
 
-template<typename TSeq>
-inline bool Model<TSeq>::has_virus(std::string_view name) const
+inline bool Model::has_virus(std::string_view name) const
 {
     for (const auto & v : viruses)
         if (v->get_name() == name)
@@ -15540,8 +18038,7 @@ inline bool Model<TSeq>::has_virus(std::string_view name) const
     return false;
 }
 
-template<typename TSeq>
-inline bool Model<TSeq>::has_tool(std::string_view name) const
+inline bool Model::has_tool(std::string_view name) const
 {
     for (const auto & t : tools)
         if (t->get_name() == name)
@@ -15550,32 +18047,27 @@ inline bool Model<TSeq>::has_tool(std::string_view name) const
 }
 
 
-template<typename TSeq>
-inline void Model<TSeq>::set_agents_data(double * data_, size_t ncols_)
+inline void Model::set_agents_data(double * data_, size_t ncols_)
 {
     agents_data = data_;
     agents_data_ncols = ncols_;
 }
 
-template<typename TSeq>
-inline double * Model<TSeq>::get_agents_data() {
+inline double * Model::get_agents_data() {
     return this->agents_data;
 }
 
-template<typename TSeq>
-inline size_t Model<TSeq>::get_agents_data_ncols() const {
+inline size_t Model::get_agents_data_ncols() const {
     return this->agents_data_ncols;
 }
 
 
-template<typename TSeq>
-inline void Model<TSeq>::set_name(std::string name)
+inline void Model::set_name(std::string name)
 {
     this->name = name;
 }
 
-template<typename TSeq>
-inline std::string Model<TSeq>::get_name() const
+inline std::string Model::get_name() const
 {
     return this->name;
 }
@@ -15587,8 +18079,7 @@ inline std::string Model<TSeq>::get_name() const
         EPI_DEBUG_FAIL_AT_TRUE(a[__i] != b[__i], c) \
     }
 
-template<typename TSeq>
-inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
+inline bool Model::operator==(const Model & other) const
 {
     EPI_DEBUG_FAIL_AT_TRUE(name != other.name, "names don't match")
     EPI_DEBUG_FAIL_AT_TRUE(db != other.db, "database don't match")
@@ -15712,8 +18203,7 @@ inline bool Model<TSeq>::operator==(const Model<TSeq> & other) const
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::draw(
+inline void Model::draw(
     DiagramType diagram_type,
     const std::string & fn_output,
     bool self
@@ -15733,14 +18223,12 @@ inline void Model<TSeq>::draw(
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::record_hospitalization(Agent<TSeq> & agent)
+inline void Model::record_hospitalization(Agent & agent)
 {
     db.record_hospitalization(agent);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::get_hospitalizations(
+inline void Model::get_hospitalizations(
     std::vector<int> & date,
     std::vector<int> & virus_id,
     std::vector<int> & tool_id,
@@ -15778,8 +18266,7 @@ inline void Model<TSeq>::get_hospitalizations(
 #ifndef EPIWORLD_POSTSAMPLING_MEAT_HPP
 #define EPIWORLD_POSTSAMPLING_MEAT_HPP
 
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::set_post_sampling(PostSamplingFun<TSeq> fun)
+inline Model & Model::set_post_sampling(PostSamplingFun fun)
 {
 
     post_sampling_fun = std::move(fun);
@@ -15798,8 +18285,7 @@ inline Model<TSeq> & Model<TSeq>::set_post_sampling(PostSamplingFun<TSeq> fun)
  * of a model leave the scratch empty, so this is also what makes them safe to
  * continue stepping without a reset.
  */
-template<typename TSeq>
-inline void Model<TSeq>::post_sampling_prepare_scratch()
+inline void Model::post_sampling_prepare_scratch()
 {
 
     if (post_sampling_scratch.counts.size() == population.size())
@@ -15817,14 +18303,12 @@ inline void Model<TSeq>::post_sampling_prepare_scratch()
 
 }
 
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::clear_post_sampling()
+inline Model & Model::clear_post_sampling()
 {
     return set_post_sampling(nullptr);
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::register_sampled_contact(
+inline void Model::register_sampled_contact(
     size_t infectious_id,
     size_t contacted_id
 )
@@ -15833,8 +18317,7 @@ inline void Model<TSeq>::register_sampled_contact(
     post_sampling_scratch.pairs.push_back(static_cast< uint32_t >(contacted_id));
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::register_sampled_contacts(
+inline void Model::register_sampled_contacts(
     const size_t * infectious_ids,
     size_t n,
     size_t contacted_id
@@ -15853,8 +18336,7 @@ inline void Model<TSeq>::register_sampled_contacts(
  * sorted, never an N-sized array) and runs the callback on each group, in
  * ascending id order. The scratch is left clean even if the callback throws.
  */
-template<typename TSeq>
-inline void Model<TSeq>::post_sampling_dispatch()
+inline void Model::post_sampling_dispatch()
 {
 
     auto & sc = post_sampling_scratch;
@@ -15865,7 +18347,7 @@ inline void Model<TSeq>::post_sampling_dispatch()
 
     // The callback gets the model: it can clear or replace the callback. The
     // whole dispatch runs on a snapshot, so that takes effect next step.
-    const PostSamplingFun<TSeq> fun = post_sampling_fun;
+    const PostSamplingFun fun = post_sampling_fun;
 
     post_sampling_prepare_scratch();
 
@@ -15970,10 +18452,6 @@ inline void Model<TSeq>::post_sampling_dispatch()
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-
-// (already included ./include/epiworld/viruses-bones.hpp)
-
-// (already included ./include/epiworld/virus-bones.hpp)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -15988,8 +18466,7 @@ inline void Model<TSeq>::post_sampling_dispatch()
 
 // (already included include/epiworld/config.hpp)
 
-template<typename TSeq>
-inline Virus<TSeq>::Virus()
+inline Virus::Virus()
 {
 
     #ifdef EPI_DEBUG_VIRUS
@@ -15998,8 +18475,7 @@ inline Virus<TSeq>::Virus()
 
 }
 
-template<typename TSeq>
-inline Virus<TSeq>::Virus(
+inline Virus::Virus(
     std::string name
     ) {
 
@@ -16011,33 +18487,25 @@ inline Virus<TSeq>::Virus(
 }
 
 #ifdef EPI_DEBUG_VIRUS
-template<typename TSeq>
-std::atomic<int> Virus<TSeq>::counter_construct = 0;
+inline std::atomic<int> Virus::counter_construct = 0;
 
-template<typename TSeq>
-std::atomic<int> Virus<TSeq>::counter_copy_construct = 0;
+inline std::atomic<int> Virus::counter_copy_construct = 0;
 
-template<typename TSeq>
-std::atomic<int> Virus<TSeq>::counter_move_construct = 0;
+inline std::atomic<int> Virus::counter_move_construct = 0;
 
-template<typename TSeq>
-std::atomic<int> Virus<TSeq>::counter_copy_assign = 0;
+inline std::atomic<int> Virus::counter_copy_assign = 0;
 
-template<typename TSeq>
-std::atomic<int> Virus<TSeq>::counter_move_assign = 0;
+inline std::atomic<int> Virus::counter_move_assign = 0;
 
-template<typename TSeq>
-std::atomic<int> Virus<TSeq>::counter_destruct = 0;
+inline std::atomic<int> Virus::counter_destruct = 0;
 
-template<typename TSeq>
-inline Virus<TSeq>::~Virus()
+inline Virus::~Virus()
 {
     counter_destruct++;
 }
 
 // Copy constructor
-template<typename TSeq>
-inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
+inline Virus::Virus(const Virus& other)
     : agent(other.agent),
       virus_name(other.virus_name),
       date(other.date),
@@ -16051,8 +18519,7 @@ inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
 }
 
 // Move constructor
-template<typename TSeq>
-inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
+inline Virus::Virus(Virus&& other) noexcept
     : agent(other.agent),
       virus_name(std::move(other.virus_name)),
       date(other.date),
@@ -16067,8 +18534,7 @@ inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
 }
 
 // Copy assignment
-template<typename TSeq>
-inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
+inline Virus& Virus::operator=(const Virus& other)
 {
     if (this != &other) {
         agent = other.agent;
@@ -16085,8 +18551,7 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
 }
 
 // Move assignment
-template<typename TSeq>
-inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
+inline Virus& Virus::operator=(Virus&& other) noexcept
 {
     if (this != &other) {
         agent = other.agent;
@@ -16104,9 +18569,8 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
 }
 #endif
 
-template<typename TSeq>
-inline void Virus<TSeq>::mutate(
-    Model<TSeq> * model
+inline void Virus::mutate(
+    Model * model
 ) {
 
     if (mutation)
@@ -16120,30 +18584,26 @@ inline void Virus<TSeq>::mutate(
     
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_mutation(
-    MutFun<TSeq> fun
+inline void Virus::set_mutation(
+    MutFun fun
 ) {
-    mutation = MutFun<TSeq>(fun);
+    mutation = MutFun(fun);
 }
 
 
-template<typename TSeq>
-inline Agent<TSeq> * Virus<TSeq>::get_agent()
+inline Agent * Virus::get_agent()
 {
 
     return agent;
 
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_agent(Agent<TSeq> * p)
+inline void Virus::set_agent(Agent * p)
 {
     agent = p;
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_id(int idx)
+inline void Virus::set_id(int idx)
 {
 
     id = idx;
@@ -16151,22 +18611,19 @@ inline void Virus<TSeq>::set_id(int idx)
 
 }
 
-template<typename TSeq>
-inline int Virus<TSeq>::get_id() const
+inline int Virus::get_id() const
 {
     
     return id;
 
 }
 
-template<typename TSeq>
-inline int Virus<TSeq>::get_lineage_id() const
+inline int Virus::get_lineage_id() const
 {
     return lineage_id;
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_date(int d) 
+inline void Virus::set_date(int d) 
 {
 
     date = d;
@@ -16174,32 +18631,28 @@ inline void Virus<TSeq>::set_date(int d)
 
 }
 
-template<typename TSeq>
-inline int Virus<TSeq>::get_date() const
+inline int Virus::get_date() const
 {
     
     return date;
     
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_name(std::string name)
+inline void Virus::set_name(std::string name)
 {
 
     virus_name = name;
 
 }
 
-template<typename TSeq>
-inline std::string Virus<TSeq>::get_name() const
+inline std::string Virus::get_name() const
 {
 
     return virus_name;
 
 }
 
-template<typename TSeq>
-inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
+inline bool Virus::operator==(const Virus & other) const
 {
     
     EPI_DEBUG_FAIL_AT_TRUE(
@@ -16217,8 +18670,7 @@ inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
 
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::print() const
+inline void Virus::print() const
 {
 
     printf_epiworld("Virus         : %s\n", virus_name.c_str());
@@ -16226,15 +18678,13 @@ inline void Virus<TSeq>::print() const
 
 }
 
-template<typename TSeq>
-inline std::unique_ptr<Virus<TSeq>> Virus<TSeq>::clone_ptr() const
+inline std::unique_ptr<Virus> Virus::clone_ptr() const
 {
-    auto cloned = std::make_unique<Virus<TSeq>>(*this);
+    auto cloned = std::make_unique<Virus>(*this);
     return cloned;
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::use_param(std::string param, std::string replacement)
+inline void Virus::use_param(std::string param, std::string replacement)
 {
     for (auto & r : param_redirects)
         if (r.first.name() == param)
@@ -16248,10 +18698,9 @@ inline void Virus<TSeq>::use_param(std::string param, std::string replacement)
     );
 }
 
-template<typename TSeq>
-inline ParamId Virus<TSeq>::param_redirect(
+inline ParamId Virus::param_redirect(
     ParamId id,
-    const Model<TSeq> & model
+    const Model & model
 ) const
 {
     for (const auto & r : param_redirects)
@@ -16261,8 +18710,7 @@ inline ParamId Virus<TSeq>::param_redirect(
     return id;
 }
 
-template<typename TSeq>
-inline NaturalHistory<TSeq> & Virus<TSeq>::nh_edit()
+inline NaturalHistory & Virus::nh_edit()
 {
     // A virus in a model (its copy there, or an agent's) keeps the model's
     // stages and transitions; a strain changes parameters instead
@@ -16275,57 +18723,50 @@ inline NaturalHistory<TSeq> & Virus<TSeq>::nh_edit()
 
     // Copies share the natural history until one of them is edited
     if (!nh_def)
-        nh_def = std::make_shared< NaturalHistory<TSeq> >(virus_name);
+        nh_def = std::make_shared< NaturalHistory >(virus_name);
     else if (nh_def.use_count() > 1)
-        nh_def = std::make_shared< NaturalHistory<TSeq> >(*nh_def);
+        nh_def = std::make_shared< NaturalHistory >(*nh_def);
 
     return *nh_def;
 }
 
-template<typename TSeq>
-inline int Virus<TSeq>::add_stage(std::string label, unsigned int flags)
+inline int Virus::add_stage(std::string label, unsigned int flags)
 {
     return nh_edit().add_stage(std::move(label), flags);
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::set_contact(int s, epiworld_double weight)
+inline void Virus::set_contact(int s, epiworld_double weight)
 {
     nh_edit().set_contact(s, weight);
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> Virus<TSeq>::infection(
-    Nodes from, int to, Value<TSeq> per_contact
+inline TransitionRef Virus::infection(
+    Nodes from, int to, Value per_contact
 )
 {
     return nh_edit().infection(std::move(from), to, std::move(per_contact));
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> Virus<TSeq>::rate(
-    Nodes from, int to, Value<TSeq> daily_probability
+inline TransitionRef Virus::rate(
+    Nodes from, int to, Value daily_probability
 )
 {
     return nh_edit().rate(std::move(from), to, std::move(daily_probability));
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> Virus<TSeq>::after(int from, int to, Duration<TSeq> d)
+inline TransitionRef Virus::after(int from, int to, Duration d)
 {
     return nh_edit().after(from, to, std::move(d));
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> Virus<TSeq>::external(
+inline TransitionRef Virus::external(
     Nodes from, int to, std::string label
 )
 {
     return nh_edit().external(std::move(from), to, std::move(label));
 }
 
-template<typename TSeq>
-inline void Virus<TSeq>::check_params(const Model<TSeq> & model) const
+inline void Virus::check_params(const Model & model) const
 {
     for (const auto & r : param_redirects)
         if (!model.has_param(r.second.name()))
@@ -16347,10 +18788,6 @@ inline void Virus<TSeq>::check_params(const Model<TSeq> & model) const
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-    
-    // #include "tools-bones.hpp"
-
-// (already included ./include/epiworld/tool-bones.hpp)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -16367,16 +18804,14 @@ inline void Virus<TSeq>::check_params(const Model<TSeq> & model) const
 /**
  * @brief Factory function of ToolFun base on logit
  * 
- * @tparam TSeq 
  * @param vars Vector indicating the position of the variables to use.
  * @param coefs Vector of coefficients.
- * @return ToolFun<TSeq> 
+ * @return ToolFun 
  */
-template<typename TSeq>
-inline ToolFun<TSeq> tool_fun_logit(
+inline ToolFun tool_fun_logit(
     std::vector< int > vars,
     std::vector< double > coefs,
-    Model<TSeq> * model
+    Model * model
 ) {
 
     // Checking that there are features
@@ -16418,11 +18853,11 @@ inline ToolFun<TSeq> tool_fun_logit(
     for (auto c: coefs)
         coefs_f.push_back(static_cast<epiworld_double>(c));
 
-    ToolFun<TSeq> fun_ = [coefs_f,vars](
-        Tool<TSeq>&,
-        Agent<TSeq> * agent,
-        VirusPtr<TSeq> &,
-        Model<TSeq> * model
+    ToolFun fun_ = [coefs_f,vars](
+        Tool&,
+        Agent * agent,
+        VirusPtr &,
+        Model * model
         ) -> epiworld_double {
 
         size_t K = coefs_f.size();
@@ -16442,22 +18877,19 @@ inline ToolFun<TSeq> tool_fun_logit(
 
 }
 
-template<typename TSeq>
-inline Tool<TSeq>::Tool()
+inline Tool::Tool()
 {
     set_name("Tool");
 }
 
-template<typename TSeq>
-inline Tool<TSeq>::Tool(std::string name)
+inline Tool::Tool(std::string name)
 {
     set_name(name);
 }
 
-template<typename TSeq>
-inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> & v,
-    Model<TSeq> * model
+inline epiworld_double Tool::get_susceptibility_reduction(
+    VirusPtr & v,
+    Model * model
 )
 {
 
@@ -16470,10 +18902,9 @@ inline epiworld_double Tool<TSeq>::get_susceptibility_reduction(
 
 }
 
-template<typename TSeq>
-inline epiworld_double Tool<TSeq>::get_transmission_reduction(
-    VirusPtr<TSeq> & v,
-    Model<TSeq> * model
+inline epiworld_double Tool::get_transmission_reduction(
+    VirusPtr & v,
+    Model * model
 )
 {
 
@@ -16486,10 +18917,9 @@ inline epiworld_double Tool<TSeq>::get_transmission_reduction(
 
 }
 
-template<typename TSeq>
-inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
-    VirusPtr<TSeq> & v,
-    Model<TSeq> * model
+inline epiworld_double Tool::get_recovery_enhancer(
+    VirusPtr & v,
+    Model * model
 )
 {
 
@@ -16500,10 +18930,9 @@ inline epiworld_double Tool<TSeq>::get_recovery_enhancer(
 
 }
 
-template<typename TSeq>
-inline epiworld_double Tool<TSeq>::get_death_reduction(
-    VirusPtr<TSeq> & v,
-    Model<TSeq> * model
+inline epiworld_double Tool::get_death_reduction(
+    VirusPtr & v,
+    Model * model
 )
 {
 
@@ -16514,46 +18943,41 @@ inline epiworld_double Tool<TSeq>::get_death_reduction(
 
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_susceptibility_reduction_fun(
-    ToolFun<TSeq> fun
+inline void Tool::set_susceptibility_reduction_fun(
+    ToolFun fun
 )
 {
     susceptibility_reduction = fun;
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_transmission_reduction_fun(
-    ToolFun<TSeq> fun
+inline void Tool::set_transmission_reduction_fun(
+    ToolFun fun
 )
 {
     transmission_reduction = fun;
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_recovery_enhancer_fun(
-    ToolFun<TSeq> fun
+inline void Tool::set_recovery_enhancer_fun(
+    ToolFun fun
 )
 {
     recovery_enhancer = fun;
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_death_reduction_fun(
-    ToolFun<TSeq> fun
+inline void Tool::set_death_reduction_fun(
+    ToolFun fun
 )
 {
     death_reduction = fun;
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_susceptibility_reduction(std::string param)
+inline void Tool::set_susceptibility_reduction(std::string param)
 {
 
     auto param_ref = std::make_shared< const ParamRef >(std::move(param));
 
-    ToolFun<TSeq> tmpfun =
-        [param_ref](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
+    ToolFun tmpfun =
+        [param_ref](Tool &, Agent *, VirusPtr&, Model* model)
         {
             return (*param_ref)(*model);
         };
@@ -16563,14 +18987,13 @@ inline void Tool<TSeq>::set_susceptibility_reduction(std::string param)
 }
 
 // EPIWORLD_SET_LAMBDA(susceptibility_reduction)
-template<typename TSeq>
-inline void Tool<TSeq>::set_transmission_reduction(std::string param)
+inline void Tool::set_transmission_reduction(std::string param)
 {
 
     auto param_ref = std::make_shared< const ParamRef >(std::move(param));
     
-    ToolFun<TSeq> tmpfun =
-        [param_ref](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
+    ToolFun tmpfun =
+        [param_ref](Tool &, Agent *, VirusPtr&, Model* model)
         {
             return (*param_ref)(*model);
         };
@@ -16580,14 +19003,13 @@ inline void Tool<TSeq>::set_transmission_reduction(std::string param)
 }
 
 // EPIWORLD_SET_LAMBDA(transmission_reduction)
-template<typename TSeq>
-inline void Tool<TSeq>::set_recovery_enhancer(std::string param)
+inline void Tool::set_recovery_enhancer(std::string param)
 {
 
     auto param_ref = std::make_shared< const ParamRef >(std::move(param));
 
-    ToolFun<TSeq> tmpfun =
-        [param_ref](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
+    ToolFun tmpfun =
+        [param_ref](Tool &, Agent *, VirusPtr&, Model* model)
         {
             return (*param_ref)(*model);
         };
@@ -16597,14 +19019,13 @@ inline void Tool<TSeq>::set_recovery_enhancer(std::string param)
 }
 
 // EPIWORLD_SET_LAMBDA(recovery_enhancer)
-template<typename TSeq>
-inline void Tool<TSeq>::set_death_reduction(std::string param)
+inline void Tool::set_death_reduction(std::string param)
 {
 
     auto param_ref = std::make_shared< const ParamRef >(std::move(param));
 
-    ToolFun<TSeq> tmpfun =
-        [param_ref](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq>* model)
+    ToolFun tmpfun =
+        [param_ref](Tool &, Agent *, VirusPtr&, Model* model)
         {
             return (*param_ref)(*model);
         };
@@ -16616,14 +19037,13 @@ inline void Tool<TSeq>::set_death_reduction(std::string param)
 // EPIWORLD_SET_LAMBDA(death_reduction)
 
 // #undef EPIWORLD_SET_LAMBDA
-template<typename TSeq>
-inline void Tool<TSeq>::set_susceptibility_reduction(
+inline void Tool::set_susceptibility_reduction(
     epiworld_double prob
 )
 {
 
-    ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
+    ToolFun tmpfun = 
+        [prob](Tool &, Agent *, VirusPtr&, Model *)
         {
             return prob;
         };
@@ -16632,14 +19052,13 @@ inline void Tool<TSeq>::set_susceptibility_reduction(
 
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_transmission_reduction(
+inline void Tool::set_transmission_reduction(
     epiworld_double prob
 )
 {
 
-    ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
+    ToolFun tmpfun = 
+        [prob](Tool &, Agent *, VirusPtr&, Model *)
         {
             return prob;
         };
@@ -16648,14 +19067,13 @@ inline void Tool<TSeq>::set_transmission_reduction(
 
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_recovery_enhancer(
+inline void Tool::set_recovery_enhancer(
     epiworld_double prob
 )
 {
 
-    ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
+    ToolFun tmpfun = 
+        [prob](Tool &, Agent *, VirusPtr&, Model *)
         {
             return prob;
         };
@@ -16664,14 +19082,13 @@ inline void Tool<TSeq>::set_recovery_enhancer(
 
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_death_reduction(
+inline void Tool::set_death_reduction(
     epiworld_double prob
 )
 {
 
-    ToolFun<TSeq> tmpfun = 
-        [prob](Tool<TSeq> &, Agent<TSeq> *, VirusPtr<TSeq>&, Model<TSeq> *)
+    ToolFun tmpfun = 
+        [prob](Tool &, Agent *, VirusPtr&, Model *)
         {
             return prob;
         };
@@ -16680,21 +19097,18 @@ inline void Tool<TSeq>::set_death_reduction(
 
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_name(std::string name)
+inline void Tool::set_name(std::string name)
 {
     tool_name = name;
 }
 
-template<typename TSeq>
-inline std::string Tool<TSeq>::get_name() const {
+inline std::string Tool::get_name() const {
 
     return tool_name;
 
 }
 
-template<typename TSeq>
-inline uint64_t Tool<TSeq>::target_bit(int lineage_id)
+inline uint64_t Tool::target_bit(int lineage_id)
 {
 
     if ((lineage_id < 0) || (lineage_id >= 63))
@@ -16709,8 +19123,7 @@ inline uint64_t Tool<TSeq>::target_bit(int lineage_id)
 
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::add_target(int lineage_id)
+inline void Tool::add_target(int lineage_id)
 {
 
     uint64_t bit = target_bit(lineage_id);
@@ -16723,8 +19136,7 @@ inline void Tool<TSeq>::add_target(int lineage_id)
 
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::add_target(const Virus<TSeq> & v)
+inline void Tool::add_target(const Virus & v)
 {
 
     if (v.get_lineage_id() < 0)
@@ -16738,8 +19150,7 @@ inline void Tool<TSeq>::add_target(const Virus<TSeq> & v)
 
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_targets(const std::vector< int > & lineage_ids)
+inline void Tool::set_targets(const std::vector< int > & lineage_ids)
 {
 
     // Validate every id before touching the current targets
@@ -16751,8 +19162,7 @@ inline void Tool<TSeq>::set_targets(const std::vector< int > & lineage_ids)
 
 }
 
-template<typename TSeq>
-inline std::vector< int > Tool<TSeq>::get_targets() const
+inline std::vector< int > Tool::get_targets() const
 {
 
     std::vector< int > res;
@@ -16767,57 +19177,48 @@ inline std::vector< int > Tool<TSeq>::get_targets() const
 
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::clear_targets()
+inline void Tool::clear_targets()
 {
     target_mask = ~uint64_t(0);
 }
 
-template<typename TSeq>
-inline bool Tool<TSeq>::targets(const Virus<TSeq> & v) const
+inline bool Tool::targets(const Virus & v) const
 {
     return (target_mask & v.lineage_bit) != 0u;
 }
 
-template<typename TSeq>
-inline Agent<TSeq> * Tool<TSeq>::get_agent()
+inline Agent * Tool::get_agent()
 {
     return this->agent;
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_agent(Agent<TSeq> * p, size_t idx)
+inline void Tool::set_agent(Agent * p, size_t idx)
 {
     agent        = p;
     pos_in_agent = static_cast<int>(idx);
 }
 
-template<typename TSeq>
-inline int Tool<TSeq>::get_id() const {
+inline int Tool::get_id() const {
     return id;
 }
 
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_id(int id)
+inline void Tool::set_id(int id)
 {
     this->id = id;
 }
 
-template<typename TSeq>
-inline void Tool<TSeq>::set_date(int d)
+inline void Tool::set_date(int d)
 {
     this->date = d;
 }
 
-template<typename TSeq>
-inline int Tool<TSeq>::get_date() const
+inline int Tool::get_date() const
 {
     return date;
 }
 
-template<typename TSeq>
-inline bool Tool<TSeq>::operator==(const Tool<TSeq> & other) const
+inline bool Tool::operator==(const Tool & other) const
 {
 
     if (tool_name != other.tool_name)
@@ -16835,8 +19236,7 @@ inline bool Tool<TSeq>::operator==(const Tool<TSeq> & other) const
 }
 
 
-template<typename TSeq>
-inline void Tool<TSeq>::print() const
+inline void Tool::print() const
 {
 
     printf_epiworld("Tool       : %s\n", this->get_name().c_str());
@@ -16852,10 +19252,9 @@ inline void Tool<TSeq>::print() const
 
 }
 
-template<typename TSeq>
-inline std::unique_ptr<Tool<TSeq>> Tool<TSeq>::clone_ptr() const
+inline std::unique_ptr<Tool> Tool::clone_ptr() const
 {
-    auto cloned = std::make_unique<Tool<TSeq>>(*this);
+    auto cloned = std::make_unique<Tool>(*this);
     return cloned;
 }
 
@@ -16869,8 +19268,6 @@ inline std::unique_ptr<Tool<TSeq>> Tool<TSeq>::clone_ptr() const
 //////////////////////////////////////////////////////////////////////////////*/
 
 
-
-// (already included ./include/epiworld/agent-bones.hpp)
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -16900,12 +19297,11 @@ inline std::unique_ptr<Tool<TSeq>> Tool<TSeq>::clone_ptr() const
 #ifndef EPIWORLD_AGENT_EVENTS_MEAT_HPP
 #define EPIWORLD_AGENT_EVENTS_MEAT_HPP
 
-template<typename TSeq>
-inline void Model<TSeq>::_event_add_virus(Event<TSeq> & a)
+inline void Model::_event_add_virus(Event & a)
 {
 
-    Agent<TSeq> *  p = a.agent;
-    VirusPtr<TSeq> & v = a.virus;
+    Agent *  p = a.agent;
+    VirusPtr & v = a.virus;
     
     db.record_transmission(
         v->get_agent() ? v->get_agent()->get_id() : -1,
@@ -16948,12 +19344,11 @@ inline void Model<TSeq>::_event_add_virus(Event<TSeq> & a)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::_event_add_tool(Event<TSeq> & a)
+inline void Model::_event_add_tool(Event & a)
 {
 
-    Agent<TSeq> * p = a.agent;
-    ToolPtr<TSeq> & t = a.tool;
+    Agent * p = a.agent;
+    ToolPtr & t = a.tool;
     
     // Update tool accounting
     p->tools.emplace_back(std::move(t));
@@ -16985,12 +19380,11 @@ inline void Model<TSeq>::_event_add_tool(Event<TSeq> & a)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::_event_rm_virus(Event<TSeq> & a)
+inline void Model::_event_rm_virus(Event & a)
 {
 
-    Agent<TSeq> * p    = a.agent;
-    VirusPtr<TSeq> & v = a.virus;
+    Agent * p    = a.agent;
+    VirusPtr & v = a.virus;
 
     p->virus = nullptr;
 
@@ -17024,12 +19418,11 @@ inline void Model<TSeq>::_event_rm_virus(Event<TSeq> & a)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
+inline void Model::_event_rm_tool(Event & a)
 {
 
-    Agent<TSeq> * p = a.agent;
-    ToolPtr<TSeq> & t = a.tool;
+    Agent * p = a.agent;
+    ToolPtr & t = a.tool;
     bool removed = false;
 
     if (t)
@@ -17038,7 +19431,7 @@ inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
         auto new_end = std::remove_if(
             p->tools.begin(),
             p->tools.end(),
-            [&t](const ToolPtr<TSeq> & tool_ptr) -> bool
+            [&t](const ToolPtr & tool_ptr) -> bool
             {
                 return tool_ptr && (tool_ptr->get_id() == t->get_id());
             }
@@ -17086,11 +19479,10 @@ inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::_event_change_state(Event<TSeq> & a)
+inline void Model::_event_change_state(Event & a)
 {
 
-    Agent<TSeq> * p = a.agent;
+    Agent * p = a.agent;
 
     if ((a.new_state != -99) && (static_cast<int>(p->state) != a.new_state))
     {
@@ -17125,8 +19517,7 @@ inline void Model<TSeq>::_event_change_state(Event<TSeq> & a)
 
 
 
-template<typename TSeq>
-inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
+inline Agent::Agent(Agent && p) :
     state(p.state),
     state_prev(p.state_prev), 
     state_last_changed(p.state_last_changed),
@@ -17158,8 +19549,7 @@ inline Agent<TSeq>::Agent(Agent<TSeq> && p) :
 }
 
 // Copy constructor
-template<typename TSeq>
-inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
+inline Agent::Agent(const Agent & p)
 {
 
     state              = p.state;
@@ -17170,7 +19560,7 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     // Dealing with the virus
     if (p.virus != nullptr)
     {
-        virus = std::shared_ptr<Virus<TSeq>>(p.virus->clone_ptr());
+        virus = std::shared_ptr<Virus>(p.virus->clone_ptr());
         virus->set_agent(this);
     }
     
@@ -17179,16 +19569,15 @@ inline Agent<TSeq>::Agent(const Agent<TSeq> & p)
     tools.reserve(p.get_n_tools());
     for (size_t i = 0u; i < p.get_n_tools(); ++i)
     {
-        tools.emplace_back(std::shared_ptr<Tool<TSeq>>(p.tools[i]->clone_ptr()));
+        tools.emplace_back(std::shared_ptr<Tool>(p.tools[i]->clone_ptr()));
         tools.back()->set_agent(this, i);
 
     }
     
 }
 
-template<typename TSeq>
-inline Agent<TSeq> & Agent<TSeq>::operator=(
-    const Agent<TSeq> & other_agent
+inline Agent & Agent::operator=(
+    const Agent & other_agent
 )
 {
 
@@ -17199,7 +19588,7 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     
     if (other_agent.virus != nullptr)
     {
-        virus = std::shared_ptr<Virus<TSeq>>(other_agent.virus->clone_ptr());
+        virus = std::shared_ptr<Virus>(other_agent.virus->clone_ptr());
         virus->set_agent(this);
     } else
         virus = nullptr;
@@ -17209,7 +19598,7 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     tools.reserve(other_agent.get_n_tools());
     for (size_t i = 0u; i < other_agent.get_n_tools(); ++i)
     {
-        tools.emplace_back(std::shared_ptr<Tool<TSeq>>(other_agent.tools[i]->clone_ptr()));
+        tools.emplace_back(std::shared_ptr<Tool>(other_agent.tools[i]->clone_ptr()));
         tools.back()->set_agent(this, i);
     }
     
@@ -17217,37 +19606,31 @@ inline Agent<TSeq> & Agent<TSeq>::operator=(
     
 }
 
-template<typename TSeq>
-inline Agent<TSeq>::~Agent() = default;
+inline Agent::~Agent() = default;
 
-template<typename TSeq>
-inline void Agent<TSeq>::add_tool(Model<TSeq> & model, const Tool<TSeq> & tool)
+inline void Agent::add_tool(Model & model, const Tool & tool)
 {
     add_tool(model, tool, -99, -99);
 }
 
-template<typename TSeq>
-inline void Agent<TSeq>::set_virus(Model<TSeq> & model, const Virus<TSeq> & virus)
+inline void Agent::set_virus(Model & model, const Virus & virus)
 {
     set_virus(model, virus, -99, -99);
 }
 
-template<typename TSeq>
-inline void Agent<TSeq>::rm_tool(Model<TSeq> & model, epiworld_fast_uint tool_idx)
+inline void Agent::rm_tool(Model & model, epiworld_fast_uint tool_idx)
 {
     rm_tool(model, tool_idx, -99, -99);
 }
 
-template<typename TSeq>
-inline void Agent<TSeq>::rm_tool(Model<TSeq> & model, ToolPtr<TSeq> & tool)
+inline void Agent::rm_tool(Model & model, ToolPtr & tool)
 {
     rm_tool(model, tool, -99, -99);
 }
 
-template<typename TSeq>
-inline void Agent<TSeq>::add_tool(
-    Model<TSeq> & model,
-    const Tool<TSeq> & tool,
+inline void Agent::add_tool(
+    Model & model,
+    const Tool & tool,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 ) {
@@ -17258,7 +19641,7 @@ inline void Agent<TSeq>::add_tool(
             " has not been registered. There are only " + std::to_string(model.get_n_tools()) +
             " included in the model.");
 
-    ToolPtr<TSeq> tool_ptr = std::shared_ptr<Tool<TSeq>>(tool.clone_ptr());
+    ToolPtr tool_ptr = std::shared_ptr<Tool>(tool.clone_ptr());
 
     model._add_event(
         this, nullptr, tool_ptr, state_new, queue, EventAction::AddTool
@@ -17266,10 +19649,9 @@ inline void Agent<TSeq>::add_tool(
 
 }
 
-template<typename TSeq>
-inline void Agent<TSeq>::set_virus(
-    Model<TSeq> & model,
-    const Virus<TSeq> & virus,
+inline void Agent::set_virus(
+    Model & model,
+    const Virus & virus,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
@@ -17295,9 +19677,9 @@ inline void Agent<TSeq>::set_virus(
             );
 
         state_new = model.nh->get_transition(tr).to;
-        queue = Queue<TSeq>::NoOne;
+        queue = Queue::NoOne;
         if (model.nh_pending == -1)
-            model.nh_pending = Model<TSeq>::NH_SEED;
+            model.nh_pending = Model::NH_SEED;
 
     }
 
@@ -17307,9 +19689,9 @@ inline void Agent<TSeq>::set_virus(
         );
 
     if (queue == -99)
-        queue = Queue<TSeq>::NoOne;
+        queue = Queue::NoOne;
 
-    VirusPtr<TSeq> virus_ptr = std::shared_ptr<Virus<TSeq>>(virus.clone_ptr());
+    VirusPtr virus_ptr = std::shared_ptr<Virus>(virus.clone_ptr());
 
     model._add_event(
         this, virus_ptr, nullptr, state_new, queue, EventAction::AddVirus,
@@ -17318,9 +19700,8 @@ inline void Agent<TSeq>::set_virus(
 
 }
 
-template<typename TSeq>
-inline void Agent<TSeq>::rm_tool(
-    Model<TSeq> & model,
+inline void Agent::rm_tool(
+    Model & model,
     epiworld_fast_uint tool_idx,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
@@ -17339,10 +19720,9 @@ inline void Agent<TSeq>::rm_tool(
 
 }
 
-template<typename TSeq>
-inline void Agent<TSeq>::rm_tool(
-    Model<TSeq> & model,
-    ToolPtr<TSeq> & tool,
+inline void Agent::rm_tool(
+    Model & model,
+    ToolPtr & tool,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
@@ -17357,9 +19737,8 @@ inline void Agent<TSeq>::rm_tool(
 
 }
 
-template<typename TSeq>
-inline void Agent<TSeq>::rm_virus(
-    Model<TSeq> & model,
+inline void Agent::rm_virus(
+    Model & model,
     epiworld_fast_int state_new,
     epiworld_fast_int queue
 )
@@ -17377,7 +19756,7 @@ inline void Agent<TSeq>::rm_virus(
         );
 
     if (queue == -99)
-        queue = Queue<TSeq>::NoOne;
+        queue = Queue::NoOne;
 
     model._add_event(
         this, virus, nullptr,
@@ -17388,74 +19767,63 @@ inline void Agent<TSeq>::rm_virus(
 
 }
 
-template<typename TSeq>
-inline epiworld_double Agent<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> & v,
-    Model<TSeq> & model
+inline epiworld_double Agent::get_susceptibility_reduction(
+    VirusPtr & v,
+    Model & model
 ) {
 
     return model.susceptibility_reduction_mixer(this, v);
 }
 
-template<typename TSeq>
-inline epiworld_double Agent<TSeq>::get_transmission_reduction(
-    VirusPtr<TSeq> & v,
-    Model<TSeq> & model
+inline epiworld_double Agent::get_transmission_reduction(
+    VirusPtr & v,
+    Model & model
 ) {
     return model.transmission_reduction_mixer(this, v);
 }
 
-template<typename TSeq>
-inline epiworld_double Agent<TSeq>::get_recovery_enhancer(
-    VirusPtr<TSeq> & v,
-    Model<TSeq> & model
+inline epiworld_double Agent::get_recovery_enhancer(
+    VirusPtr & v,
+    Model & model
 ) {
     return model.recovery_enhancer_mixer(this, v);
 }
 
-template<typename TSeq>
-inline epiworld_double Agent<TSeq>::get_death_reduction(
-    VirusPtr<TSeq> & v,
-    Model<TSeq> & model
+inline epiworld_double Agent::get_death_reduction(
+    VirusPtr & v,
+    Model & model
 ) {
     return model.death_reduction_mixer(this, v);
 }
 
-template<typename TSeq>
-inline int Agent<TSeq>::get_id() const
+inline int Agent::get_id() const
 {
     return id;
 }
 
-template<typename TSeq>
-inline VirusPtr<TSeq> & Agent<TSeq>::get_virus() {
+inline VirusPtr & Agent::get_virus() {
     return virus;
 }
 
-template<typename TSeq>
-inline const VirusPtr<TSeq> & Agent<TSeq>::get_virus() const {
+inline const VirusPtr & Agent::get_virus() const {
     return virus;
 }
 
 
-template<typename TSeq>
-inline std::vector< ToolPtr<TSeq> > Agent<TSeq>::get_tools() {
+inline std::vector< ToolPtr > Agent::get_tools() {
     return tools;
 }
 
-template<typename TSeq>
-inline const std::vector< ToolPtr<TSeq> > Agent<TSeq>::get_tools() const {
+inline const std::vector< ToolPtr > Agent::get_tools() const {
     return tools;
 }
 
-template<typename TSeq>
-inline ToolPtr<TSeq> & Agent<TSeq>::get_tool(int i)
+inline ToolPtr & Agent::get_tool(int i)
 {
     return tools.at(i);
 }
 
-template<typename TSeq>
-inline ToolPtr<TSeq> & Agent<TSeq>::get_tool(std::string name)
+inline ToolPtr & Agent::get_tool(std::string name)
 {
     for (auto & tool : tools)
         if (tool->get_name() == name)
@@ -17467,14 +19835,12 @@ inline ToolPtr<TSeq> & Agent<TSeq>::get_tool(std::string name)
 
 }
 
-template<typename TSeq>
-inline size_t Agent<TSeq>::get_n_tools() const noexcept
+inline size_t Agent::get_n_tools() const noexcept
 {
     return tools.size();
 }
 
-template<typename TSeq>
-inline void Agent<TSeq>::mutate_virus(Model<TSeq> & model)
+inline void Agent::mutate_virus(Model & model)
 {
 
     if (virus == nullptr)
@@ -17486,9 +19852,8 @@ inline void Agent<TSeq>::mutate_virus(Model<TSeq> & model)
 
 }
 
-template<typename TSeq>
-inline void Agent<TSeq>::change_state(
-    Model<TSeq> & model,
+inline void Agent::change_state(
+    Model & model,
     epiworld_fast_uint new_state,
     epiworld_fast_int queue
     )
@@ -17503,23 +19868,19 @@ inline void Agent<TSeq>::change_state(
 
 }
 
-template<typename TSeq>
-inline unsigned int Agent<TSeq>::get_state() const {
+inline unsigned int Agent::get_state() const {
     return state;
 }
 
-template<typename TSeq>
-inline unsigned int Agent<TSeq>::get_state_prev() const {
+inline unsigned int Agent::get_state_prev() const {
     return state_prev;
 }
 
-template<typename TSeq>
-inline int Agent<TSeq>::get_state_last_changed() const {
+inline int Agent::get_state_last_changed() const {
     return state_last_changed;
 }
 
-template<typename TSeq>
-inline void Agent<TSeq>::reset()
+inline void Agent::reset()
 {
 
     this->virus = nullptr;
@@ -17534,8 +19895,7 @@ inline void Agent<TSeq>::reset()
     
 }
 
-template<typename TSeq>
-inline bool Agent<TSeq>::has_tool(epiworld_fast_uint t) const
+inline bool Agent::has_tool(epiworld_fast_uint t) const
 {
 
     for (auto & tool : tools)
@@ -17546,8 +19906,7 @@ inline bool Agent<TSeq>::has_tool(epiworld_fast_uint t) const
 
 }
 
-template<typename TSeq>
-inline bool Agent<TSeq>::has_tool(std::string_view name) const
+inline bool Agent::has_tool(std::string_view name) const
 {
 
     for (auto & tool : tools)
@@ -17558,16 +19917,14 @@ inline bool Agent<TSeq>::has_tool(std::string_view name) const
 
 }
 
-template<typename TSeq>
-inline bool Agent<TSeq>::has_tool(const Tool<TSeq> & tool) const
+inline bool Agent::has_tool(const Tool & tool) const
 {
 
     return has_tool(tool.get_id());
 
 }
 
-template<typename TSeq>
-inline bool Agent<TSeq>::has_virus(epiworld_fast_uint t) const
+inline bool Agent::has_virus(epiworld_fast_uint t) const
 {
     if (virus->get_id() == static_cast<int>(t))
         return true;
@@ -17575,8 +19932,7 @@ inline bool Agent<TSeq>::has_virus(epiworld_fast_uint t) const
     return false;
 }
 
-template<typename TSeq>
-inline bool Agent<TSeq>::has_virus(std::string_view name) const
+inline bool Agent::has_virus(std::string_view name) const
 {
     
     if (virus->get_name() == name)
@@ -17586,17 +19942,15 @@ inline bool Agent<TSeq>::has_virus(std::string_view name) const
 
 }
 
-template<typename TSeq>
-inline bool Agent<TSeq>::has_virus(const Virus<TSeq> & virus) const
+inline bool Agent::has_virus(const Virus & virus) const
 {
 
     return has_virus(virus.get_id());
 
 }
 
-template<typename TSeq>
-inline void Agent<TSeq>::print(
-    Model<TSeq> & model,
+inline void Agent::print(
+    Model & model,
     bool compressed
     ) const
 {
@@ -17657,8 +20011,7 @@ inline void Agent<TSeq>::print(
 
 }
 
-template<typename TSeq>
-inline double & Agent<TSeq>::operator()(size_t j, Model<TSeq> & model)
+inline double & Agent::operator()(size_t j, Model & model)
 {
 
     if (model.agents_data_ncols <= j)
@@ -17668,8 +20021,7 @@ inline double & Agent<TSeq>::operator()(size_t j, Model<TSeq> & model)
 
 }
 
-template<typename TSeq>
-inline double Agent<TSeq>::operator()(size_t j, const Model<TSeq> & model) const
+inline double Agent::operator()(size_t j, const Model & model) const
 {
 
     if (model.agents_data_ncols <= j)
@@ -17679,8 +20031,7 @@ inline double Agent<TSeq>::operator()(size_t j, const Model<TSeq> & model) const
 
 }
 
-template<typename TSeq>
-inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
+inline bool Agent::operator==(const Agent & other) const
 {
 
     // Checking the address
@@ -17784,8 +20135,7 @@ inline bool Agent<TSeq>::operator==(const Agent<TSeq> & other) const
  * has the derivation.
  */
 
-template<typename TSeq>
-inline void Model<TSeq>::state_masks_build()
+inline void Model::state_masks_build()
 {
 
     const size_t ns = static_cast< size_t >(nstates);
@@ -17823,10 +20173,9 @@ inline void Model<TSeq>::state_masks_build()
 
 }
 
-template<typename TSeq>
-inline size_t Model<TSeq>::add_exposures(
-    Agent<TSeq> * agent,
-    const ContactLayer<TSeq> * layer,
+inline size_t Model::add_exposures(
+    Agent * agent,
+    const ContactLayer * layer,
     const size_t * contacts,
     size_t n,
     size_t n_exposures
@@ -17874,8 +20223,7 @@ inline size_t Model<TSeq>::add_exposures(
 
 }
 
-template<typename TSeq>
-inline Virus<TSeq> * Model<TSeq>::draw_exposure(size_t n_exposures)
+inline Virus * Model::draw_exposure(size_t n_exposures)
 {
 
     sampled_layer = -1;
@@ -17893,12 +20241,11 @@ inline Virus<TSeq> * Model<TSeq>::draw_exposure(size_t n_exposures)
 
 }
 
-template<typename TSeq>
-inline Virus<TSeq> * Model<TSeq>::sample_virus(
-    Agent<TSeq> * agent,
+inline Virus * Model::sample_virus(
+    Agent * agent,
     const size_t * contacts,
     size_t n,
-    const ContactLayer<TSeq> * layer
+    const ContactLayer * layer
 )
 {
 
@@ -17906,8 +20253,7 @@ inline Virus<TSeq> * Model<TSeq>::sample_virus(
 
 }
 
-template<typename TSeq>
-inline Virus<TSeq> * Model<TSeq>::sample_virus(Agent<TSeq> * agent)
+inline Virus * Model::sample_virus(Agent * agent)
 {
 
     if (agent->get_virus() != nullptr)
@@ -17947,7 +20293,7 @@ inline Virus<TSeq> * Model<TSeq>::sample_virus(Agent<TSeq> * agent)
     db.n_transmissions_potential++;
     #endif
 
-    Virus<TSeq> * virus = draw_exposure(n_exposures);
+    Virus * virus = draw_exposure(n_exposures);
 
     #ifdef EPI_DEBUG
     if (virus != nullptr)
@@ -17958,8 +20304,7 @@ inline Virus<TSeq> * Model<TSeq>::sample_virus(Agent<TSeq> * agent)
 
 }
 
-template<typename TSeq>
-inline bool Model<TSeq>::transmission_prepare()
+inline bool Model::transmission_prepare()
 {
 
     const size_t ns = static_cast< size_t >(nstates);
@@ -18001,8 +20346,7 @@ inline bool Model<TSeq>::transmission_prepare()
 
 }
 
-template<typename TSeq>
-inline bool Model<TSeq>::transmission_choose_push() const
+inline bool Model::transmission_choose_push() const
 {
 
     if (transmission_mode == TransmissionMode::pull)
@@ -18036,9 +20380,8 @@ inline bool Model<TSeq>::transmission_choose_push() const
 
 }
 
-template<typename TSeq>
-inline typename Model<TSeq>::TransmissionSums
-Model<TSeq>::get_transmission_sums() const
+inline typename Model::TransmissionSums
+Model::get_transmission_sums() const
 {
 
     TransmissionSums sums = {0u, 0u, 0u, 0u};
@@ -18064,8 +20407,7 @@ Model<TSeq>::get_transmission_sums() const
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::transmission_push()
+inline void Model::transmission_push()
 {
 
     // The recording path is chosen once per step, not per contact
@@ -18080,9 +20422,8 @@ inline void Model<TSeq>::transmission_push()
 
 }
 
-template<typename TSeq>
 template<bool Record>
-inline void Model<TSeq>::transmission_push_impl()
+inline void Model::transmission_push_impl()
 {
 
     const size_t ns = static_cast< size_t >(nstates);
@@ -18127,11 +20468,11 @@ inline void Model<TSeq>::transmission_push_impl()
             const size_t j_id = (w << 6) + epi_ctz64(word);
             word &= (word - 1u);
 
-            Agent<TSeq> & j = population[j_id];
+            Agent & j = population[j_id];
             if (j.virus == nullptr)
                 continue;
 
-            VirusPtr<TSeq> & v = j.virus;
+            VirusPtr & v = j.virus;
 
             // Every network, in the order the layers were added, as a pull
             // reads them
@@ -18155,7 +20496,7 @@ inline void Model<TSeq>::transmission_push_impl()
                     if (!push_pushable[t])
                         continue;
 
-                    Agent<TSeq> & i = population[i_id];
+                    Agent & i = population[i_id];
 
                     // An agent with a virus is not susceptible (pulling would
                     // refuse it; update_state() reports it).
@@ -18271,7 +20612,7 @@ inline void Model<TSeq>::transmission_push_impl()
         )
             continue;
 
-        Agent<TSeq> & i = population[target.id];
+        Agent & i = population[target.id];
 
         #ifdef EPI_DEBUG
         db.n_transmissions_today++;
@@ -18290,8 +20631,7 @@ inline void Model<TSeq>::transmission_push_impl()
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::transmission_update_others()
+inline void Model::transmission_update_others()
 {
 
     const size_t ns = static_cast< size_t >(nstates);
@@ -18359,8 +20699,7 @@ inline void Model<TSeq>::transmission_update_others()
 
 }
 
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::set_transmission_mode(
+inline Model & Model::set_transmission_mode(
     TransmissionMode mode,
     double kappa
 )
@@ -18377,8 +20716,7 @@ inline Model<TSeq> & Model<TSeq>::set_transmission_mode(
 
 }
 
-template<typename TSeq>
-inline Model<TSeq> & Model<TSeq>::set_transmission_mode(
+inline Model & Model::set_transmission_mode(
     std::string_view mode,
     double kappa
 )
@@ -18398,20 +20736,17 @@ inline Model<TSeq> & Model<TSeq>::set_transmission_mode(
 
 }
 
-template<typename TSeq>
-inline TransmissionMode Model<TSeq>::get_transmission_mode() const
+inline TransmissionMode Model::get_transmission_mode() const
 {
     return transmission_mode;
 }
 
-template<typename TSeq>
-inline TransmissionMode Model<TSeq>::get_last_transmission_mode() const
+inline TransmissionMode Model::get_last_transmission_mode() const
 {
     return transmission_mode_last;
 }
 
-template<typename TSeq>
-inline double Model<TSeq>::get_transmission_kappa() const
+inline double Model::get_transmission_kappa() const
 {
     return transmission_kappa;
 }
@@ -18438,29 +20773,31 @@ inline double Model<TSeq>::get_transmission_kappa() const
 #ifndef EPIWORLD_NATURALHISTORY_MEAT_HPP
 #define EPIWORLD_NATURALHISTORY_MEAT_HPP
 
+inline TransitionRef::operator int() const
+{
+    return nh->status_chart ? (-2 - id) : id;
+}
+
 // Value -----------------------------------------------------------------------
 
-template<typename TSeq>
-inline Value<TSeq> Value<TSeq>::inverse(std::string name)
+inline Value Value::inverse(std::string name)
 {
-    Value<TSeq> v(std::move(name));
+    Value v(std::move(name));
     v.kind = Kind::inverse;
     return v;
 }
 
-template<typename TSeq>
-inline Value<TSeq> Value<TSeq>::complement(std::string name)
+inline Value Value::complement(std::string name)
 {
-    Value<TSeq> v(std::move(name));
+    Value v(std::move(name));
     v.kind = Kind::complement;
     return v;
 }
 
-template<typename TSeq>
-inline epiworld_double Value<TSeq>::eval(
-    Agent<TSeq> & agent,
-    const Virus<TSeq> * virus,
-    Model<TSeq> & model
+inline epiworld_double Value::eval(
+    Agent & agent,
+    const Virus * virus,
+    Model & model
 ) const
 {
 
@@ -18491,10 +20828,9 @@ inline epiworld_double Value<TSeq>::eval(
 
 }
 
-template<typename TSeq>
-inline epiworld_double Value<TSeq>::eval(
-    Agent<TSeq> & agent,
-    Model<TSeq> & model
+inline epiworld_double Value::eval(
+    Agent & agent,
+    Model & model
 ) const
 {
     const auto & v = agent.get_virus();
@@ -18503,54 +20839,48 @@ inline epiworld_double Value<TSeq>::eval(
 
 // Duration --------------------------------------------------------------------
 
-template<typename TSeq>
-inline Duration<TSeq> Duration<TSeq>::fixed(Value<TSeq> days)
+inline Duration Duration::fixed(Value days)
 {
-    Duration<TSeq> d;
+    Duration d;
     d.kind = Kind::fixed;
     d.mean = std::move(days);
     return d;
 }
 
-template<typename TSeq>
-inline Duration<TSeq> Duration<TSeq>::geometric(Value<TSeq> mean)
+inline Duration Duration::geometric(Value mean)
 {
-    Duration<TSeq> d;
+    Duration d;
     d.kind = Kind::geometric;
     d.mean = std::move(mean);
     return d;
 }
 
-template<typename TSeq>
-inline Duration<TSeq> Duration<TSeq>::lognormal(Value<TSeq> mean, Value<TSeq> sd)
+inline Duration Duration::lognormal(Value mean, Value sd)
 {
-    Duration<TSeq> d;
+    Duration d;
     d.kind = Kind::lognormal;
     d.mean = std::move(mean);
     d.sd = std::move(sd);
     return d;
 }
 
-template<typename TSeq>
-inline Duration<TSeq> Duration<TSeq>::gamma(Value<TSeq> mean, Value<TSeq> sd)
+inline Duration Duration::gamma(Value mean, Value sd)
 {
-    Duration<TSeq> d;
+    Duration d;
     d.kind = Kind::gamma;
     d.mean = std::move(mean);
     d.sd = std::move(sd);
     return d;
 }
 
-template<typename TSeq>
-inline Duration<TSeq> Duration<TSeq>::since(int s) const
+inline Duration Duration::since(int s) const
 {
-    Duration<TSeq> d(*this);
+    Duration d(*this);
     d.anchor = s;
     return d;
 }
 
-template<typename TSeq>
-inline int Duration<TSeq>::draw(Agent<TSeq> & agent, Model<TSeq> & model) const
+inline int Duration::draw(Agent & agent, Model & model) const
 {
 
     auto whole = [](epiworld_double days) -> int {
@@ -18619,8 +20949,7 @@ inline int Duration<TSeq>::draw(Agent<TSeq> & agent, Model<TSeq> & model) const
 
 // TransitionRef ---------------------------------------------------------------
 
-template<typename TSeq>
-inline TransitionRef<TSeq> & TransitionRef<TSeq>::name(std::string n)
+inline TransitionRef & TransitionRef::name(std::string n)
 {
     for (auto & t : nh->transitions)
         if ((t.name == n) && (&t != &nh->transitions[id]))
@@ -18633,8 +20962,7 @@ inline TransitionRef<TSeq> & TransitionRef<TSeq>::name(std::string n)
     return *this;
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> & TransitionRef<TSeq>::effect(Effect e)
+inline TransitionRef & TransitionRef::effect(Effect e)
 {
     auto & t = nh->transitions[id];
     if ((e != Effect::none) && (t.kind != TransitionKind::rate))
@@ -18646,9 +20974,8 @@ inline TransitionRef<TSeq> & TransitionRef<TSeq>::effect(Effect e)
     return *this;
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> & TransitionRef<TSeq>::to(
-    std::vector< std::pair< int, Value<TSeq> > > targets
+inline TransitionRef & TransitionRef::to(
+    std::vector< std::pair< int, Value > > targets
 )
 {
     auto & t = nh->transitions[id];
@@ -18671,8 +20998,7 @@ inline TransitionRef<TSeq> & TransitionRef<TSeq>::to(
     return *this;
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> & TransitionRef<TSeq>::sampler(InfectionSampler<TSeq> f)
+inline TransitionRef & TransitionRef::sampler(InfectionSampler f)
 {
     auto & t = nh->transitions[id];
     if (t.kind != TransitionKind::infection)
@@ -18684,8 +21010,7 @@ inline TransitionRef<TSeq> & TransitionRef<TSeq>::sampler(InfectionSampler<TSeq>
     return *this;
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> & TransitionRef<TSeq>::when(Nodes stages)
+inline TransitionRef & TransitionRef::when(Nodes stages)
 {
     auto & t = nh->transitions[id];
     if (!nh->status_chart)
@@ -18699,12 +21024,10 @@ inline TransitionRef<TSeq> & TransitionRef<TSeq>::when(Nodes stages)
 
 // NaturalHistory --------------------------------------------------------------
 
-template<typename TSeq>
-inline NaturalHistory<TSeq>::NaturalHistory(std::string name_) :
+inline NaturalHistory::NaturalHistory(std::string name_) :
     name(std::move(name_)) {}
 
-template<typename TSeq>
-inline void NaturalHistory<TSeq>::check_stage(int s, const char * what) const
+inline void NaturalHistory::check_stage(int s, const char * what) const
 {
     if ((s < 0) || (static_cast< size_t >(s) >= stage_labels.size()))
         throw std::range_error(
@@ -18714,8 +21037,7 @@ inline void NaturalHistory<TSeq>::check_stage(int s, const char * what) const
         );
 }
 
-template<typename TSeq>
-inline int NaturalHistory<TSeq>::add_stage(std::string label, unsigned int flags)
+inline int NaturalHistory::add_stage(std::string label, unsigned int flags)
 {
 
     for (auto & l : stage_labels)
@@ -18740,8 +21062,7 @@ inline int NaturalHistory<TSeq>::add_stage(std::string label, unsigned int flags
 
 }
 
-template<typename TSeq>
-inline void NaturalHistory<TSeq>::set_contact(int s, epiworld_double weight)
+inline void NaturalHistory::set_contact(int s, epiworld_double weight)
 {
     check_stage(s, "");
 
@@ -18755,8 +21076,7 @@ inline void NaturalHistory<TSeq>::set_contact(int s, epiworld_double weight)
     stage_contact[s] = weight;
 }
 
-template<typename TSeq>
-inline int NaturalHistory<TSeq>::add_transition(Transition<TSeq> t)
+inline int NaturalHistory::add_transition(Transition t)
 {
 
     if (t.from.empty())
@@ -18785,63 +21105,58 @@ inline int NaturalHistory<TSeq>::add_transition(Transition<TSeq> t)
 
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> NaturalHistory<TSeq>::infection(
-    Nodes from, int to, Value<TSeq> per_contact
+inline TransitionRef NaturalHistory::infection(
+    Nodes from, int to, Value per_contact
 )
 {
-    Transition<TSeq> t;
+    Transition t;
     t.kind = TransitionKind::infection;
     t.from = std::move(from.ids);
     t.to = to;
     t.value = std::move(per_contact);
-    return TransitionRef<TSeq>(this, add_transition(std::move(t)));
+    return TransitionRef(this, add_transition(std::move(t)));
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> NaturalHistory<TSeq>::rate(
-    Nodes from, int to, Value<TSeq> daily_probability
+inline TransitionRef NaturalHistory::rate(
+    Nodes from, int to, Value daily_probability
 )
 {
-    Transition<TSeq> t;
+    Transition t;
     t.kind = TransitionKind::rate;
     t.from = std::move(from.ids);
     t.to = to;
     t.value = std::move(daily_probability);
-    return TransitionRef<TSeq>(this, add_transition(std::move(t)));
+    return TransitionRef(this, add_transition(std::move(t)));
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> NaturalHistory<TSeq>::after(
-    int from, int to, Duration<TSeq> d
+inline TransitionRef NaturalHistory::after(
+    int from, int to, Duration d
 )
 {
-    if (d.get_kind() == Duration<TSeq>::Kind::none)
+    if (d.get_kind() == Duration::Kind::none)
         throw std::logic_error("A duration transition needs a duration.");
 
-    Transition<TSeq> t;
+    Transition t;
     t.kind = TransitionKind::after;
     t.from = {from};
     t.to = to;
     t.duration = std::move(d);
-    return TransitionRef<TSeq>(this, add_transition(std::move(t)));
+    return TransitionRef(this, add_transition(std::move(t)));
 }
 
-template<typename TSeq>
-inline TransitionRef<TSeq> NaturalHistory<TSeq>::external(
+inline TransitionRef NaturalHistory::external(
     Nodes from, int to, std::string label
 )
 {
-    Transition<TSeq> t;
+    Transition t;
     t.kind = TransitionKind::external;
     t.from = std::move(from.ids);
     t.to = to;
     t.name = std::move(label);
-    return TransitionRef<TSeq>(this, add_transition(std::move(t)));
+    return TransitionRef(this, add_transition(std::move(t)));
 }
 
-template<typename TSeq>
-inline int NaturalHistory<TSeq>::stage_id(std::string_view label) const
+inline int NaturalHistory::stage_id(std::string_view label) const
 {
     for (size_t s = 0u; s < stage_labels.size(); ++s)
         if (stage_labels[s] == label)
@@ -18853,8 +21168,7 @@ inline int NaturalHistory<TSeq>::stage_id(std::string_view label) const
     );
 }
 
-template<typename TSeq>
-inline int NaturalHistory<TSeq>::transition_id(std::string_view label) const
+inline int NaturalHistory::transition_id(std::string_view label) const
 {
     for (size_t t = 0u; t < transitions.size(); ++t)
         if (transitions[t].name == label)
@@ -18866,8 +21180,7 @@ inline int NaturalHistory<TSeq>::transition_id(std::string_view label) const
     );
 }
 
-template<typename TSeq>
-inline bool NaturalHistory<TSeq>::is_source(int transition, int s) const
+inline bool NaturalHistory::is_source(int transition, int s) const
 {
     for (int f : transitions[transition].from)
         if (f == s)
@@ -18875,9 +21188,8 @@ inline bool NaturalHistory<TSeq>::is_source(int transition, int s) const
     return false;
 }
 
-template<typename TSeq>
-inline bool NaturalHistory<TSeq>::same_structure(
-    const NaturalHistory<TSeq> & o
+inline bool NaturalHistory::same_structure(
+    const NaturalHistory & o
 ) const
 {
 
@@ -18906,9 +21218,8 @@ inline bool NaturalHistory<TSeq>::same_structure(
 
 }
 
-template<typename TSeq>
-inline void NaturalHistory<TSeq>::finalize(
-    Model<TSeq> & model,
+inline void NaturalHistory::finalize(
+    Model & model,
     const std::string & owner
 )
 {
@@ -18931,11 +21242,11 @@ inline void NaturalHistory<TSeq>::finalize(
                 );
 
     // A number becomes a model parameter, named after the transition
-    auto as_param = [&model](Value<TSeq> & v, const std::string & pname) {
-        if (v.kind != Value<TSeq>::Kind::number)
+    auto as_param = [&model](Value & v, const std::string & pname) {
+        if (v.kind != Value::Kind::number)
             return;
         model.add_param(v.number, pname, true);
-        v = Value<TSeq>(pname);
+        v = Value(pname);
     };
 
     for (size_t id = 0u; id < transitions.size(); ++id)
@@ -19079,8 +21390,7 @@ inline void NaturalHistory<TSeq>::finalize(
 
 // Installing ------------------------------------------------------------------
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_install(std::shared_ptr< NaturalHistory<TSeq> > def)
+inline void Model::nh_install(std::shared_ptr< NaturalHistory > def)
 {
 
     if (nstates != 0u)
@@ -19119,8 +21429,7 @@ inline void Model<TSeq>::nh_install(std::shared_ptr< NaturalHistory<TSeq> > def)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_statuses(Statuses<TSeq> s)
+inline void Model::set_statuses(Statuses s)
 {
 
     if (running)
@@ -19130,15 +21439,14 @@ inline void Model<TSeq>::set_statuses(Statuses<TSeq> s)
         throw std::logic_error("The statuses have no status.");
 
     s.finalize(*this, "Statuses");
-    st = std::make_shared< const Statuses<TSeq> >(std::move(s));
+    st = std::make_shared< const Statuses >(std::move(s));
 
     if (nh)
         nh_build_states();
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_build_states()
+inline void Model::nh_build_states()
 {
 
     const int ns = static_cast< int >(nh->get_n_stages());
@@ -19167,7 +21475,7 @@ inline void Model<TSeq>::nh_build_states()
         }
 
     // Every cell with a drawn exit (of its stage or its status) is updated
-    UpdateFun<TSeq> update = [](Agent<TSeq> * p, Model<TSeq> * m) -> void {
+    UpdateFun update = [](Agent * p, Model * m) -> void {
         m->nh_step(*p);
     };
 
@@ -19222,24 +21530,21 @@ inline void Model<TSeq>::nh_build_states()
 
 // Accessors -------------------------------------------------------------------
 
-template<typename TSeq>
-inline int Model<TSeq>::get_stage(const Agent<TSeq> & agent) const
+inline int Model::get_stage(const Agent & agent) const
 {
     if (!nh)
         throw std::logic_error("The model has no natural history.");
     return nh_stage_of(agent.state);
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::get_status(const Agent<TSeq> & agent) const
+inline int Model::get_status(const Agent & agent) const
 {
     if (!nh)
         throw std::logic_error("The model has no natural history.");
     return nh_status_of(agent.state);
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::transition_id(std::string_view name) const
+inline int Model::transition_id(std::string_view name) const
 {
 
     if (!nh)
@@ -19258,8 +21563,7 @@ inline int Model<TSeq>::transition_id(std::string_view name) const
 
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::get_stage_entered(size_t id, int stage) const
+inline int Model::get_stage_entered(size_t id, int stage) const
 {
     if (!nh)
         throw std::logic_error("The model has no natural history.");
@@ -19267,24 +21571,21 @@ inline int Model<TSeq>::get_stage_entered(size_t id, int stage) const
     return nh_entered.at(id * nh->get_n_stages() + static_cast< size_t >(stage));
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::get_stage_until(size_t id) const
+inline int Model::get_stage_until(size_t id) const
 {
     if (!nh)
         throw std::logic_error("The model has no natural history.");
     return nh_until.at(id);
 }
 
-template<typename TSeq>
-inline int Model<TSeq>::get_episode(size_t id) const
+inline int Model::get_episode(size_t id) const
 {
     if (!nh)
         throw std::logic_error("The model has no natural history.");
     return nh_episode.at(id);
 }
 
-template<typename TSeq>
-inline bool Model<TSeq>::nh_removed(int stage) const
+inline bool Model::nh_removed(int stage) const
 {
     // A stage that takes agents out of every layer and has no exit
     if (nh->get_contact(stage) > 0.0)
@@ -19297,8 +21598,7 @@ inline bool Model<TSeq>::nh_removed(int stage) const
 
 // Moving agents from code ------------------------------------------------------
 
-template<typename TSeq>
-inline bool Model<TSeq>::fire(int transition, Agent<TSeq> & agent)
+inline bool Model::fire(int transition, Agent & agent)
 {
 
     if (!nh)
@@ -19342,18 +21642,16 @@ inline bool Model<TSeq>::fire(int transition, Agent<TSeq> & agent)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::react(Trigger on, int transition)
+inline void Model::react(Trigger on, int transition)
 {
     if (!nh)
         throw std::logic_error("react() needs a natural history.");
     nh_reactions.push_back({std::move(on), transition, nullptr});
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::react(
+inline void Model::react(
     Trigger on,
-    std::function< void(Agent<TSeq> &, Model<TSeq> &) > fun
+    std::function< void(Agent &, Model &) > fun
 )
 {
     if (!nh)
@@ -19361,8 +21659,7 @@ inline void Model<TSeq>::react(
     nh_reactions.push_back({std::move(on), -1, std::move(fun)});
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::set_initial(Assign<TSeq> a)
+inline void Model::set_initial(Assign a)
 {
 
     if (!nh)
@@ -19374,8 +21671,7 @@ inline void Model<TSeq>::set_initial(Assign<TSeq> a)
 
 // The run ---------------------------------------------------------------------
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_reset()
+inline void Model::nh_reset()
 {
 
     const size_t n  = population.size();
@@ -19408,8 +21704,7 @@ inline void Model<TSeq>::nh_reset()
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_step(Agent<TSeq> & p)
+inline void Model::nh_step(Agent & p)
 {
 
     const unsigned int c = p.state;
@@ -19427,7 +21722,7 @@ inline void Model<TSeq>::nh_step(Agent<TSeq> & p)
     {
 
         const auto & tr = nh_of(p).transitions[si.infection];
-        Virus<TSeq> * v = tr.sampler ? tr.sampler(p, *this) : sample_virus(&p);
+        Virus * v = tr.sampler ? tr.sampler(p, *this) : sample_virus(&p);
         if (v != nullptr)
         {
             nh_propose(si.infection, p, v);
@@ -19480,7 +21775,7 @@ inline void Model<TSeq>::nh_step(Agent<TSeq> & p)
     const int k = nh_status_of(c);
     const StageInfo & ki = st->stages[static_cast< size_t >(k)];
 
-    auto applies = [s](const Transition<TSeq> & tr) -> bool {
+    auto applies = [s](const Transition & tr) -> bool {
         return tr.when.empty() ||
             (std::find(tr.when.begin(), tr.when.end(), s) != tr.when.end());
     };
@@ -19514,11 +21809,10 @@ inline void Model<TSeq>::nh_step(Agent<TSeq> & p)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_propose(
+inline void Model::nh_propose(
     int transition,
-    Agent<TSeq> & p,
-    Virus<TSeq> * virus
+    Agent & p,
+    Virus * virus
 )
 {
 
@@ -19555,21 +21849,20 @@ inline void Model<TSeq>::nh_propose(
 
     const int s = nh_stage_of(p.state);
     if (status)
-        p.change_state(*this, static_cast< epiworld_fast_uint >(to), Queue<TSeq>::NoOne);
+        p.change_state(*this, static_cast< epiworld_fast_uint >(to), Queue::NoOne);
     else if (tr.kind == TransitionKind::infection)
-        p.set_virus(*this, *virus, to, Queue<TSeq>::NoOne);
+        p.set_virus(*this, *virus, to, Queue::NoOne);
     else if (nh->is_carrier(s) && !nh->is_carrier(to))
-        p.rm_virus(*this, to, Queue<TSeq>::NoOne);
+        p.rm_virus(*this, to, Queue::NoOne);
     else
-        p.change_state(*this, static_cast< epiworld_fast_uint >(to), Queue<TSeq>::NoOne);
+        p.change_state(*this, static_cast< epiworld_fast_uint >(to), Queue::NoOne);
 
     nh_pending = -1;
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_enter(
-    Agent<TSeq> & p,
+inline void Model::nh_enter(
+    Agent & p,
     unsigned int stage_old,
     int transition
 )
@@ -19610,8 +21903,7 @@ inline void Model<TSeq>::nh_enter(
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_react(Agent<TSeq> & p, int transition, int stage_old)
+inline void Model::nh_react(Agent & p, int transition, int stage_old)
 {
 
     if (nh_reactions.empty())
@@ -19649,8 +21941,7 @@ inline void Model<TSeq>::nh_react(Agent<TSeq> & p, int transition, int stage_old
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_queue_move(Agent<TSeq> & p, unsigned int state_old)
+inline void Model::nh_queue_move(Agent & p, unsigned int state_old)
 {
 
     const char from = nh_queue[state_old];
@@ -19672,8 +21963,7 @@ inline void Model<TSeq>::nh_queue_move(Agent<TSeq> & p, unsigned int state_old)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::nh_initial_place()
+inline void Model::nh_initial_place()
 {
 
     if (!nh_initial.is_set())
@@ -19707,7 +21997,7 @@ inline void Model<TSeq>::nh_initial_place()
 
         nh_pending = NH_INITIAL;
         population[i].change_state(
-            *this, static_cast< epiworld_fast_uint >(s), Queue<TSeq>::NoOne
+            *this, static_cast< epiworld_fast_uint >(s), Queue::NoOne
         );
         nh_pending = -1;
 
@@ -19717,10 +22007,9 @@ inline void Model<TSeq>::nh_initial_place()
 
 }
 
-template<typename TSeq>
-inline epiworld_double Model<TSeq>::nh_infection_prob(
-    Agent<TSeq> & target,
-    const Virus<TSeq> & v
+inline epiworld_double Model::nh_infection_prob(
+    Agent & target,
+    const Virus & v
 )
 {
     const int tr = nh->stages[static_cast< size_t >(nh_stage_of(target.state))].infection;
@@ -19737,2443 +22026,6 @@ inline epiworld_double Model<TSeq>::nh_infection_prob(
 ////////////////////////////////////////////////////////////////////////////////
 
  End of -./include/epiworld/model-meat-naturalhistory.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/layer-mixing.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_LAYER_MIXING_HPP
-#define EPIWORLD_LAYER_MIXING_HPP
-
-namespace layer {
-
-template<typename TSeq>
-class Mixing;
-
-/**
- * @brief A mixing layer (see `Mixing`).
- * @param name Name of the layer (unique in a model).
- * @ingroup contact_layers
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-std::shared_ptr< Mixing<TSeq> > mixing(std::string name);
-
-/**
- * @brief Contact layer with mixing: contacts drawn fresh every step, by group.
- *
- * @details Created with `layer::mixing()`. Every agent of a group takes part
- * in the mixing (the contacts are spread over all of them), and the agents in
- * the model's infectious states transmit (`Model::set_infectious_states()`).
- * The quarantine model takes its isolated agents out of the mixing altogether
- * (see `Model::set_excluded_states()`).
- *
- * ### Groups
- *
- * The layer owns the grouping, set with `set_groups()` before the first run:
- * - `assign::labels(v)`, one group per agent (or -1, which leaves the agent
- *   out of the layer): the grouping is *fixed*;
- * - any other `Assign` (e.g., `assign::counts({{0, 300}, {1, 700}})`), drawn
- *   at every reset: each run (and each replicate of `run_multiple()`) then
- *   gets its own draw, from its own seed, as a network layer from a `graph::`
- *   generator does. See `assign.hpp`.
- *
- * ### Contacts: a matrix or a probability per pair
- *
- * The contacts are given in one of two ways:
- * - `set_contact_matrix()`: contacts across groups, for a few groups that meet
- *   each other (age groups in public spaces). Entry `(g, h)` is the expected
- *   number of contacts per day of an agent in `g` with agents in `h`. With
- *   `set_contact_rate(param)`, the contacts are the model parameter `param`
- *   times the matrix, so a global event or a calibration can change them
- *   (one group and a 1 x 1 matrix of 1: everyone meets "Contact rate" others
- *   a day, at random).
- * - `set_contact_prob()`: contacts within groups only, for many small groups
- *   (households, classrooms, transit trips). Each member meets each other
- *   member of its group with probability `q` per day, whatever the size of the
- *   group; `q = 1` makes every group a clique (everyone meets everyone, every
- *   day), with no ties stored. One number sets the same `q` for every group.
- *   It needs the grouping from `set_groups()`.
- *
- * Setting one between runs drops the other. A within-group layer is seen by
- * the model's queue (an infectious agent reaches only its own group), and
- * `members_of()` lists a group.
- *
- * ### Sampling
- *
- * Each step, `update()` rebuilds the pool of infectious agents of each group,
- * and the number of agents in the mixing per group, without scanning the
- * population: infectious agents are the carriers in infectious states, from
- * the model's per-state index (walked in ascending id order), and the counts
- * are the group sizes minus the few agents in excluded states.
- *
- * `sample()` then meets each infectious agent of a group `g` with a
- * probability `p` per pair, independently: it draws a binomial number of
- * contacts over the infectious agents of `g` and picks that many *distinct*
- * ones (a partial shuffle of the pool), skipping the agent itself. With
- * `p = 1` it takes them all, with no random draws. Within groups, the only
- * group is the agent's own and `p = q[g]`. With a matrix, `p = min(1,
- * rate * contact_matrix(group of agent, g) / others(g))`, where `rate` is the
- * contact-rate parameter (1 without one) and `others(g)` is the number of
- * agents of `g` in the mixing other than the agent itself: the contacts per
- * day stay as the matrix says when agents are excluded.
- *
- * ### Edits
- *
- * `set_group()`, `set_contact_matrix()` and `set_contact_prob()` called
- * during a run apply to that run only: they set the dirty flag, and the next
- * `reset()` restores the baseline. A move made during a step takes effect at
- * the end of the step, with the pools (the agents of the step sample from the
- * grouping it started with). Called between runs, they set the baseline (so a
- * calibration can reuse one model). `set_groups()` sets the baseline grouping
- * and can only be called between runs.
- *
- * ### History (traced within-group layers)
- *
- * A within-group layer with tracing on (`enable_tracing()`) keeps, for the
- * current run, the history of who was in which group and who was absent (in
- * an excluded state), day by day: `groupmates_of(agent, d1, d2, out)` lists
- * who shared a group with `agent`, both present, between days `d1` and `d2`, with
- * the days they shared. With `q = 1` that is exactly who the agent met; with
- * `q < 1`, who it could have met (contact tracing by membership: "notify the
- * household"). A move or an absence is recorded when it takes effect (the end
- * of the step, so the next day); leaving the layer (`NO_GROUP`) is a move like
- * any other. Agents that never change group or presence add nothing to the
- * history. Editing the grouping between runs drops it.
- *
- * @tparam TSeq Type of sequence.
- * @ingroup contact_layers
- */
-template<typename TSeq>
-class Mixing : public ContactLayer<TSeq>
-{
-public:
-
-    /// Group of the agents that are not in the layer.
-    static constexpr size_t NO_GROUP = std::numeric_limits< size_t >::max();
-
-private:
-
-    /// A grouping drawn at every reset (see `set_groups()`)
-    struct Grouping {
-        size_t n_groups;
-        std::function< std::vector< size_t >(Model<TSeq> &) > draw;
-    };
-
-    std::optional< ParamRef > rate_ref; ///< Empty: rate 1
-
-    // Grouping
-    std::vector< size_t > groups;          ///< Group of each agent
-    std::vector< size_t > groups_baseline; ///< Fixed, or this run's draw
-    Grouping grouping{0u, nullptr};        ///< Empty draw: fixed groups
-    size_t n_groups = 0u;
-    bool explicit_groups = false; ///< Set by set_groups()
-    bool layout_stale = true;     ///< Group sizes and pool offsets to rebuild
-    std::vector< size_t > group_size; ///< Agents in each group
-
-    std::vector< double > contact_matrix;          ///< Column-major
-    std::vector< double > contact_matrix_baseline; ///< Set between runs
-    std::vector< double > contact_prob;          ///< Within-group `q`, per group
-    std::vector< double > contact_prob_baseline; ///< Set between runs (one entry: every group)
-
-    std::vector< std::vector< size_t > > members; ///< Agents of each group
-
-    /// Moves made during a step (agent, group), applied by `update()`
-    std::vector< std::pair< size_t, size_t > > moves;
-
-    // History of the run (traced within-group layers, see groupmates_of())
-
-    /// From day `from` on, the agent is in `group`, present or absent.
-    struct Spell {
-        int from;
-        bool present;
-        size_t group;
-    };
-
-    /// An agent left a group on day `day` (its first day elsewhere).
-    struct Departure {
-        int day;
-        size_t agent;
-    };
-
-    bool history = false; ///< Kept this run, and still valid
-    /// Per agent, its spells in order (sized only with a history)
-    std::vector< std::vector< Spell > > spells_of;
-    /// Per group, the departures in order (sized only with a history)
-    std::vector< std::vector< Departure > > departures;
-    std::vector< bool > absent;       ///< Per agent, in an excluded state
-    std::vector< size_t > absent_ids; ///< The agents flagged in `absent`
-    /// The step's movers and their group before it (scratch of `update()`)
-    std::vector< std::pair< size_t, size_t > > moved_from;
-
-    /// Records the agent's group and presence from tomorrow on.
-    void record(size_t agent_id, size_t old_group, int today);
-    void clear_history();
-
-    /// Calls `f(group, first, last)` for each span of days in `[a, b]` that
-    /// the agent spent in a group, present.
-    template<typename F>
-    void spells(size_t agent_id, int a, int b, F f) const;
-
-    /// The day the agent last left group `g` (it is no longer there).
-    int last_departure(size_t agent_id, size_t g) const;
-
-    std::vector< size_t > pool;      ///< Infectious agents, partitioned by group
-    std::vector< size_t > offsets;   ///< Where each group starts in `pool`
-    std::vector< size_t > counts;    ///< Infectious agents per group
-    std::vector< size_t > n_available; ///< Agents in the mixing, per group
-
-    std::vector< uint64_t > marks;   ///< Bitset used to order the pool
-    std::vector< size_t > ordered;   ///< Infectious ids (ascending), scratch
-
-    /**
-     * @brief How many agents of a group an agent meets in a day: the draw of
-     * `Model::rbinom(n, p)` (same distribution, same random numbers), with
-     * its parameters set once a day instead of at every draw.
-     */
-    struct DailyDraw {
-        int n = 0;      ///< Infectious agents of the group
-        double p = 0.0; ///< Probability of meeting each
-        bool poisson = false;
-        std::poisson_distribution<>::param_type pois;
-        std::binomial_distribution<>::param_type binom;
-        void set(int n_, double p_);
-        int operator()(Model<TSeq> & model) const;
-    };
-
-    /// With a contact matrix: entry `own * n_groups + g` is the draw of an
-    /// agent of group `own` (in the mixing) from group `g`, set by `update()`.
-    std::vector< DailyDraw > daily;
-    void daily_build(const Model<TSeq> & model);
-
-    void rebuild_layout();
-    void rebuild_members();
-    void move(size_t agent_id, size_t group, bool notify_queue);
-    void check_agent(size_t agent_id) const;
-    void check_group(size_t group) const;
-
-    /// Meets `n_met` distinct infectious agents of group `g`.
-    void draw(size_t g, size_t n_met, size_t agent, Model<TSeq> & model,
-        std::vector< size_t > & out);
-
-protected:
-
-    // Created with layer::mixing()
-    explicit Mixing(std::string name) : ContactLayer<TSeq>(std::move(name)) {}
-
-    template<typename T>
-    friend std::shared_ptr< Mixing<T> > mixing(std::string);
-
-    // Reads the groups unchecked (as the ties of a network layer)
-    friend class Queue<TSeq>;
-
-public:
-
-    /**
-     * @brief Sets the grouping of the layer (between runs only).
-     * @param a Who is in which group: each agent's label is its group, in
-     * `[0, n_groups_)`, or none (out of the layer). With `assign::labels()`
-     * the grouping is fixed (and `set_group()` between runs edits it);
-     * otherwise it is drawn again at every reset, e.g.,
-     * `assign::counts({{0, 300}, {1, 700}})`. See `assign.hpp`.
-     * @param n_groups_ Number of groups (the contact matrix is
-     * `n_groups x n_groups`).
-     */
-    void set_groups(Assign<TSeq> a, size_t n_groups_);
-
-    /// Group of an agent (`NO_GROUP` if it is not in the layer).
-    size_t get_group(size_t agent_id) const
-    {
-        check_agent(agent_id);
-        return groups[agent_id];
-    }
-
-    /// Whether the agent takes part in the layer (valid after `reset()`).
-    bool in_layer(size_t agent_id) const { return groups[agent_id] != NO_GROUP; }
-
-    /**
-     * @brief Moves an agent to another group (`NO_GROUP` takes it out of the
-     * layer).
-     * @details Like every change made during a step, it is in force for the
-     * contacts of the next step: the move waits for the end of the step, when
-     * the pools are rebuilt (until then, `get_group()` gives the old group).
-     */
-    void set_group(size_t agent_id, size_t group);
-
-    size_t get_n_groups() const { return n_groups; }
-
-    /**
-     * @brief Sets the contact matrix.
-     * @param cmat Column-major `n_groups x n_groups` matrix: entry `(i, j)`
-     * is the expected number of contacts per day that an agent in group `i` has
-     * with agents in group `j`.
-     */
-    void set_contact_matrix(std::vector< double > cmat);
-
-    const std::vector< double > & get_contact_matrix() const
-    {
-        return contact_matrix;
-    }
-
-    /**
-     * @brief The contacts are the model parameter `param` times the contact
-     * matrix (read at the end of every step, after the global events, so a
-     * change to the parameter applies from the next step).
-     * @details For a layer with a contact matrix only; `reset()` throws for a
-     * layer with contact probabilities.
-     */
-    void set_contact_rate(std::string param) { rate_ref.emplace(std::move(param)); }
-
-    bool has_contact_rate() const { return rate_ref.has_value(); }
-
-    /// The contact rate: the value of the `set_contact_rate()` parameter (1
-    /// without one).
-    double get_contact_rate(const Model<TSeq> & model) const
-    {
-        return rate_ref ? (*rate_ref)(model) : 1.0;
-    }
-
-    /**
-     * @brief Sets the probability that two members of a group meet on a given
-     * day (contacts within groups only).
-     * @param q One probability per group, or a single one for every group;
-     * `1` makes the groups cliques (everyone meets everyone, every day).
-     */
-    void set_contact_prob(std::vector< double > q);
-    void set_contact_prob(double q)
-    {
-        set_contact_prob(std::vector< double >{q});
-    }
-
-    /// The within-group contact probabilities (one per group after `reset()`;
-    /// empty with a contact matrix).
-    const std::vector< double > & get_contact_prob() const
-    {
-        return contact_prob;
-    }
-
-    /// Whether the layer mixes within groups only (`set_contact_prob()`).
-    bool within_groups() const { return !contact_prob_baseline.empty(); }
-
-    /// The agents of group `g`, in no particular order (valid after `reset()`).
-    const std::vector< size_t > & members_of(size_t g) const
-    {
-        check_group(g);
-        return members[g];
-    }
-
-    /// A groupmate of an agent over a window of days (see `groupmates_of()`).
-    struct Groupmate {
-        size_t agent;
-        int last_day; ///< The last day they shared a group, both present
-        int n_days;   ///< The days they shared a group, both present
-    };
-
-    /**
-     * @brief Who shared a group with `agent`, both present, between days `d1`
-     * and `d2` (traced within-group layers; see the class description).
-     * @details One entry per groupmate, however many times either moved or
-     * was absent in between. Days before day 1 (when contacts start) and after
-     * today (not known yet) are left out. The history is that of the current (or last) run, and covers it
-     * whole: tracing turned on during a run starts it at the next one.
-     * @throws std::logic_error Without a history (see the class description).
-     * @param out Replaced by the groupmates, in ascending id order (a vector
-     * reused across calls allocates nothing once it has grown).
-     */
-    void groupmates_of(
-        size_t agent_id,
-        int d1,
-        int d2,
-        std::vector< Groupmate > & out
-    ) const;
-
-    layer::Mixing<TSeq> * as_mixing() override { return this; }
-
-    /// Within groups only: a carrier reaches only its own group.
-    bool supports_queue() const override { return within_groups(); }
-
-    /**
-     * @brief Restores the baseline and sizes all buffers for the model (the
-     * first `update()`, on day 0, builds the pools).
-     */
-    void reset(Model<TSeq> & model) override;
-
-    /**
-     * @brief Rebuilds the infectious pools and the available counts from the
-     * current state of the model (once per step).
-     */
-    void update(Model<TSeq> & model) override;
-
-    std::shared_ptr< ContactLayer<TSeq> > clone() const override
-    {
-        return std::make_shared< Mixing<TSeq> >(*this);
-    }
-
-    /**
-     * @brief Samples the infectious contacts of `agent` (none if it is not in
-     * the layer), appending them to `out`.
-     * @details `exclude` is ignored: the pools hold the agents in the model's
-     * infectious states only. See `ContactLayer::sample()`.
-     */
-    size_t sample(
-        size_t agent,
-        Model<TSeq> & model,
-        const std::vector< bool > * exclude,
-        std::vector< size_t > & out
-    ) override;
-
-    /// Number of infectious agents in a group.
-    size_t get_n_infectious(size_t group) const { return counts[group]; }
-
-};
-
-template<typename TSeq>
-inline std::shared_ptr< Mixing<TSeq> > mixing(std::string name)
-{
-    return std::shared_ptr< Mixing<TSeq> >(new Mixing<TSeq>(std::move(name)));
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::set_groups(Assign<TSeq> a, size_t n_groups_)
-{
-
-    if (!this->edits_baseline())
-        throw std::logic_error(
-            "Mixing layer '" + this->get_name() + "': set_groups() sets the "
-            "baseline and cannot be called during a run; use set_group()."
-        );
-
-    if (!a.is_set())
-        throw std::invalid_argument(
-            "Mixing layer '" + this->get_name() + "': empty grouping."
-        );
-
-    // A label is a group, or none
-    const std::string lname = this->get_name();
-    auto to_groups = [lname, n_groups_](const std::vector< int > & labels) {
-        std::vector< size_t > g(labels.size(), NO_GROUP);
-        for (size_t i = 0u; i < labels.size(); ++i)
-        {
-            if (labels[i] == -1)
-                continue;
-            if ((labels[i] < 0) || (static_cast< size_t >(labels[i]) >= n_groups_))
-                throw std::range_error(
-                    "Mixing layer '" + lname + "': the label " +
-                    std::to_string(labels[i]) + " is not a group (" +
-                    std::to_string(n_groups_) + " groups; a grouping gives "
-                    "each agent a group, e.g., assign::counts({{0, n}, ...}))."
-                );
-            g[i] = static_cast< size_t >(labels[i]);
-        }
-        return g;
-    };
-
-    n_groups        = n_groups_;
-    explicit_groups = true;
-    layout_stale    = true;
-
-    if (const auto * fixed = a.get_fixed())
-    {
-        groups_baseline = to_groups(*fixed);
-        groups          = groups_baseline;
-        grouping        = {0u, nullptr};
-        rebuild_members();
-    }
-    else
-    {
-        // Drawn at every reset; everyone can be in a group
-        grouping = {
-            n_groups_,
-            [a, to_groups](Model<TSeq> & model) -> std::vector< size_t > {
-                const std::vector< char > everyone(model.size(), 1);
-                return to_groups(a.draw(model, everyone));
-            }
-        };
-        groups_baseline.clear();
-        groups.clear();
-    }
-
-    clear_history();
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::check_agent(size_t agent_id) const
-{
-    if (agent_id >= groups.size())
-        throw std::range_error(
-            "Mixing layer '" + this->get_name() + "': agent " +
-            std::to_string(agent_id) + " is out of range (the layer has " +
-            std::to_string(groups.size()) + " agents; was it reset?)."
-        );
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::check_group(size_t group) const
-{
-    if (group >= n_groups)
-        throw std::range_error(
-            "Mixing layer '" + this->get_name() + "': group " +
-            std::to_string(group) + " is out of range (" +
-            std::to_string(n_groups) + " groups)."
-        );
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::set_group(size_t agent_id, size_t group)
-{
-
-    check_agent(agent_id);
-    if (group != NO_GROUP)
-        check_group(group);
-
-    // During a run, the move waits for the end of the step (see update())
-    if (!this->edits_baseline())
-    {
-        moves.emplace_back(agent_id, group);
-        return;
-    }
-
-    if (grouping.draw)
-        throw std::logic_error(
-            "Mixing layer '" + this->get_name() + "': its grouping is drawn "
-            "at every reset, so a move between runs would be lost; move "
-            "agents during a run, or set fixed groups with set_groups()."
-        );
-
-    groups_baseline[agent_id] = group;
-    move(agent_id, group, false);
-    clear_history();
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::move(
-    size_t agent_id,
-    size_t group,
-    bool notify_queue
-)
-{
-
-    const size_t old = groups[agent_id];
-    if (old == group)
-        return;
-
-    // During a run, the queue follows the move (it sees within-group layers)
-    if (notify_queue && (this->model != nullptr) && within_groups())
-        this->model->group_member_moved(
-            agent_id,
-            old   == NO_GROUP ? nullptr : &members[old],
-            group == NO_GROUP ? nullptr : &members[group]
-        );
-
-    if (old != NO_GROUP)
-    {
-        auto & m = members[old];
-        auto it = std::find(m.begin(), m.end(), agent_id);
-        *it = m.back();
-        m.pop_back();
-    }
-
-    if (group != NO_GROUP)
-        members[group].push_back(agent_id);
-
-    groups[agent_id] = group;
-    layout_stale = true;
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::set_contact_matrix(std::vector< double > cmat)
-{
-
-    for (double c : cmat)
-        if (c < 0.0)
-            throw std::range_error(
-                "Mixing layer '" + this->get_name() + "': the contact matrix "
-                "must be non-negative (" + std::to_string(c) + " < 0)."
-            );
-
-    // Between runs, the size is checked by reset() (the grouping may not be
-    // set yet); during a run, the grouping and the form are fixed
-    if (this->edits_baseline())
-    {
-        contact_matrix_baseline = cmat;
-        contact_prob_baseline.clear();
-    }
-    else if (within_groups())
-        throw std::logic_error(
-            "Mixing layer '" + this->get_name() + "': the layer mixes within "
-            "groups (set_contact_prob()); a contact matrix can only replace "
-            "the contact probabilities between runs."
-        );
-    else if (cmat.size() != n_groups * n_groups)
-        throw std::length_error(
-            "Mixing layer '" + this->get_name() + "': the contact matrix has " +
-            std::to_string(cmat.size()) + " entries, but the layer has " +
-            std::to_string(n_groups) + " groups."
-        );
-
-    contact_matrix = std::move(cmat);
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::set_contact_prob(std::vector< double > q)
-{
-
-    if (q.empty())
-        throw std::length_error(
-            "Mixing layer '" + this->get_name() + "': set_contact_prob() needs "
-            "at least one probability."
-        );
-
-    for (double x : q)
-        if (!((x >= 0.0) && (x <= 1.0)))
-            throw std::range_error(
-                "Mixing layer '" + this->get_name() + "': contact probabilities "
-                "must be in [0, 1] (" + std::to_string(x) + ")."
-            );
-
-    // Between runs, the size is checked by reset(); during a run, the
-    // grouping and the form are fixed
-    if (this->edits_baseline())
-    {
-        contact_prob_baseline = q;
-        contact_matrix_baseline.clear();
-    }
-    else
-    {
-
-        if (!within_groups())
-            throw std::logic_error(
-                "Mixing layer '" + this->get_name() + "': the layer has a "
-                "contact matrix; contact probabilities can only replace it "
-                "between runs."
-            );
-
-        // A copy: assign() may free the element before reading it
-        if (q.size() == 1u)
-            q.assign(n_groups, double(q[0u]));
-        else if (q.size() != n_groups)
-            throw std::length_error(
-                "Mixing layer '" + this->get_name() + "': " +
-                std::to_string(q.size()) + " contact probabilities, but the "
-                "layer has " + std::to_string(n_groups) + " groups."
-            );
-
-    }
-
-    contact_prob = std::move(q);
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::rebuild_members()
-{
-
-    members.assign(n_groups, {});
-    for (size_t i = 0u; i < groups.size(); ++i)
-        if (groups[i] != NO_GROUP)
-            members[groups[i]].push_back(i);
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::rebuild_layout()
-{
-
-    group_size.assign(n_groups, 0u);
-    for (size_t g : groups)
-        if (g != NO_GROUP)
-            ++group_size[g];
-
-    counts.assign(n_groups, 0u);
-    offsets.assign(n_groups, 0u);
-    n_available.assign(n_groups, 0u);
-
-    // Groups start where the previous one ends (at most its size)
-    for (size_t i = 1u; i < n_groups; ++i)
-        offsets[i] = offsets[i - 1u] + group_size[i - 1u];
-
-    layout_stale = false;
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::reset(Model<TSeq> & model)
-{
-
-    const size_t n = model.size();
-
-    if (!explicit_groups)
-        throw std::logic_error(
-            "Mixing layer '" + this->get_name() + "': it has no groups; set "
-            "them with set_groups()."
-        );
-
-    // This run's draw, or the fixed groups (edits of the last run dropped)
-    if (grouping.draw)
-    {
-        groups_baseline = grouping.draw(model);
-        for (size_t g : groups_baseline)
-            if ((g != NO_GROUP) && (g >= n_groups))
-                throw std::range_error(
-                    "Mixing layer '" + this->get_name() + "': the grouping "
-                    "drew group " + std::to_string(g) + ", out of range (" +
-                    std::to_string(n_groups) + " groups)."
-                );
-    }
-
-    groups = groups_baseline;
-    if (groups.size() != n)
-        throw std::length_error(
-            "Mixing layer '" + this->get_name() + "': the grouping has " +
-            std::to_string(groups.size()) + " agents, but the model has " +
-            std::to_string(n) + "."
-        );
-
-    // Edits of the last run are dropped
-    if (within_groups())
-    {
-
-        contact_prob = contact_prob_baseline;
-        // A copy: assign() may free the element before reading it
-        if (contact_prob.size() == 1u)
-            contact_prob.assign(n_groups, double(contact_prob[0u]));
-        else if (contact_prob.size() != n_groups)
-            throw std::length_error(
-                "Mixing layer '" + this->get_name() + "': " +
-                std::to_string(contact_prob.size()) + " contact "
-                "probabilities, but the layer has " +
-                std::to_string(n_groups) + " groups."
-            );
-
-        contact_matrix.clear();
-
-        if (has_contact_rate())
-            throw std::logic_error(
-                "Mixing layer '" + this->get_name() + "': a contact rate "
-                "scales a contact matrix; this layer has contact "
-                "probabilities (within groups)."
-            );
-
-    }
-    else
-    {
-
-        contact_matrix = contact_matrix_baseline;
-        if (contact_matrix.size() != n_groups * n_groups)
-            throw std::length_error(
-                "Mixing layer '" + this->get_name() + "': the contact matrix "
-                "has " + std::to_string(contact_matrix.size()) + " entries, but "
-                "the layer has " + std::to_string(n_groups) + " groups."
-            );
-
-        contact_prob.clear();
-
-    }
-
-    rebuild_members();
-    moves.clear();
-
-    clear_history();
-    history = within_groups() && this->is_tracing();
-    if (history)
-    {
-        spells_of.resize(n);
-        departures.resize(n_groups);
-        absent.assign(n, false);
-    }
-
-    pool.assign(n, 0u);
-    ordered.clear();
-    ordered.reserve(n);
-    marks.assign((n + 63u) / 64u, 0u);
-
-    rebuild_layout();
-    this->mark_clean();
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::update(Model<TSeq> & model)
-{
-
-    // Moves made during the step; the history keeps each agent's net change
-    // (several moves of one agent in a step are one, or none if it is back)
-    moved_from.clear();
-    for (const auto & [agent_id, group] : moves)
-    {
-        if (history)
-            moved_from.emplace_back(agent_id, groups[agent_id]);
-
-        move(agent_id, group, true);
-    }
-    moves.clear();
-
-    // The first entry of each agent has its group before the step
-    std::stable_sort(
-        moved_from.begin(), moved_from.end(),
-        [](const auto & x, const auto & y) { return x.first < y.first; }
-    );
-    for (size_t i = 0u; i < moved_from.size(); ++i)
-    {
-        const auto & [agent_id, old] = moved_from[i];
-        if ((i > 0u) && (moved_from[i - 1u].first == agent_id))
-            continue;
-
-        if (groups[agent_id] != old)
-            record(agent_id, old, model.today());
-    }
-
-    if (layout_stale)
-        rebuild_layout();
-
-    const size_t ns = static_cast< size_t >(model.nstates);
-    const auto & not_infectious = model.state_not_infectious;
-
-    std::fill(counts.begin(), counts.end(), 0u);
-
-    // Marking the carriers in infectious states; walking the bitset gives
-    // ascending ids. States without carriers (e.g., the susceptible) are
-    // skipped without a scan.
-    for (size_t s = 0u; s < ns; ++s)
-    {
-        if ((model.state_carriers[s] == 0u) ||
-            (!not_infectious.empty() && not_infectious[s]))
-            continue;
-
-        for (size_t id : model.state_index_members(s))
-            if (model.agent_carrier[id])
-                marks[id >> 6] |= (uint64_t(1) << (id & 63u));
-    }
-
-    ordered.clear();
-    for (size_t w = 0u; w < marks.size(); ++w)
-    {
-        uint64_t word = marks[w];
-        marks[w] = 0u;
-        while (word != 0u)
-        {
-            ordered.push_back((w << 6) + epi_ctz64(word));
-            word &= (word - 1u);
-        }
-    }
-
-    // Placing them in their group (agents out of the layer are not in the mixing)
-    for (size_t id : ordered)
-    {
-        const size_t g = groups[id];
-        if (g == NO_GROUP)
-            continue;
-
-        pool[offsets[g] + counts[g]++] = id;
-    }
-
-    // In the mixing = group size - agents in excluded states
-    for (size_t g = 0u; g < n_groups; ++g)
-        n_available[g] = group_size[g];
-
-    // Back from an excluded state
-    if (history)
-    {
-        size_t k = 0u;
-        for (size_t id : absent_ids)
-        {
-            if (model.state_excluded[model.agent_state[id]])
-                absent_ids[k++] = id;
-            else
-            {
-                absent[id] = false;
-                record(id, NO_GROUP, model.today());
-            }
-        }
-        absent_ids.resize(k);
-    }
-
-    for (size_t s = 0u; s < ns; ++s)
-    {
-        if (!model.state_excluded[s])
-            continue;
-
-        for (size_t id : model.state_index_members(s))
-        {
-            if (history && !absent[id])
-            {
-                absent[id] = true;
-                absent_ids.push_back(id);
-                record(id, NO_GROUP, model.today());
-            }
-
-            const size_t g = groups[id];
-            if (g == NO_GROUP)
-                continue;
-
-            if (n_available[g] > 0u)
-                --n_available[g];
-        }
-    }
-
-    if (!within_groups())
-        daily_build(model);
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::record(size_t agent_id, size_t old_group, int today)
-{
-
-    const size_t g = groups[agent_id];
-    spells_of[agent_id].push_back({today + 1, !absent[agent_id], g});
-
-    // Absences do not change the members
-    if ((old_group != NO_GROUP) && (old_group != g))
-        departures[old_group].push_back({today + 1, agent_id});
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::clear_history()
-{
-    history = false;
-    // Freed, not just emptied: an untraced layer holds nothing
-    std::vector< std::vector< Spell > >().swap(spells_of);
-    std::vector< std::vector< Departure > >().swap(departures);
-    std::vector< bool >().swap(absent);
-    absent_ids.clear();
-}
-
-template<typename TSeq>
-template<typename F>
-inline void Mixing<TSeq>::spells(size_t agent_id, int a, int b, F f) const
-{
-
-    // Walking back from the last spell, each one holding until the next
-    int end = b + 1;
-    const auto & sp = spells_of[agent_id];
-    for (auto s = sp.rbegin(); (s != sp.rend()) && (end > a); ++s)
-    {
-        const int first = std::max(s->from, a);
-        if (s->present && (s->group != NO_GROUP) && (first < end))
-            f(s->group, first, end - 1);
-
-        end = std::min(end, s->from);
-    }
-
-    // Before its first change, the agent is where the run started
-    if ((end > a) && (groups_baseline[agent_id] != NO_GROUP))
-        f(groups_baseline[agent_id], a, end - 1);
-
-}
-
-template<typename TSeq>
-inline int Mixing<TSeq>::last_departure(size_t agent_id, size_t g) const
-{
-
-    // The spell after its last one in g (none: it left its starting group)
-    const auto & sp = spells_of[agent_id];
-    for (size_t k = sp.size() - 1u; k > 0u; --k)
-        if (sp[k - 1u].group == g)
-            return sp[k].from;
-
-    return sp[0u].from;
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::groupmates_of(
-    size_t agent_id,
-    int d1,
-    int d2,
-    std::vector< Groupmate > & out
-) const
-{
-
-    check_agent(agent_id);
-    if (!history)
-        throw std::logic_error(
-            "Mixing layer '" + this->get_name() + "': " + (
-                (this->is_tracing() && within_groups()) ?
-                "no history. It covers whole runs: tracing was turned on, "
-                "or the grouping edited, after the last run started; the "
-                "next run keeps one." :
-                "groupmates_of() needs a traced layer (enable_tracing() "
-                "before the run) with contact probabilities (within groups)."
-            )
-        );
-
-    // Contacts start on day 1 (day 0 is the initial state)
-    d1 = std::max(d1, 1);
-    d2 = std::min(d2, this->model->today());
-
-    // One entry per shared span, merged per groupmate below
-    out.clear();
-    spells(agent_id, d1, d2, [&](size_t g, int a, int b) {
-
-        auto shared = [&](size_t other) {
-            spells(other, a, b, [&](size_t h, int first, int last) {
-                if (h == g)
-                    out.push_back({other, last, last - first + 1});
-            });
-        };
-
-        // The members now
-        for (size_t other : members[g])
-            if (other != agent_id)
-                shared(other);
-
-        // Those who left after day a, each once: at its last departure
-        const auto & left = departures[g];
-        for (auto d = left.rbegin(); (d != left.rend()) && (d->day > a); ++d)
-            if (
-                (d->agent != agent_id) && (groups[d->agent] != g) &&
-                (last_departure(d->agent, g) == d->day)
-            )
-                shared(d->agent);
-
-    });
-
-    std::sort(out.begin(), out.end(), [](const auto & x, const auto & y) {
-        return x.agent < y.agent;
-    });
-
-    size_t k = 0u;
-    for (size_t i = 0u; i < out.size(); ++i)
-    {
-        if ((k > 0u) && (out[k - 1u].agent == out[i].agent))
-        {
-            out[k - 1u].last_day = std::max(out[k - 1u].last_day, out[i].last_day);
-            out[k - 1u].n_days  += out[i].n_days;
-        }
-        else
-            out[k++] = out[i];
-    }
-    out.resize(k);
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::DailyDraw::set(int n_, double p_)
-{
-
-    n = n_;
-    p = p_;
-    poisson = false;
-
-    if ((n == 0) || (p <= 0.0) || (p >= 1.0))
-        return;
-
-    // The same choice as Model::rbinom(n, p)
-    #ifdef EPI_FAST_BINOM
-    if ((p <= 0.01) && (static_cast< double >(n) * p * p <= 0.1))
-    {
-        poisson = true;
-        pois = std::poisson_distribution<>::param_type(static_cast< double >(n) * p);
-        return;
-    }
-    #endif
-
-    binom = std::binomial_distribution<>::param_type(n, p);
-
-}
-
-template<typename TSeq>
-inline int Mixing<TSeq>::DailyDraw::operator()(Model<TSeq> & model) const
-{
-
-    if ((n == 0) || (p <= 0.0))
-        return 0;
-
-    // Everyone, with no random draws
-    if (p >= 1.0)
-        return n;
-
-    if (poisson)
-        return std::min(model.rpoissd(*model.engine, pois), n);
-
-    return model.rbinomd(*model.engine, binom);
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::daily_build(const Model<TSeq> & model)
-{
-
-    // The contact rate scales the whole matrix
-    const double scale = get_contact_rate(model);
-
-    daily.resize(n_groups * n_groups);
-    for (size_t own = 0u; own < n_groups; ++own)
-    {
-
-        // Column of the group: entry (own, g) is rate[g * n_groups]
-        const double * rate = contact_matrix.data() + own;
-        for (size_t g = 0u; g < n_groups; ++g)
-        {
-
-            // In its own group, an agent's contacts are the others
-            const size_t others = n_available[g] - ((g == own) ? 1u : 0u);
-            const double p = (others == 0u || n_available[g] == 0u) ? 0.0 :
-                std::min(
-                    1.0,
-                    scale * rate[g * n_groups] / static_cast< double >(others)
-                );
-
-            daily[own * n_groups + g].set(static_cast< int >(counts[g]), p);
-
-        }
-
-    }
-
-}
-
-template<typename TSeq>
-inline void Mixing<TSeq>::draw(
-    size_t g,
-    size_t n_met,
-    size_t agent,
-    Model<TSeq> & model,
-    std::vector< size_t > & out
-)
-{
-
-    const size_t n_pool = counts[g];
-
-    // A binomial number of distinct agents is the same as meeting each one
-    // independently with probability p; with p = 1 (a clique) it is everyone,
-    // with no draws. A partial shuffle of the pool puts the ones met first.
-    size_t * first = pool.data() + offsets[g];
-    for (size_t s = 0u; s < n_met; ++s)
-    {
-
-        if (n_met < n_pool)
-        {
-            size_t which = s + static_cast< size_t >(
-                model.runif() * static_cast< double >(n_pool - s)
-            );
-
-            // Correcting overflow error
-            if (which >= n_pool)
-                which = n_pool - 1u;
-
-            std::swap(first[s], first[which]);
-        }
-
-        const size_t id = first[s];
-
-        #ifdef EPI_DEBUG
-        if (model.get_agent(id).get_virus() == nullptr)
-            throw std::logic_error(
-                "The agent is not infected, but it should be."
-            );
-        #endif
-
-        // Can't meet itself
-        if (id != agent)
-            out.push_back(id);
-
-    }
-
-}
-
-template<typename TSeq>
-inline size_t Mixing<TSeq>::sample(
-    size_t agent,
-    Model<TSeq> & model,
-    const std::vector< bool > *,
-    std::vector< size_t > & out
-)
-{
-
-    if (!in_layer(agent))
-        return 0u;
-
-    const size_t first = out.size();
-
-    const size_t own = groups[agent];
-
-    if (within_groups())
-    {
-        // Only the agent's own group
-        const double q = contact_prob[own];
-        const size_t n_pool = counts[own];
-        if ((n_pool > 0u) && (q > 0.0))
-            draw(
-                own,
-                (q < 1.0) ?
-                    static_cast< size_t >(model.rbinom(static_cast< int >(n_pool), q)) :
-                    n_pool,
-                agent, model, out
-            );
-    }
-    else if (!model.state_excluded[model.agent_state[agent]])
-    {
-
-        // The day's draws of the agent's group (see update())
-        const DailyDraw * day = daily.data() + own * n_groups;
-        for (size_t g = 0u; g < n_groups; ++g)
-        {
-            const int n_met = day[g](model);
-            if (n_met > 0)
-                draw(g, static_cast< size_t >(n_met), agent, model, out);
-        }
-
-    }
-    else
-    {
-
-        // An excluded agent is not one of the others of its group (it rarely
-        // samples: its state usually has no sampler)
-        const double scale = get_contact_rate(model);
-        const double * rate = contact_matrix.data() + own;
-        for (size_t g = 0u; g < n_groups; ++g)
-        {
-            const size_t n_pool = counts[g];
-            const double p = (n_available[g] == 0u) ? 0.0 : std::min(
-                1.0,
-                scale * rate[g * n_groups] / static_cast< double >(n_available[g])
-            );
-            if ((n_pool == 0u) || (p <= 0.0))
-                continue;
-
-            draw(
-                g,
-                (p < 1.0) ?
-                    static_cast< size_t >(model.rbinom(static_cast< int >(n_pool), p)) :
-                    n_pool,
-                agent, model, out
-            );
-        }
-
-    }
-
-    // Reporting the interactions, only if somebody listens
-    const size_t n_sampled = out.size() - first;
-    this->trace(out.data() + first, n_sampled, agent);
-    if (model.has_post_sampling())
-        model.register_sampled_contacts(
-            out.data() + first, n_sampled, static_cast< int >(agent)
-        );
-
-    return n_sampled;
-
-}
-
-}
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/layer-mixing.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/layer-network.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_LAYER_NETWORK_HPP
-#define EPIWORLD_LAYER_NETWORK_HPP
-
-namespace layer {
-
-/**
- * @brief A fixed network layer (see `Network`).
- * @param name Name of the layer (unique in a model).
- * @param graph The ties; its number of vertices must match the model's
- * population. Directed if the graph is.
- * @ingroup contact_layers
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-std::shared_ptr< Network<TSeq> > network(std::string name, const AdjList & graph);
-
-/**
- * @brief A network layer drawn at every reset (see `Network`).
- * @param name Name of the layer (unique in a model).
- * @param generator Called with the model at every reset; the graph it returns
- * must have one vertex per agent.
- * @ingroup contact_layers
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-std::shared_ptr< Network<TSeq> > network(
-    std::string name,
-    typename Network<TSeq>::Generator generator
-);
-
-/**
- * @brief Contact layer with explicit ties (a network).
- *
- * @details The contacts of an agent in this layer are its ties. A network
- * layer is created with `layer::network()`, either from a graph, which is then
- * *fixed*, or from a *generator*, a function that receives the model and
- * returns a graph, which the layer calls at every reset: each run (and each
- * replicate of `run_multiple()`) then gets its own draw, from its own seed.
- * The `graph::` functions return generators; any function
- * `AdjList(Model<TSeq> &)` is one.
- *
- * ### Ties and their order
- *
- * Each agent's ties are kept in the order they were added (a graph is loaded
- * with each agent's ties in ascending id order, without repeats), and that
- * order is load-bearing: the single draw that picks the infector walks the
- * contacts in this order, so whichever agent sits at a given position is the
- * one recorded. Adding or removing a tie never permutes the others. Agents with
- * more than `EPI_NEIGHBOR_INDEX_THRESHOLD` ties also get a position index, so
- * that looking a tie up is not a scan.
- *
- * ### Edits
- *
- * `add_edge()`, `rm_edge()` and the rewiring function are the only way to
- * change the ties, and they keep the model's queue and agents-by-state index in
- * step, so they are safe at any point of a run. An edit made during a run
- * applies to that run only: the next reset restores a fixed graph, and redraws
- * a generated one. An edit made between runs changes a fixed graph for the runs
- * that follow; a generated graph is redrawn anyway.
- *
- * ### Rewiring
- *
- * `set_rewiring()` gives the layer a function that is called at the end of
- * every step (not on day 0), after the global events, with the layer and the
- * model; `graph::rewire_degseq()` returns the degree-preserving one.
- *
- * @tparam TSeq Type of sequence.
- * @ingroup contact_layers
- */
-template<typename TSeq>
-class Network : public ContactLayer<TSeq>
-{
-    friend class Model<TSeq>;
-    friend class Queue<TSeq>;
-
-public:
-
-    /// Returns the graph of a run (called at every reset).
-    using Generator = std::function< AdjList(Model<TSeq> &) >;
-
-    /// Changes the ties at the end of each step.
-    using Rewiring = std::function< void(Network<TSeq> &, Model<TSeq> &) >;
-
-private:
-
-    Generator generator; ///< Empty for a fixed graph
-    Rewiring rewiring;
-    bool directed = false;
-
-    std::vector< std::vector< size_t > > ties; ///< Neighbors of each agent
-
-    /// Position of each neighbor, only for agents with many ties
-    std::unordered_map< size_t, std::unordered_map< size_t, size_t > > index;
-
-    // The fixed graph the next reset restores, one row per agent; empty until
-    // the first edit
-    std::vector< size_t > baseline_start;
-    std::vector< size_t > baseline_ids;
-    bool baseline_stale = false; ///< Edited between runs
-
-    void set_graph(const AdjList & graph);
-    void capture_baseline();
-    void restore_baseline();
-    void build_index(size_t i);
-    size_t find(size_t i, size_t j) const; ///< Position of `j` in `ties[i]`
-    bool append(size_t i, size_t j, bool check);
-    void erase_at(size_t i, size_t pos);
-    void check_endpoints(size_t i, size_t j) const;
-    void edit();
-
-protected:
-
-    // Created with layer::network()
-    Network(std::string name, const AdjList & graph);
-    Network(std::string name, Generator generator);
-
-    template<typename T>
-    friend std::shared_ptr< Network<T> > network(std::string, const AdjList &);
-
-    template<typename T>
-    friend std::shared_ptr< Network<T> > network(
-        std::string, typename Network<T>::Generator
-    );
-
-public:
-
-    size_t size() const { return ties.size(); } ///< Number of agents
-    bool is_directed() const { return directed; }
-
-    /// Number of ties of agent `i` (in a directed network, the ties it keeps).
-    size_t get_degree(size_t i) const { return ties[i].size(); }
-
-    /**
-     * @brief The neighbors of agent `i`, without allocating.
-     * @details In order (see the class description). The view is invalidated by
-     * any change to the agent's ties. The layer must belong to a model.
-     */
-    NeighborsView<TSeq> neighbors_view(size_t i);
-
-    /**
-     * @name Edit the ties
-     *
-     * @details Undirected ties only, changed at both ends: `add_edge()` and
-     * `rm_edge()` throw in a directed network.
-     *
-     * @return Whether a tie was added (removed).
-     * @throws std::range_error if an id is out of range.
-     * @throws std::logic_error if `i == j` or the network is directed.
-     */
-    ///@{
-    bool add_edge(size_t i, size_t j);
-    bool rm_edge(size_t i, size_t j);
-    ///@}
-
-    /// Whether `i` and `j` are tied (in a directed network, whether `i -> j`).
-    bool has_edge(size_t i, size_t j) const;
-
-    /**
-     * @brief Swaps two ties: `j`, `i`'s neighbor at position `pos_i`, and `l`,
-     * `k`'s neighbor at position `pos_k`, trade places.
-     *
-     * @details (i-j), (k-l) become (i-l), (k-j); in an undirected network the
-     * other ends follow. No degree changes. Used by rewiring functions.
-     * @throws std::range_error if an id or a position is out of range.
-     * @throws std::logic_error if the network is undirected and the ties share
-     * an endpoint (`i`, `j`, `k` and `l` must be four different agents).
-     */
-    void swap_ties(size_t i, size_t pos_i, size_t k, size_t pos_k);
-
-    /// Sets the function that rewires the ties at the end of each step.
-    void set_rewiring(Rewiring fun) { rewiring = std::move(fun); }
-    bool has_rewiring() const { return static_cast< bool >(rewiring); }
-
-    /**
-     * @brief The ties as an edge list.
-     * @details Each undirected tie once (`source <= target`); each directed
-     * tie as kept by its source. The vectors are appended to.
-     */
-    void get_edgelist(
-        std::vector< int > & source,
-        std::vector< int > & target
-    ) const;
-
-    /// Writes the edge list (see `get_edgelist()`) to a file.
-    void write_edgelist(const std::string & fn) const;
-
-    /**
-     * @brief The neighbors of `agent` that carry a virus, written to `out`
-     * (room for `get_degree(agent)` entries).
-     * @details Neighbors in a state flagged in `exclude` (if not null) are
-     * skipped. With `Record`, each contact is reported to the model's
-     * post-sampling callback.
-     * @return The number of contacts written.
-     */
-    template< bool Record >
-    size_t pull(
-        size_t agent,
-        Model<TSeq> & model,
-        const std::vector< bool > * exclude,
-        size_t * out
-    ) const;
-
-    /// The network's part of a pull (see `ContactLayer::sample()`).
-    size_t sample(
-        size_t agent,
-        Model<TSeq> & model,
-        const std::vector< bool > * exclude,
-        std::vector< size_t > & out
-    ) override
-    {
-
-        const size_t first = out.size();
-        out.resize(first + ties[agent].size());
-
-        // The recording path is chosen once per call, not per contact
-        const size_t n = model.post_sampling_on ?
-            pull<true>(agent, model, exclude, out.data() + first) :
-            pull<false>(agent, model, exclude, out.data() + first);
-
-        out.resize(first + n);
-        this->trace(out.data() + first, n, agent);
-        return n;
-
-    }
-
-    void reset(Model<TSeq> & model) override;
-    void update(Model<TSeq> & model) override;
-
-    layer::Network<TSeq> * as_network() override { return this; }
-
-    /// An undirected network: a carrier's ties are its contacts' ties too.
-    bool supports_queue() const override { return !directed; }
-
-    std::shared_ptr< ContactLayer<TSeq> > clone() const override
-    {
-        return std::make_shared< Network<TSeq> >(*this);
-    }
-
-};
-
-template<typename TSeq>
-inline std::shared_ptr< Network<TSeq> > network(
-    std::string name,
-    const AdjList & graph
-)
-{
-    return std::shared_ptr< Network<TSeq> >(
-        new Network<TSeq>(std::move(name), graph)
-    );
-}
-
-template<typename TSeq>
-inline std::shared_ptr< Network<TSeq> > network(
-    std::string name,
-    typename Network<TSeq>::Generator generator
-)
-{
-    return std::shared_ptr< Network<TSeq> >(
-        new Network<TSeq>(std::move(name), std::move(generator))
-    );
-}
-
-template<typename TSeq>
-inline Network<TSeq>::Network(std::string name, const AdjList & graph) :
-    ContactLayer<TSeq>(std::move(name))
-{
-    set_graph(graph);
-}
-
-template<typename TSeq>
-inline Network<TSeq>::Network(std::string name, Generator generator_) :
-    ContactLayer<TSeq>(std::move(name)),
-    generator(std::move(generator_))
-{
-    if (!generator)
-        throw std::invalid_argument(
-            "Network layer '" + this->get_name() + "': empty generator."
-        );
-}
-
-template<typename TSeq>
-inline void Network<TSeq>::set_graph(const AdjList & graph)
-{
-
-    const size_t n = graph.vcount();
-
-    // AdjList::is_directed() throws on a graph with no vertices
-    directed = (n > 0u) && graph.is_directed();
-
-    // Each row of the graph (sorted, without repeats) becomes its agent's
-    // ties. Resizing rather than reassigning keeps the rows' memory from one
-    // draw of a generator to the next.
-    const auto & start = graph.get_start();
-    const auto & ids = graph.get_ids();
-
-    ties.resize(n);
-    index.clear();
-    for (size_t i = 0u; i < n; ++i)
-    {
-
-        ties[i].assign(
-            ids.begin() + static_cast< std::ptrdiff_t >(start[i]),
-            ids.begin() + static_cast< std::ptrdiff_t >(start[i + 1u])
-        );
-
-        if (ties[i].size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
-            build_index(i);
-
-    }
-
-}
-
-template<typename TSeq>
-inline void Network<TSeq>::capture_baseline()
-{
-
-    const size_t n = ties.size();
-    baseline_start.assign(n + 1u, 0u);
-    for (size_t i = 0u; i < n; ++i)
-        baseline_start[i + 1u] = baseline_start[i] + ties[i].size();
-
-    baseline_ids.resize(baseline_start[n]);
-    for (size_t i = 0u; i < n; ++i)
-        std::copy(
-            ties[i].begin(), ties[i].end(),
-            baseline_ids.begin() + static_cast< std::ptrdiff_t >(baseline_start[i])
-        );
-
-}
-
-template<typename TSeq>
-inline void Network<TSeq>::restore_baseline()
-{
-
-    const size_t n = baseline_start.size() - 1u;
-    ties.resize(n);
-    index.clear();
-    for (size_t i = 0u; i < n; ++i)
-    {
-
-        ties[i].assign(
-            baseline_ids.begin() + static_cast< std::ptrdiff_t >(baseline_start[i]),
-            baseline_ids.begin() + static_cast< std::ptrdiff_t >(baseline_start[i + 1u])
-        );
-
-        if (ties[i].size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
-            build_index(i);
-
-    }
-
-}
-
-template<typename TSeq>
-inline void Network<TSeq>::build_index(size_t i)
-{
-
-    auto & pos = index[i];
-    pos.clear();
-    pos.reserve(ties[i].size());
-    for (size_t k = 0u; k < ties[i].size(); ++k)
-        pos[ties[i][k]] = k;
-
-}
-
-template<typename TSeq>
-inline size_t Network<TSeq>::find(size_t i, size_t j) const
-{
-
-    const auto & row = ties[i];
-
-    if (row.size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
-    {
-        const auto & pos = index.at(i);
-        auto it = pos.find(j);
-        return (it == pos.end()) ? row.size() : it->second;
-    }
-
-    for (size_t k = 0u; k < row.size(); ++k)
-        if (row[k] == j)
-            return k;
-
-    return row.size();
-
-}
-
-template<typename TSeq>
-inline bool Network<TSeq>::append(size_t i, size_t j, bool check)
-{
-
-    if (check && (find(i, j) != ties[i].size()))
-        return false;
-
-    ties[i].push_back(j);
-
-    if (ties[i].size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
-    {
-        auto it = index.find(i);
-        if (it == index.end())
-            build_index(i);
-        else
-            it->second[j] = ties[i].size() - 1u;
-    }
-
-    return true;
-
-}
-
-template<typename TSeq>
-inline void Network<TSeq>::erase_at(size_t i, size_t pos)
-{
-
-    auto & row = ties[i];
-    row.erase(row.begin() + static_cast< std::ptrdiff_t >(pos));
-
-    // Everything after `pos` shifted down by one, so the index has to follow.
-    // Moving the last tie into the hole would be O(1) but would permute the
-    // others, and their order decides which infector the draw picks.
-    if (row.size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
-        build_index(i);
-    else
-        index.erase(i);
-
-}
-
-template<typename TSeq>
-inline void Network<TSeq>::check_endpoints(size_t i, size_t j) const
-{
-
-    if ((i >= ties.size()) || (j >= ties.size()))
-        throw std::range_error(
-            "Network layer '" + this->get_name() + "': agent ids must be below " +
-            std::to_string(ties.size()) + "; got " + std::to_string(i) +
-            " and " + std::to_string(j) + "."
-        );
-
-    if (i == j)
-        throw std::logic_error(
-            "Network layer '" + this->get_name() + "': an agent cannot be tied "
-            "to itself (agent " + std::to_string(i) + ")."
-        );
-
-    if (directed)
-        throw std::logic_error(
-            "Network layer '" + this->get_name() + "': add_edge() and rm_edge() "
-            "change both ends of a tie, which is not meaningful in a directed "
-            "network."
-        );
-
-}
-
-template<typename TSeq>
-inline void Network<TSeq>::edit()
-{
-
-    // A fixed graph keeps a copy to restore, taken before its first edit, so
-    // that a graph never edited is held once
-    if (!generator && baseline_start.empty())
-        capture_baseline();
-
-    // Between runs, a fixed graph is edited from its baseline: the edits of the
-    // last run are dropped first, and the next reset takes the result as the
-    // new baseline.
-    const bool dirty = this->is_dirty();
-    if (!this->edits_baseline() || generator)
-        return;
-
-    if (dirty)
-    {
-        restore_baseline();
-        this->mark_clean();
-    }
-
-    baseline_stale = true;
-
-}
-
-template<typename TSeq>
-inline NeighborsView<TSeq> Network<TSeq>::neighbors_view(size_t i)
-{
-
-    if (this->model == nullptr)
-        throw std::logic_error(
-            "Network layer '" + this->get_name() + "': neighbors_view() needs "
-            "the layer to be added to a model."
-        );
-
-    if (i >= ties.size())
-        throw std::range_error(
-            "Network layer '" + this->get_name() + "': agent " +
-            std::to_string(i) + " is out of range."
-        );
-
-    const auto & row = ties[i];
-    return NeighborsView<TSeq>(
-        row.empty() ? nullptr : row.data(), row.size(),
-        &this->model->get_agents()
-    );
-
-}
-
-template<typename TSeq>
-inline bool Network<TSeq>::add_edge(size_t i, size_t j)
-{
-
-    check_endpoints(i, j);
-    edit();
-
-    // Two statements, so that the second end is visited even when the first
-    // already had the tie
-    const bool here  = append(i, j, true);
-    const bool there = append(j, i, true);
-
-    if (!here && !there)
-        return false;
-
-    if (this->model != nullptr)
-        this->model->network_tie_changed(i, here ? 1 : 0, j, there ? 1 : 0);
-
-    return true;
-
-}
-
-template<typename TSeq>
-inline bool Network<TSeq>::rm_edge(size_t i, size_t j)
-{
-
-    check_endpoints(i, j);
-    edit();
-
-    const size_t pos_i = find(i, j);
-    const size_t pos_j = find(j, i);
-    const bool rm_i = pos_i != ties[i].size();
-    const bool rm_j = pos_j != ties[j].size();
-
-    // Nothing to unwind if the two were never tied
-    if (!rm_i && !rm_j)
-        return false;
-
-    if (rm_i)
-        erase_at(i, pos_i);
-
-    if (rm_j)
-        erase_at(j, pos_j);
-
-    if (this->model != nullptr)
-        this->model->network_tie_changed(i, rm_i ? -1 : 0, j, rm_j ? -1 : 0);
-
-    return true;
-
-}
-
-template<typename TSeq>
-inline bool Network<TSeq>::has_edge(size_t i, size_t j) const
-{
-
-    if ((i >= ties.size()) || (j >= ties.size()))
-        throw std::range_error(
-            "Network layer '" + this->get_name() + "': agent ids must be below " +
-            std::to_string(ties.size()) + "; got " + std::to_string(i) +
-            " and " + std::to_string(j) + "."
-        );
-
-    return find(i, j) != ties[i].size();
-
-}
-
-template<typename TSeq>
-inline void Network<TSeq>::swap_ties(
-    size_t i,
-    size_t pos_i,
-    size_t k,
-    size_t pos_k
-)
-{
-
-    if ((i >= ties.size()) || (k >= ties.size()))
-        throw std::range_error(
-            "Network layer '" + this->get_name() + "': agent ids must be below " +
-            std::to_string(ties.size()) + "."
-        );
-
-    if (pos_i >= ties[i].size())
-        throw std::range_error(
-            "The tie you want to swap is out of range. Agent " +
-            std::to_string(i) + " only has " + std::to_string(ties[i].size()) +
-            " ties."
-        );
-
-    if (pos_k >= ties[k].size())
-        throw std::range_error(
-            "The tie you want to swap is out of range. Agent " +
-            std::to_string(k) + " only has " + std::to_string(ties[k].size()) +
-            " ties."
-        );
-
-    const size_t j = ties[i][pos_i];
-    const size_t l = ties[k][pos_k];
-
-    // The other ends follow in an undirected network, so ties that share an
-    // agent would write into the rows being swapped (and leave self-ties)
-    if (!directed && ((i == k) || (j == l) || (i == l) || (k == j)))
-        throw std::logic_error(
-            "Network layer '" + this->get_name() + "': swap_ties() needs four "
-            "different agents in an undirected network; the ties (" +
-            std::to_string(i) + "-" + std::to_string(j) + ") and (" +
-            std::to_string(k) + "-" + std::to_string(l) + ") share one."
-        );
-
-    edit();
-
-    std::swap(ties[i][pos_i], ties[k][pos_k]);
-
-    if (!directed)
-    {
-
-        // The two agents that were swapped away have to be told: the one that
-        // pointed back at `i` now points at `k`, and vice versa. Positions are
-        // looked up rather than cached, so ties can be edited without a
-        // back-pointer table going stale.
-        const size_t back_j = find(j, i);
-        const size_t back_l = find(l, k);
-
-        #ifdef EPI_DEBUG
-        if ((back_j >= ties[j].size()) || (back_l >= ties[l].size()))
-            throw std::logic_error(
-                "[epi-debug] swap_ties: the tie is not reciprocated.");
-        #endif
-
-        ties[j][back_j] = k;
-        ties[l][back_l] = i;
-
-        // Four lists may have changed. Rebuilding is O(degree), the same order
-        // as the swap itself, and sidesteps the aliasing cases (an agent on
-        // both sides of the swap) that piecemeal updates get wrong.
-        for (size_t a : {i, k, j, l})
-            if (ties[a].size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
-                build_index(a);
-
-    }
-    else
-    {
-
-        for (size_t a : {i, k})
-            if (ties[a].size() > EPI_NEIGHBOR_INDEX_THRESHOLD)
-                build_index(a);
-
-    }
-
-    // Nobody's degree changed; only the queue needs to follow
-    if (this->model != nullptr)
-        this->model->network_ties_swapped(i, j, k, l, directed);
-
-}
-
-template<typename TSeq>
-inline void Network<TSeq>::get_edgelist(
-    std::vector< int > & source,
-    std::vector< int > & target
-) const
-{
-
-    for (size_t i = 0u; i < ties.size(); ++i)
-        for (size_t j : ties[i])
-            if (directed || (i <= j))
-            {
-                source.push_back(static_cast< int >(i));
-                target.push_back(static_cast< int >(j));
-            }
-
-}
-
-template<typename TSeq>
-inline void Network<TSeq>::write_edgelist(const std::string & fn) const
-{
-
-    std::ofstream efile(fn, std::ios_base::out);
-    efile << "source target\n";
-
-    for (size_t i = 0u; i < ties.size(); ++i)
-        for (size_t j : ties[i])
-            if (directed || (i <= j))
-                efile << i << " " << j << "\n";
-
-}
-
-template<typename TSeq>
-template< bool Record >
-inline size_t Network<TSeq>::pull(
-    size_t agent,
-    Model<TSeq> & model,
-    const std::vector< bool > * exclude,
-    size_t * out
-) const
-{
-
-    size_t n = 0u;
-    const auto & row = ties[agent];
-
-    // During a run, most neighbors do not carry a virus. The model's compact
-    // per-agent flag rules them out reading one byte each instead of loading
-    // the neighbor's `Agent`; the contacts kept, and their order, are the same.
-    const char * carrier = model.get_agent_carrier();
-    auto & agents = model.get_agents();
-
-    for (size_t j : row)
-    {
-
-        if ((carrier != nullptr) && (carrier[j] == 0))
-            continue;
-
-        auto & neighbor = agents[j];
-
-        if ((exclude != nullptr) && (*exclude)[neighbor.get_state()])
-            continue;
-
-        if (neighbor.get_virus() == nullptr)
-            continue;
-
-        // The post-sampling callback sees every eligible contact
-        if constexpr (Record)
-            model.register_sampled_contact(j, agent);
-
-        out[n++] = j;
-
-    }
-
-    return n;
-
-}
-
-template<typename TSeq>
-inline void Network<TSeq>::reset(Model<TSeq> & model)
-{
-
-    if (generator)
-        set_graph(generator(model));
-    else if (this->is_dirty())
-        restore_baseline();
-    else if (baseline_stale)
-        capture_baseline(); // Edits made between runs become the baseline
-
-    baseline_stale = false;
-
-    if (ties.size() != model.size())
-        throw std::length_error(
-            "Network layer '" + this->get_name() + "': the graph has " +
-            std::to_string(ties.size()) + " vertices, but the model has " +
-            std::to_string(model.size()) + " agents."
-        );
-
-    this->mark_clean();
-
-}
-
-template<typename TSeq>
-inline void Network<TSeq>::update(Model<TSeq> & model)
-{
-
-    // Day 0 is recorded, not stepped: rewiring starts at the end of day 1
-    if (rewiring && (model.today() > 0))
-        rewiring(*this, model);
-
-}
-
-}
-
-/**
- * @brief Rewires a share of a network layer's ties, keeping every degree.
- *
- * @details Picks two agents with probability proportional to their degree and
- * one tie of each, uniformly, and swaps them (`layer::Network::swap_ties()`),
- * skipping swaps that would create self-ties or repeated ties;
- * `floor(proportion * sum of degrees)` attempts. Use it through
- * `graph::rewire_degseq()`.
- */
-template<typename TSeq>
-inline void rewire_degseq(
-    layer::Network<TSeq> & net,
-    Model<TSeq> & model,
-    epiworld_double proportion
-)
-{
-
-    const size_t n = net.size();
-
-    #ifdef EPI_DEBUG
-    std::vector< size_t > degree0(n);
-    for (size_t i = 0u; i < n; ++i)
-        degree0[i] = net.get_degree(i);
-    #endif
-
-    // Agents with ties, weighted by degree
-    std::vector< size_t > non_isolates;
-    std::vector< epiworld_double > weights;
-    epiworld_double nedges = 0.0;
-
-    for (size_t i = 0u; i < n; ++i)
-    {
-        if (net.get_degree(i) > 0u)
-        {
-            non_isolates.push_back(i);
-            epiworld_double wtemp = static_cast< epiworld_double >(net.get_degree(i));
-            weights.push_back(wtemp);
-            nedges += wtemp;
-        }
-    }
-
-    if (non_isolates.size() == 0u)
-        throw std::logic_error("The graph is completely disconnected.");
-
-    // Cumulative probs
-    weights[0u] /= nedges;
-    for (size_t i = 1u; i < non_isolates.size(); ++i)
-    {
-         weights[i] /= nedges;
-         weights[i] += weights[i - 1u];
-    }
-
-    const size_t N = non_isolates.size();
-    int nrewires = floor(proportion * nedges);
-    while (nrewires-- > 0)
-    {
-
-        // Picking egos
-        int id0 = static_cast< int >(pick_cumulative(weights, model.runif()));
-        int id1 = static_cast< int >(pick_cumulative(weights, model.runif()));
-
-        // Correcting for under or overflow.
-        if (id1 == id0)
-            id1++;
-
-        if (id1 >= static_cast< int >(N))
-            id1 = 0;
-
-        const size_t a0 = non_isolates[id0];
-        const size_t a1 = non_isolates[id1];
-
-        // Picking alters (relative location in their lists), uniformly
-        const size_t id01 = model.runif_index(net.get_degree(a0));
-        const size_t id11 = model.runif_index(net.get_degree(a1));
-
-        const size_t alter0 = net.neighbors_view(a0).id(id01);
-        const size_t alter1 = net.neighbors_view(a1).id(id11);
-
-        // After the swap a0 is tied to alter1 and a1 to alter0. Skip swaps of
-        // the same alter, and those that would tie an agent to itself or
-        // repeat a tie.
-        if ((alter0 == alter1) || (alter0 == a1) || (alter1 == a0))
-            continue;
-
-        if (net.has_edge(a0, alter1) || net.has_edge(a1, alter0))
-            continue;
-
-        net.swap_ties(a0, id01, a1, id11);
-
-    }
-
-    #ifdef EPI_DEBUG
-    for (size_t i = 0u; i < n; ++i)
-        if (degree0[i] != net.get_degree(i))
-            throw std::logic_error("[epi-debug] Degree does not match after rewire_degseq.");
-    #endif
-
-}
-
-namespace graph {
-
-/**
- * @name Network generators
- *
- * @details Each returns a `layer::Network<TSeq>::Generator`: a function that
- * draws the graph for a model, with one vertex per agent, using the model's
- * random numbers. The arguments are structure, used once per draw (see the
- * contact-layers plan, point 17).
- */
-///@{
-
-/// Small-world network: ring lattice with `k` ties per agent, rewired with
-/// probability `p` (see `rgraph_smallworld()`).
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline typename layer::Network<TSeq>::Generator smallworld(
-    epiworld_fast_uint k,
-    epiworld_double p,
-    bool directed = false
-)
-{
-    return [k, p, directed](Model<TSeq> & model) -> AdjList {
-        return rgraph_smallworld(
-            static_cast< epiworld_fast_uint >(model.size()), k, p, directed, model
-        );
-    };
-}
-
-/// Bernoulli (Erdős–Rényi) network: each tie with probability `p` (see
-/// `rgraph_bernoulli()`).
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline typename layer::Network<TSeq>::Generator bernoulli(
-    epiworld_double p,
-    bool directed = false
-)
-{
-    return [p, directed](Model<TSeq> & model) -> AdjList {
-        return rgraph_bernoulli(
-            static_cast< epiworld_fast_uint >(model.size()), p, directed, model
-        );
-    };
-}
-
-/// Stochastic block model (see `rgraph_sbm()`); the block sizes must add up to
-/// the model's population.
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline typename layer::Network<TSeq>::Generator sbm(
-    std::vector< size_t > block_sizes,
-    std::vector< double > mixing_matrix,
-    bool row_major = true
-)
-{
-    return [block_sizes, mixing_matrix, row_major](Model<TSeq> & model) -> AdjList {
-        return rgraph_sbm(block_sizes, mixing_matrix, row_major, model);
-    };
-}
-
-///@}
-
-/**
- * @brief Degree-preserving rewiring, for `layer::Network::set_rewiring()`.
- *
- * @details Each step, a share of the ties, read from the model parameter
- * `param` (a proportion in `[0, 1]`), is rewired: two ties {(i, j), (k, l)}
- * become {(i, l), (k, j)}, skipping swaps that would create self-ties or
- * repeated ties. In a directed network only the sources' ties move, which keeps
- * every agent's in- and out-degree.
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline typename layer::Network<TSeq>::Rewiring rewire_degseq(std::string param)
-{
-    return [ref = ParamRef(std::move(param))](
-        layer::Network<TSeq> & net, Model<TSeq> & model
-    ) -> void {
-
-        const epiworld_double proportion = ref(model);
-        if ((proportion < 0.0) || (proportion > 1.0))
-            throw std::range_error(
-                "The rewiring proportion '" + ref.name() + "' must be in [0, 1]; "
-                "it is " + std::to_string(proportion) + "."
-            );
-
-        epiworld::rewire_degseq(net, model, proportion);
-
-    };
-}
-
-}
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/layer-network.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/agentssample-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_AGENTS_BONES_HPP
-#define EPIWORLD_AGENTS_BONES_HPP
-
-/**
- * @brief Sample of agents
- * 
- * A sample without replacement from the model's agents, optionally restricted
- * to some states.
- * 
- * @tparam TSeq 
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class AgentsSample {
-private:
-
-    size_t sample_size = 0u;
-
-    std::vector< Agent<TSeq>* >* agents = nullptr; ///< Pointer to sample of agents
-    size_t * agents_n = nullptr;                    ///< Size of sample of agents
-    
-    std::vector< size_t >* agents_left = nullptr;  ///< Pointer to agents left (iota)
-    size_t * agents_left_n = nullptr;               ///< Size of agents left
-
-    Model<TSeq> * model = nullptr; ///< Extracts runif() and the population.
-    std::vector< size_t > states = {};
-
-    void sample_n(size_t n); ///< Backbone function for sampling
-
-
-public:
-
-    // Not available (for now)
-    AgentsSample() = delete;                             ///< Default constructor
-    AgentsSample(const AgentsSample<TSeq> & a) = delete; ///< Copy constructor
-    AgentsSample(AgentsSample<TSeq> && a) = delete;      ///< Move constructor
-
-    AgentsSample(
-        Model<TSeq> & model_, size_t n,
-        std::vector< size_t > states_ = {},
-        bool truncate = false
-        );
-
-    ~AgentsSample();
-
-    typename std::vector< Agent<TSeq> * >::iterator begin();
-    typename std::vector< Agent<TSeq> * >::iterator end();
-
-    Agent<TSeq> * operator[](size_t n);
-    Agent<TSeq> * operator()(size_t n);
-    size_t size() const noexcept;
-
-};
-
-template<typename TSeq>
-inline AgentsSample<TSeq>::AgentsSample(
-    Model<TSeq> & model_,
-    size_t n,
-    std::vector< size_t > states_,
-    bool truncate
-    ) {
-
-    states = states_;
-
-    if (truncate)
-    {
-        
-        if (n > model_.size())
-            n = model_.size();
-
-    } else if (n > model_.size())
-        throw std::logic_error(
-            "There are only " + std::to_string(model_.size()) + " agents. You cannot " +
-            "sample " + std::to_string(n));
-
-    sample_size   = n;
-    model         = &model_;
-
-    agents        = &model_.sampled_population;
-    agents_n      = &model_.sampled_population_n;
-
-    agents_left   = &model_.population_left;
-    agents_left_n = &model_.population_left_n;
-
-    sample_n(n);
-    
-    return; 
-
-}
-
-template<typename TSeq>
-inline AgentsSample<TSeq>::~AgentsSample() {}
-
-template<typename TSeq>
-inline size_t AgentsSample<TSeq>::size() const noexcept
-{ 
-    return this->sample_size;
-}
-
-template<typename TSeq>
-inline Agent<TSeq> * AgentsSample<TSeq>::operator[](size_t i)
-{
-
-    return agents->operator[](i);
-
-}
-
-template<typename TSeq>
-inline Agent<TSeq> * AgentsSample<TSeq>::operator()(size_t i)
-{
-
-    if (i >= this->sample_size)
-        throw std::range_error("The requested agent is out of range.");
-
-    return agents->operator[](i);
-
-}
-
-template<typename TSeq>
-inline typename std::vector< Agent<TSeq> * >::iterator AgentsSample<TSeq>::begin()
-{
-    // Check for null pointer
-    if (agents == nullptr)
-        return typename std::vector< Agent<TSeq> * >::iterator{};
-    
-    return agents->begin();
-}
-
-template<typename TSeq>
-inline typename std::vector< Agent<TSeq> * >::iterator AgentsSample<TSeq>::end()
-{
-    // Check for null pointer
-    if (agents == nullptr)
-        return typename std::vector< Agent<TSeq> * >::iterator{};
-    
-    // Ensure we don't go beyond the actual vector size
-    size_t actual_end = std::min(sample_size, agents->size());
-    return agents->begin() + actual_end;
-}
-
-template<typename TSeq>
-inline void AgentsSample<TSeq>::sample_n(size_t n)
-{
-
-    if (states.size())
-    {
-
-        // Only the agents in the selected states can be sampled
-        agents_left->clear();
-        agents_left->reserve(model->size());
-        for (size_t a_i = 0u; a_i < model->population.size(); ++a_i)
-        {
-            size_t s = model->population[a_i].get_state();
-            if (std::find(states.begin(), states.end(), s) != states.end())
-                agents_left->push_back(a_i);
-        }
-
-    }
-    else if (model->size() != agents_left->size())
-    {
-
-        // The population changed size (or this is the first sample)
-        agents_left->resize(model->size(), 0u);
-        std::iota(agents_left->begin(), agents_left->end(), 0u);
-
-    }
-
-    // Restart the counter of agents left
-    *agents_left_n = agents_left->size();
-
-    // Making sure we have enough room for the sample of agents
-    if (agents->size() < sample_size)
-        agents->resize(sample_size, nullptr);
-
-    #ifdef EPI_DEBUG
-    std::vector< bool > __sampled(model->size(), true);
-    for (auto & a_i: *agents_left)
-        __sampled[a_i] = false;
-    #endif
-
-    for (size_t i = 0u; i < n; ++i)
-    {
-
-        // Sampling from 0 to (agents_left_n - 1)
-        size_t ith_ = static_cast<size_t>(model->runif() * ((*agents_left_n)--));
-
-        // Getting the id of the agent and adding it to the list of agents
-        size_t ith  = agents_left->operator[](ith_);
-        agents->operator[](i) = &model->population[ith];
-
-        #ifdef EPI_DEBUG
-        if (__sampled[ith])
-            throw std::logic_error("The same agent was sampled twice.");
-        else
-            __sampled[ith] = true;
-        #endif
-
-        // Updating list
-        std::swap(
-            agents_left->operator[](ith_),
-            agents_left->operator[](*agents_left_n)
-            );
-
-    }
-
-    return;
-
-}
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/agentssample-bones.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -22211,34 +22063,32 @@ inline void AgentsSample<TSeq>::sample_n(size_t n)
  * @ingroup tools
  * 
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ToolVaccine: public Tool<TSeq> {
+class ToolVaccine: public Tool {
 private:
 
     int _immune = -1;
     epiworld_double _efficacy = 0.0;
-    epiworld_double _set_immunity(Model<TSeq> & model);
+    epiworld_double _set_immunity(Model & model);
 
 public:
-    ToolVaccine(std::string name = "Vaccine") : Tool<TSeq>(name) {};
+    ToolVaccine(std::string name = "Vaccine") : Tool(name) {};
 
     virtual epiworld_double get_susceptibility_reduction(
-        VirusPtr<TSeq> & v,
-        Model<TSeq> * model
+        VirusPtr & v,
+        Model * model
     ) override;
     
-    virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun) override;
+    virtual void set_susceptibility_reduction_fun(ToolFun fun) override;
     virtual void set_susceptibility_reduction(std::string param) override;
     virtual void set_susceptibility_reduction(epiworld_double prob) override;
 
-    std::unique_ptr<Tool<TSeq>> clone_ptr() const override;
+    std::unique_ptr<Tool> clone_ptr() const override;
 
 };
 
-template<typename TSeq>
-inline epiworld_double ToolVaccine<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> &,
-    Model<TSeq> * model
+inline epiworld_double ToolVaccine::get_susceptibility_reduction(
+    VirusPtr &,
+    Model * model
 )
 {
 
@@ -22252,9 +22102,8 @@ inline epiworld_double ToolVaccine<TSeq>::get_susceptibility_reduction(
 
 }
 
-template<typename TSeq>
-inline void ToolVaccine<TSeq>::set_susceptibility_reduction_fun(
-    ToolFun<TSeq>
+inline void ToolVaccine::set_susceptibility_reduction_fun(
+    ToolFun
 )
 {
     throw std::logic_error(
@@ -22265,8 +22114,7 @@ inline void ToolVaccine<TSeq>::set_susceptibility_reduction_fun(
     );
 }
 
-template<typename TSeq>
-inline void ToolVaccine<TSeq>::set_susceptibility_reduction(std::string)
+inline void ToolVaccine::set_susceptibility_reduction(std::string)
 {
     throw std::logic_error(
         std::string(
@@ -22279,8 +22127,7 @@ inline void ToolVaccine<TSeq>::set_susceptibility_reduction(std::string)
     );
 }
 
-template<typename TSeq>
-inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double prob)
+inline void ToolVaccine::set_susceptibility_reduction(epiworld_double prob)
 {
 
     // assertm(prob >= 0 && prob <= 1, "The efficacy must be between 0 and 1.");
@@ -22288,17 +22135,15 @@ inline void ToolVaccine<TSeq>::set_susceptibility_reduction(epiworld_double prob
 
 }
 
-template<typename TSeq>
-inline epiworld_double ToolVaccine<TSeq>::_set_immunity(Model<TSeq> & model)
+inline epiworld_double ToolVaccine::_set_immunity(Model & model)
 {
     _immune = (model.runif() < _efficacy) ? 1 : 0;
     return _immune;
 }
 
-template<typename TSeq>
-inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
+inline std::unique_ptr<Tool> ToolVaccine::clone_ptr() const
 {
-    auto ans =  std::make_unique<ToolVaccine<TSeq>>(*this);
+    auto ans =  std::make_unique<ToolVaccine>(*this);
     ans->_immune = -1;
     return ans;
 }
@@ -22324,55 +22169,9 @@ inline std::unique_ptr<Tool<TSeq>> ToolVaccine<TSeq>::clone_ptr() const
 
 #ifndef QUARANTINETRIGGER_MEAT_HPP
 #define QUARANTINETRIGGER_MEAT_HPP
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+// (already included include/epiworld/globalevents/quarantinetrigger-bones.hpp)
 
- Start of -include/epiworld/globalevents/quarantinetrigger-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef QUARANTINETRIGGER_BONES_HPP
-#define QUARANTINETRIGGER_BONES_HPP
-
-#include <vector>
-// (already included include/epiworld/globalevents/../config.hpp)
-
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class QuarantineTrigger {
-private:
-    int _model_sim_id = -1;
-    int _day = -1;
-    std::vector< size_t > _agents_triggering_quarantine;
-    std::vector< int > _date_infectious;
-    
-    void _setup(const Model<TSeq> & model);
-public:
-    QuarantineTrigger() = default;
-    void add_triggering_agent(
-        const Model<TSeq> & model,
-        const Agent<TSeq> & agent,
-        int date_infectious
-    );
-
-    std::vector< size_t > & get_triggering_agents();
-    std::vector< int > & get_date_infectious();
-};
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/globalevents/quarantinetrigger-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-
-template<typename TSeq>
-inline void QuarantineTrigger<TSeq>::_setup(const Model<TSeq> & model) {
+inline void QuarantineTrigger::_setup(const Model & model) {
 
     if (
         (static_cast<int>(model.get_sim_id()) != _model_sim_id) ||
@@ -22386,10 +22185,9 @@ inline void QuarantineTrigger<TSeq>::_setup(const Model<TSeq> & model) {
 
 }
 
-template<typename TSeq>
-inline void QuarantineTrigger<TSeq>::add_triggering_agent(
-    const Model<TSeq> & model,
-    const Agent<TSeq> & agent,
+inline void QuarantineTrigger::add_triggering_agent(
+    const Model & model,
+    const Agent & agent,
     int date_infectious
 ) {
     
@@ -22399,13 +22197,11 @@ inline void QuarantineTrigger<TSeq>::add_triggering_agent(
     this->_date_infectious.push_back(date_infectious);
 }
 
-template<typename TSeq>
-inline std::vector< size_t > & QuarantineTrigger<TSeq>::get_triggering_agents() {
+inline std::vector< size_t > & QuarantineTrigger::get_triggering_agents() {
     return this->_agents_triggering_quarantine;
 }
 
-template<typename TSeq>
-inline std::vector< int > & QuarantineTrigger<TSeq>::get_date_infectious() {
+inline std::vector< int > & QuarantineTrigger::get_date_infectious() {
     return this->_date_infectious;
 }
 
@@ -22434,749 +22230,18 @@ inline std::vector< int > & QuarantineTrigger<TSeq>::get_date_infectious() {
 // Standard library headers are included at global scope by epiworld.hpp (this
 // file is included from within `namespace epiworld`, so system headers must not
 // be re-included here).
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+// (already included include/epiworld/globalevents/bubbles-bones.hpp)
 
- Start of -include/epiworld/globalevents/bubbles-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_GLOBALEVENTS_BUBBLES_BONES_HPP
-#define EPIWORLD_GLOBALEVENTS_BUBBLES_BONES_HPP
-
-// Standard library headers (vector, memory, string, unordered_map, utility,
-// algorithm, stdexcept) are included at global scope by epiworld.hpp; this file
-// is only ever included from within `namespace epiworld`, so it must not
-// re-include system headers here.
-// (already included include/epiworld/globalevents/../config.hpp)
-
-/**
- * @brief Flavor of the social-bubble intervention (how bubbles are formed).
- * @ingroup globalevents
- *
- * @details Both flavors produce a partition of the population into disjoint
- * bubbles in which households are never split, and both form bubbles along
- * *existing* contacts (see Bubbles).
- */
-enum class BubbleFlavor {
-    /**
-     * Household-level rule: whole households bubble together, up to
-     * `group_size` households per bubble. A bubble is grown from a seed
-     * household by repeatedly absorbing a random household that is connected
-     * to it in the contact network. `group_size == 1` leaves every household
-     * on its own, i.e. a strict household-only lockdown.
-     *
-     * Models e.g. the Belgian rule of 10 May 2020 ("a household may form one
-     * fixed bubble with other households").
-     */
-    Household,
-    /**
-     * Individual-level rule: each agent nominates up to `group_size` peers
-     * among its existing contacts outside its own household. A nomination
-     * merges the two agents' households -- so a teenager choosing a partner
-     * brings both households into one bubble.
-     *
-     * Nominations are only accepted while the bubble stays within
-     * `max_households` households; this cap is what enforces the policy's
-     * exclusivity. Without it the merges percolate: with several members per
-     * household each nominating someone, the household graph becomes connected
-     * and everyone ends up in a single bubble, imposing no restriction at all.
-     *
-     * Models e.g. the Belgian rule of 19 October 2020 (`group_size == 1`, "one
-     * close contact per person").
-     */
-    Peer
-};
-
-/**
- * @brief How a bubble is *realized*: a transmission rule, or also contacts.
- * @ingroup globalevents
- *
- * @details Orthogonal to `BubbleFlavor`, which decides how households are
- * grouped. This decides what being in a bubble together actually does.
- */
-enum class BubbleTies {
-    /**
-     * The contact network is never modified. Being in a bubble together only
-     * means transmission between the two is left alone, while contact outside
-     * the bubble is damped by the transmission factor.
-     *
-     * This makes the policy purely subtractive, which under-states it: two
-     * households merged because one member of each happened to be tied keep
-     * exactly that one contact between them, and everybody else in the two
-     * households never meets. The same gap exists inside a household, where two
-     * members with no edge between them never meet either.
-     */
-    Existing,
-    /**
-     * The bubble is a group of a within-group mixing layer, the household
-     * layer (`Bubbles::make_layer()`). Outside the policy window each agent
-     * is in its household's group, where each pair meets with the household
-     * contact probability; while the policy is in force it is in its
-     * bubble's, where each pair meets with the bubble contact probability
-     * (households left on their own keep theirs), and it goes back when the
-     * policy lifts.
-     *
-     * This is what the modelled policy actually says -- the household you have
-     * bubbled with is a household you now see. The force of infection inside a
-     * bubble grows with its size, since every bubblemate met is an independent
-     * exposure. There is one probability per group, so housemates in a merged
-     * bubble meet at the bubble's, like the other households.
-     *
-     * Contacts *outside* the bubble (the network layers) are untouched and
-     * still damped by the transmission factor, which is what makes the bubble
-     * imperfect. A pair of bubblemates that is also tied in a network layer
-     * meets in both layers.
-     */
-    Complete
-};
-
-template<typename TSeq>
-class Bubbles;
-
-/**
- * @brief Tool carried by every agent under a Bubbles policy.
- * @ingroup globalevents
- *
- * @details The tool does not hold the bubble partition -- it holds a pointer to
- * the `Bubbles` intervention that owns it, resolved by name from the model the
- * first time the tool is used. `clone_ptr()` clears that pointer, exactly as
- * `ToolVaccine` clears its per-agent immunity, so a copy of the tool always
- * re-resolves against the model it ends up in. Copies of a model therefore
- * never reach into the model they were copied from, which is what lets bubble
- * models run in parallel replicates.
- *
- * Users do not instantiate this directly; the intervention hands it to every
- * agent when it sets itself up, at the start of each run.
- *
- * @tparam TSeq Sequence type (should match `TSeq` across the model).
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class BubbleTool : public Tool<TSeq> {
-private:
-
-    std::string _event_name;                  ///< Name of the owning intervention.
-    Bubbles<TSeq> * _policy = nullptr;        ///< Resolved lazily, per model.
-
-public:
-
-    BubbleTool(std::string name, std::string event_name);
-
-    /**
-     * @brief Reduction applied to an exposure of this tool's agent.
-     *
-     * `0.0` when the transmitter shares the agent's bubble (contacts inside the
-     * bubble are what the policy preserves), and `1 - f` otherwise, where `f`
-     * is the intervention's transmission factor. Outside the policy window, or
-     * before a partition exists, the reduction is `0.0`.
-     */
-    epiworld_double get_susceptibility_reduction(
-        VirusPtr<TSeq> & v,
-        Model<TSeq> * model
-    ) override;
-
-    std::unique_ptr<Tool<TSeq>> clone_ptr() const override;
-
-};
-
-/**
- * @brief Social-bubble contact-restriction intervention for network models.
- * @ingroup globalevents
- *
- * @details A "social bubble" policy lets people keep seeing a small, fixed set
- * of others while cutting off the rest of their contacts. `Bubbles` implements
- * this for models with network layers (e.g. `ModelSEIR` or `ModelSIR` with a
- * `layer::Network`; it reads the contacts of every network layer), and is
- * designed for the household-based rules used during COVID-19.
- *
- * ## How it works
- *
- * The intervention is a global event, so installing it is a one-liner:
- *
- * ```cpp
- * model.add_globalevent(bubbles);
- * ```
- *
- * Everything else happens by itself. At the start of every run -- from
- * `Model::reset()`, so the policy is in force on day 1 -- the intervention sets
- * itself up on the model it is running in: it registers the
- * transmission-factor parameter, draws the bubble partition with that run's
- * RNG, and hands a `BubbleTool` ("Social bubble") to every agent. Each
- * replicate of `run_multiple()` -- each of which runs on its own copy of the
- * model, possibly on its own thread -- repeats this with its own seed.
- *
- * By default the contacts are **not modified** (`BubbleTies::Existing`); with
- * `BubbleTies::Complete` the bubble is also a group of the household layer,
- * which is described under *Two ways to be in a bubble* below. Either way, when a
- * susceptible agent `p` is exposed to an infectious neighbor, the tool
- * identifies the transmitter through the virus (`v->get_agent()`) and compares
- * the two agents' bubble labels:
- *
- * - same bubble  -> reduction `0.0`: contacts *inside* the bubble are what the
- *                   policy preserves, so they are left untouched;
- * - different bubbles -> reduction `1 - f`, i.e. transmission along contacts
- *                   *outside* the bubble is scaled by the transmission factor
- *                   `f`;
- * - outside the policy window -> reduction `0.0`, no effect.
- *
- * The transmission factor `f` is how strictly the bubble is observed:
- * `f == 0` is a perfectly efficient bubble (out-of-bubble contact is cut
- * entirely, which is equivalent to deleting those edges), `f == 1` disables the
- * intervention (out-of-bubble contact is as good as before), and intermediate
- * values model a soft contact reduction -- people still meet outside their
- * bubble, just less often or more carefully.
- *
- * `f` is **not** stored in the intervention: setup registers it as a model
- * parameter (`param_name`, "Bubble transmission factor" by default) and the
- * tool reads it from the model on every exposure. It can therefore be inspected
- * with `model.get_param()`, changed mid-run with `model.set_param()`, or swept
- * over in a calibration without rebuilding the intervention. The value given to
- * the constructor is only a default: if the model already carries that
- * parameter -- because it was set with `model.add_param()` or read from a
- * parameter file with `model.read_params()` before the run -- the model's value
- * is kept. Values outside `[0, 1]` are clamped.
- *
- * Since reductions combine as `1 - prod(1 - r_i)`, a reduction of `1.0`
- * (`f == 0`) zeroes the transmission probability regardless of any other tools
- * the agent carries. Contact weights are uniform in these models, so
- * suppressing transmission on out-of-bubble contacts is equivalent to deleting
- * those contacts, while keeping the network intact for other purposes (contact
- * tracing, output).
- *
- * ## Where the state lives
- *
- * `Bubbles` *is* the model's global event: `add_globalevent()` hands the model a
- * clone of it, and the bubble partition (`get_bubble_id()`) is a member of that
- * clone. Since `Model`'s copy constructor deep-copies global events and tools,
- * every copy of a model -- including the per-thread copies `run_multiple()`
- * makes -- owns its partition outright, and the tool resolves to the
- * intervention of whichever model it belongs to. Nothing is shared between
- * models, so replicates may run on as many threads as you like.
- *
- * The object you construct is a template: once added to a model it is no longer
- * connected to it, and its own `get_bubble_id()` stays empty. To look at the
- * partition of a model that has run, ask the model for its copy:
- *
- * ```cpp
- * const auto & bubble_id = Bubbles<>::get_from(model)->get_bubble_id();
- * ```
- *
- * ## Forming bubbles (why ties matter)
- *
- * Households are declared with a per-agent `household_id` vector (one entry per
- * agent, indexed by agent id). Bubbles are always:
- *
- * - **disjoint** -- every agent belongs to exactly one bubble;
- * - **household-preserving** -- a household is never split; and
- * - **connection-aware** -- bubbles only ever join households that are actually
- *   connected in the contact network.
- *
- * The last point is essential, and it holds for both realizations. Under
- * `BubbleTies::Existing` the intervention can only suppress transmission along
- * edges that exist, so putting two households that share no contact into one
- * bubble would change nothing at all and `group_size` would be inert. Under
- * `BubbleTies::Complete` they would meet, but bubbling two households that have
- * never met is not the policy being modelled: a household chooses a bubble
- * partner it already socialises with.
- *
- * ## Two ways to be in a bubble
- *
- * `BubbleFlavor` decides *how households are grouped*. `BubbleTies` decides
- * *what being grouped does*, and the two are independent.
- *
- * Under **`BubbleTies::Existing`** (the default, and the original behaviour) a
- * bubble is only a transmission rule. This under-states the policy in a way
- * worth being explicit about: if households `a` and `b` were merged because one
- * member of each happened to be tied, that single contact is the only one
- * preserved between them -- the rest of `a` never meets the rest of `b`, though
- * the policy says the two households have bubbled. The same gap exists inside a
- * household, whose members need not all be tied to each other.
- *
- * Under **`BubbleTies::Complete`** the bubble is a group of the household
- * layer, a within-group mixing layer that `make_layer()` builds from
- * `household_id`:
- *
- * ```cpp
- * // Housemates meet every day; two members of a merged bubble, 3 days in 10
- * bubbles.set_ties(BubbleTies::Complete, "household", 0.3);
- * model.add_layer(bubbles.make_layer(1.0));
- * model.add_globalevent(bubbles);
- * ```
- *
- * Outside the policy window everyone meets their household, each pair with
- * the household contact probability. While the policy is in force each agent
- * is in its bubble's group instead, where each pair meets with the bubble
- * contact probability; a household that bubbled with nobody keeps its own.
- * A within-group layer has one probability per group, so in a merged bubble
- * housemates meet at the bubble's rate too. When the bubbles are redrawn
- * agents move to the new ones, and when the policy lifts they go back to
- * their households (with the probabilities the layer had at reset). Moves are
- * a layer's ordinary edits: they take effect at the end of the step, a reset
- * puts everyone back, and a traced layer records them in its history
- * (`groupmates_of()`). No ties are stored, and the network layers are left
- * alone. The layer must start each run with one group per household, as
- * `make_layer()` builds it; setup checks it.
- *
- * Completing a bubble **raises the force of infection inside it**: every
- * bubblemate met is an independent exposure, so with the default (everyone,
- * every day) a bubble of `k` agents gives each member `k - 1` chances a day;
- * a bubble contact probability below 1 thins the meetings (the policy says
- * the households may meet, not that they meet daily). A pair of bubblemates
- * that is also tied in a network layer meets in both layers.
- *
- * Contacts *outside* the bubble are untouched by either setting: they stay in
- * the network and are damped by `f`, which is what makes the bubble imperfect.
- *
- * Grouping reads the network layers only, so `BubbleFlavor` draws the same
- * bubbles whatever `BubbleTies` says. An agent is in one group per layer, so
- * two `Complete` policies on one model (household bubbles and school bubbles,
- * say) each need their own layer; sharing one is an error. `Complete` runs
- * within `Model::run()` (or `run_multiple()`): a move outside a run would edit
- * the layer's baseline.
- *
- * ### Matching a policy
- *
- * These are the closest settings for two styles of rule used during
- * COVID-19, not exact matches:
- *
- * | Policy style                                       | Settings                                       |
- * |----------------------------------------------------|------------------------------------------------|
- * | Households join one or a few others (New Zealand;  | `Household`, `group_size` = households per     |
- * | UK support bubbles; Belgium, May 2020)             | bubble, `Complete`                             |
- * | One close contact per person (Belgium, Oct. 2020)  | `Peer`, `max_households = 2` (the default),    |
- * |                                                    | `Existing`                                     |
- *
- * The second is an approximation. `Peer` commits whole households, so with
- * `max_households = 2` one accepted choice pairs two households and the other
- * members of either can choose no one else (`group_size` then has no effect;
- * see *The algorithms*). Under `Existing` every tie between the two households
- * is spared, not only the chosen one. The model therefore gives a household
- * one partner household where the rule gives each person their own contact. A
- * larger `max_households` lets more members choose, at the cost of larger
- * bubbles. `Peer` with `Complete` has both households meet in full: more
- * contact than the rule allows, but still allowed, for the case where a
- * person brings their household along.
- *
- * ## The algorithms
- *
- * Both rules start from the **household contact graph**: one node per
- * household, with an edge between two households whenever at least one member
- * of the first is connected to a member of the second in the network layers.
- * All random draws use the model's RNG, so a run is reproducible from its
- * seed.
- *
- * **`BubbleFlavor::Household`** -- grow bubbles from seed households:
- *
- * 1. Visit households in random order.
- * 2. Skip a household if it already belongs to a bubble; otherwise open a new
- *    bubble containing it, and set the *frontier* to its unassigned neighbours
- *    in the household contact graph.
- * 3. While the bubble holds fewer than `group_size` households and the frontier
- *    is not empty, draw a household from the frontier at random, add it to the
- *    bubble, and extend the frontier with that household's unassigned
- *    neighbours. A household that is tied to several members of the bubble
- *    appears in the frontier more than once and is correspondingly more likely
- *    to be drawn, so stronger ties are favoured.
- * 4. Stop when no unassigned neighbour remains, even if the bubble is smaller
- *    than `group_size`.
- *
- * Each bubble is therefore a *connected* subgraph of the household contact
- * graph -- not necessarily a clique, so with `group_size > 2` two households in
- * one bubble need not be tied to each other directly. Because a household with
- * no available partner is left on its own, the number of bubbles is at least
- * `ceil(n_households / group_size)`. Cost is linear in the number of edges.
- *
- * **`BubbleFlavor::Peer`** -- agents choose peers from those still available:
- *
- * Households are kept in a disjoint-set (union-find) structure that also tracks
- * how many households each bubble holds, so a bubble that is full can be
- * recognised at once.
- *
- * 1. Visit the agents in random order.
- * 2. Skip an agent whose household is already in a full bubble -- it has left
- *    the pool and can neither choose nor be chosen.
- * 3. Otherwise, repeatedly draw one of the agent's contacts outside its own
- *    household, at random and without replacement, until the agent has made
- *    `group_size` successful choices or has no contact left that its bubble can
- *    still take in. A draw is accepted when the two households are in different
- *    bubbles **and** the merged bubble would hold at most `max_households`
- *    households; otherwise that contact is simply unavailable and the agent
- *    draws again. Accepting a draw merges the two households (household
- *    commitment), and the agent stops once its bubble is full.
- *
- * The cap is what makes the rule work. Without it the merges percolate: with a
- * few members per household each choosing someone, the household graph becomes
- * connected and every household lands in one giant bubble -- no restriction at
- * all.
- *
- * Note that `max_households` is the effective dial on bubble size, while
- * `group_size` rarely binds: because a choice by *any* member commits the whole
- * household, the members of one household together tend to fill its bubble
- * regardless of how many choices each of them is allowed. With
- * `max_households == 2`, in particular, one accepted choice fills the bubble and
- * `group_size` has no effect at all. Households whose every contact was taken
- * first remain on their own.
- *
- * ## Scheduling
- *
- * `start_day` is the first day the policy applies; `end_day` is the (exclusive)
- * day it lifts, or `< 0` to never lift. With `rewire_every > 0` the partition is
- * re-randomised every that-many days, modelling policies whose bubbles change
- * over time (e.g. contacts renewed weekly); `0` keeps a fixed bubble.
- *
- * The initial partition is drawn when the intervention sets itself up, at reset
- * time, so it is redrawn for each replicate of `run_multiple()` using that
- * replicate's seed and is already in force on day 1. Re-randomisations are
- * applied by the intervention itself (a daily global event) and, since global
- * events run after each day's transitions, take effect the following step.
- *
- * ## Example
- *
- * ```cpp
- * epimodels::ModelSEIR<> model("flu", 10000, 0.01, 0.1, 4.5, 1.0/7.0);
- * model.add_layer(layer::network(
- *     "contacts", graph::smallworld(8, 0.05)
- * ));
- *
- * std::vector< size_t > household_id(10000);
- * for (size_t i = 0u; i < 10000; ++i)
- *     household_id[i] = i / 3;             // households of three
- *
- * // Two households per bubble from day 10, halving out-of-bubble transmission.
- * Bubbles<> bubbles(
- *     household_id, BubbleFlavor::Household,
- *     2,      // group_size
- *     0.5,    // transmission_factor (default of the model parameter)
- *     10      // start_day
- * );
- * model.add_globalevent(bubbles);
- *
- * // The factor lives in the model, so it can be changed without touching the
- * // intervention. Setting it before the run overrides the default above.
- * model.add_param(0.25, "Bubble transmission factor", true);
- *
- * model.run(100, 1231);
- *
- * // The partition belongs to the model, not to `bubbles`.
- * const auto & bubble_id = Bubbles<>::get_from(model)->get_bubble_id();
- * ```
- *
- * To have those two households actually meet -- every member of one meeting
- * every member of the other, every day -- make the bubble a group of the
- * household layer:
- *
- * ```cpp
- * bubbles.set_ties(BubbleTies::Complete, "household");
- * model.add_layer(bubbles.make_layer());
- * model.add_globalevent(bubbles);
- * ```
- *
- * A household-only lockdown in which the household meets in full, and everyone
- * else is reachable only through an imperfectly observed bubble, is
- * `group_size == 1` with a non-zero factor:
- *
- * ```cpp
- * Bubbles<> household_only(
- *     household_id, BubbleFlavor::Household,
- *     1,      // group_size: nobody bubbles with another household
- *     0.15,   // but the bubble leaks: 15% of out-of-bubble transmission remains
- *     0, -1, 0, "Social bubble", 2u, "Bubble transmission factor",
- *     BubbleTies::Complete, "household"
- * );
- * ```
- *
- * @note Both rules produce *exclusive* bubbles, which is what the modelled
- * policies prescribe. A rule that instead grants each person a personal budget
- * of contacts that need be neither mutual nor exclusive (e.g. "up to ten
- * different people a week") is not a partition of the population and cannot be
- * expressed this way.
- *
- * @note Not yet modelled: fixed out-of-bubble "sport partners", travel between
- * regions, and caps on the number of individuals (as opposed to households) a
- * bubble may contain.
- *
- * @tparam TSeq Sequence type (should match `TSeq` across the model).
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class Bubbles final : public GlobalEvent<TSeq> {
-private:
-
-    std::vector< size_t > household; ///< Household of each agent, 0..n_households - 1.
-    size_t n_households;
-    BubbleFlavor flavor;
-    size_t group_size;               ///< households per bubble (Household) or max peers (Peer).
-    size_t max_households;           ///< cap on households per bubble (Peer only).
-    epiworld_double transmission_factor; ///< initial value of the model parameter, in [0, 1].
-    int start_day;
-    int end_day;
-    int rewire_every;
-    std::string param_name;          ///< model parameter holding the transmission factor.
-    BubbleTies ties;                 ///< whether bubblemates meet in a layer.
-    std::string layer;               ///< the household layer of `BubbleTies::Complete`.
-    double bubble_contact_prob;      ///< daily meeting probability in a merged bubble.
-
-    /// The household layer of `BubbleTies::Complete` (throws if there is none).
-    layer::Mixing<TSeq> & bubble_layer(Model<TSeq> * model) const;
-
-    // Per-model state. Copied with the intervention, so each model (including
-    // each per-thread copy made by run_multiple) owns its own partition.
-    std::vector< int > bubble_id;    ///< Per-agent bubble label; -1 = unassigned.
-
-    std::vector< double > home_prob; ///< Contact probability of each group at reset.
-    int placed_epoch = -1;           ///< Partition agents are in (-1: their homes).
-    int model_id   = -1;             ///< Sim id this intervention was set up for.
-    int last_epoch = -1;             ///< Rewiring epoch the current partition was computed for.
-
-    /// @name The two grouping rules.
-    ///@{
-    void partition_household(Model<TSeq> * model);
-    void partition_peer(Model<TSeq> * model);
-    ///@}
-
-    /**
-     * @brief Install the intervention on the model it is running in.
-     *
-     * @details Called from `reset()`, i.e. once per run and once per replicate
-     * of `run_multiple()`. It registers the transmission-factor parameter
-     * (keeping any value the model already has), draws the epoch-0 partition
-     * with the run's RNG, and gives the bubble tool to every agent.
-     *
-     * @param model Model the intervention belongs to.
-     * @throws std::length_error if `household_id` does not have exactly one
-     *         entry per agent.
-     */
-    void _setup(Model<TSeq> * model);
-
-    /**
-     * @brief Moves agents in the household layer to match the policy as of
-     *        the next simulation step.
-     *
-     * @details Into their bubbles when the policy is about to apply (or the
-     * partition was redrawn), back to their households when it is about to
-     * lapse. Nothing under `BubbleTies::Existing`.
-     */
-    void sync_groups(Model<TSeq> * model);
-
-public:
-
-    /**
-     * @brief Configure a social-bubble policy.
-     *
-     * @param household_id Household label of each agent, indexed by agent id.
-     *        Its length must equal the number of agents in the model. Labels are
-     *        arbitrary (they need not be consecutive); agents sharing a label
-     *        form a household and are always placed in the same bubble.
-     * @param flavor Whether bubbles are chosen by households or by individuals
-     *        (see `BubbleFlavor`).
-     * @param group_size For `Household`, the maximum number of households per
-     *        bubble (`1` = strict household-only lockdown). For `Peer`, the
-     *        maximum number of external peers each agent may pick.
-     * @param transmission_factor Initial value of the model parameter
-     *        `param_name`: the multiplier applied to transmission between
-     *        agents of *different* bubbles, in `[0, 1]`. `0.0` (the default) is
-     *        a perfectly efficient bubble -- contact outside it is cut
-     *        entirely; `0.5` halves out-of-bubble transmission (a soft contact
-     *        reduction); and `1.0` turns the intervention off. Transmission
-     *        within a bubble is never altered. The value is stored in the model
-     *        (see `deploy()`), not here, so it can be changed at any time with
-     *        `model.set_param(param_name, ...)`.
-     * @param start_day First day on which the policy applies.
-     * @param end_day Day on which the policy is lifted (exclusive). Use a
-     *        negative value for a policy that never ends. Must be greater than
-     *        `start_day`.
-     * @param rewire_every Re-randomise the bubbles every this-many days, for
-     *        policies whose contacts change over time. `0` keeps the bubbles
-     *        fixed for the whole intervention.
-     * @param name Name given to the tool and to the intervention's global
-     *        event; the tool finds its policy by this name, and `get_from()`
-     *        looks it up on a model with it.
-     * @param max_households **`Peer` flavor only**: the largest number of
-     *        households a bubble may contain. A nomination that would exceed it
-     *        is declined, which is what stops one household's choices from
-     *        chaining into the next (see `BubbleFlavor::Peer`). The default of
-     *        `2` represents two households joined by a close contact. Ignored by
-     *        the `Household` flavor, where `group_size` already is the cap.
-     * @param param_name Name of the model parameter that holds the transmission
-     *        factor. Give two interventions deployed on the same model
-     *        different names if they are to be dialled independently.
-     * @param ties Whether the bubble is only a transmission rule
-     *        (`BubbleTies::Existing`, the default) or also a group of the
-     *        household layer, where bubblemates meet every day
-     *        (`BubbleTies::Complete`). See `BubbleTies`.
-     * @param layer Name of the household layer of `BubbleTies::Complete`
-     *        (required then; see `make_layer()`).
-     * @param bubble_contact_prob With `BubbleTies::Complete`, the probability
-     *        that two members of a bubble that merged households meet on a
-     *        given day, in `[0, 1]`.
-     *
-     * @throws std::range_error if `transmission_factor` or
-     *         `bubble_contact_prob` is outside `[0, 1]`, if
-     *         `group_size` is zero for the `Household` flavor, if
-     *         `max_households` is less than 2 for the `Peer` flavor, or if
-     *         `end_day` is non-negative and not greater than `start_day`.
-     */
-    Bubbles(
-        std::vector< size_t > household_id,
-        BubbleFlavor flavor,
-        size_t group_size,
-        epiworld_double transmission_factor = 0.0,
-        int start_day = 0,
-        int end_day = -1,
-        int rewire_every = 0,
-        std::string name = "Social bubble",
-        size_t max_households = 2u,
-        std::string param_name = "Bubble transmission factor",
-        BubbleTies ties = BubbleTies::Existing,
-        std::string layer = "",
-        double bubble_contact_prob = 1.0
-    );
-
-    /**
-     * @brief The model's copy of the intervention.
-     *
-     * @param model Model the intervention was added to.
-     * @param name Name it was added under.
-     * @return Pointer to the model's own intervention, or `nullptr` if the
-     *         model has no global event by that name, or it is not a `Bubbles`.
-     */
-    static Bubbles<TSeq> * get_from(
-        Model<TSeq> & model,
-        const std::string & name = "Social bubble"
-    );
-
-    /**
-     * @brief Recompute the partition using the model's RNG.
-     *
-     * Called when the intervention sets itself up (at reset) and at each
-     * rewiring epoch. Rarely needed directly.
-     */
-    void compute_partition(Model<TSeq> * model);
-
-    /**
-     * @brief Current bubble label of every agent, indexed by agent id.
-     *
-     * Two agents in the same bubble transmit as they would without the policy;
-     * transmission between labels is scaled by the transmission factor.
-     * Populated at the start of each run, and only on the model's own copy of
-     * the intervention -- see `get_from()`.
-     */
-    const std::vector< int > & get_bubble_id() const;
-
-    /// @brief The rule used to form bubbles.
-    BubbleFlavor get_flavor() const;
-
-    /// @brief Whether bubblemates meet in the household layer.
-    BubbleTies get_ties() const;
-
-    /**
-     * @brief Choose how the bubble is realized. See `BubbleTies`.
-     *
-     * Set it before the run; the intervention reads it when it sets itself up.
-     * Remember that the model owns its own copy once the intervention has been
-     * added, so set this on the object you are about to add, or on the model's
-     * copy via `get_from()`.
-     *
-     * @param layer Name of the household layer of `BubbleTies::Complete`
-     *        (required then; see `make_layer()`).
-     * @param bubble_contact_prob The probability that two members of a bubble
-     *        that merged households meet on a given day, in `[0, 1]`.
-     */
-    void set_ties(
-        BubbleTies ties,
-        std::string layer = "",
-        double bubble_contact_prob = 1.0
-    );
-
-    /**
-     * @brief The household layer of `BubbleTies::Complete`, to add to the
-     *        model with `Model::add_layer()`.
-     *
-     * @details A within-group mixing layer named as in `set_ties()`, with one
-     * group per household (from `household_id`), in which each pair meets
-     * with probability `household_contact_prob` a day; the policy moves agents
-     * to their bubble's group while it is in force (see `BubbleTies`). The
-     * layer can be changed further before it is added (e.g.,
-     * `enable_tracing()`).
-     *
-     * @param household_contact_prob The probability that two housemates meet
-     *        on a given day (`1`: every day).
-     * @throws std::logic_error if the layer has no name.
-     */
-    std::shared_ptr< layer::Mixing<TSeq> > make_layer(
-        double household_contact_prob = 1.0
-    ) const;
-
-    /**
-     * @brief Name of the model parameter holding the transmission factor.
-     *
-     * Use it with `model.get_param()` / `model.set_param()` to read or change
-     * how leaky the bubbles are, including in the middle of a run.
-     */
-    const std::string & get_param_name() const;
-
-    /// @brief True when the policy applies on the given day.
-    bool is_active(int today) const;
-
-    /**
-     * @brief Rewiring epoch the current partition was computed for.
-     *
-     * `0` for the partition drawn at setup, incrementing every `rewire_every`
-     * days while the policy is active. `-1` before the first partition.
-     */
-    int get_last_epoch() const;
-
-    /**
-     * @brief Reduction applied to an exposure between two agents.
-     *
-     * The tool's side of the intervention; see `BubbleTool`.
-     */
-    epiworld_double susceptibility_reduction(
-        const Agent<TSeq> * p,
-        const Agent<TSeq> * transmitter,
-        Model<TSeq> * model
-    ) const;
-
-    /**
-     * @brief Installs the intervention on the model, once per run.
-     *
-     * Called by `Model::reset()`; see `_setup()`. This is what makes adding the
-     * intervention to a model the only step there is.
-     */
-    void reset(Model<TSeq> * model) override;
-
-    /// @brief Re-randomises the partition at rewiring epochs, and keeps the
-    /// household layer of a `Complete` bubble in step with the policy.
-    void operator()(Model<TSeq> * model, int day) override;
-
-    std::unique_ptr< GlobalEvent<TSeq> > clone_ptr() const override;
-
-};
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -include/epiworld/globalevents/bubbles-bones.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-
-template<typename TSeq>
-inline BubbleTool<TSeq>::BubbleTool(
+inline BubbleTool::BubbleTool(
     std::string name,
     std::string event_name
-) : Tool<TSeq>(name), _event_name(std::move(event_name))
+) : Tool(name), _event_name(std::move(event_name))
 {
 }
 
-template<typename TSeq>
-inline epiworld_double BubbleTool<TSeq>::get_susceptibility_reduction(
-    VirusPtr<TSeq> & v,
-    Model<TSeq> * model
+inline epiworld_double BubbleTool::get_susceptibility_reduction(
+    VirusPtr & v,
+    Model * model
 )
 {
 
@@ -23186,7 +22251,7 @@ inline epiworld_double BubbleTool<TSeq>::get_susceptibility_reduction(
     if (_policy == nullptr)
     {
 
-        _policy = Bubbles<TSeq>::get_from(*model, _event_name);
+        _policy = Bubbles::get_from(*model, _event_name);
 
         if (_policy == nullptr)
             throw std::logic_error(
@@ -23202,16 +22267,14 @@ inline epiworld_double BubbleTool<TSeq>::get_susceptibility_reduction(
 
 }
 
-template<typename TSeq>
-inline std::unique_ptr<Tool<TSeq>> BubbleTool<TSeq>::clone_ptr() const
+inline std::unique_ptr<Tool> BubbleTool::clone_ptr() const
 {
-    auto ans = std::make_unique<BubbleTool<TSeq>>(*this);
+    auto ans = std::make_unique<BubbleTool>(*this);
     ans->_policy = nullptr; // the copy resolves against its own model
     return ans;
 }
 
-template<typename TSeq>
-inline Bubbles<TSeq>::Bubbles(
+inline Bubbles::Bubbles(
     std::vector< size_t > household_id,
     BubbleFlavor flavor,
     size_t group_size,
@@ -23277,8 +22340,7 @@ inline Bubbles<TSeq>::Bubbles(
 
 }
 
-template<typename TSeq>
-inline void Bubbles<TSeq>::partition_household(Model<TSeq> * model)
+inline void Bubbles::partition_household(Model * model)
 {
 
     size_t nh = n_households;
@@ -23383,8 +22445,7 @@ inline void Bubbles<TSeq>::partition_household(Model<TSeq> * model)
 
 }
 
-template<typename TSeq>
-inline void Bubbles<TSeq>::partition_peer(Model<TSeq> * model)
+inline void Bubbles::partition_peer(Model * model)
 {
 
     size_t n  = household.size();
@@ -23500,8 +22561,7 @@ inline void Bubbles<TSeq>::partition_peer(Model<TSeq> * model)
 
 }
 
-template<typename TSeq>
-inline std::shared_ptr< layer::Mixing<TSeq> > Bubbles<TSeq>::make_layer(
+inline std::shared_ptr< layer::Mixing > Bubbles::make_layer(
     double household_contact_prob
 ) const
 {
@@ -23514,21 +22574,20 @@ inline std::shared_ptr< layer::Mixing<TSeq> > Bubbles<TSeq>::make_layer(
 
     // Everyone with their household: the bubbles are larger groups of the
     // same layer (households are never split)
-    auto res = layer::mixing<TSeq>(layer);
-    res->set_groups(assign::labels<TSeq>(household), n_households);
+    auto res = layer::mixing(layer);
+    res->set_groups(assign::labels(household), n_households);
     res->set_contact_prob(household_contact_prob);
 
     return res;
 
 }
 
-template<typename TSeq>
-inline layer::Mixing<TSeq> & Bubbles<TSeq>::bubble_layer(
-    Model<TSeq> * model
+inline layer::Mixing & Bubbles::bubble_layer(
+    Model * model
 ) const
 {
 
-    layer::Mixing<TSeq> * res = (!layer.empty() && model->has_layer(layer)) ?
+    layer::Mixing * res = (!layer.empty() && model->has_layer(layer)) ?
         model->get_layer(layer).as_mixing() : nullptr;
 
     if ((res == nullptr) || !res->within_groups())
@@ -23542,8 +22601,7 @@ inline layer::Mixing<TSeq> & Bubbles<TSeq>::bubble_layer(
 
 }
 
-template<typename TSeq>
-inline void Bubbles<TSeq>::sync_groups(Model<TSeq> * model)
+inline void Bubbles::sync_groups(Model * model)
 {
 
     // Global events run after the day's transitions, so the moves take effect
@@ -23569,19 +22627,19 @@ inline void Bubbles<TSeq>::sync_groups(Model<TSeq> * model)
     if (want)
     {
         std::vector< double > q(home_prob.size(), bubble_contact_prob);
-        std::vector< size_t > first(home_prob.size(), layer::Mixing<TSeq>::NO_GROUP);
+        std::vector< size_t > first(home_prob.size(), layer::Mixing::NO_GROUP);
         std::vector< bool > merged(home_prob.size(), false);
         for (size_t i = 0u; i < household.size(); ++i)
         {
             const size_t b = static_cast< size_t >(bubble_id[i]);
-            if (first[b] == layer::Mixing<TSeq>::NO_GROUP)
+            if (first[b] == layer::Mixing::NO_GROUP)
                 first[b] = household[i];
             else if (first[b] != household[i])
                 merged[b] = true;
         }
 
         for (size_t b = 0u; b < q.size(); ++b)
-            if (!merged[b] && (first[b] != layer::Mixing<TSeq>::NO_GROUP))
+            if (!merged[b] && (first[b] != layer::Mixing::NO_GROUP))
                 q[b] = home_prob[first[b]];
 
         groups.set_contact_prob(std::move(q));
@@ -23593,8 +22651,7 @@ inline void Bubbles<TSeq>::sync_groups(Model<TSeq> * model)
 
 }
 
-template<typename TSeq>
-inline void Bubbles<TSeq>::compute_partition(Model<TSeq> * model)
+inline void Bubbles::compute_partition(Model * model)
 {
 
     bubble_id.assign(household.size(), -1);
@@ -23609,17 +22666,15 @@ inline void Bubbles<TSeq>::compute_partition(Model<TSeq> * model)
 
 }
 
-template<typename TSeq>
-inline bool Bubbles<TSeq>::is_active(int today) const
+inline bool Bubbles::is_active(int today) const
 {
     return (today >= start_day) && ((end_day < 0) || (today < end_day));
 }
 
-template<typename TSeq>
-inline epiworld_double Bubbles<TSeq>::susceptibility_reduction(
-    const Agent<TSeq> * p,
-    const Agent<TSeq> * transmitter,
-    Model<TSeq> * model
+inline epiworld_double Bubbles::susceptibility_reduction(
+    const Agent * p,
+    const Agent * transmitter,
+    Model * model
 ) const
 {
 
@@ -23653,8 +22708,7 @@ inline epiworld_double Bubbles<TSeq>::susceptibility_reduction(
 
 }
 
-template<typename TSeq>
-inline void Bubbles<TSeq>::_setup(Model<TSeq> * model)
+inline void Bubbles::_setup(Model * model)
 {
 
     if (household.size() != model->size())
@@ -23673,7 +22727,7 @@ inline void Bubbles<TSeq>::_setup(Model<TSeq> * model)
         // An agent is in one group per layer, so two policies need two layers
         for (size_t e = 0u; e < model->get_n_globalevents(); ++e)
         {
-            const auto * other = dynamic_cast< const Bubbles<TSeq> * >(
+            const auto * other = dynamic_cast< const Bubbles * >(
                 &model->get_globalevent(e)
             );
 
@@ -23745,7 +22799,7 @@ inline void Bubbles<TSeq>::_setup(Model<TSeq> * model)
     // identical.
     if (!model->has_tool(this->get_name()))
     {
-        BubbleTool<TSeq> bubble_tool(this->get_name(), this->get_name());
+        BubbleTool bubble_tool(this->get_name(), this->get_name());
         model->add_tool(bubble_tool);
     }
 
@@ -23755,8 +22809,7 @@ inline void Bubbles<TSeq>::_setup(Model<TSeq> * model)
 
 }
 
-template<typename TSeq>
-inline void Bubbles<TSeq>::reset(Model<TSeq> * model)
+inline void Bubbles::reset(Model * model)
 {
 
     // Model::reset() runs this once per run -- and once per replicate of
@@ -23768,8 +22821,7 @@ inline void Bubbles<TSeq>::reset(Model<TSeq> * model)
 
 }
 
-template<typename TSeq>
-inline void Bubbles<TSeq>::operator()(Model<TSeq> * model, int day)
+inline void Bubbles::operator()(Model * model, int day)
 {
 
     // Under Model::run() this never fires: reset() has already set us up for
@@ -23808,9 +22860,8 @@ inline void Bubbles<TSeq>::operator()(Model<TSeq> * model, int day)
 
 }
 
-template<typename TSeq>
-inline Bubbles<TSeq> * Bubbles<TSeq>::get_from(
-    Model<TSeq> & model,
+inline Bubbles * Bubbles::get_from(
+    Model & model,
     const std::string & name
 )
 {
@@ -23818,36 +22869,31 @@ inline Bubbles<TSeq> * Bubbles<TSeq>::get_from(
     if (!model.has_globalevent(name))
         return nullptr;
 
-    return dynamic_cast< Bubbles<TSeq> * >(&model.get_globalevent(name));
+    return dynamic_cast< Bubbles * >(&model.get_globalevent(name));
 
 }
 
-template<typename TSeq>
-inline const std::vector< int > & Bubbles<TSeq>::get_bubble_id() const
+inline const std::vector< int > & Bubbles::get_bubble_id() const
 {
     return bubble_id;
 }
 
-template<typename TSeq>
-inline int Bubbles<TSeq>::get_last_epoch() const
+inline int Bubbles::get_last_epoch() const
 {
     return last_epoch;
 }
 
-template<typename TSeq>
-inline BubbleFlavor Bubbles<TSeq>::get_flavor() const
+inline BubbleFlavor Bubbles::get_flavor() const
 {
     return flavor;
 }
 
-template<typename TSeq>
-inline BubbleTies Bubbles<TSeq>::get_ties() const
+inline BubbleTies Bubbles::get_ties() const
 {
     return ties;
 }
 
-template<typename TSeq>
-inline void Bubbles<TSeq>::set_ties(
+inline void Bubbles::set_ties(
     BubbleTies ties,
     std::string layer,
     double bubble_contact_prob
@@ -23865,16 +22911,14 @@ inline void Bubbles<TSeq>::set_ties(
 
 }
 
-template<typename TSeq>
-inline const std::string & Bubbles<TSeq>::get_param_name() const
+inline const std::string & Bubbles::get_param_name() const
 {
     return param_name;
 }
 
-template<typename TSeq>
-inline std::unique_ptr< GlobalEvent<TSeq> > Bubbles<TSeq>::clone_ptr() const
+inline std::unique_ptr< GlobalEvent > Bubbles::clone_ptr() const
 {
-    return std::make_unique< Bubbles<TSeq> >(*this);
+    return std::make_unique< Bubbles >(*this);
 }
 
 #endif
@@ -23989,14 +23033,13 @@ public:
  * name and, if need be, its own parameters (`Virus::use_param()`), so it has
  * the same stages.
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 struct ModelInfo {
     std::string id;                   ///< e.g. "SEIR", for make_model()
     std::string label;                ///< e.g. "Susceptible-Exposed-Infected-Recovered"
     std::string description;          ///< One paragraph
     std::string virus_name;           ///< Default virus name; empty if the model names its own
     std::vector< ParamInfo > params;  ///< Constructor arguments, in order
-    std::function< std::unique_ptr< Model<TSeq> >(const ModelArgs &) > build;
+    std::function< std::unique_ptr< Model >(const ModelArgs &) > build;
 };
 
 /**
@@ -24012,21 +23055,20 @@ struct ModelInfo {
  * the models it lists; a model's entry is its static `model_info()`.
  *
  * ```cpp
- * ModelRegistry<> registry;
+ * ModelRegistry registry;
  * epimodels::register_models(registry);            // the core models
  * measles::register_models(registry);              // and, optionally, measles'
  *
  * auto model = registry.make_model(
  *     "SEIR", {{"n", 5000}, {"transmission_prob", 0.1}}, "flu"
  * );                                               // the rest take defaults
- * model->add_layer(layer::network("contacts", graph::smallworld<>(10, 0.1)));
+ * model->add_layer(layer::network("contacts", graph::smallworld(10, 0.1)));
  * model->run(100, 123);
  * ```
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class ModelRegistry {
 private:
-    std::vector< ModelInfo<TSeq> > models;
+    std::vector< ModelInfo > models;
 
 public:
     /**
@@ -24035,13 +23077,13 @@ public:
      * argument is repeated, a default is outside its limits, or there is no
      * builder.
      */
-    ModelRegistry<TSeq> & add(ModelInfo<TSeq> info);
+    ModelRegistry & add(ModelInfo info);
 
     /// Every model, in the order they were added.
-    const std::vector< ModelInfo<TSeq> > & list_models() const noexcept;
+    const std::vector< ModelInfo > & list_models() const noexcept;
 
     /// @throws std::invalid_argument naming the known ids.
-    const ModelInfo<TSeq> & get_model_info(const std::string & id) const;
+    const ModelInfo & get_model_info(const std::string & id) const;
 
     /**
      * @brief Builds a model from its id and the values of its arguments.
@@ -24054,7 +23096,7 @@ public:
      * outside its limits or not whole when it must be, or a virus name for a
      * model that names its own virus.
      */
-    std::unique_ptr< Model<TSeq> > make_model(
+    std::unique_ptr< Model > make_model(
         const std::string & id,
         const std::map< std::string, double > & values = {},
         const std::string & virus_name = ""
@@ -24151,8 +23193,7 @@ inline const std::string & ModelArgs::virus_name() const noexcept
     return vname;
 }
 
-template<typename TSeq>
-inline ModelRegistry<TSeq> & ModelRegistry<TSeq>::add(ModelInfo<TSeq> info)
+inline ModelRegistry & ModelRegistry::add(ModelInfo info)
 {
 
     if (info.id.empty())
@@ -24192,15 +23233,13 @@ inline ModelRegistry<TSeq> & ModelRegistry<TSeq>::add(ModelInfo<TSeq> info)
 
 }
 
-template<typename TSeq>
-inline const std::vector< ModelInfo<TSeq> > &
-ModelRegistry<TSeq>::list_models() const noexcept
+inline const std::vector< ModelInfo > &
+ModelRegistry::list_models() const noexcept
 {
     return models;
 }
 
-template<typename TSeq>
-inline const ModelInfo<TSeq> & ModelRegistry<TSeq>::get_model_info(
+inline const ModelInfo & ModelRegistry::get_model_info(
     const std::string & id
 ) const
 {
@@ -24219,8 +23258,7 @@ inline const ModelInfo<TSeq> & ModelRegistry<TSeq>::get_model_info(
 
 }
 
-template<typename TSeq>
-inline std::unique_ptr< Model<TSeq> > ModelRegistry<TSeq>::make_model(
+inline std::unique_ptr< Model > ModelRegistry::make_model(
     const std::string & id,
     const std::map< std::string, double > & values,
     const std::string & virus_name
@@ -24436,19 +23474,17 @@ namespace epimodels {
  * @brief Global event that distributes a tool to agents with probability p.
  * @ingroup model_utilities
  * 
- * @tparam TSeq Sequence type (should match `TSeq` across the model)
  * @param p Probability of distributing the tool.
  * @param tool Tool function.
- * @return std::function<void(Model<TSeq>*)> 
+ * @return std::function<void(Model*)> 
  */
-template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalevent_tool(
-    Tool<TSeq> & tool,
+inline std::function<void(Model*)> globalevent_tool(
+    Tool & tool,
     double p
 ) {
 
-    std::function<void(Model<TSeq>*)> fun = [p,&tool](
-        Model<TSeq> * model
+    std::function<void(Model*)> fun = [p,&tool](
+        Model * model
         ) -> void {
 
         for (auto & agent : model->get_agents())
@@ -24485,21 +23521,19 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool(
  * p = 1 / (1 + exp(-\sum_i coef_i * agent(vars_i))).
  * @ingroup model_utilities
  * 
- * @tparam TSeq Sequence type (should match `TSeq` across the model)
  * @param coefs Vector of coefficients.
  * @param vars Vector of variables.
  * @param tool_fun Tool function.
- * @return std::function<void(Model<TSeq>*)> 
+ * @return std::function<void(Model*)> 
  */
-template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
-    Tool<TSeq> & tool,
+inline std::function<void(Model*)> globalevent_tool_logit(
+    Tool & tool,
     std::vector< size_t > vars,
     std::vector< double > coefs
 ) {
 
-    std::function<void(Model<TSeq>*)> fun = [coefs,vars,&tool](
-        Model<TSeq> * model
+    std::function<void(Model*)> fun = [coefs,vars,&tool](
+        Model * model
         ) -> void {
 
         for (auto & agent : model->get_agents())
@@ -24545,19 +23579,17 @@ inline std::function<void(Model<TSeq>*)> globalevent_tool_logit(
  * @brief Global event that updates a parameter in the model.
  * @ingroup model_utilities
  * 
- * @tparam TSeq Sequence type (should match `TSeq` across the model)
  * @param param Parameter to update.
  * @param value Value to update the parameter to.
- * @return std::function<void(Model<TSeq>*)> 
+ * @return std::function<void(Model*)> 
  */
-template<typename TSeq>
-inline std::function<void(Model<TSeq>*)> globalevent_set_param(
+inline std::function<void(Model*)> globalevent_set_param(
     std::string param,
     double value
 ) {
 
-    std::function<void(Model<TSeq>*)> fun = [value,param](
-        Model<TSeq> * model
+    std::function<void(Model*)> fun = [value,param](
+        Model * model
         ) -> void {
 
         model->set_param(param, value);
@@ -24608,8 +23640,7 @@ inline std::function<void(Model<TSeq>*)> globalevent_set_param(
  * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
  * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIS : public Model<TSeq>
+class ModelSIS : public Model
 {
 
 public:
@@ -24629,11 +23660,10 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 };
 
-template<typename TSeq>
-inline ModelSIS<TSeq>::ModelSIS(
+inline ModelSIS::ModelSIS(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -24649,18 +23679,17 @@ inline ModelSIS<TSeq>::ModelSIS(
     this->add_param(transmission_prob, "Transmission probability");
     this->add_param(recovery_rate, "Recovery rate");
 
-    Virus<TSeq> virus(vname);
+    Virus virus(vname);
     virus.add_stage("Susceptible");
     virus.add_stage("Infected", stage::infectious);
     virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
     virus.rate(INFECTED, SUSCEPTIBLE, "Recovery rate").effect(Effect::recovery);
 
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share(prevalence));
 
 }
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelSIS<TSeq>::model_info()
+inline ModelInfo ModelSIS::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -24676,8 +23705,8 @@ inline ModelInfo<TSeq> ModelSIS<TSeq>::model_info()
             ParamInfo::probability("recovery_rate", "Recovery rate", 0.14,
                 "Daily probability that an infected agent recovers.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelSIS<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelSIS >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
                 a("transmission_prob"), a("recovery_rate")
             );
@@ -24715,15 +23744,14 @@ inline ModelInfo<TSeq> ModelSIS<TSeq>::model_info()
  * 
  * @ingroup basic_compartmental
  * 
- * @param model A Model<TSeq> object where to set up the SIR.
+ * @param model A Model object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param n Number of agents.
  * @param initial_prevalence epiworld_double Initial prevalence
  * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
  * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIR : public Model<TSeq>
+class ModelSIR : public Model
 {
 public:
 
@@ -24745,11 +23773,10 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 };
 
-template<typename TSeq>
-inline ModelSIR<TSeq>::ModelSIR(
+inline ModelSIR::ModelSIR(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -24763,22 +23790,21 @@ inline ModelSIR<TSeq>::ModelSIR(
     this->add_param(recovery_rate, "Recovery rate");
     this->add_param(transmission_prob, "Transmission probability");
 
-    Virus<TSeq> virus(vname);
+    Virus virus(vname);
     virus.add_stage("Susceptible");
     virus.add_stage("Infected", stage::infectious);
     virus.add_stage("Recovered");
     virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability");
     virus.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
 
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered (SIR)");
    
 }
 
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelSIR<TSeq>::model_info()
+inline ModelInfo ModelSIR::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -24794,8 +23820,8 @@ inline ModelInfo<TSeq> ModelSIR<TSeq>::model_info()
             ParamInfo::probability("recovery_rate", "Recovery rate", 0.14,
                 "Daily probability that an infected agent recovers.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelSIR<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelSIR >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
                 a("transmission_prob"), a("recovery_rate")
             );
@@ -24833,7 +23859,7 @@ inline ModelInfo<TSeq> ModelSIR<TSeq>::model_info()
  * 
  * @ingroup basic_compartmental
  *
- * @param model A Model<TSeq> object where to set up the SIR.
+ * @param model A Model object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param n Number of agents.
  * @param prevalence epiworld_double Initial prevalence the immune system
@@ -24843,8 +23869,7 @@ inline ModelInfo<TSeq> ModelSIR<TSeq>::model_info()
  * virus, not yet infectious).
  * @param recovery_rate epiworld_double Recovery rate of the virus.
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIR : public Model<TSeq>
+class ModelSEIR : public Model
 {
 
 public:
@@ -24867,12 +23892,11 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 };
 
 
-template<typename TSeq>
-inline ModelSEIR<TSeq>::ModelSEIR(
+inline ModelSEIR::ModelSEIR(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -24888,24 +23912,23 @@ inline ModelSEIR<TSeq>::ModelSEIR(
     this->add_param(latent_period, "Latent period");
     this->add_param(recovery_rate, "Recovery rate");
 
-    Virus<TSeq> virus(vname);
+    Virus virus(vname);
     virus.add_stage("Susceptible");
     virus.add_stage("Exposed", stage::carrier);
     virus.add_stage("Infected", stage::infectious);
     virus.add_stage("Removed");
     virus.infection(SUSCEPTIBLE, EXPOSED, "Transmission probability");
-    virus.after(EXPOSED, INFECTED, Duration<TSeq>::geometric("Latent period"));
+    virus.after(EXPOSED, INFECTED, Duration::geometric("Latent period"));
     virus.rate(INFECTED, REMOVED, "Recovery rate").effect(Effect::recovery);
 
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share(prevalence));
 
     this->set_name("Susceptible-Exposed-Infected-Removed (SEIR)");
 
 }
 
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelSEIR<TSeq>::model_info()
+inline ModelInfo ModelSEIR::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -24924,8 +23947,8 @@ inline ModelInfo<TSeq> ModelSEIR<TSeq>::model_info()
             ParamInfo::probability("recovery_rate", "Recovery rate", 0.14,
                 "Daily probability that an infected agent recovers.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelSEIR<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelSEIR >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
                 a("transmission_prob"), a("latent_period"), a("recovery_rate")
             );
@@ -24960,8 +23983,7 @@ inline ModelInfo<TSeq> ModelSEIR<TSeq>::model_info()
  * @brief Template for a Surveillance model
  * @ingroup special_models
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSURV : public Model<TSeq> {
+class ModelSURV : public Model {
 
 public:
     // state
@@ -25042,12 +24064,11 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 
 };
 
-template<typename TSeq>
-inline ModelSURV<TSeq>::ModelSURV(
+inline ModelSURV::ModelSURV(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_fast_uint prevalence,
@@ -25075,9 +24096,9 @@ inline ModelSURV<TSeq>::ModelSURV(
         LATENT
     };
 
-    GlobalFun<TSeq> surveillance_program = 
+    GlobalFun surveillance_program = 
     [exposed_state](
-        Model<TSeq>* m
+        Model* m
         ) -> void
     {
 
@@ -25107,7 +24128,7 @@ inline ModelSURV<TSeq>::ModelSURV(
                 continue;
 
             sampled[i] = true;
-            Agent<TSeq> * p = &pop[i];
+            Agent * p = &pop[i];
             
             // If still exposed for the next term
             if (IN(m->get_stage(*p), exposed_state ))
@@ -25115,7 +24136,7 @@ inline ModelSURV<TSeq>::ModelSURV(
 
                 // The ones already isolated stay so
                 ndetected += 1.0;
-                if (m->get_stage(*p) == ModelSURV<TSeq>::ASYMPTOMATIC)
+                if (m->get_stage(*p) == ModelSURV::ASYMPTOMATIC)
                 {
                     ndetected_asympt += 1.0;
                     m->fire(detected_asympt, *p);
@@ -25135,7 +24156,7 @@ inline ModelSURV<TSeq>::ModelSURV(
                 static_cast<epiworld_double>(nsampled),
                 ndetected,
                 ndetected_asympt,
-                static_cast<epiworld_double>(totals[ModelSURV<TSeq>::ASYMPTOMATIC])
+                static_cast<epiworld_double>(totals[ModelSURV::ASYMPTOMATIC])
             }
             );
 
@@ -25155,14 +24176,14 @@ inline ModelSURV<TSeq>::ModelSURV(
 
     // The latent and infectious periods are gamma with shape the parameter
     // and scale 1 (mean the parameter, variance the same)
-    auto gamma_days = [](const char * pname) -> DurationFun<TSeq> {
+    auto gamma_days = [](const char * pname) -> DurationFun {
         const std::string name(pname);
-        return [name](Agent<TSeq> &, Model<TSeq> & m) -> int {
+        return [name](Agent &, Model & m) -> int {
             return static_cast< int >(std::lround(m.rgamma(m.par(name), 1.0)));
         };
     };
 
-    Virus<TSeq> covid(vname);
+    Virus covid(vname);
     covid.add_stage("Susceptible");
     covid.add_stage("Latent", stage::carrier);
     covid.add_stage("Symptomatic", stage::infectious);
@@ -25176,16 +24197,16 @@ inline ModelSURV<TSeq>::ModelSURV(
     covid.infection(SUSCEPTIBLE, LATENT, "Prob of transmission");
 
     // After the latent period, symptoms or not
-    covid.after(LATENT, SYMPTOMATIC, Duration<TSeq>(gamma_days("Latent period")))
+    covid.after(LATENT, SYMPTOMATIC, Duration(gamma_days("Latent period")))
       .name("Latent -> Symptomatic or Asymptomatic")
       .to({
-        {SYMPTOMATIC, Value<TSeq>("Prob of symptoms")},
-        {ASYMPTOMATIC, Value<TSeq>::complement("Prob of symptoms")}
+        {SYMPTOMATIC, Value("Prob of symptoms")},
+        {ASYMPTOMATIC, Value::complement("Prob of symptoms")}
       });
 
     // The infectious period counts from the end of the latent one; isolation
     // keeps counting from there
-    const Duration<TSeq> infectious(gamma_days("Infect period"));
+    const Duration infectious(gamma_days("Infect period"));
     covid.after(SYMPTOMATIC, RECOVERED, infectious);
     covid.after(SYMPTOMATIC_ISOLATED, RECOVERED, infectious.since(SYMPTOMATIC));
     covid.after(ASYMPTOMATIC, RECOVERED, infectious);
@@ -25204,25 +24225,24 @@ inline ModelSURV<TSeq>::ModelSURV(
 
 
     // Virus ------------------------------------------------------------------
-    this->add_virus(covid, assign::count<TSeq>(prevalence));
+    this->add_virus(covid, assign::count(prevalence));
 
     this->set_user_data({"nsampled", "ndetected", "ndetected_asympt", "nasymptomatic"});
     this->add_globalevent(surveillance_program, "Surveilance program", -1);
    
     // Vaccine tool -----------------------------------------------------------
-    Tool<TSeq> vax("Vaccine");
+    Tool vax("Vaccine");
     vax.set_susceptibility_reduction("Vax efficacy");
     vax.set_transmission_reduction("Vax redux transmission");
 
-    this->add_tool(vax, assign::share<TSeq>(prop_vaccinated));
+    this->add_tool(vax, assign::share(prop_vaccinated));
 
     this->set_name("Surveillance");
 
 
 }
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelSURV<TSeq>::model_info()
+inline ModelInfo ModelSURV::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -25261,8 +24281,8 @@ inline ModelInfo<TSeq> ModelSURV<TSeq>::model_info()
             ParamInfo::probability("prob_noreinfect", "Prob. no reinfect", 0.9,
                 "Probability that a recovered agent is not reinfected.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelSURV<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelSURV >(
                 a.virus_name(), static_cast< uint_t >(a("n")),
                 static_cast< uint_t >(a("prevalence")), a("efficacy_vax"),
                 a("latent_period"), a("infect_period"), a("prob_symptoms"),
@@ -25304,8 +24324,7 @@ inline ModelInfo<TSeq> ModelSURV<TSeq>::model_info()
  * 
  * @ingroup death_compartmental
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIRD : public Model<TSeq>
+class ModelSIRD : public Model
 {
 public:
 
@@ -25341,11 +24360,10 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 };
 
-template<typename TSeq>
-inline ModelSIRD<TSeq>::ModelSIRD(
+inline ModelSIRD::ModelSIRD(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -25361,7 +24379,7 @@ inline ModelSIRD<TSeq>::ModelSIRD(
     this->add_param(transmission_prob, "Transmission probability");
     this->add_param(death_rate, "Death rate");
 
-    Virus<TSeq> virus(vname);
+    Virus virus(vname);
     virus.add_stage("Susceptible");
     virus.add_stage("Infected", stage::infectious);
     virus.add_stage("Recovered");
@@ -25371,7 +24389,7 @@ inline ModelSIRD<TSeq>::ModelSIRD(
     virus.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
     virus.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
 
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share(prevalence));
 
     this->set_name("Susceptible-Infected-Recovered-Deceased (SIRD)");
 
@@ -25379,8 +24397,7 @@ inline ModelSIRD<TSeq>::ModelSIRD(
 }
 
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelSIRD<TSeq>::model_info()
+inline ModelInfo ModelSIRD::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -25398,8 +24415,8 @@ inline ModelInfo<TSeq> ModelSIRD<TSeq>::model_info()
             ParamInfo::probability("death_rate", "Death rate", 0.01,
                 "Daily probability that an infected agent dies.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelSIRD<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelSIRD >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
                 a("transmission_prob"), a("recovery_rate"), a("death_rate")
             );
@@ -25444,8 +24461,7 @@ inline ModelInfo<TSeq> ModelSIRD<TSeq>::model_info()
  * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
  * @param inital_death epiworld_double Initial death_rate of the immune system
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSISD : public Model<TSeq>
+class ModelSISD : public Model
 {
 
 public:
@@ -25467,11 +24483,10 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 };
 
-template<typename TSeq>
-inline ModelSISD<TSeq>::ModelSISD(
+inline ModelSISD::ModelSISD(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -25489,7 +24504,7 @@ inline ModelSISD<TSeq>::ModelSISD(
     this->add_param(recovery_rate, "Recovery rate");
     this->add_param(death_rate, "Death rate");
 
-    Virus<TSeq> virus(vname);
+    Virus virus(vname);
     virus.add_stage("Susceptible");
     virus.add_stage("Infected", stage::infectious);
     virus.add_stage("Deceased");
@@ -25498,12 +24513,11 @@ inline ModelSISD<TSeq>::ModelSISD(
     virus.rate(INFECTED, SUSCEPTIBLE, "Recovery rate").effect(Effect::recovery);
     virus.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
 
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share(prevalence));
 
 }
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelSISD<TSeq>::model_info()
+inline ModelInfo ModelSISD::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -25521,8 +24535,8 @@ inline ModelInfo<TSeq> ModelSISD<TSeq>::model_info()
             ParamInfo::probability("death_rate", "Death rate", 0.01,
                 "Daily probability that an infected agent dies.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelSISD<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelSISD >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
                 a("transmission_prob"), a("recovery_rate"), a("death_rate")
             );
@@ -25560,8 +24574,7 @@ inline ModelInfo<TSeq> ModelSISD<TSeq>::model_info()
  * 
  * @ingroup death_compartmental
 */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRD : public Model<TSeq>
+class ModelSEIRD : public Model
 {
   
 public:
@@ -25599,13 +24612,12 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 };
 
 
 
-template<typename TSeq>
-inline ModelSEIRD<TSeq>::ModelSEIRD(
+inline ModelSEIRD::ModelSEIRD(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -25623,7 +24635,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   this->add_param(recovery_rate, "Recovery rate");
   this->add_param(death_rate, "Death rate");
 
-  Virus<TSeq> virus(vname);
+  Virus virus(vname);
   virus.add_stage("Susceptible");
   virus.add_stage("Exposed", stage::carrier);
   virus.add_stage("Infected", stage::infectious);
@@ -25631,11 +24643,11 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
   virus.add_stage("Deceased");
   virus.set_contact(DECEASED, 0.0);
   virus.infection(SUSCEPTIBLE, EXPOSED, "Transmission probability");
-  virus.after(EXPOSED, INFECTED, Duration<TSeq>::geometric("Latent period"));
+  virus.after(EXPOSED, INFECTED, Duration::geometric("Latent period"));
   virus.rate(INFECTED, REMOVED, "Recovery rate").effect(Effect::recovery);
   virus.rate(INFECTED, DECEASED, "Death rate").effect(Effect::death);
 
-  this->add_virus(virus, assign::share<TSeq>(prevalence));
+  this->add_virus(virus, assign::share(prevalence));
 
   this->set_name("Susceptible-Exposed-Infected-Removed-Deceased (SEIRD)");
   
@@ -25643,8 +24655,7 @@ inline ModelSEIRD<TSeq>::ModelSEIRD(
 
 
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelSEIRD<TSeq>::model_info()
+inline ModelInfo ModelSEIRD::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -25664,8 +24675,8 @@ inline ModelInfo<TSeq> ModelSEIRD<TSeq>::model_info()
             ParamInfo::probability("death_rate", "Death rate", 0.01,
                 "Daily probability that an infected agent dies.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelSEIRD<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelSEIRD >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
                 a("transmission_prob"), a("latent_period"), a("recovery_rate"),
                 a("death_rate")
@@ -25725,11 +24736,9 @@ inline ModelInfo<TSeq> ModelSEIRD<TSeq>::model_info()
  * where \f$\beta_i\f$ are the coefficients for the features \f$x_i\f$ of the agents,
  * and \f$n\f$ is the number of features.
  * 
- * @param TSeq Type of the sequence (e.g. std::vector, std::deque)
  
 */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSIRLogit : public Model<TSeq>
+class ModelSIRLogit : public Model
 {
 public:
     static constexpr int SUSCEPTIBLE = 0;
@@ -25762,7 +24771,7 @@ public:
         epiworld_double prevalence
     );
 
-    std::unique_ptr< Model<TSeq> > clone_ptr() override;
+    std::unique_ptr< Model > clone_ptr() override;
 
     void reset() override;
     
@@ -25773,28 +24782,26 @@ public:
 
 };
 
-template<typename TSeq>
-inline std::unique_ptr<Model<TSeq>> ModelSIRLogit<TSeq>::clone_ptr()
+inline std::unique_ptr<Model> ModelSIRLogit::clone_ptr()
 {
     
-    return std::make_unique<ModelSIRLogit<TSeq>>(*this);
+    return std::make_unique<ModelSIRLogit>(*this);
 
 }
 
-template<typename TSeq>
-inline void ModelSIRLogit<TSeq>::reset()
+inline void ModelSIRLogit::reset()
 {
 
     /* Checking specified columns in the model */
     for (const auto & c : coef_infect_cols)
     {
-        if (c >= Model<TSeq>::agents_data_ncols)
+        if (c >= Model::agents_data_ncols)
             throw std::range_error("Columns specified in coef_infect_cols out of range.");
     }
 
     for (const auto & c : coef_recover_cols)
     {
-        if (c >= Model<TSeq>::agents_data_ncols)
+        if (c >= Model::agents_data_ncols)
             throw std::range_error("Columns specified in coef_recover_cols out of range.");
     }
 
@@ -25809,7 +24816,7 @@ inline void ModelSIRLogit<TSeq>::reset()
             "The number of coefficients (recovery) doesn't match the number of features. It must be as many features of the agents."
             );
     
-    Model<TSeq>::reset();
+    Model::reset();
 
     return;
 
@@ -25818,15 +24825,14 @@ inline void ModelSIRLogit<TSeq>::reset()
 /**
  * @brief Template for a Susceptible-Infected-Removed (SIR) model
  * 
- * @param model A Model<TSeq> object where to set up the SIR.
+ * @param model A Model object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param prevalence Initial prevalence (proportion)
  * @param contact_rate Average number of contacts (interactions) per step.
  * @param prob_transmission Probability of transmission
  * @param prob_recovery Probability of recovery
  */
-template<typename TSeq>
-inline ModelSIRLogit<TSeq>::ModelSIRLogit(
+inline ModelSIRLogit::ModelSIRLogit(
     const std::string & vname,
     epiworld_fast_uint n,
     double * data,
@@ -25865,13 +24871,13 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
     // Infection: each infectious neighbor is an exposure with probability
     // plogis(baseline + p * coef_exposure), where the baseline comes from the
     // agent's features and p is the usual per-contact probability
-    const Value<TSeq> p_contact("Transmission probability");
-    InfectionSampler<TSeq> sampler = [p_contact](
-        Agent<TSeq> & p, Model<TSeq> & m
-        ) -> Virus<TSeq> *
+    const Value p_contact("Transmission probability");
+    InfectionSampler sampler = [p_contact](
+        Agent & p, Model & m
+        ) -> Virus *
         {
 
-            ModelSIRLogit<TSeq> * _m = model_cast<ModelSIRLogit<TSeq>,TSeq>(&m);
+            ModelSIRLogit * _m = model_cast<ModelSIRLogit>(&m);
 
             const double coef_exposure = _m->coefs_infect[0u];
 
@@ -25913,10 +24919,10 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
         };
 
     // Recovery: plogis of the agent's features
-    ValueFun<TSeq> p_recover = [](Agent<TSeq> & p, Model<TSeq> & m) -> epiworld_double
+    ValueFun p_recover = [](Agent & p, Model & m) -> epiworld_double
     {
 
-        ModelSIRLogit<TSeq> * _m = model_cast<ModelSIRLogit<TSeq>,TSeq>(&m);
+        ModelSIRLogit * _m = model_cast<ModelSIRLogit>(&m);
 
         double prob = 0.0;
         for (size_t i = 0u; i < _m->coefs_recover.size(); ++i)
@@ -25926,14 +24932,14 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
 
     };
 
-    Virus<TSeq> virus(vname);
+    Virus virus(vname);
     virus.add_stage("Susceptible");
     virus.add_stage("Infected", stage::infectious);
     virus.add_stage("Recovered");
     virus.infection(SUSCEPTIBLE, INFECTED, "Transmission probability").sampler(sampler);
     virus.rate(INFECTED, RECOVERED, p_recover);
 
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share(prevalence));
 
     this->set_name("Susceptible-Infected-Removed (SIR) (logit)");
 
@@ -25971,7 +24977,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
  * @brief Template for a Network Diffusion Model
  * @ingroup special_models
  * 
- * @param model A Model<TSeq> object where to set up the SIR.
+ * @param model A Model object where to set up the SIR.
  * @param vname std::string Name of the virus
  * @param n Number of agents.
  * @param initial_prevalence epiworld_double Initial prevalence
@@ -25979,8 +24985,7 @@ inline ModelSIRLogit<TSeq>::ModelSIRLogit(
  * @param initial_recovery epiworld_double Initial recovery rate of the immune system
  * 
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelDiffNet : public Model<TSeq>
+class ModelDiffNet : public Model
 {
 private:
 public:
@@ -26008,8 +25013,7 @@ public:
     std::vector< double > params;
 };
 
-template<typename TSeq>
-inline ModelDiffNet<TSeq>::ModelDiffNet(
+inline ModelDiffNet::ModelDiffNet(
     const std::string & innovation_name,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -26035,15 +25039,15 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
     // Adoption: for each innovation, a logit of the exposure (the share of
     // neighbors who adopted it, optionally normalized) plus the agent's
     // features and the baseline probability; one draw picks one, or none
-    InfectionSampler<TSeq> sampler = [](
-        Agent<TSeq> & agent, Model<TSeq> & m
-    ) -> Virus<TSeq> * {
+    InfectionSampler sampler = [](
+        Agent & agent, Model & m
+    ) -> Virus * {
 
         const size_t nviruses = m.get_n_viruses();
-        std::vector< Virus<TSeq>* > innovations(nviruses, nullptr);
+        std::vector< Virus* > innovations(nviruses, nullptr);
         std::vector< double > exposure(nviruses, 0.0);
 
-        ModelDiffNet<TSeq> * diffmodel = model_cast<ModelDiffNet<TSeq>,TSeq>(&m);
+        ModelDiffNet * diffmodel = model_cast<ModelDiffNet>(&m);
 
         size_t n_neighbors = 0u;
         // Every network layer, in the order the layers were added
@@ -26086,24 +25090,24 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
 
         }
 
-        const int which = roulette<TSeq>(exposure, &m);
+        const int which = roulette(exposure, &m);
         if (which < 0)
             return nullptr;
 
         // An innovation no neighbor has is adopted from the model's own
-        Virus<TSeq> * v = innovations[static_cast< size_t >(which)];
+        Virus * v = innovations[static_cast< size_t >(which)];
         return (v != nullptr) ? v : m.get_viruses()[static_cast< size_t >(which)].get();
 
     };
 
     this->set_agents_data(agents_data, data_ncols);
 
-    Virus<TSeq> virus(innovation_name);
+    Virus virus(innovation_name);
     virus.add_stage("Non adopters");
     virus.add_stage("Adopters", stage::infectious);
     virus.infection(NONADOPTER, ADOPTER, parname).sampler(sampler);
 
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+    this->add_virus(virus, assign::share(prevalence));
 
     this->set_name(
         std::string("Diffusion of Innovations - ") + innovation_name);
@@ -26183,11 +25187,9 @@ inline ModelDiffNet<TSeq>::ModelDiffNet(
  * **Implementation details:**
  * <a href="../impl/quarantine-isolation-and-contact-tracing.md">Quarantine, Isolation, and Contact Tracing</a>
  *
- * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
  * @ingroup basic_compartmental
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class ModelSEIRQuarantine : public Model<TSeq>
+class ModelSEIRQuarantine : public Model
 {
 private:
 
@@ -26196,7 +25198,7 @@ private:
     std::vector< bool > isolation_willingness; ///< Indicator for isolation willingness
     std::vector< size_t > agent_quarantine_triggered; ///< Whether the quarantine process has started
 
-    static void _quarantine_process(Model<TSeq> * m);
+    static void _quarantine_process(Model * m);
 
 public:
 
@@ -26258,7 +25260,7 @@ public:
     );
 
     void reset() override;
-    std::unique_ptr< Model<TSeq> > clone_ptr() override;
+    std::unique_ptr< Model > clone_ptr() override;
 
     std::vector< size_t > get_agent_quarantine_triggered() const
     {
@@ -26277,11 +25279,10 @@ public:
 
 
     /// This model's entry in a `ModelRegistry`: arguments and builder
-    static ModelInfo<TSeq> model_info();
+    static ModelInfo model_info();
 };
 
-template<typename TSeq>
-inline void ModelSEIRQuarantine<TSeq>::reset()
+inline void ModelSEIRQuarantine::reset()
 {
 
     // The quarantine process reads the contacts of every layer
@@ -26289,7 +25290,7 @@ inline void ModelSEIRQuarantine<TSeq>::reset()
         if (!this->get_layer(i).is_tracing())
             this->get_layer(i).enable_tracing();
 
-    Model<TSeq>::reset();
+    Model::reset();
 
     // Who is willing to quarantine, and to isolate (drawn once per run)
     quarantine_willingness.assign(this->size(), false);
@@ -26308,17 +25309,15 @@ inline void ModelSEIRQuarantine<TSeq>::reset()
 
 }
 
-template<typename TSeq>
-inline std::unique_ptr<Model<TSeq>> ModelSEIRQuarantine<TSeq>::clone_ptr()
+inline std::unique_ptr<Model> ModelSEIRQuarantine::clone_ptr()
 {
-    return std::make_unique<ModelSEIRQuarantine<TSeq>>(*this);
+    return std::make_unique<ModelSEIRQuarantine>(*this);
 }
 
-template<typename TSeq>
-inline void ModelSEIRQuarantine<TSeq>::_quarantine_process(Model<TSeq> * m)
+inline void ModelSEIRQuarantine::_quarantine_process(Model * m)
 {
 
-    auto * model = model_cast<ModelSEIRQuarantine<TSeq>, TSeq>(m);
+    auto * model = model_cast<ModelSEIRQuarantine>(m);
     const int isolated = m->transition_id("Isolated");
     const int quarantined = m->transition_id("Quarantined");
     const bool isolation_on = EPI_PAR(m, "Isolation period") >= 0;
@@ -26418,8 +25417,7 @@ inline void ModelSEIRQuarantine<TSeq>::_quarantine_process(Model<TSeq> * m)
 
 }
 
-template<typename TSeq>
-inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
+inline ModelSEIRQuarantine::ModelSEIRQuarantine(
     const std::string & vname,
     epiworld_fast_uint n,
     epiworld_double prevalence,
@@ -26455,22 +25453,22 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
     this->add_param(contact_tracing_window, "Contact tracing window");
 
     // The disease
-    Virus<TSeq> virus(vname);
+    Virus virus(vname);
     virus.add_stage("Susceptible");
     virus.add_stage("Exposed", stage::carrier);
     virus.add_stage("Infected", stage::infectious);
     virus.add_stage("Severe", stage::carrier);
     virus.add_stage("Recovered");
     virus.infection(SUSCEPTIBLE, EXPOSED, "Transmission probability");
-    virus.after(EXPOSED, INFECTED, Duration<TSeq>::geometric("Latent period"));
+    virus.after(EXPOSED, INFECTED, Duration::geometric("Latent period"));
     virus.rate(INFECTED, RECOVERED, "Recovery rate").effect(Effect::recovery);
     virus.rate(INFECTED, SEVERE, "Hospitalization rate");
     const int out_severe =
-        virus.rate(SEVERE, RECOVERED, Value<TSeq>::inverse("Hospitalization period"));
-    this->add_virus(virus, assign::share<TSeq>(prevalence));
+        virus.rate(SEVERE, RECOVERED, Value::inverse("Hospitalization period"));
+    this->add_virus(virus, assign::share(prevalence));
 
     // Where agents are
-    Statuses<TSeq> s;
+    Statuses s;
     s.add_status("Free");
     s.add_status("Quarantined");
     s.add_status("Isolated");
@@ -26480,13 +25478,13 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
     s.set_contact(HOSPITALIZED, 0.0);
 
     s.external(FREE, QUARANTINED, "Quarantined");
-    s.after(QUARANTINED, FREE, Duration<TSeq>::fixed("Quarantine period"))
+    s.after(QUARANTINED, FREE, Duration::fixed("Quarantine period"))
         .name("Quarantine ends");
     s.external(FREE, ISOLATED, "Isolated");
     const int onset_q = s.external({FREE, QUARANTINED}, ISOLATED, "Onset in quarantine");
     s.after(
         ISOLATED, FREE,
-        Duration<TSeq>::fixed("Isolation period").since(INFECTED)
+        Duration::fixed("Isolation period").since(INFECTED)
     ).name("Isolation ends");
     const int admit = s.external({FREE, QUARANTINED, ISOLATED}, HOSPITALIZED, "Admitted");
     const int discharge = s.external(HOSPITALIZED, FREE, "Discharged");
@@ -26497,7 +25495,7 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
     this->react(Trigger::entered(SEVERE), admit);
     this->react(
         Trigger::entered(SEVERE),
-        [](Agent<TSeq> & p, Model<TSeq> & m) { m.record_hospitalization(p); }
+        [](Agent & p, Model & m) { m.record_hospitalization(p); }
     );
     this->react(Trigger::fired(out_severe), discharge);
 
@@ -26507,8 +25505,7 @@ inline ModelSEIRQuarantine<TSeq>::ModelSEIRQuarantine(
 
 }
 
-template<typename TSeq>
-inline ModelInfo<TSeq> ModelSEIRQuarantine<TSeq>::model_info()
+inline ModelInfo ModelSEIRQuarantine::model_info()
 {
 
     using uint_t = epiworld_fast_uint;
@@ -26554,8 +25551,8 @@ inline ModelInfo<TSeq> ModelSEIRQuarantine<TSeq>::model_info()
             ParamInfo::count("contact_tracing_window", "Contact tracing window",
                 4.0, "Days before detection whose contacts are traced.")
         },
-        [](const ModelArgs & a) -> std::unique_ptr< Model<TSeq> > {
-            return std::make_unique< ModelSEIRQuarantine<TSeq> >(
+        [](const ModelArgs & a) -> std::unique_ptr< Model > {
+            return std::make_unique< ModelSEIRQuarantine >(
                 a.virus_name(), static_cast< uint_t >(a("n")), a("prevalence"),
                 a("transmission_prob"), a("latent_period"), a("recovery_rate"),
                 a("hospitalization_rate"), a("hospitalization_period"),
@@ -26587,18 +25584,17 @@ inline ModelInfo<TSeq> ModelSEIRQuarantine<TSeq>::model_info()
      * @details Each model's entry is its `model_info()`. `ModelSIRLogit` and
      * `ModelDiffNet` take data arrays and are built directly.
      */
-    template<typename TSeq = EPI_DEFAULT_TSEQ>
-    inline ModelRegistry<TSeq> & register_models(ModelRegistry<TSeq> & registry)
+    inline ModelRegistry & register_models(ModelRegistry & registry)
     {
         return registry
-            .add(ModelSIS<TSeq>::model_info())
-            .add(ModelSIR<TSeq>::model_info())
-            .add(ModelSEIR<TSeq>::model_info())
-            .add(ModelSISD<TSeq>::model_info())
-            .add(ModelSIRD<TSeq>::model_info())
-            .add(ModelSEIRD<TSeq>::model_info())
-            .add(ModelSEIRQuarantine<TSeq>::model_info())
-            .add(ModelSURV<TSeq>::model_info());
+            .add(ModelSIS::model_info())
+            .add(ModelSIR::model_info())
+            .add(ModelSEIR::model_info())
+            .add(ModelSISD::model_info())
+            .add(ModelSIRD::model_info())
+            .add(ModelSEIRD::model_info())
+            .add(ModelSEIRQuarantine::model_info())
+            .add(ModelSURV::model_info());
     }
 }
 

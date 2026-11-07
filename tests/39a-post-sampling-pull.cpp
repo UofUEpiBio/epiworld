@@ -16,12 +16,12 @@ struct Batch {
     bool state_ok; // Nobody had changed state yet
 };
 
-epimodels::ModelSIR<> make_ring()
+epimodels::ModelSIR make_ring()
 {
 
-    epimodels::ModelSIR<> model("Virus", 8, 0.0, 1.0, 0.0);
+    epimodels::ModelSIR model("Virus", 8, 0.0, 1.0, 0.0);
 
-    Virus<> v = model.get_virus(0);
+    Virus v = model.get_virus(0);
     model.rm_virus(0);
     model.add_virus(v, assign::agents({2u, 6u}));
 
@@ -51,7 +51,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
     std::vector< std::string > log;
 
     model.set_post_sampling(
-        [&](Agent<> * p, const SampledContactsView & contacts, Model<> * m) -> void {
+        [&](Agent * p, const SampledContactsView & contacts, Model * m) -> void {
 
             Batch b;
             b.day = m->today();
@@ -73,7 +73,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
     );
 
     model.add_globalevent(
-        [&](Model<> * m) -> void { log.push_back("ge" + std::to_string(m->today())); },
+        [&](Model * m) -> void { log.push_back("ge" + std::to_string(m->today())); },
         "log"
     );
 
@@ -122,7 +122,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
         auto self_clearing = make_ring();
         size_t calls = 0u;
         self_clearing.set_post_sampling(
-            [&calls](Agent<> *, const SampledContactsView &, Model<> * m) -> void {
+            [&calls](Agent *, const SampledContactsView &, Model * m) -> void {
                 calls++;
                 m->clear_post_sampling();
             }
@@ -136,10 +136,10 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
         auto replacing = make_ring();
         size_t calls_a = 0u, calls_b = 0u;
         replacing.set_post_sampling(
-            [&](Agent<> *, const SampledContactsView &, Model<> * m) -> void {
+            [&](Agent *, const SampledContactsView &, Model * m) -> void {
                 calls_a++;
                 m->set_post_sampling(
-                    [&calls_b](Agent<> *, const SampledContactsView &, Model<> *) -> void {
+                    [&calls_b](Agent *, const SampledContactsView &, Model *) -> void {
                         calls_b++;
                     }
                 );
@@ -158,7 +158,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
 
     auto run = [](bool hook) -> std::vector< int > {
 
-        epimodels::ModelSEIR<> model("Virus", 2000, 0.02, 0.4, 3.0, 0.2);
+        epimodels::ModelSEIR model("Virus", 2000, 0.02, 0.4, 3.0, 0.2);
         model.add_layer(layer::network(
             "network", rgraph_smallworld(2000, 6, 0.1, false, model)
         ));
@@ -167,7 +167,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
 
         if (hook)
             model.set_post_sampling(
-                [](Agent<> *, const SampledContactsView &, Model<> *) -> void {}
+                [](Agent *, const SampledContactsView &, Model *) -> void {}
             );
 
         model.run(40, 331);

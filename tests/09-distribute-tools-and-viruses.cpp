@@ -4,12 +4,12 @@ using namespace epiworld;
 
 EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
 
-    epimodels::ModelSIR<> model_0(
+    epimodels::ModelSIR model_0(
         "a virus", 10000u, 0.01, 1.0, 1.0/10000.0
     );
     add_random_mixing(model_0, 4.0);
     
-    Tool<> tool("vax");
+    Tool tool("vax");
     tool.set_susceptibility_reduction(0.5);
 
     model_0.add_tool(tool, assign::share(0.1));
@@ -32,23 +32,23 @@ EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
             got_tool.push_back(i);
     }
 
-    epimodels::ModelSIR<> model_1(
+    epimodels::ModelSIR model_1(
         "a virus", 10000u, 0.01, 1.0, 1.0/10000.0
     );
     add_random_mixing(model_1, 4.0);
 
-    model_1.assign_virus(0, assign::agents<>(got_it));
+    model_1.assign_virus(0, assign::agents(got_it));
 
     // A tool removed from the model is not distributed (it would reach
     // everyone, so got_tool1 would not match below)
-    Tool<> everyone("everyone");
+    Tool everyone("everyone");
     model_1.add_tool(everyone, assign::share(1.0));
     REQUIRE_THROWS_AS(model_1.rm_tool(1u), std::range_error);
     model_1.rm_tool(0u);
     REQUIRE(model_1.get_n_tools() == 0u);
 
     model_1.add_tool(tool);
-    model_1.assign_tool(0, assign::agents<>(got_tool));
+    model_1.assign_tool(0, assign::agents(got_tool));
     
     model_1.run(0, 131);
 
@@ -97,8 +97,8 @@ EPIWORLD_TEST_CASE("Distribution funs", "[DistFuns]") {
     REQUIRE(got_tool == got_tool1);
 
     // Agents drop a tool by position or by pointer, once the events run
-    Agent<> & a = model_0.get_agent(got_tool[0]);
-    Agent<> & b = model_0.get_agent(got_tool[1]);
+    Agent & a = model_0.get_agent(got_tool[0]);
+    Agent & b = model_0.get_agent(got_tool[1]);
     REQUIRE_THROWS_AS(a.rm_tool(model_0, 1u), std::range_error);
     REQUIRE_THROWS_AS(a.rm_tool(model_0, b.get_tool(0)), std::logic_error);
 

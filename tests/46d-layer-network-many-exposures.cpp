@@ -26,11 +26,11 @@ EPIWORLD_TEST_CASE("Network layers - many exposures", "[layer-network]") {
 
     auto make = [&](double p) {
 
-        auto model = std::make_unique< epimodels::ModelSIR<> >(
+        auto model = std::make_unique< epimodels::ModelSIR >(
             "flu", n, 0.0, p, 0.0
         );
         model->verbose_off();
-        model->assign_virus(0, assign::agents<>(leaves));
+        model->assign_virus(0, assign::agents(leaves));
         for (std::string name : {"a", "b", "c"})
             model->add_layer(layer::network(
                 name, AdjList(source, target, static_cast< int >(n), false)
@@ -55,7 +55,7 @@ EPIWORLD_TEST_CASE("Network layers - many exposures", "[layer-network]") {
             size_t infected = 0u;
             model->run_multiple(
                 1, nsims, 46,
-                [&infected](size_t, Model<> * m) -> void {
+                [&infected](size_t, Model * m) -> void {
                     if (m->get_agent(0u).get_virus() != nullptr)
                         ++infected;
                 },
@@ -76,7 +76,7 @@ EPIWORLD_TEST_CASE("Network layers - many exposures", "[layer-network]") {
             std::vector< size_t > by_layer(3u, 0u);
             model->run_multiple(
                 1, nsims, 46,
-                [&](size_t, Model<> * m) -> void {
+                [&](size_t, Model * m) -> void {
                     std::vector< int > d, src, tgt, v, se, lay;
                     m->get_db().get_transmissions(d, src, tgt, v, se, lay);
                     for (size_t k = 0u; k < tgt.size(); ++k)

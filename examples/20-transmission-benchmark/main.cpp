@@ -101,7 +101,7 @@ static Options parse(int argc, char ** argv)
 
 // Scenario A: epiworld-benchmark's SEIRH runner (runners/epiworld.R),
 // translated line by line.
-static void build_seirh(Model<> & model, size_t n)
+static void build_seirh(Model & model, size_t n)
 {
     const double mean_degree = 10.0, target_r0 = 2.0;
     const double latent_days = 4.0, infectious_days = 7.0;
@@ -119,7 +119,7 @@ static void build_seirh(Model<> & model, size_t n)
     model.add_param(recovery, "Recovery rate");
     model.add_param(1.0 / hosp_days, "Hospital recovery rate");
 
-    Virus<> pathogen("Benchmark pathogen");
+    Virus pathogen("Benchmark pathogen");
     pathogen.add_stage("Susceptible");
     pathogen.add_stage("Exposed", stage::carrier);
     pathogen.add_stage("Infected", stage::infectious);
@@ -141,7 +141,7 @@ static void build_seirh(Model<> & model, size_t n)
 // ties in which the number of stubs per agent is heavy tailed (a discrete
 // Pareto with exponent 1.5, capped), paired uniformly at random. Self-contained
 // and deterministic.
-static void build_heterogeneous(Model<> & model, size_t n)
+static void build_heterogeneous(Model & model, size_t n)
 {
 
     std::mt19937_64 rng(20260929);
@@ -230,7 +230,7 @@ static Result time_model(
     int * n_push = &res.n_push;
     int * n_pull = &res.n_pull;
     model.add_globalevent(
-        [n_push, n_pull](Model<> * m) -> void {
+        [n_push, n_pull](Model * m) -> void {
             if (m->get_last_transmission_mode() == TransmissionMode::push)
                 ++(*n_push);
             else
@@ -264,7 +264,7 @@ static Result time_model(
 
         Trace * trp = &tr;
         model.add_globalevent(
-            [trp](Model<> * m) -> void {
+            [trp](Model * m) -> void {
 
                 std::clock_t now = std::clock();
                 auto sums = m->get_transmission_sums();
@@ -359,7 +359,7 @@ int main(int argc, char ** argv)
 
                 if (scen == "A")
                 {
-                    Model<> model(n);
+                    Model model(n);
                     model.seed(20260907);
                     build_seirh(model, n);
                     res = time_model(model, o, mode, {0u});
@@ -369,7 +369,7 @@ int main(int argc, char ** argv)
                     double recovery = 1.0 / 7.0;
                     double t = 2.0 / 9.0;
                     double beta = t * recovery / (1.0 - t * (1.0 - recovery));
-                    epimodels::ModelSEIR<> model(
+                    epimodels::ModelSEIR model(
                         "Benchmark pathogen",
                         n,
                         100.0 / static_cast< double >(n),
@@ -383,7 +383,7 @@ int main(int argc, char ** argv)
                 }
                 else if (scen == "D")
                 {
-                    epimodels::ModelSEIR<> model(
+                    epimodels::ModelSEIR model(
                         "Measles-like pathogen",
                         n,
                         10.0 / static_cast< double >(n),
@@ -397,7 +397,7 @@ int main(int argc, char ** argv)
                 }
                 else if (scen == "E")
                 {
-                    epimodels::ModelSEIR<> model(
+                    epimodels::ModelSEIR model(
                         "Heterogeneous pathogen",
                         n,
                         100.0 / static_cast< double >(n),
@@ -409,7 +409,7 @@ int main(int argc, char ** argv)
                 }
                 else if (scen == "C")
                 {
-                    epimodels::ModelSIR<> model("Dense pathogen", n, 0.01, 0.05, 0.2);
+                    epimodels::ModelSIR model("Dense pathogen", n, 0.01, 0.05, 0.2);
                     model.seed(20260907);
                     model.add_layer(layer::network(
                         "network", rgraph_smallworld(n, 50, 0.1, false, model)

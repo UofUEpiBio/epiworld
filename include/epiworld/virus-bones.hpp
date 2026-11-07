@@ -1,38 +1,32 @@
 #ifndef EPIWORLD_VIRUS_HPP
 #define EPIWORLD_VIRUS_HPP
 
-template<typename TSeq>
 class Agent;
 
-template<typename TSeq>
 class Virus;
 
-template<typename TSeq>
 class Model;
 
-template<typename TSeq>
 class Tool;
 
 /**
  * @brief Virus
  * 
- * @tparam TSeq 
  * @details
  * A virus is identified by its id, which the model assigns: `Model::add_virus()`
  * records a new variant (the founder of a lineage), and so does every
  * mutation (a child of the variant it changed). Tools can reduce what a
  * virus does, so its effects are a function of the agent.
  */
-template<typename TSeq>
 class Virus {
-    friend class Agent<TSeq>;
-    friend class Model<TSeq>;
-    friend class DataBase<TSeq>;
-    friend class Tool<TSeq>;
-    friend class ContactLayer<TSeq>;
+    friend class Agent;
+    friend class Model;
+    friend class DataBase;
+    friend class Tool;
+    friend class ContactLayer;
 private:
     
-    Agent<TSeq> * agent = nullptr;
+    Agent * agent = nullptr;
 
 
     std::string virus_name = "unknown virus";
@@ -40,14 +34,14 @@ private:
     int id   = -99;    
     int lineage_id = -99; ///< Id of the founding virus (kept across mutations).
     uint64_t lineage_bit = uint64_t(1) << 63; ///< Bit matched against Tool::target_mask.
-    MutFun<TSeq>          mutation                 = nullptr;
+    MutFun          mutation                 = nullptr;
 
     /// Parameters this variant reads in place of others (see `use_param()`)
     std::vector< std::pair< ParamRef, ParamRef > > param_redirects;
 
     /// Its natural history (shared by its copies; copied on the first edit)
-    std::shared_ptr< NaturalHistory<TSeq> > nh_def = nullptr;
-    NaturalHistory<TSeq> & nh_edit();
+    std::shared_ptr< NaturalHistory > nh_def = nullptr;
+    NaturalHistory & nh_edit();
         
 public:
 
@@ -68,10 +62,10 @@ public:
     #ifdef EPI_DEBUG_VIRUS
     
     // Copy and move operations for debugging
-    Virus(const Virus<TSeq>& other);                    // Copy constructor
-    Virus(Virus<TSeq>&& other) noexcept;                // Move constructor
-    Virus<TSeq>& operator=(const Virus<TSeq>& other);   // Copy assignment
-    Virus<TSeq>& operator=(Virus<TSeq>&& other) noexcept; // Move assignment
+    Virus(const Virus& other);                    // Copy constructor
+    Virus(Virus&& other) noexcept;                // Move constructor
+    Virus& operator=(const Virus& other);   // Copy assignment
+    Virus& operator=(Virus&& other) noexcept; // Move assignment
 
     ~Virus();
     #endif
@@ -85,13 +79,13 @@ public:
      * if two of them made the same change.
      */
     ///@{
-    void mutate(Model<TSeq> * model);
-    void set_mutation(MutFun<TSeq> fun);
+    void mutate(Model * model);
+    void set_mutation(MutFun fun);
     ///@}
     
     
-    Agent<TSeq> * get_agent();
-    void set_agent(Agent<TSeq> * p);
+    Agent * get_agent();
+    void set_agent(Agent * p);
     
     void set_date(int d);
     int get_date() const;
@@ -114,8 +108,8 @@ public:
     void set_name(std::string name);
     std::string get_name() const;
 
-    bool operator==(const Virus<TSeq> & other) const;
-    bool operator!=(const Virus<TSeq> & other) const {return !operator==(other);};
+    bool operator==(const Virus & other) const;
+    bool operator!=(const Virus & other) const {return !operator==(other);};
 
     void print() const;
 
@@ -132,13 +126,13 @@ public:
     ///@{
     int add_stage(std::string label, unsigned int flags = 0u);
     void set_contact(int s, epiworld_double weight);
-    TransitionRef<TSeq> infection(Nodes from, int to, Value<TSeq> per_contact);
-    TransitionRef<TSeq> rate(Nodes from, int to, Value<TSeq> daily_probability);
-    TransitionRef<TSeq> after(int from, int to, Duration<TSeq> d);
-    TransitionRef<TSeq> external(Nodes from, int to, std::string label);
+    TransitionRef infection(Nodes from, int to, Value per_contact);
+    TransitionRef rate(Nodes from, int to, Value daily_probability);
+    TransitionRef after(int from, int to, Duration d);
+    TransitionRef external(Nodes from, int to, std::string label);
 
     /// The natural history (`nullptr` if the virus has none).
-    const NaturalHistory<TSeq> * get_natural_history() const { return nh_def.get(); }
+    const NaturalHistory * get_natural_history() const { return nh_def.get(); }
     ///@}
 
     /**
@@ -150,13 +144,13 @@ public:
     void use_param(std::string param, std::string replacement);
 
     /// The parameter this variant reads in place of `id`.
-    ParamId param_redirect(ParamId id, const Model<TSeq> & model) const;
+    ParamId param_redirect(ParamId id, const Model & model) const;
 
     /// Throws if a parameter it reads (see `use_param()`) is not in `model`.
-    void check_params(const Model<TSeq> & model) const;
+    void check_params(const Model & model) const;
 
     virtual ~Virus() = default;
-    virtual std::unique_ptr<Virus<TSeq>> clone_ptr() const;
+    virtual std::unique_ptr<Virus> clone_ptr() const;
 
 };
 

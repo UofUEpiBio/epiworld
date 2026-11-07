@@ -20,7 +20,7 @@ struct Outcome {
     std::vector< epiworld_fast_uint > states;
 };
 
-Outcome outcome_of(Model<> & model)
+Outcome outcome_of(Model & model)
 {
     Outcome o;
     model.get_db().get_transmissions(
@@ -49,7 +49,7 @@ void require_same(const Outcome & a, const Outcome & b)
 
 // Every transmission (seeds have source -1) went from an agent to one that
 // lists it among its neighbors. Returns how many there were.
-size_t require_along_ties(Model<> & model, const Outcome & o)
+size_t require_along_ties(Model & model, const Outcome & o)
 {
     size_t n = 0u;
     for (size_t k = 0u; k < o.source.size(); ++k)
@@ -84,12 +84,12 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     }
 
     auto run_path = [&](bool directed, size_t seed_agent, bool queuing) {
-        epimodels::ModelSIR<> model("a virus", n, 0.0, 1.0, 0.0);
+        epimodels::ModelSIR model("a virus", n, 0.0, 1.0, 0.0);
         model.verbose_off();
         model.add_layer(layer::network(
             "network", AdjList(source, target, n, directed)
         ));
-        model.assign_virus(0u, assign::agents<>({seed_agent}));
+        model.assign_virus(0u, assign::agents({seed_agent}));
         if (!queuing)
             model.queuing_off();
         model.run(2 * n, 42);
@@ -135,7 +135,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     // The same network and seeds, with queuing on and off and each transmission
     // mode requested: all runs must match, and they all pull.
     auto run_random = [](bool queuing, const char * mode) {
-        epimodels::ModelSEIR<> model("a virus", 1500u, 0.01, 0.5, 3.0, 0.2);
+        epimodels::ModelSEIR model("a virus", 1500u, 0.01, 0.5, 3.0, 0.2);
         model.verbose_off();
         model.seed(2026);
         model.add_layer(layer::network(
@@ -172,7 +172,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     for (bool queuing : {true, false})
     {
 
-        epimodels::ModelSIR<> model("a virus", n, 0.0, 1.0, 0.0);
+        epimodels::ModelSIR model("a virus", n, 0.0, 1.0, 0.0);
         model.verbose_off();
         model.add_layer(layer::network(
             "network", AdjList(source, target, n, true)
@@ -181,7 +181,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
         size_t offered = 0u;
         auto & v = model.get_virus(0u);
         model.assign_virus(0u, assign::agents({static_cast<size_t>(n - 1)}));
-        v.set_mutation([&offered](Agent<> *, Virus<> &, Model<> *) -> bool {
+        v.set_mutation([&offered](Agent *, Virus &, Model *) -> bool {
             ++offered;
             return false;
         });

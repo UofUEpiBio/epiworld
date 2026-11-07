@@ -12,12 +12,11 @@ using namespace epiworld;
  * its contact rate) but would ignore any other layer, so a model with none or
  * with more throws instead.
  */
-template<typename TSeq>
-inline layer::Mixing<TSeq> & measles_mixing_layer(Model<TSeq> & model)
+inline layer::Mixing & measles_mixing_layer(Model & model)
 {
 
     auto * mix = (model.get_n_layers() == 1u) ?
-        dynamic_cast< layer::Mixing<TSeq> * >(&model.get_layer(0u)) : nullptr;
+        dynamic_cast< layer::Mixing * >(&model.get_layer(0u)) : nullptr;
 
     if ((mix == nullptr) || mix->within_groups())
         throw std::logic_error(
@@ -43,10 +42,8 @@ inline layer::Mixing<TSeq> & measles_mixing_layer(Model<TSeq> & model)
  * infectious stage, with a relative contact rate computed as 1 minus a model
  * parameter such as "Rash reduction contact rate".
  *
- * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
  * @ingroup disease_specific
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class SamplerMixing
 {
 private:
@@ -57,7 +54,7 @@ private:
     std::vector< int > contact_stages;
     int free_status = 0;
 
-    layer::Mixing<TSeq> * mixing = nullptr; ///< The model's layer (update())
+    layer::Mixing * mixing = nullptr; ///< The model's layer (update())
     double contact_rate = 1.0;              ///< Its contact rate (update())
 
     std::vector< size_t > primary_infectious;
@@ -70,7 +67,7 @@ private:
     std::vector< double > adjusted_contact_rate;
     std::vector< size_t > sampled_agents;
 
-    double get_reduced_contact_rate(Model<TSeq> & model) const;
+    double get_reduced_contact_rate(Model & model) const;
     bool is_available_for_contact(int stage, bool include_reduced) const;
 
     #ifdef EPI_DEBUG
@@ -107,7 +104,7 @@ public:
      *
      * @param model Model containing current agents and its mixing layer.
      */
-    void reset(Model<TSeq> & model);
+    void reset(Model & model);
 
     /**
      * @brief Updates infectious pools and per-group sampling weights (and
@@ -115,7 +112,7 @@ public:
      *
      * @param model Model containing current agents and its mixing layer.
      */
-    void update(Model<TSeq> & model);
+    void update(Model & model);
 
     /**
      * @brief Samples infectious contacts into the internal sampled-agent
@@ -126,7 +123,7 @@ public:
      *
      * @return Number of sampled contacts written to the internal buffer.
      */
-    size_t sample(Agent<TSeq> * agent, Model<TSeq> & model);
+    size_t sample(Agent * agent, Model & model);
 
     /**
      * @brief Returns the internal sampled-agent buffer.
@@ -158,8 +155,7 @@ public:
 
 };
 
-template<typename TSeq>
-inline void SamplerMixing<TSeq>::configure(
+inline void SamplerMixing::configure(
     int primary_infectious_stage_,
     int reduced_infectious_stage_,
     std::string reduced_contact_reduction_param_,
@@ -176,9 +172,8 @@ inline void SamplerMixing<TSeq>::configure(
     free_status = free_status_;
 }
 
-template<typename TSeq>
-inline double SamplerMixing<TSeq>::get_reduced_contact_rate(
-    Model<TSeq> & model
+inline double SamplerMixing::get_reduced_contact_rate(
+    Model & model
 ) const
 {
     if (reduced_contact_reduction_param.name().empty())
@@ -187,8 +182,7 @@ inline double SamplerMixing<TSeq>::get_reduced_contact_rate(
     return 1.0 - reduced_contact_reduction_param(model);
 }
 
-template<typename TSeq>
-inline bool SamplerMixing<TSeq>::is_available_for_contact(
+inline bool SamplerMixing::is_available_for_contact(
     int stage,
     bool include_reduced
 ) const
@@ -203,8 +197,7 @@ inline bool SamplerMixing<TSeq>::is_available_for_contact(
     return false;
 }
 
-template<typename TSeq>
-inline void SamplerMixing<TSeq>::reset(Model<TSeq> & model)
+inline void SamplerMixing::reset(Model & model)
 {
     sampled_agents.resize(model.size());
     primary_infectious.assign(model.size(), 0u);
@@ -213,14 +206,13 @@ inline void SamplerMixing<TSeq>::reset(Model<TSeq> & model)
     update(model);
 }
 
-template<typename TSeq>
-inline void SamplerMixing<TSeq>::update(Model<TSeq> & model)
+inline void SamplerMixing::update(Model & model)
 {
     mixing = &measles_mixing_layer(model);
     contact_rate = mixing->get_contact_rate(model);
 
     const size_t ngroups = mixing->get_n_groups();
-    constexpr size_t none = layer::Mixing<TSeq>::NO_GROUP;
+    constexpr size_t none = layer::Mixing::NO_GROUP;
 
     n_primary_infectious_per_group.assign(ngroups, 0u);
     n_reduced_infectious_per_group.assign(ngroups, 0u);
@@ -273,15 +265,14 @@ inline void SamplerMixing<TSeq>::update(Model<TSeq> & model)
     }
 }
 
-template<typename TSeq>
-inline size_t SamplerMixing<TSeq>::sample(
-    Agent<TSeq> * agent,
-    Model<TSeq> & model
+inline size_t SamplerMixing::sample(
+    Agent * agent,
+    Model & model
 )
 {
     // An agent in no group meets nobody
     const size_t agent_group_id = mixing->get_group(agent->get_id());
-    if (agent_group_id == layer::Mixing<TSeq>::NO_GROUP)
+    if (agent_group_id == layer::Mixing::NO_GROUP)
         return 0u;
 
     const size_t ngroups = mixing->get_n_groups();

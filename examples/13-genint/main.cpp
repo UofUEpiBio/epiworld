@@ -7,10 +7,10 @@ using namespace epiworld;
 
 // Everyone meets "Contact rate" others a day, at random: one group, a 1 x 1
 // contact matrix of 1, scaled by the parameter.
-void add_random_mixing(Model<> & model, double contact_rate)
+void add_random_mixing(Model & model, double contact_rate)
 {
     model.add_param(contact_rate, "Contact rate");
-    auto mix = layer::mixing<>("random mixing");
+    auto mix = layer::mixing("random mixing");
     mix->set_groups(assign::labels(std::vector< size_t >(model.size(), 0u)), 1u);
     mix->set_contact_matrix({1.0});
     mix->set_contact_rate("Contact rate");
@@ -21,7 +21,7 @@ void add_random_mixing(Model<> & model, double contact_rate)
 // day's susceptible agents (gen_int_mean()); the latent period, if any, adds
 // to it.
 std::vector< double > expected_gentime(
-    Model<> & model, size_t ndays, double latent_period
+    Model & model, size_t ndays, double latent_period
 )
 {
 
@@ -47,7 +47,7 @@ std::vector< double > expected_gentime(
 
 // Mean observed generation interval of the infections in the first `ndays`
 // days (the first three quarters of the records)
-double observed_gentime(Model<> & model, size_t ndays)
+double observed_gentime(Model & model, size_t ndays)
 {
 
     std::vector< int > agent, virus, time, gentime;
@@ -82,14 +82,14 @@ int main()
     const size_t nsteps = 200;    // Number of days
     const size_t ndays  = 20;     // Days used in the comparison
 
-    epimodels::ModelSIR<> model("avirus", popsize, prevalence, p_i, p_r);
+    epimodels::ModelSIR model("avirus", popsize, prevalence, p_i, p_r);
     add_random_mixing(model, r);
     model.run(nsteps, 554);
     model.print();
 
     auto sir = expected_gentime(model, ndays, 0.0);
 
-    epimodels::ModelSEIR<> model2(
+    epimodels::ModelSEIR model2(
         "avirus", popsize, prevalence, p_i, latent, p_r
     );
     add_random_mixing(model2, r);

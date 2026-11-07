@@ -14,7 +14,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
 
     // Create a model with both virus and tools
-    epimodels::ModelSEIR<> model(
+    epimodels::ModelSEIR model(
         "test virus", 100, 0.1, 0.5, 3.0, 7.0
     );
     add_random_mixing(model, 5.0);

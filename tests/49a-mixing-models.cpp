@@ -15,14 +15,14 @@ EPIWORLD_TEST_CASE("A model plus a mixing layer is the old mixing model", "[mixi
     for (size_t i = 0u; i < n; ++i)
         groups[i] = i % 2u;
 
-    auto add_mixing = [&groups](Model<> & model) {
-        auto mixing = layer::mixing<>("mixing");
+    auto add_mixing = [&groups](Model & model) {
+        auto mixing = layer::mixing("mixing");
         mixing->set_groups(assign::labels(groups), 2u);
         mixing->set_contact_matrix({6.0, 1.0, 1.0, 4.0});
         model.add_layer(mixing);
     };
 
-    auto history = [](Model<> & model) {
+    auto history = [](Model & model) {
         model.verbose_off();
         model.run(20, 1912);
         std::vector< int > counts;
@@ -46,7 +46,7 @@ EPIWORLD_TEST_CASE("A model plus a mixing layer is the old mixing model", "[mixi
         #endif
     };
 
-    epimodels::ModelSIR<> sir("v", n, 0.02, 0.1, 1.0 / 7.0);
+    epimodels::ModelSIR sir("v", n, 0.02, 0.1, 1.0 / 7.0);
     add_mixing(sir);
     const std::vector< int > sir_expected = {
         980, 20, 0, 966, 32, 2, 946, 47, 7, 917, 66, 17, 889, 82, 29,
@@ -60,7 +60,7 @@ EPIWORLD_TEST_CASE("A model plus a mixing layer is the old mixing model", "[mixi
     // ModelSEIR draws its latent period when an agent enters it (a natural
     // history), so its draws differ from the old model's: only the counts
     // must add up
-    epimodels::ModelSEIR<> seir("v", n, 0.02, 0.1, 3.0, 1.0 / 7.0);
+    epimodels::ModelSEIR seir("v", n, 0.02, 0.1, 3.0, 1.0 / 7.0);
     add_mixing(seir);
     const auto seir_got = history(seir);
     REQUIRE(seir_got.size() == 21u * 4u);

@@ -69,8 +69,7 @@ inline const std::string & ModelArgs::virus_name() const noexcept
     return vname;
 }
 
-template<typename TSeq>
-inline ModelRegistry<TSeq> & ModelRegistry<TSeq>::add(ModelInfo<TSeq> info)
+inline ModelRegistry & ModelRegistry::add(ModelInfo info)
 {
 
     if (info.id.empty())
@@ -110,15 +109,13 @@ inline ModelRegistry<TSeq> & ModelRegistry<TSeq>::add(ModelInfo<TSeq> info)
 
 }
 
-template<typename TSeq>
-inline const std::vector< ModelInfo<TSeq> > &
-ModelRegistry<TSeq>::list_models() const noexcept
+inline const std::vector< ModelInfo > &
+ModelRegistry::list_models() const noexcept
 {
     return models;
 }
 
-template<typename TSeq>
-inline const ModelInfo<TSeq> & ModelRegistry<TSeq>::get_model_info(
+inline const ModelInfo & ModelRegistry::get_model_info(
     const std::string & id
 ) const
 {
@@ -137,8 +134,7 @@ inline const ModelInfo<TSeq> & ModelRegistry<TSeq>::get_model_info(
 
 }
 
-template<typename TSeq>
-inline std::unique_ptr< Model<TSeq> > ModelRegistry<TSeq>::make_model(
+inline std::unique_ptr< Model > ModelRegistry::make_model(
     const std::string & id,
     const std::map< std::string, double > & values,
     const std::string & virus_name

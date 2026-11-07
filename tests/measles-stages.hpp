@@ -88,9 +88,8 @@ inline MeaslesRashExits measles_rash_exits(
  * Number of agents that took the declared transition `name` on each day of
  * the last run (entry `d` is day `d`).
  */
-template<typename TSeq>
 inline std::vector< int > transitions_by_day(
-    const epiworld::Model<TSeq> & model,
+    const epiworld::Model & model,
     const std::string & name
 ) {
 
@@ -108,9 +107,8 @@ inline std::vector< int > transitions_by_day(
 }
 
 /// The same, for the stage transition `from -> to` (its default name).
-template<typename TSeq>
 inline std::vector< int > transitions_by_day(
-    const epiworld::Model<TSeq> & model,
+    const epiworld::Model & model,
     const std::string & from,
     const std::string & to
 ) {

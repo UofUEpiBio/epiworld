@@ -11,7 +11,7 @@ namespace {
 std::vector< size_t > deliveries(int nthreads, size_t nsims)
 {
 
-    epimodels::ModelSEIR<> model("Virus", 1000, 0.02, 0.5, 3.0, 0.2);
+    epimodels::ModelSEIR model("Virus", 1000, 0.02, 0.5, 3.0, 0.2);
     model.add_layer(layer::network(
         "network", rgraph_smallworld(1000, 6, 0.1, false, model)
     ));
@@ -22,7 +22,7 @@ std::vector< size_t > deliveries(int nthreads, size_t nsims)
     auto * slots = &per_sim;
 
     model.set_post_sampling(
-        [slots](Agent<> *, const SampledContactsView & c, Model<> * m) -> void {
+        [slots](Agent *, const SampledContactsView & c, Model * m) -> void {
             (*slots)[m->get_sim_id()] += c.size();
         }
     );
@@ -38,7 +38,7 @@ std::vector< size_t > deliveries(int nthreads, size_t nsims)
 EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sampling-clone]") {
 
     // A clone keeps the callback; removing it there leaves the original alone
-    epimodels::ModelSEIR<> model("Virus", 500, 0.02, 0.5, 3.0, 0.2);
+    epimodels::ModelSEIR model("Virus", 500, 0.02, 0.5, 3.0, 0.2);
     model.add_layer(layer::network(
         "network", rgraph_smallworld(500, 6, 0.1, false, model)
     ));
@@ -46,16 +46,16 @@ EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sa
 
     size_t original = 0u, copied = 0u;
     model.set_post_sampling(
-        [&original](Agent<> *, const SampledContactsView & c, Model<> *) -> void {
+        [&original](Agent *, const SampledContactsView & c, Model *) -> void {
             original += c.size();
         }
     );
 
-    auto clone = std::make_unique< epimodels::ModelSEIR<> >(model);
+    auto clone = std::make_unique< epimodels::ModelSEIR >(model);
     REQUIRE(clone->has_post_sampling());
 
     clone->set_post_sampling(
-        [&copied](Agent<> *, const SampledContactsView & c, Model<> *) -> void {
+        [&copied](Agent *, const SampledContactsView & c, Model *) -> void {
             copied += c.size();
         }
     );
@@ -75,7 +75,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sa
     // reset(): the scratch is sized for their own population
     {
 
-        epimodels::ModelSEIR<> base("Virus", 500, 0.05, 0.5, 3.0, 0.2);
+        epimodels::ModelSEIR base("Virus", 500, 0.05, 0.5, 3.0, 0.2);
         base.add_layer(layer::network(
             "network", rgraph_smallworld(500, 6, 0.1, false, base)
         ));
@@ -87,7 +87,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sa
 
         size_t n_batches = 0u;
         base.set_post_sampling(
-            [&n_batches](Agent<> *, const SampledContactsView &, Model<> *) -> void {
+            [&n_batches](Agent *, const SampledContactsView &, Model *) -> void {
                 n_batches++;
             }
         );
@@ -95,14 +95,14 @@ EPIWORLD_TEST_CASE("Post-sampling callback - clones and run_multiple", "[post-sa
         base.seed(5);
         base.reset();
 
-        epimodels::ModelSEIR<> copied(base);
+        epimodels::ModelSEIR copied(base);
         copied.update_state();
 
-        epimodels::ModelSEIR<> moved(std::move(copied));
+        epimodels::ModelSEIR moved(std::move(copied));
         moved.update_state();
 
         // Assigned from a model with a different population
-        epimodels::ModelSEIR<> other("Virus", 100, 0.05, 0.5, 3.0, 0.2);
+        epimodels::ModelSEIR other("Virus", 100, 0.05, 0.5, 3.0, 0.2);
         other.add_layer(layer::network(
             "network", rgraph_smallworld(100, 4, 0.1, false, other)
         ));

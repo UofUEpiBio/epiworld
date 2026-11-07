@@ -13,7 +13,7 @@ EPIWORLD_TEST_CASE("Bernoulli graphs - p = 0 and p = 1", "[rgraph_bernoulli]") {
     for (bool directed : {false, true})
     {
 
-        epimodels::ModelSIR<> model("a virus", n, 0.05, 1.0, 0.0);
+        epimodels::ModelSIR model("a virus", n, 0.05, 1.0, 0.0);
         model.verbose_off();
         auto & net = model.add_layer(layer::network(
             "network", graph::bernoulli(0.0, directed)
@@ -35,7 +35,7 @@ EPIWORLD_TEST_CASE("Bernoulli graphs - p = 0 and p = 1", "[rgraph_bernoulli]") {
 
     }
 
-    epimodels::ModelSIR<> model("a virus", n, 0.05, 1.0, 0.0);
+    epimodels::ModelSIR model("a virus", n, 0.05, 1.0, 0.0);
     REQUIRE_THROWS_AS(rgraph_bernoulli(n, -0.1, false, model), std::range_error);
     REQUIRE_THROWS_AS(rgraph_bernoulli(n, 1.5, true, model), std::range_error);
 

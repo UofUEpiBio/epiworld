@@ -14,7 +14,7 @@ EPIWORLD_TEST_CASE(
     size_t n     = 300;
     std::vector<double> contact_matrix(9u, 2.0/3.0);
     
-    measles::ModelMeaslesMixingRiskQuarantine<> model(
+    measles::ModelMeaslesMixingRiskQuarantine model(
         n,           // Number of agents
         0.1 ,        // Initial prevalence
         0.2,         // Transmission rate
@@ -44,7 +44,7 @@ EPIWORLD_TEST_CASE(
     );
 
     // Moving the virus to the first agent
-    model.assign_virus(0, assign::count<>(10.0));
+    model.assign_virus(0, assign::count(10.0));
 
     // Run multiple simulations to get transition matrix
     std::vector<std::vector<epiworld_double>> transitions(nsims);

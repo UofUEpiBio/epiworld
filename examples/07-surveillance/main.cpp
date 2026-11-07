@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
     else if (argc != 1)
         std::logic_error("What is the surveillance prob?");
 
-    epimodels::ModelSURV<> model(
+    epimodels::ModelSURV model(
         "a virus", // Name of the virus
         popsize,
         preval, // prevalence

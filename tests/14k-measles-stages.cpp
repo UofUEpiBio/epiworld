@@ -15,7 +15,7 @@ EPIWORLD_TEST_CASE(
 
     size_t n = 200u;
 
-    measles::ModelMeaslesMixing<> model(
+    measles::ModelMeaslesMixing model(
         n,           // Number of agents
         1.0,         // Initial prevalence: everyone
         0.0,         // Transmission rate
@@ -65,9 +65,9 @@ EPIWORLD_TEST_CASE(
     // agent; isolation is off (its period is less than a day), so agents are
     // released the next day, and the rash period still ends on day 10
     model.add_globalevent(
-        [](Model<> * m) -> void {
+        [](Model * m) -> void {
             for (auto & agent : m->get_agents())
-                if (m->get_stage(agent) == measles::ModelMeaslesMixing<>::LATENT)
+                if (m->get_stage(agent) == measles::ModelMeaslesMixing::LATENT)
                     m->fire(m->transition_id("Quarantined"), agent);
         },
         "Quarantine everyone",
@@ -83,7 +83,7 @@ EPIWORLD_TEST_CASE(
     REQUIRE(all_on("Rash", "Recovered", 10));
 
     // The same course in the risk-based quarantine model
-    measles::ModelMeaslesMixingRiskQuarantine<> model_risk(
+    measles::ModelMeaslesMixingRiskQuarantine model_risk(
         n,           // Number of agents
         1.0,         // Initial prevalence: everyone
         0.0,         // Transmission rate
@@ -124,7 +124,7 @@ EPIWORLD_TEST_CASE(
 
     // A case imported on day 3 by a global event (not by contact) counts its
     // latent period from that day: prodromal on day 8, rash on day 11
-    measles::ModelMeaslesMixing<> model_import(
+    measles::ModelMeaslesMixing model_import(
         n,           // Number of agents
         0.0,         // Initial prevalence: none
         0.0,         // Transmission rate
@@ -152,7 +152,7 @@ EPIWORLD_TEST_CASE(
     add_group_mixing(model_import, {1.0}, blocks({0u, n}));
     model_import.verbose_off();
     model_import.add_globalevent(
-        [](Model<> * m) -> void {
+        [](Model * m) -> void {
             m->get_agent(0).set_virus(*m, m->get_virus(0));
         },
         "Import a case",

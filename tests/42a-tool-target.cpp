@@ -6,14 +6,14 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Tool targeting a virus", "[tool][target]") {
 
     // No recovery: infected agents stay infected
-    epimodels::ModelSIR<> model("A", 1000, 0.01, 0.5, 0.0);
+    epimodels::ModelSIR model("A", 1000, 0.01, 0.5, 0.0);
     add_random_mixing(model, 4.0);
     model.verbose_off();
 
-    Virus<> virus_b = sir_virus("B");
+    Virus virus_b = sir_virus("B");
 
     // Targeting requires the virus to be in the model
-    Tool<> tool("Vaccine against A");
+    Tool tool("Vaccine against A");
     tool.set_susceptibility_reduction(1.0);
     REQUIRE_THROWS_AS(tool.add_target(virus_b), std::logic_error);
     REQUIRE_THROWS_AS(tool.add_target(-1), std::range_error);
@@ -38,7 +38,7 @@ EPIWORLD_TEST_CASE("Tool targeting a virus", "[tool][target]") {
 
     // A global event records, each day, the date and the agents infected
     model.set_user_data({"Infected", "Day"});
-    model.add_globalevent([](Model<> * m) -> void {
+    model.add_globalevent([](Model * m) -> void {
         m->add_user_data(0u, m->get_db().get_today_total_stage("Infected"));
         m->add_user_data(1u, static_cast< epiworld_double >(m->today()));
     }, "Record infected");

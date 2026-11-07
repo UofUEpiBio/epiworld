@@ -8,7 +8,7 @@
 
 using namespace epiworld;
 
-epimodels::ModelSIR<> model(
+epimodels::ModelSIR model(
     "covid", // Name of the virus
     1000,
     .1,      // Initial prevalence

@@ -6,7 +6,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Tool targeting a mutating virus", "[tool][target][mutation]") {
 
     // No recovery: infected agents stay infected
-    epimodels::ModelSIR<> model("A", 1000, 0.0, 0.5, 0.0);
+    epimodels::ModelSIR model("A", 1000, 0.0, 0.5, 0.0);
     add_random_mixing(model, 4.0);
     model.verbose_off();
 
@@ -15,20 +15,20 @@ EPIWORLD_TEST_CASE("Tool targeting a mutating virus", "[tool][target][mutation]"
     for (size_t i = 1u; i < 40u; i += 2u)
         seeds.push_back(i);
 
-    Virus<> & virus = model.get_virus(0);
+    Virus & virus = model.get_virus(0);
     model.assign_virus(0, assign::agents(seeds));
     virus.set_mutation(
-        [](Agent<> *, Virus<> &, Model<> *) -> bool { return true; });
+        [](Agent *, Virus &, Model *) -> bool { return true; });
 
     // Protecting the even agents against A
     std::vector< size_t > protected_ids;
     for (size_t i = 0u; i < model.size(); i += 2u)
         protected_ids.push_back(i);
 
-    Tool<> tool("Vaccine against A");
+    Tool tool("Vaccine against A");
     tool.set_susceptibility_reduction(1.0);
     tool.add_target(virus);
-    model.add_tool(tool, assign::agents<>(protected_ids));
+    model.add_tool(tool, assign::agents(protected_ids));
 
     model.run(30, 2231);
 

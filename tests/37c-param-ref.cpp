@@ -5,9 +5,9 @@ using namespace epiworld;
 // Builds an SEIR-like model whose parameters are added in `order`, so the same
 // names sit at different positions in different models.
 static void build_model(
-    Model<> & model,
+    Model & model,
     const std::vector< std::string > & order,
-    Virus<> & virus
+    Virus & virus
 ) {
 
     std::map< std::string, epiworld_double > values = {
@@ -35,7 +35,7 @@ static void build_model(
  */
 EPIWORLD_TEST_CASE("ParamRef across models", "[parameters][ParamRef]") {
 
-    Virus<> virus("a virus");
+    Virus virus("a virus");
     virus.add_stage("Susceptible");
     virus.add_stage("Exposed", stage::carrier);
     virus.add_stage("Infected", stage::infectious);
@@ -44,8 +44,8 @@ EPIWORLD_TEST_CASE("ParamRef across models", "[parameters][ParamRef]") {
     virus.rate(1, 2, "incubation");
     virus.rate(2, 3, "gamma");
 
-    Model<> model_a(2000);
-    Model<> model_b(2000);
+    Model model_a(2000);
+    Model model_b(2000);
     build_model(
         model_a, {"beta", "incubation", "gamma", "padding"}, virus
     );

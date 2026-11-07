@@ -11,7 +11,7 @@ int main() {
     epiworld_fast_uint nthreads = 4u;
     constexpr epiworld_fast_uint n_agents = 5000u;
     omp_set_num_threads(nthreads);
-    std::vector< epimodels::ModelSIR<> > Models;
+    std::vector< epimodels::ModelSIR > Models;
 
     for (epiworld_fast_uint i = 0u; i < nthreads; ++i)
         Models.emplace_back(

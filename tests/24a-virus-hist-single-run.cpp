@@ -12,7 +12,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Virus history across multiple days", "[virus_hist]") {
 
     // Create a simple SIR model
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "test virus", 100, 0.1, 0.3, 0.1
     );
 

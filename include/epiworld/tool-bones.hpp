@@ -1,30 +1,24 @@
 #ifndef EPIWORLD_TOOL_BONES_HPP
 #define EPIWORLD_TOOL_BONES_HPP
 
-template<typename TSeq>
 class Virus;
 
-template<typename TSeq>
 class Agent;
 
-template<typename TSeq>
 class Model;
 
-template<typename TSeq>
 class Tool;
 
 /**
  * @brief Tools for defending the agent against the virus
  * 
- * @tparam TSeq Type of sequence
  */
-template<typename TSeq> 
 class Tool {
-    friend class Agent<TSeq>;
-    friend class Model<TSeq>;
+    friend class Agent;
+    friend class Model;
 protected:
 
-    Agent<TSeq> * agent = nullptr;
+    Agent * agent = nullptr;
     int pos_in_agent        = -99; ///< Location in the agent
 
     int date = -99;
@@ -32,17 +26,17 @@ protected:
     std::string tool_name;
     
 
-    ToolFun<TSeq> susceptibility_reduction = nullptr;
-    ToolFun<TSeq> transmission_reduction   = nullptr;
-    ToolFun<TSeq> recovery_enhancer        = nullptr;
-    ToolFun<TSeq> death_reduction          = nullptr;
+    ToolFun susceptibility_reduction = nullptr;
+    ToolFun transmission_reduction   = nullptr;
+    ToolFun recovery_enhancer        = nullptr;
+    ToolFun death_reduction          = nullptr;
 
 
     /// Bitmask of targeted virus lineages (all ones: every virus).
     uint64_t target_mask = ~uint64_t(0);
 
 
-    void set_agent(Agent<TSeq> * p, size_t idx);
+    void set_agent(Agent * p, size_t idx);
 
 public:
 
@@ -64,15 +58,15 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    virtual epiworld_double get_susceptibility_reduction(VirusPtr<TSeq> & v, Model<TSeq> * model);
-    virtual epiworld_double get_transmission_reduction(VirusPtr<TSeq> & v, Model<TSeq> * model);
-    virtual epiworld_double get_recovery_enhancer(VirusPtr<TSeq> & v, Model<TSeq> * model);
-    virtual epiworld_double get_death_reduction(VirusPtr<TSeq> & v, Model<TSeq> * model);
+    virtual epiworld_double get_susceptibility_reduction(VirusPtr & v, Model * model);
+    virtual epiworld_double get_transmission_reduction(VirusPtr & v, Model * model);
+    virtual epiworld_double get_recovery_enhancer(VirusPtr & v, Model * model);
+    virtual epiworld_double get_death_reduction(VirusPtr & v, Model * model);
     
-    virtual void set_susceptibility_reduction_fun(ToolFun<TSeq> fun);
-    virtual void set_transmission_reduction_fun(ToolFun<TSeq> fun);
-    virtual void set_recovery_enhancer_fun(ToolFun<TSeq> fun);
-    virtual void set_death_reduction_fun(ToolFun<TSeq> fun);
+    virtual void set_susceptibility_reduction_fun(ToolFun fun);
+    virtual void set_transmission_reduction_fun(ToolFun fun);
+    virtual void set_recovery_enhancer_fun(ToolFun fun);
+    virtual void set_death_reduction_fun(ToolFun fun);
 
     virtual void set_susceptibility_reduction(std::string param);
     virtual void set_transmission_reduction(std::string param);
@@ -109,30 +103,30 @@ public:
      */
     ///@{
     void add_target(int lineage_id);
-    void add_target(const Virus<TSeq> & v);
+    void add_target(const Virus & v);
     void set_targets(const std::vector< int > & lineage_ids);
     std::vector< int > get_targets() const; ///< Empty if the tool acts on every virus.
     void clear_targets();
-    bool targets(const Virus<TSeq> & v) const;
+    bool targets(const Virus & v) const;
     ///@}
 
     void set_name(std::string name);
     virtual std::string get_name() const;
 
-    Agent<TSeq> * get_agent();
+    Agent * get_agent();
     int get_id() const;
     void set_id(int id);
     void set_date(int d);
     int get_date() const;
 
 
-    bool operator==(const Tool<TSeq> & other) const;
-    bool operator!=(const Tool<TSeq> & other) const {return !operator==(other);};
+    bool operator==(const Tool & other) const;
+    bool operator!=(const Tool & other) const {return !operator==(other);};
 
     void print() const;
 
 
-    virtual std::unique_ptr<Tool<TSeq>> clone_ptr() const; 
+    virtual std::unique_ptr<Tool> clone_ptr() const; 
 
 };
 

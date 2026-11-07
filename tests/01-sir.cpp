@@ -5,7 +5,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("SIR", "[SIR]") {
 
     // Queuing doesn't matter and get results that are meaningful
-    epimodels::ModelSIR<> model_0(
+    epimodels::ModelSIR model_0(
         "a virus", 10000, 0.01, .9, .3
         );
 
@@ -19,7 +19,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
         verbose_off().
         run(100);
 
-    epimodels::ModelSIR<> model_1(
+    epimodels::ModelSIR model_1(
         "a virus", 10000, 0.01, .9, .3
         );
 
@@ -35,7 +35,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
         run(100);
 
     // Now, with parameters
-    epimodels::ModelSIR<> model_2(
+    epimodels::ModelSIR model_2(
         "a virus", 10000, 0.01, .0, .0
         );
 

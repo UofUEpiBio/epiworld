@@ -16,14 +16,14 @@ EPIWORLD_TEST_CASE("Bubbles - rewiring advances epochs", "[bubbles]") {
     size_t n = 300u, hh_size = 3u;
     auto hh = make_households(n, hh_size);
 
-    epimodels::ModelSEIR<> model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
+    epimodels::ModelSEIR model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
     model.seed(5);
     model.add_layer(layer::network(
         "network", rgraph_smallworld(n, 6, 0.05, false, model)
     ));
 
     int start = 10, rewire = 7, ndays = 60;
-    Bubbles<> bubbles(hh, BubbleFlavor::Household, 2u, 0.0, start, -1, rewire);
+    Bubbles bubbles(hh, BubbleFlavor::Household, 2u, 0.0, start, -1, rewire);
     model.add_globalevent(bubbles);
     model.verbose_off();
     model.run(ndays);
@@ -31,6 +31,6 @@ EPIWORLD_TEST_CASE("Bubbles - rewiring advances epochs", "[bubbles]") {
     // The intervention recomputes the partition at each rewiring epoch. The
     // model owns the intervention, so the epoch is read off the model.
     int expected_epoch = (ndays - start) / rewire;
-    REQUIRE(Bubbles<>::get_from(model)->get_last_epoch() == expected_epoch);
+    REQUIRE(Bubbles::get_from(model)->get_last_epoch() == expected_epoch);
 
 }

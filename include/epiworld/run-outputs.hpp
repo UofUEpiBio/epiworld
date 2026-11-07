@@ -133,14 +133,7 @@ public:
         state->whats = std::move(whats);
     }
 
-    template<typename TSeq>
-    void operator()(size_t sim_id, Model<TSeq> * model) const
-    {
-        auto out = model->get_db().get_run_outputs(state->whats);
-        if (sim_id >= state->runs.size())
-            state->runs.resize(sim_id + 1u);
-        state->runs[sim_id] = std::move(out);
-    }
+    void operator()(size_t sim_id, Model * model) const; ///< In database-meat.hpp.
 
     /// All simulations, concatenated, with a leading 0-based `sim_id` column.
     RunOutputs results() const

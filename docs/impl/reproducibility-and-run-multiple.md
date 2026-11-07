@@ -11,7 +11,7 @@ The `run` method in the `Model` class executes a single simulation of the model 
 #include <iostream>
 
 int main() {
-    Model<int> model(100); /* Create a model with 100 agents. */
+    Model model(100); /* Create a model with 100 agents. */
 
     /* Run the simulation for 30 days with a fixed seed. */
     model.run(30, 42);
@@ -37,13 +37,13 @@ In this example, the simulation runs 10 times, each for 30 days. A custom callba
 #include "epiworld/model-bones.hpp"
 #include <iostream>
 
-void save_results(size_t run_id, Model<int>* model) {
+void save_results(size_t run_id, Model* model) {
     std::cout << "Saving results for run " << run_id << "\n";
     /* ... */
 }
 
 int main() {
-    Model<int> model(100); /* Create a model with 100 agents. */
+    Model model(100); /* Create a model with 100 agents. */
     
     /* Run the simulation 10 times, each for 30 days. */
     model.run_multiple(30, 10, 42, save_results, true, true, 4);
@@ -60,10 +60,10 @@ The `fun` parameter in `run_multiple` allows users to specify a callback functio
 #include "epiworld/model-bones.hpp"
 
 int main() {
-    Model<int> model(100); /* Create a model with 100 agents. */
+    Model model(100); /* Create a model with 100 agents. */
 
     /* Use the default saver function to save results to files. */
-    model.run_multiple(30, 10, 42, make_save_run<int>(), true, true, 4);
+    model.run_multiple(30, 10, 42, make_save_run(), true, true, 4);
 
     return 0;
 }

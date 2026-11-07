@@ -16,16 +16,16 @@ using namespace epiworld;
  * - Infected individuals may be hospitalized or recover (competing daily
  *   rates); hospitalized ones may recover or be discharged infected.
  */
-inline Virus<int> mrsa_virus()
+inline Virus mrsa_virus()
 {
-    Virus<int> mrsa("MRSA");
+    Virus mrsa("MRSA");
     mrsa.add_stage("Susceptible");
     const int infected = mrsa.add_stage("Infected", stage::infectious);
     const int hospitalized = mrsa.add_stage("Infected (hospitalized)", stage::carrier);
 
     // Infected agents in the hospital do not transmit
     mrsa.infection(0, infected, 0.1).to({
-        {infected, Value<int>::complement("Prob hospitalization")},
+        {infected, Value::complement("Prob hospitalization")},
         {hospitalized, "Prob hospitalization"}
     });
     mrsa.rate(infected, hospitalized, "Prob hospitalization");
@@ -36,14 +36,14 @@ inline Virus<int> mrsa_virus()
 }
 
 int main() {
-    Model<int> model(1000);
+    Model model(1000);
 
     model.add_param(0.1, "Prob hospitalization");
     model.add_param(0.33, "Prob recovery");
     model.add_param(0.1, "Discharge infected");
 
     // Adding the virus
-    model.add_virus(mrsa_virus(), assign::share<>(0.01));
+    model.add_virus(mrsa_virus(), assign::share(0.01));
 
     // Add a population
     model.add_layer(layer::network(
