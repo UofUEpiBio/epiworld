@@ -45,15 +45,37 @@ namespace assign {
 using AssignFun = std::function< int(Agent &, Model &) >;
 
 /**
+ * @brief The work space of a draw. The model keeps one and reuses it at every
+ * reset, so placing agents allocates nothing once its vectors have grown.
+ * @details Copying it gives an empty one.
+ */
+struct AssignBuffers {
+
+    /// In: one entry per agent, whether it can be given a label. A draw may
+    /// clear entries (of the agents it labels).
+    std::vector< char > eligible;
+
+    /// Out: the agents given a label, with their label, in ascending id order.
+    std::vector< std::pair< size_t, int > > out;
+
+    /// The forms' work space (agent ids; the draws index it with 32 bits).
+    std::vector< uint32_t > pool;
+
+    AssignBuffers() = default;
+    AssignBuffers(const AssignBuffers &) {}
+    AssignBuffers & operator=(const AssignBuffers &) { return *this; }
+
+};
+
+/**
  * @brief Gives each eligible agent a label, or none (see `assign.hpp`).
  * @details Default-constructed, it gives no one anything.
  */
 class Assign {
 public:
-    /// The labels of the agents (-1: none), given who is eligible.
-    using DrawFun = std::function<
-        std::vector< int >(Model &, const std::vector< char > &)
-    >;
+    /// Appends the agents given a label, with their label, to `buf.out`,
+    /// given who is eligible (`buf.eligible`).
+    using DrawFun = std::function< void(Model &, AssignBuffers &) >;
 
 private:
     DrawFun fun = nullptr;
@@ -73,12 +95,14 @@ public:
     bool is_set() const { return static_cast< bool >(fun); }
 
     /**
-     * @brief The labels of the agents of `model` (-1: none).
-     * @param eligible One entry per agent: whether it can be given a label.
+     * @brief Draws the labels of the agents of `model`.
+     * @param buf `buf.eligible` has one entry per agent: whether it can be
+     * given a label (the draw may clear entries). On return, `buf.out` has the
+     * agents given a label, with their label, in ascending id order.
      * @throws std::logic_error if the form names an agent that is not
      * eligible.
      */
-    std::vector< int > draw(Model & model, const std::vector< char > & eligible) const;
+    void draw(Model & model, AssignBuffers & buf) const;
 };
 
 #endif

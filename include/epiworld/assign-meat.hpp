@@ -3,14 +3,23 @@
 
 // The forms of `Assign` (see assign.hpp)
 
-inline std::vector< int > Assign::draw(
-    Model & model,
-    const std::vector< char > & eligible
-) const
+inline void Assign::draw(Model & model, AssignBuffers & buf) const
 {
+
+    buf.out.clear();
     if (!fun)
-        return std::vector< int >(model.size(), -1);
-    return fun(model, eligible);
+        return;
+
+    fun(model, buf);
+
+    const auto by_agent = [](
+        const std::pair< size_t, int > & a,
+        const std::pair< size_t, int > & b
+    ) { return a.first < b.first; };
+
+    if (!std::is_sorted(buf.out.begin(), buf.out.end(), by_agent))
+        std::sort(buf.out.begin(), buf.out.end(), by_agent);
+
 }
 
 namespace assign {
@@ -37,28 +46,32 @@ namespace detail {
 
     /**
      * Label by label, in order, draws `count` agents at random from the
-     * eligible ones not yet labelled (taken in ascending id order). A count
-     * above what is left is an error.
+     * eligible ones not yet labelled (taken in ascending id order); a
+     * labelled agent is no longer eligible. A count above what is left is an
+     * error.
      */
-    inline std::vector< int > draw_counts(
+    inline void draw_counts(
         Model & model,
-        const std::vector< char > & eligible,
+        AssignBuffers & buf,
         const std::vector< std::pair< int, size_t > > & counts
     )
     {
 
-        std::vector< int > labels(model.size(), -1);
-        std::vector< size_t > idx;
+        auto & eligible = buf.eligible;
+        auto & idx      = buf.pool;
 
         for (const auto & c : counts)
         {
 
-            idx.clear();
-            for (size_t i = 0u; i < labels.size(); ++i)
-                if (eligible[i] && (labels[i] == -1))
-                    idx.push_back(i);
+            // The eligible ids, in order (written without branching)
+            idx.resize(eligible.size());
+            size_t n_left = 0u;
+            for (size_t i = 0u; i < eligible.size(); ++i)
+            {
+                idx[n_left] = static_cast< uint32_t >(i);
+                n_left += (eligible[i] != 0);
+            }
 
-            size_t n_left = idx.size();
             if (c.second > n_left)
                 throw std::range_error(
                     "Cannot assign " + std::to_string(c.second) + " agents: "
@@ -70,13 +83,12 @@ namespace detail {
                 const size_t loc = model.runif_index(
                     static_cast< uint32_t >(n_left--)
                 );
-                labels[idx[loc]] = c.first;
+                buf.out.emplace_back(idx[loc], c.first);
+                eligible[idx[loc]] = 0;
                 std::swap(idx[loc], idx[n_left]);
             }
 
         }
-
-        return labels;
 
     }
 
@@ -121,26 +133,25 @@ namespace detail {
     }
 
     /// In each group, draws `want[g]` of its eligible members (capped).
-    inline std::vector< int > draw_groups(
+    inline void draw_groups(
         Model & model,
-        const std::vector< char > & eligible,
+        AssignBuffers & buf,
         const std::string & layer,
         const std::vector< epiworld_double > & values,
         bool as_share
     )
     {
 
-        std::vector< int > labels(model.size(), -1);
         const auto members = groups_of(model, layer, values.size());
 
-        std::vector< size_t > idx;
+        auto & idx = buf.pool;
         for (size_t g = 0u; g < values.size(); ++g)
         {
 
             idx.clear();
             for (size_t i : members[g])
-                if (eligible[i])
-                    idx.push_back(i);
+                if (buf.eligible[i])
+                    idx.push_back(static_cast< uint32_t >(i));
 
             size_t n = idx.size();
             const epiworld_double want = as_share ?
@@ -152,13 +163,11 @@ namespace detail {
             for (size_t k = 0u; k < n_draw; ++k)
             {
                 const size_t loc = model.runif_index(static_cast< uint32_t >(n--));
-                labels[idx[loc]] = ANY;
+                buf.out.emplace_back(idx[loc], ANY);
                 std::swap(idx[loc], idx[n]);
             }
 
         }
-
-        return labels;
 
     }
 
@@ -168,19 +177,19 @@ namespace detail {
 inline Assign share(epiworld_double p)
 {
     detail::check_share(p, "share");
-    return Assign([p](Model & m, const std::vector< char > & e) {
+    return Assign([p](Model & m, AssignBuffers & b) {
         const size_t n = static_cast< size_t >(std::floor(
-            p * static_cast< epiworld_double >(detail::n_eligible(e))
+            p * static_cast< epiworld_double >(detail::n_eligible(b.eligible))
         ));
-        return detail::draw_counts(m, e, {{ANY, n}});
+        detail::draw_counts(m, b, {{ANY, n}});
     });
 }
 
 /// `n` eligible agents, at random.
 inline Assign count(size_t n)
 {
-    return Assign([n](Model & m, const std::vector< char > & e) {
-        return detail::draw_counts(m, e, {{ANY, n}});
+    return Assign([n](Model & m, AssignBuffers & b) {
+        detail::draw_counts(m, b, {{ANY, n}});
     });
 }
 
@@ -199,22 +208,22 @@ inline Assign shares(std::vector< std::pair< int, epiworld_double > > s)
     if (total > 1.0 + 1e-9)
         throw std::range_error("assign::shares(): the shares add up to more than 1.");
 
-    return Assign([s](Model & m, const std::vector< char > & e) {
+    return Assign([s](Model & m, AssignBuffers & b) {
         const epiworld_double n = static_cast< epiworld_double >(
-            detail::n_eligible(e)
+            detail::n_eligible(b.eligible)
         );
         std::vector< std::pair< int, size_t > > c;
         for (auto & x : s)
             c.emplace_back(x.first, static_cast< size_t >(std::floor(x.second * n)));
-        return detail::draw_counts(m, e, c);
+        detail::draw_counts(m, b, c);
     });
 }
 
 /// Several labels: label `l` goes to `n` agents, drawn in order.
 inline Assign counts(std::vector< std::pair< int, size_t > > c)
 {
-    return Assign([c](Model & m, const std::vector< char > & e) {
-        return detail::draw_counts(m, e, c);
+    return Assign([c](Model & m, AssignBuffers & b) {
+        detail::draw_counts(m, b, c);
     });
 }
 
@@ -229,8 +238,8 @@ inline Assign group_shares(std::string layer, std::vector< epiworld_double > p)
     for (auto x : p)
         detail::check_share(x, "group_shares");
 
-    return Assign([layer, p](Model & m, const std::vector< char > & e) {
-        return detail::draw_groups(m, e, layer, p, true);
+    return Assign([layer, p](Model & m, AssignBuffers & b) {
+        detail::draw_groups(m, b, layer, p, true);
     });
 }
 
@@ -243,17 +252,18 @@ inline Assign group_counts(std::string layer, std::vector< epiworld_double > n)
     for (auto x : n)
         detail::check_count(x, "group_counts");
 
-    return Assign([layer, n](Model & m, const std::vector< char > & e) {
-        return detail::draw_groups(m, e, layer, n, false);
+    return Assign([layer, n](Model & m, AssignBuffers & b) {
+        detail::draw_groups(m, b, layer, n, false);
     });
 }
 
 /// The given agents (each must be eligible).
 inline Assign agents(std::vector< size_t > ids)
 {
+    std::sort(ids.begin(), ids.end());
+    ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
     auto ids_ptr = std::make_shared< const std::vector< size_t > >(std::move(ids));
-    return Assign([ids_ptr](Model & m, const std::vector< char > & e) {
-        std::vector< int > labels(m.size(), -1);
+    return Assign([ids_ptr](Model & m, AssignBuffers & b) {
         for (size_t i : *ids_ptr)
         {
             if (i >= m.size())
@@ -261,14 +271,13 @@ inline Assign agents(std::vector< size_t > ids)
                     "assign::agents(): agent " + std::to_string(i) +
                     " is out of range."
                 );
-            if (!e[i])
+            if (!b.eligible[i])
                 throw std::logic_error(
                     "assign::agents(): agent " + std::to_string(i) +
                     " cannot be given this (it is not eligible)."
                 );
-            labels[i] = ANY;
+            b.out.emplace_back(i, ANY);
         }
-        return labels;
     });
 }
 
@@ -276,19 +285,23 @@ inline Assign agents(std::vector< size_t > ids)
 inline Assign labels(std::vector< int > v)
 {
     auto v_ptr = std::make_shared< const std::vector< int > >(std::move(v));
-    return Assign([v_ptr](Model & m, const std::vector< char > & e) {
+    return Assign([v_ptr](Model & m, AssignBuffers & b) {
         if (v_ptr->size() != m.size())
             throw std::range_error(
                 "assign::labels(): " + std::to_string(v_ptr->size()) +
                 " labels for " + std::to_string(m.size()) + " agents."
             );
         for (size_t i = 0u; i < v_ptr->size(); ++i)
-            if (((*v_ptr)[i] != -1) && !e[i])
+        {
+            if ((*v_ptr)[i] == -1)
+                continue;
+            if (!b.eligible[i])
                 throw std::logic_error(
                     "assign::labels(): agent " + std::to_string(i) +
                     " cannot be given this (it is not eligible)."
                 );
-        return *v_ptr;
+            b.out.emplace_back(i, (*v_ptr)[i]);
+        }
     }, v_ptr);
 }
 
@@ -317,13 +330,16 @@ inline Assign labels(const std::vector< T > & v)
 /// `fun(agent, model)` for each eligible agent (-1: none).
 inline Assign by(AssignFun fun)
 {
-    return Assign([fun](Model & m, const std::vector< char > & e) {
-        std::vector< int > labels(m.size(), -1);
+    return Assign([fun](Model & m, AssignBuffers & b) {
         auto & pop = m.get_agents();
         for (size_t i = 0u; i < pop.size(); ++i)
-            if (e[i])
-                labels[i] = fun(pop[i], m);
-        return labels;
+        {
+            if (!b.eligible[i])
+                continue;
+            const int label = fun(pop[i], m);
+            if (label != -1)
+                b.out.emplace_back(i, label);
+        }
     });
 }
 

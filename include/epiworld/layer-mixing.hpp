@@ -398,22 +398,15 @@ inline void Mixing::set_groups(Assign a, size_t n_groups_)
 
     // A label is a group, or none
     const std::string lname = this->get_name();
-    auto to_groups = [lname, n_groups_](const std::vector< int > & labels) {
-        std::vector< size_t > g(labels.size(), NO_GROUP);
-        for (size_t i = 0u; i < labels.size(); ++i)
-        {
-            if (labels[i] == -1)
-                continue;
-            if ((labels[i] < 0) || (static_cast< size_t >(labels[i]) >= n_groups_))
-                throw std::range_error(
-                    "Mixing layer '" + lname + "': the label " +
-                    std::to_string(labels[i]) + " is not a group (" +
-                    std::to_string(n_groups_) + " groups; a grouping gives "
-                    "each agent a group, e.g., assign::counts({{0, n}, ...}))."
-                );
-            g[i] = static_cast< size_t >(labels[i]);
-        }
-        return g;
+    auto group_of = [lname, n_groups_](int label) {
+        if ((label < 0) || (static_cast< size_t >(label) >= n_groups_))
+            throw std::range_error(
+                "Mixing layer '" + lname + "': the label " +
+                std::to_string(label) + " is not a group (" +
+                std::to_string(n_groups_) + " groups; a grouping gives "
+                "each agent a group, e.g., assign::counts({{0, n}, ...}))."
+            );
+        return static_cast< size_t >(label);
     };
 
     n_groups        = n_groups_;
@@ -422,7 +415,10 @@ inline void Mixing::set_groups(Assign a, size_t n_groups_)
 
     if (const auto * fixed = a.get_fixed())
     {
-        groups_baseline = to_groups(*fixed);
+        groups_baseline.assign(fixed->size(), NO_GROUP);
+        for (size_t i = 0u; i < fixed->size(); ++i)
+            if ((*fixed)[i] != -1)
+                groups_baseline[i] = group_of((*fixed)[i]);
         groups          = groups_baseline;
         grouping        = {0u, nullptr};
         rebuild_members();
@@ -432,9 +428,14 @@ inline void Mixing::set_groups(Assign a, size_t n_groups_)
         // Drawn at every reset; everyone can be in a group
         grouping = {
             n_groups_,
-            [a, to_groups](Model & model) -> std::vector< size_t > {
-                const std::vector< char > everyone(model.size(), 1);
-                return to_groups(a.draw(model, everyone));
+            [a, group_of](Model & model) -> std::vector< size_t > {
+                auto & buf = model.assign_buffers;
+                buf.eligible.assign(model.size(), 1);
+                a.draw(model, buf);
+                std::vector< size_t > g(model.size(), NO_GROUP);
+                for (const auto & x : buf.out)
+                    g[x.first] = group_of(x.second);
+                return g;
             }
         };
         groups_baseline.clear();

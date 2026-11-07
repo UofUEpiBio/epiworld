@@ -193,7 +193,11 @@ inline int Model::get_stage_entered(size_t id, int stage) const
     if (!nh)
         throw std::logic_error("The model has no natural history.");
     nh->check_stage(stage, "");
-    return nh_entered.at(id * nh->get_n_stages() + static_cast< size_t >(stage));
+    const int row = nh_row.at(id);
+    if (row < 0)
+        return (stage == 0) ? 0 : -1;
+    return nh_rows[static_cast< size_t >(row) * (1u + nh->get_n_stages()) +
+        1u + static_cast< size_t >(stage)];
 }
 
 inline int Model::get_stage_until(size_t id) const
@@ -207,7 +211,27 @@ inline int Model::get_episode(size_t id) const
 {
     if (!nh)
         throw std::logic_error("The model has no natural history.");
-    return nh_episode.at(id);
+    const int row = nh_row.at(id);
+    if (row < 0)
+        return 0;
+    return nh_rows[static_cast< size_t >(row) * (1u + nh->get_n_stages())];
+}
+
+inline int * Model::nh_record(size_t id)
+{
+
+    const size_t width = 1u + nh->get_n_stages();
+    if (nh_row[id] < 0)
+    {
+        // No infection yet, in the first stage since day 0
+        nh_row[id] = static_cast< int >(nh_rows.size() / width);
+        nh_rows.resize(nh_rows.size() + width, -1);
+        nh_rows[nh_rows.size() - width]      = 0;
+        nh_rows[nh_rows.size() - width + 1u] = 0;
+    }
+
+    return nh_rows.data() + static_cast< size_t >(nh_row[id]) * width;
+
 }
 
 inline bool Model::nh_removed(int stage) const
@@ -299,29 +323,27 @@ inline void Model::set_initial(Assign a)
 inline void Model::nh_reset()
 {
 
-    const size_t n  = population.size();
-    const size_t ns = nh->get_n_stages();
+    const size_t n = population.size();
 
     nh_until.assign(n, INT_MAX);
-    nh_entered.assign(n * ns, -1);
-    nh_episode.assign(n, 0);
-    nh_status_until.assign(n, INT_MAX);
-    nh_status_since.assign(n, 0);
-    nh_status_sod.assign(n, 0);
+    nh_row.assign(n, -1);
+    nh_rows.clear();
+    nh_status_until.assign(st ? n : 0u, INT_MAX);
+    nh_status_sod.assign(st ? n : 0u, 0);
     nh_pending = -1;
 
     // Everyone starts in the first stage and the first status, on day 0
     const int after = nh->stages[0u].after;
     const int s_after = st ? st->stages[0u].after : -1;
-    for (auto & p : population)
-    {
-        const size_t id = static_cast< size_t >(p.id);
-        nh_entered[id * ns] = 0;
-        if (after >= 0)
-            nh_until[id] = nh->transitions[after].duration.draw(p, *this);
-        if (s_after >= 0)
-            nh_status_until[id] = st->transitions[s_after].duration.draw(p, *this);
-    }
+    if ((after >= 0) || (s_after >= 0))
+        for (auto & p : population)
+        {
+            const size_t id = static_cast< size_t >(p.id);
+            if (after >= 0)
+                nh_until[id] = nh->transitions[after].duration.draw(p, *this);
+            if (s_after >= 0)
+                nh_status_until[id] = st->transitions[s_after].duration.draw(p, *this);
+        }
 
     if (use_queuing && (nh_queue[0u] == 1))
         for (size_t id = 0u; id < n; ++id)
@@ -502,10 +524,11 @@ inline void Model::nh_enter(
         (transition == NH_SEED) ||
         (!nh->is_carrier(static_cast< int >(stage_old)) && nh->is_carrier(s));
 
-    int * entered = nh_entered.data() + id * ns;
+    int * record  = nh_record(id);
+    int * entered = record + 1;
     if (infected)
     {
-        ++nh_episode[id];
+        ++record[0];
         std::fill(entered, entered + ns, -1);
     }
 
@@ -538,7 +561,7 @@ inline void Model::nh_react(Agent & p, int transition, int stage_old)
     const int s = nh_stage_of(p.state);
 
     // The status at the start of the day (the agent changed today)
-    const int status_sod = nh_status_sod[id];
+    const int status_sod = st ? nh_status_sod[id] : 0;
 
     for (const auto & r : nh_reactions)
     {
@@ -595,19 +618,19 @@ inline void Model::nh_initial_place()
         return;
 
     // The agents left without the virus, in the first stage
-    std::vector< char > eligible(population.size());
+    auto & buf = assign_buffers;
+    buf.eligible.resize(population.size());
     for (auto & p : population)
-        eligible[static_cast< size_t >(p.id)] =
+        buf.eligible[static_cast< size_t >(p.id)] =
             (p.virus == nullptr) && (nh_stage_of(p.state) == 0);
 
-    const std::vector< int > labels = nh_initial.draw(*this, eligible);
+    nh_initial.draw(*this, buf);
 
-    for (size_t i = 0u; i < labels.size(); ++i)
+    for (const auto & x : buf.out)
     {
 
-        const int s = labels[i];
-        if (s == -1)
-            continue;
+        const size_t i = x.first;
+        const int s    = x.second;
 
         if (
             (s < 0) || (static_cast< size_t >(s) >= nh->get_n_stages()) ||
