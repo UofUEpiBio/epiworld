@@ -518,17 +518,6 @@ public:
     [](epiworld::Model<tseq>* m) -> void
 
 
-// Use this to make it more efficient for storage if the type is small
-// and the pointer is not needed
-#define EPI_TYPENAME_TRAITS(tseq, bound) typename std::conditional< \
-    sizeof( tseq ) <= sizeof( bound ), \
-    tseq, \
-    std::shared_ptr< tseq > \
-    >::type
-
-#define EPI_IF_TSEQ_LESS_EQ_INT(tseq) \
-    if constexpr (sizeof( tseq ) <= sizeof( int ))
-
 #define EPI_CHECK_COALESCE(proposed_, virus_tool_, alt_) \
     if (static_cast<int>(proposed_) == -99) {\
         if (static_cast<int>(virus_tool_) == -99) \
@@ -1106,65 +1095,6 @@ struct vecHasher {
 
 template<typename Ta = epiworld_double, typename Tb = epiworld_fast_uint>
 using MapVec_type = std::unordered_map< std::vector< Ta >, Tb, vecHasher<Ta>>;
-
-/**
- * @name Default sequence initializers
- *
- * @details
- * If the user does not provide a default sequence, this function is used when
- * a sequence needs to be initialized. Some examples: `Agent`, `Virus`, and
- * `Tool` need a default sequence.
- *
- * @tparam TSeq
- * @return TSeq
- */
-///@{
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline TSeq default_sequence(int seq_count);
-
-// Making it 'static' so that we don't have problems when including the
-// header. This is important during the linkage, e.g., in R.
-// See https://en.cppreference.com/w/cpp/language/storage_duration#Linkage
-// static int _n_sequences_created = 0;
-
-template<>
-inline bool default_sequence(int seq_count) {
-
-    if (seq_count == 2)
-        throw std::logic_error("Maximum number of sequence created.");
-
-    return seq_count++ ? false : true;
-}
-
-template<>
-inline int default_sequence(int seq_count) {
-    return seq_count++;
-}
-
-template<>
-inline epiworld_double default_sequence(int seq_count) {
-    return static_cast<epiworld_double>(seq_count++);
-}
-
-template<>
-inline std::vector<bool> default_sequence(int seq_count) {
-
-    if (seq_count == 2)
-        throw std::logic_error("Maximum number of sequence created.");
-
-    return {seq_count++ ? false : true};
-}
-
-template<>
-inline std::vector<int> default_sequence(int seq_count) {
-    return {seq_count++};
-}
-
-template<>
-inline std::vector<epiworld_double> default_sequence(int seq_count) {
-    return {static_cast<epiworld_double>(seq_count++)};
-}
-///@}
 
 /**
  * @brief Check whether `a` is included in `b`
@@ -3887,118 +3817,6 @@ inline void UserData<TSeq>::print() const
 
 
 
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- Start of -./include/epiworld/seq_processing.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
-#ifndef EPIWORLD_SEQ_PROCESSING_HPP 
-#define EPIWORLD_SEQ_PROCESSING_HPP
-
-/**
- * @brief Hasher function to turn the sequence into an integer vector
- * 
- * @tparam TSeq 
- * @param x 
- * @return std::vector<int> 
- */
-template<typename TSeq>
-inline std::vector<int> default_seq_hasher(const TSeq & x);
-
-template<>
-inline std::vector<int> default_seq_hasher<std::vector<int>>(const std::vector<int> & x) {
-    return x;
-}
-
-template<>
-inline std::vector<int> default_seq_hasher<std::vector<bool>>(const std::vector<bool> & x) {
-    std::vector<int> ans(x.size());
-    size_t j = 0;
-    for (const auto & i : x)
-        ans[j++] = i? 1 : 0;
-    return ans;
-}
-
-template<>
-inline std::vector<int> default_seq_hasher<int>(const int & x) {
-    return {x};
-}
-
-template<>
-inline std::vector<int> default_seq_hasher<bool>(const bool & x) {
-    return {x ? 1 : 0};
-}
-
-/**
- * @brief Default way to write sequences
- * 
- * @tparam TSeq 
- * @param seq 
- * @return std::string 
- */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-inline std::string default_seq_writer(const TSeq & seq);
-
-template<>
-inline std::string default_seq_writer<std::vector<int>>(
-    const std::vector<int> & seq
-) {
-
-    std::string out = "";
-    for (const auto & s : seq)
-        out = out + std::to_string(s);
-
-    return out;
-
-}
-
-template<>
-inline std::string default_seq_writer<std::vector<bool>>(
-    const std::vector<bool> & seq
-) {
-
-    std::string out = "";
-    for (const auto & s : seq)
-        out = out + (s ? "1" : "0");
-
-    return out;
-
-}
-
-template<>
-inline std::string default_seq_writer<bool>(
-    const bool & seq
-) {
-
-    return seq ? "1" : "0";
-
-}
-
-template<>
-inline std::string default_seq_writer<int>(
-    const int & seq
-) {
-
-    return std::to_string(seq);
-
-}
-
-
-
-#endif
-/*//////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
- End of -./include/epiworld/seq_processing.hpp-
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////*/
-
-
 
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -4336,7 +4154,7 @@ inline const std::vector< std::string > & run_output_names()
 /**
  * @brief Writes a table as a space-separated file with a header.
  *
- * Strings are double-quoted, except for the `*_sequence` columns.
+ * Strings are double-quoted.
  *
  * In `EPI_DEBUG` builds, each line is prefixed with the id of the thread that
  * wrote it (a leading `thread` column), as the CSVs always were. It describes
@@ -4356,12 +4174,11 @@ inline void write_table(const std::string & fn, const OutputTable & table)
     for (size_t j = 0u; j < table.colnames.size(); ++j)
         file << table.colnames[j] << (j + 1u < table.colnames.size() ? " " : "\n");
 
-    // Quoting only the string columns that are not sequences
+    // Quoting the string columns
     std::vector< bool > quote(table.columns.size());
     for (size_t j = 0u; j < quote.size(); ++j)
         quote[j] =
-            std::holds_alternative< std::vector< std::string > >(table.columns[j]) &&
-            table.colnames[j].find("_sequence") == std::string::npos;
+            std::holds_alternative< std::vector< std::string > >(table.columns[j]);
 
     for (size_t i = 0u; i < table.nrow(); ++i)
     {
@@ -4534,20 +4351,16 @@ private:
 
     HospitalizationsTracker<TSeq> m_hospitalizations; ///< Tracker for hospitalization events
 
-    // Variants information
-    MapVec_type<int,int> virus_id; ///< The squence is the key
+    // Variants, by id: the viruses added to the model first (founders, kept
+    // even if removed, so ids stay put), then the run's mutations
+    size_t n_founders = 0u;
     std::vector< std::string > virus_name;
-    std::vector< TSeq> virus_sequence;
     std::vector< int > virus_origin_date;
     std::vector< int > virus_parent_id;
 
-    MapVec_type<int,int> tool_id; ///< The squence is the key
+    // Tools, by id
     std::vector< std::string > tool_name;
-    std::vector< TSeq> tool_sequence;
     std::vector< int > tool_origin_date;
-
-    std::function<std::vector<int>(const TSeq&)> seq_hasher = default_seq_hasher<TSeq>;
-    std::function<std::string(const TSeq &)> seq_writer = default_seq_writer<TSeq>;
 
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     std::vector< std::vector<int> > today_virus;
@@ -4663,23 +4476,21 @@ public:
     // DataBase<TSeq> & operator=(const DataBase<TSeq> & m);
 
     /**
-     * @brief Registering a new variant
+     * @brief Records a new variant, giving the virus its id
      *
-     * @param v Pointer to the new virus.
-     * Since viruses are originated in the agent, the numbers simply move around.
-     * From the parent virus to the new virus. And the total number of infected
-     * does not change.
-     * @param founder `true` when `Model::add_virus()` registers the virus,
-     * which then starts its own lineage (unless its sequence is on record).
+     * @param v The virus.
+     * @param founder `true` when `Model::add_virus()` records the virus: it
+     * starts its own lineage (and the variants of the last run are dropped).
+     * Otherwise `v` has mutated: the new variant is a child of the id it had,
+     * and its agent's counts move from the parent to it.
      */
     void record_virus(Virus<TSeq> & v, bool founder = false);
-    void record_tool(Tool<TSeq> & t);
-    void set_seq_hasher(std::function<std::vector<int>(TSeq)> fun);
+    void record_tool(Tool<TSeq> & t); ///< Gives the tool the next id.
     void reset();
+    void drop_variants(); ///< Keeps the founders' records, dropping the run's variants.
     Model<TSeq> * get_model();
     void record();
 
-    const std::vector< TSeq > & get_sequence() const;
     const std::vector< int > & get_nexposed() const;
     size_t size() const;
 
@@ -5036,6 +4847,9 @@ inline void DataBase<TSeq>::reset()
     for (size_t s = 0u; s < model->nstates; ++s)
         transition_matrix[s + s * model->nstates] = today_total[s];
 
+    // The last run's variants go; the founders keep their ids
+    drop_variants();
+
     hist_virus_date.clear();
     hist_virus_id.clear();
     hist_virus_state.clear();
@@ -5087,17 +4901,12 @@ inline void DataBase<TSeq>::reset()
 template<typename TSeq>
 inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
     m_hospitalizations(db.m_hospitalizations),
-    virus_id(db.virus_id),
+    n_founders(db.n_founders),
     virus_name(db.virus_name),
-    virus_sequence(db.virus_sequence),
     virus_origin_date(db.virus_origin_date),
     virus_parent_id(db.virus_parent_id),
-    tool_id(db.tool_id),
     tool_name(db.tool_name),
-    tool_sequence(db.tool_sequence),
     tool_origin_date(db.tool_origin_date),
-    seq_hasher(db.seq_hasher),
-    seq_writer(db.seq_writer),
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     today_virus(db.today_virus),
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
@@ -5146,11 +4955,6 @@ inline DataBase<TSeq>::DataBase(const DataBase<TSeq> & db) :
 template<typename TSeq>
 inline Model<TSeq> * DataBase<TSeq>::get_model() {
     return model;
-}
-
-template<typename TSeq>
-inline const std::vector< TSeq > & DataBase<TSeq>::get_sequence() const {
-    return virus_sequence;
 }
 
 template<typename TSeq>
@@ -5264,40 +5068,40 @@ inline void DataBase<TSeq>::record()
     {
 
         // Recording virus's history
-        for (auto & p : virus_id)
+        for (size_t v = 0u; v < today_virus.size(); ++v)
         {
 
             for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
             {
 
                 hist_virus_date.push_back(model->today());
-                hist_virus_id.push_back(p.second);
+                hist_virus_id.push_back(static_cast< int >(v));
                 hist_virus_state.push_back(s);
 
                 #ifdef EPI_DEBUG
-                if (today_virus[p.second][s] < 0)
+                if (today_virus[v][s] < 0)
                     throw std::logic_error(
                         "The count of viruses in DataBase::record cannot be negative."
                     );
                 #endif
 
-                hist_virus_counts.push_back(today_virus[p.second][s]);
+                hist_virus_counts.push_back(today_virus[v][s]);
 
             }
 
         }
 
         // Recording tool's history
-        for (auto & p : tool_id)
+        for (size_t t = 0u; t < today_tool.size(); ++t)
         {
 
             for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
             {
 
                 hist_tool_date.push_back(model->today());
-                hist_tool_id.push_back(p.second);
+                hist_tool_id.push_back(static_cast< int >(t));
                 hist_tool_state.push_back(s);
-                hist_tool_counts.push_back(today_tool[p.second][s]);
+                hist_tool_counts.push_back(today_tool[t][s]);
 
             }
 
@@ -5358,290 +5162,80 @@ inline void DataBase<TSeq>::record()
 }
 
 template<typename TSeq>
+inline void DataBase<TSeq>::drop_variants()
+{
+
+    const size_t n = n_founders;
+    if (virus_name.size() <= n)
+        return;
+
+    virus_name.resize(n);
+    virus_origin_date.resize(n);
+    virus_parent_id.resize(n);
+    today_virus.resize(n);
+    today_total_nviruses_active = static_cast< int >(n);
+
+}
+
+template<typename TSeq>
 inline void DataBase<TSeq>::record_virus(Virus<TSeq> & v, bool founder)
 {
 
-    // If no sequence, then need to add one. This is regardless of the case
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        if (v.get_sequence() == -1)
-            v.set_sequence(default_sequence<TSeq>(
-                static_cast<int>(virus_name.size())
-                ));
-    }
-    else
-    {
-        if (v.get_sequence() == nullptr)
-            v.set_sequence(default_sequence<TSeq>(
-                static_cast<int>(virus_name.size())
-                ));        
-    }
-
-    std::vector< int > hash;
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        hash = seq_hasher(v.get_sequence());
-    }
-    else
-    {
-        hash = seq_hasher(*v.get_sequence());
-    }
-
-    // Lineages 63 and above share the overflow bit, which tools cannot target
-    auto set_lineage = [&v](int lineage_id) {
-        v.lineage_id  = lineage_id;
-        v.lineage_bit = uint64_t(1) << std::min(lineage_id, 63);
-    };
-
-    // A virus added to the model founds a lineage. Its id may come from
-    // another model, so only its sequence identifies it here.
     if (founder)
     {
-
-        auto match = virus_id.find(hash);
-        if (match == virus_id.end())
-            v.set_id(-99);
-        else
-        {
-            // Already on record (e.g., added twice): keep its lineage
-            int id = static_cast< int >(match->second);
-            v.set_id(id);
-            v.set_date(virus_origin_date[id]);
-
-            while (virus_parent_id[id] >= 0)
-                id = virus_parent_id[id];
-
-            set_lineage(id);
-            return;
-        }
-
+        drop_variants();
+        ++n_founders;
     }
+    else if (v.get_id() < 0)
+        throw std::logic_error(
+            "The virus \"" + v.get_name() + "\" mutated but is not on record."
+        );
 
-    // Negative id -> virus hasn't been recorded
-    if (v.get_id() < 0)
+    const int parent = founder ? -99 : v.get_id();
+    const int id = static_cast< int >(virus_name.size());
+
+    virus_name.push_back(v.get_name());
+    virus_origin_date.push_back(model->today());
+    virus_parent_id.push_back(parent);
+    today_virus.push_back(std::vector< int >(model->nstates, 0));
+    today_total_nviruses_active++;
+
+    v.set_id(id);
+    v.set_date(model->today());
+
+    // A founder starts a lineage, which its mutations keep. Lineages 63 and
+    // above share the overflow bit, which tools cannot target.
+    if (founder)
     {
-
-        epiworld_fast_uint new_id = virus_id.size();
-        virus_name.push_back(v.get_name());
-        virus_id[hash] = new_id;
-
-        EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-        {
-            virus_sequence.push_back(v.get_sequence());
-        }
-        else
-        {
-            virus_sequence.push_back(*v.get_sequence());
-        }
-
-
-        virus_origin_date.push_back(model->today());
-        
-        virus_parent_id.push_back(v.get_id()); // Must be -99
-        
-        today_virus.push_back({});
-        today_virus[new_id].resize(model->nstates, 0);
-       
-        // Updating the variant
-        v.set_id(new_id);
-        v.set_date(model->today());
-
-        // A new founder starts a lineage (mutations keep it)
-        set_lineage(static_cast< int >(new_id));
-
-        today_total_nviruses_active++;
-
+        v.lineage_id  = id;
+        v.lineage_bit = uint64_t(1) << std::min(id, 63);
     }
-    else
-    { // In this case, the virus is already on record, need to make sure
-             // The new sequence is new.
-
-        // Updating registry
-        epiworld_fast_uint old_id = v.get_id();
-        epiworld_fast_uint new_id;
-
-        // If the sequence is new, then it means that the
-        if (virus_id.find(hash) == virus_id.end())
-        {
-
-            new_id = virus_id.size();
-            virus_id[hash] = new_id;
-            virus_name.push_back(v.get_name());
-
-            EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-            {
-                virus_sequence.push_back(v.get_sequence());
-            }
-            else
-            {
-                virus_sequence.push_back(*v.get_sequence());
-            }
-
-            virus_origin_date.push_back(model->today());
-            
-            virus_parent_id.push_back(old_id);
-            
-            today_virus.push_back({});
-            today_virus[new_id].resize(model->nstates, 0);
-        
-            // Updating the variant
-            v.set_id(new_id);
-            v.set_date(model->today());
-
-            today_total_nviruses_active++;
-
-        } else {
-
-            // Finding the id
-            new_id = virus_id[hash];
-
-            // Reflecting the change
-            v.set_id(new_id);
-            v.set_date(virus_origin_date[new_id]);
-
-        }
-
-        // Moving statistics (only if we are affecting an individual)
-        if (v.get_agent() != nullptr)
-        {
-            // Correcting math
-            epiworld_fast_uint tmp_state = v.get_agent()->get_state();
-            today_virus[old_id][tmp_state]--;
-            today_virus[new_id][tmp_state]++;
-
-            #ifdef EPI_DEBUG
-            if (today_virus[old_id][tmp_state] < 0)
-                throw std::logic_error("An entry in today_virus is negative.");
-            #endif
-
-        }
-
+    else if (v.get_agent() != nullptr)
+    {
+        // The agent's counts move from the parent to the variant
+        const auto s = v.get_agent()->get_state();
+        today_virus[parent][s]--;
+        today_virus[id][s]++;
     }
-    
-    return;
 
-} 
+}
 
 template<typename TSeq>
 inline void DataBase<TSeq>::record_tool(Tool<TSeq> & t)
 {
 
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        if (t.get_sequence() == -1)
-            t.set_sequence(default_sequence<TSeq>(
-                static_cast<int>(tool_name.size())
-            ));
-    }
-    else
-    {
-        if (t.get_sequence() == nullptr)
-            t.set_sequence(default_sequence<TSeq>(
-                static_cast<int>(tool_name.size())
-            ));
-    }
+    t.set_id(static_cast< int >(tool_name.size()));
+    t.set_date(model->today());
+    tool_name.push_back(t.get_name());
+    tool_origin_date.push_back(model->today());
+    today_tool.push_back(std::vector< int >(model->nstates, 0));
 
-    if (t.get_id() < 0) 
-    {
-
-        epiworld_fast_uint new_id = tool_id.size();
-        tool_name.push_back(t.get_name());
-
-        std::vector< int > hash;
-        EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-        {
-            hash = seq_hasher(t.get_sequence());
-            tool_id[hash] = new_id;
-            tool_sequence.push_back(t.get_sequence());
-        }
-        else
-        {
-            hash = seq_hasher(*t.get_sequence());
-            tool_id[hash] = new_id;
-            tool_sequence.push_back(*t.get_sequence());
-
-        }
-        tool_origin_date.push_back(model->today());
-                
-        today_tool.push_back({});
-        today_tool[new_id].resize(model->nstates, 0);
-
-        // Updating the tool
-        t.set_id(new_id);
-        t.set_date(model->today());
-
-    } else {
-
-        // Updating registry
-        std::vector< int > hash;
-        EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-        {
-            hash = seq_hasher(t.get_sequence());
-        }
-        else
-        {
-            hash = seq_hasher(*t.get_sequence());
-        }
-        epiworld_fast_uint old_id = t.get_id();
-        epiworld_fast_uint new_id;
-        
-        if (tool_id.find(hash) == tool_id.end())
-        {
-
-            new_id = tool_id.size();
-            tool_id[hash] = new_id;
-            tool_name.push_back(t.get_name());
-
-            EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-            {
-                tool_sequence.push_back(t.get_sequence());
-            }
-            else
-            {
-                tool_sequence.push_back(*t.get_sequence());
-            }
-            
-            tool_origin_date.push_back(model->today());
-                    
-            today_tool.push_back({});
-            today_tool[new_id].resize(model->nstates, 0);
-
-            // Updating the tool
-            t.set_id(new_id);
-            t.set_date(model->today());
-
-        } else {
-
-            // Finding the id
-            new_id = tool_id[hash];
-
-            // Reflecting the change
-            t.set_id(new_id);
-            t.set_date(tool_origin_date[new_id]);
-
-        }
-
-        // Moving statistics (only if we are affecting an individual)
-        if (t.get_agent() != nullptr)
-        {
-            // Correcting math
-            epiworld_fast_uint tmp_state = t.get_agent()->get_state();
-            today_tool[old_id][tmp_state]--;
-            today_tool[new_id][tmp_state]++;
-
-        }
-
-    }
-
-    
-    
-    return;
-} 
+}
 
 template<typename TSeq>
 inline size_t DataBase<TSeq>::size() const
 {
-    return virus_id.size();
+    return virus_name.size();
 }
 
 template<typename TSeq>
@@ -6225,21 +5819,12 @@ inline RunOutputs DataBase<TSeq>::get_run_outputs(
 
         if (what == "virus_info")
         {
-            std::vector< int > id, date, parent;
-            std::vector< std::string > name, seq;
-            for (const auto & v : virus_id)
-            {
-                id.push_back(v.second);
-                name.push_back(virus_name[v.second]);
-                seq.push_back(seq_writer(virus_sequence[v.second]));
-                date.push_back(virus_origin_date[v.second]);
-                parent.push_back(virus_parent_id[v.second]);
-            }
+            std::vector< int > id(virus_name.size());
+            std::iota(id.begin(), id.end(), 0);
             t.add("virus_id", id);
-            t.add("virus", name);
-            t.add("virus_sequence", seq);
-            t.add("date_recorded", date);
-            t.add("parent", parent);
+            t.add("virus", virus_name);
+            t.add("date_recorded", virus_origin_date);
+            t.add("parent", virus_parent_id);
         }
         else if (what == "virus_hist")
         {
@@ -6251,19 +5836,11 @@ inline RunOutputs DataBase<TSeq>::get_run_outputs(
         }
         else if (what == "tool_info")
         {
-            std::vector< int > id, date;
-            std::vector< std::string > name, seq;
-            for (const auto & v : tool_id)
-            {
-                id.push_back(v.second);
-                name.push_back(tool_name[v.second]);
-                seq.push_back(seq_writer(tool_sequence[v.second]));
-                date.push_back(tool_origin_date[v.second]);
-            }
+            std::vector< int > id(tool_name.size());
+            std::iota(id.begin(), id.end(), 0);
             t.add("id", id);
-            t.add("tool_name", name);
-            t.add("tool_sequence", seq);
-            t.add("date_recorded", date);
+            t.add("tool_name", tool_name);
+            t.add("date_recorded", tool_origin_date);
         }
         else if (what == "tool_hist")
         {
@@ -6462,13 +6039,13 @@ inline void DataBase<TSeq>::record_transmission(
 template<typename TSeq>
 inline size_t DataBase<TSeq>::get_n_viruses() const
 {
-    return virus_id.size();
+    return virus_name.size();
 }
 
 template<typename TSeq>
 inline size_t DataBase<TSeq>::get_n_tools() const
 {
-    return tool_id.size();
+    return tool_name.size();
 }
 
 
@@ -6668,231 +6245,6 @@ inline std::vector< epiworld_double > DataBase<TSeq>::get_transition_probability
         EPI_DEBUG_FAIL_AT_TRUE(a[__i] != b[__i], c) \
     }
 
-template<>
-inline bool DataBase<std::vector<int>>::operator==(const DataBase<std::vector<int>> & other) const
-{
-    VECT_MATCH(
-        virus_name, other.virus_name,
-        "DataBase:: virus_name don't match"
-        )
-
-    EPI_DEBUG_FAIL_AT_TRUE(
-        virus_sequence.size() != other.virus_sequence.size(),
-        "DataBase:: virus_sequence don't match."
-        )
-
-    for (size_t i = 0u; i < virus_sequence.size(); ++i)
-    {
-        VECT_MATCH(
-            virus_sequence[i], other.virus_sequence[i],
-            "DataBase:: virus_sequence[i] don't match"
-            )
-    }
-
-    VECT_MATCH(
-        virus_origin_date,
-        other.virus_origin_date,
-        "DataBase:: virus_origin_date[i] don't match"
-    )
-
-    VECT_MATCH(
-        virus_parent_id,
-        other.virus_parent_id,
-        "DataBase:: virus_parent_id[i] don't match"
-    )
-
-    VECT_MATCH(
-        tool_name,
-        other.tool_name,
-        "DataBase:: tool_name[i] don't match"
-    )
-
-    VECT_MATCH(
-        tool_sequence,
-        other.tool_sequence,
-        "DataBase:: tool_sequence[i] don't match"
-    )
-
-    VECT_MATCH(
-        tool_origin_date,
-        other.tool_origin_date,
-        "DataBase:: tool_origin_date[i] don't match"
-    )
-
-
-    EPI_DEBUG_FAIL_AT_TRUE(
-        sampling_freq != other.sampling_freq,
-        "DataBase:: sampling_freq don't match."
-        )
-
-    // Variants history
-    VECT_MATCH(
-        hist_virus_date,
-        other.hist_virus_date,
-        "DataBase:: hist_virus_date[i] don't match"
-        )
-
-    VECT_MATCH(
-        hist_virus_id,
-        other.hist_virus_id,
-        "DataBase:: hist_virus_id[i] don't match"
-        )
-
-    VECT_MATCH(
-        hist_virus_state,
-        other.hist_virus_state,
-        "DataBase:: hist_virus_state[i] don't match"
-        )
-
-    VECT_MATCH(
-        hist_virus_counts,
-        other.hist_virus_counts,
-        "DataBase:: hist_virus_counts[i] don't match"
-        )
-
-    // Tools history
-    VECT_MATCH(
-        hist_tool_date,
-        other.hist_tool_date,
-        "DataBase:: hist_tool_date[i] don't match"
-        )
-
-    VECT_MATCH(
-        hist_tool_id,
-        other.hist_tool_id,
-        "DataBase:: hist_tool_id[i] don't match"
-        )
-
-    VECT_MATCH(
-        hist_tool_state,
-        other.hist_tool_state,
-        "DataBase:: hist_tool_state[i] don't match"
-        )
-
-    VECT_MATCH(
-        hist_tool_counts,
-        other.hist_tool_counts,
-        "DataBase:: hist_tool_counts[i] don't match"
-        )
-
-    // Overall hist
-    VECT_MATCH(
-        hist_total_date,
-        other.hist_total_date,
-        "DataBase:: hist_total_date[i] don't match"
-        )
-
-    VECT_MATCH(
-        hist_total_nviruses_active,
-        other.hist_total_nviruses_active,
-        "DataBase:: hist_total_nviruses_active[i] don't match"
-        )
-
-    VECT_MATCH(
-        hist_total_state,
-        other.hist_total_state,
-        "DataBase:: hist_total_state[i] don't match"
-        )
-
-    VECT_MATCH(
-        hist_total_counts,
-        other.hist_total_counts,
-        "DataBase:: hist_total_counts[i] don't match"
-        )
-
-    VECT_MATCH(
-        hist_transition_matrix,
-        other.hist_transition_matrix,
-        "DataBase:: hist_transition_matrix[i] don't match"
-        )
-
-    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_virus.size() != other.today_virus.size(),
-        "DataBase:: today_virus don't match."
-        )
-    
-    for (size_t i = 0u; i < today_virus.size(); ++i)
-    {
-        VECT_MATCH(
-            today_virus[i], other.today_virus[i],
-            "DataBase:: today_virus[i] don't match"
-            )
-    }
-
-    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
-    if (today_tool.size() != other.today_tool.size())
-        return false;
-    
-    for (size_t i = 0u; i < today_tool.size(); ++i)
-    {
-        VECT_MATCH(
-            today_tool[i], other.today_tool[i],
-            "DataBase:: today_tool[i] don't match"
-            )
-    }
-
-    // {Susceptible, Infected, etc.}
-    VECT_MATCH(
-        today_total, other.today_total,
-        "DataBase:: today_total don't match"
-        )
-
-    // Totals
-    EPI_DEBUG_FAIL_AT_TRUE(
-        today_total_nviruses_active != other.today_total_nviruses_active,
-        "DataBase:: today_total_nviruses_active don't match."
-        )
-
-    // Transmission network
-    VECT_MATCH(
-        transmission_date,
-        other.transmission_date,                 ///< Date of the transmission eve,
-        "DataBase:: transmission_date[i] don't match"
-        )
-
-    VECT_MATCH(
-        transmission_source,
-        other.transmission_source,               ///< Id of the sour,
-        "DataBase:: transmission_source[i] don't match"
-        )
-
-    VECT_MATCH(
-        transmission_target,
-        other.transmission_target,               ///< Id of the targ,
-        "DataBase:: transmission_target[i] don't match"
-        )
-
-    VECT_MATCH(
-        transmission_virus,
-        other.transmission_virus,              ///< Id of the varia,
-        "DataBase:: transmission_virus[i] don't match"
-        )
-
-    VECT_MATCH(
-        transmission_source_exposure_date,
-        other.transmission_source_exposure_date, ///< Date when the source acquired the varia,
-        "DataBase:: transmission_source_exposure_date[i] don't match"
-        )
-
-    VECT_MATCH(
-        transmission_layer,
-        other.transmission_layer,
-        "DataBase:: transmission_layer[i] don't match"
-        )
-
-
-    VECT_MATCH(
-        transition_matrix,
-        other.transition_matrix,
-        "DataBase:: transition_matrix[i] don't match"
-        )
-
-
-    return true;
-
-}
-
 template<typename TSeq>
 inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
 {
@@ -6903,12 +6255,6 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
     )
 
     VECT_MATCH(
-        virus_sequence,
-        other.virus_sequence,
-        "DataBase:: virus_sequence[i] don't match"
-    )
-
-    VECT_MATCH(
         virus_origin_date,
         other.virus_origin_date,
         "DataBase:: virus_origin_date[i] don't match"
@@ -6924,12 +6270,6 @@ inline bool DataBase<TSeq>::operator==(const DataBase<TSeq> & other) const
         tool_name,
         other.tool_name,
         "DataBase:: tool_name[i] don't match"
-    )
-
-    VECT_MATCH(
-        tool_sequence,
-        other.tool_sequence,
-        "DataBase:: tool_sequence[i] don't match"
     )
 
     VECT_MATCH(
@@ -10529,10 +9869,10 @@ class Tool;
  * 
  * @tparam TSeq 
  * @details
- * Raw transmisibility of a virus should be a function of its genetic
- * sequence. Nonetheless, transmisibility can be reduced as a result of
- * having one or more tools to fight the virus. Because of this, transmisibility
- * should be a function of the agent.
+ * A virus is identified by its id, which the model assigns: `Model::add_virus()`
+ * records a new variant (the founder of a lineage), and so does every
+ * mutation (a child of the variant it changed). Tools can reduce what a
+ * virus does, so its effects are a function of the agent.
  */
 template<typename TSeq>
 class Virus {
@@ -10545,8 +9885,6 @@ private:
     
     Agent<TSeq> * agent = nullptr;
 
-    EPI_TYPENAME_TRAITS(TSeq, int) baseline_sequence = 
-        EPI_TYPENAME_TRAITS(TSeq, int)(); 
 
     std::string virus_name = "unknown virus";
     int date = -99;
@@ -10589,11 +9927,19 @@ public:
     ~Virus();
     #endif
     
+    /**
+     * @brief Mutation
+     * @details The function returns `true` when it changed the virus (it may
+     * change its name or, with `use_param()`, the parameters it reads). The
+     * model then records the virus as a new variant: a new id, whose parent is
+     * the id it had, in the same lineage. Each mutation is a new variant, even
+     * if two of them made the same change.
+     */
+    ///@{
     void mutate(Model<TSeq> * model);
     void set_mutation(MutFun<TSeq> fun);
+    ///@}
     
-    EPI_TYPENAME_TRAITS(TSeq, int) get_sequence();
-    void set_sequence(TSeq sequence);
     
     Agent<TSeq> * get_agent();
     void set_agent(Agent<TSeq> * p);
@@ -10953,8 +10299,6 @@ protected:
     int id   = -99;
     std::string tool_name;
     
-    EPI_TYPENAME_TRAITS(TSeq, int) sequence = 
-        EPI_TYPENAME_TRAITS(TSeq, int)(); ///< Sequence of the tool
 
     ToolFun<TSeq> susceptibility_reduction = nullptr;
     ToolFun<TSeq> transmission_reduction   = nullptr;
@@ -10978,9 +10322,6 @@ public:
 
     virtual ~Tool() = default;
 
-    void set_sequence(TSeq d);
-    void set_sequence(std::shared_ptr<TSeq> d);
-    EPI_TYPENAME_TRAITS(TSeq, int) get_sequence();
 
     /**
      * @name Get and set the tool functions
@@ -12261,6 +11602,12 @@ public:
      * infected a label: the stage it starts in (a carrier stage), or, for the
      * forms without labels (e.g., `assign::share()`), the infection's target.
      * By default, no one gets it (see `assign.hpp`).
+     *
+     * Each call records a new variant, the founder of a lineage, whose id is
+     * the number of viruses added before it (adding the same virus twice
+     * records two; a removed virus keeps its record, so ids do not move).
+     * Mutations during a run add variants after them, which the next run
+     * (or the next `add_virus()`) drops.
      */
     void add_virus(const Virus<TSeq> & v, Assign<TSeq> a = Assign<TSeq>());
 
@@ -16649,15 +15996,6 @@ inline Virus<TSeq>::Virus()
     counter_construct++;
     #endif
 
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        baseline_sequence = -1;
-    }
-    else
-    {
-        baseline_sequence = nullptr;
-    }
-
 }
 
 template<typename TSeq>
@@ -16668,15 +16006,6 @@ inline Virus<TSeq>::Virus(
     #ifdef EPI_DEBUG_VIRUS
     counter_construct++;
     #endif
-
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        baseline_sequence = -1;
-    }
-    else
-    {
-        baseline_sequence = nullptr;
-    }
     
     set_name(name);
 }
@@ -16710,7 +16039,6 @@ inline Virus<TSeq>::~Virus()
 template<typename TSeq>
 inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
     : agent(other.agent),
-      baseline_sequence(other.baseline_sequence),
       virus_name(other.virus_name),
       date(other.date),
       id(other.id),
@@ -16726,7 +16054,6 @@ inline Virus<TSeq>::Virus(const Virus<TSeq>& other)
 template<typename TSeq>
 inline Virus<TSeq>::Virus(Virus<TSeq>&& other) noexcept
     : agent(other.agent),
-      baseline_sequence(std::move(other.baseline_sequence)),
       virus_name(std::move(other.virus_name)),
       date(other.date),
       id(other.id),
@@ -16745,7 +16072,6 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(const Virus<TSeq>& other)
 {
     if (this != &other) {
         agent = other.agent;
-        baseline_sequence = other.baseline_sequence;
         virus_name = other.virus_name;
         date = other.date;
         id = other.id;
@@ -16764,7 +16090,6 @@ inline Virus<TSeq>& Virus<TSeq>::operator=(Virus<TSeq>&& other) noexcept
 {
     if (this != &other) {
         agent = other.agent;
-        baseline_sequence = std::move(other.baseline_sequence);
         virus_name = std::move(other.virus_name);
         date = other.date;
         id = other.id;
@@ -16800,32 +16125,6 @@ inline void Virus<TSeq>::set_mutation(
     MutFun<TSeq> fun
 ) {
     mutation = MutFun<TSeq>(fun);
-}
-
-template<typename TSeq>
-inline EPI_TYPENAME_TRAITS(TSeq, int) Virus<TSeq>::get_sequence()
-{
-
-    return baseline_sequence;
-
-}
-
-template<typename TSeq>
-inline void Virus<TSeq>::set_sequence(TSeq sequence)
-{
-
-    baseline_sequence = std::make_shared<TSeq>(sequence);
-    return;
-
-}
-
-template<>
-inline void Virus<int>::set_sequence(int sequence)
-{
-
-    baseline_sequence = sequence;
-    return;
-
 }
 
 
@@ -16899,61 +16198,10 @@ inline std::string Virus<TSeq>::get_name() const
 
 }
 
-template<>
-inline bool Virus<std::vector<int>>::operator==(
-    const Virus<std::vector<int>> & other
-    ) const
-{
-    
-    EPI_DEBUG_FAIL_AT_TRUE(
-        baseline_sequence->size() != other.baseline_sequence->size(),
-        "Virus:: baseline_sequence don't match"
-        )
-
-    for (size_t i = 0u; i < baseline_sequence->size(); ++i)
-    {
-
-        EPI_DEBUG_FAIL_AT_TRUE(
-            baseline_sequence->operator[](i) != other.baseline_sequence->operator[](i),
-            "Virus:: baseline_sequence[i] don't match"
-            )
-
-    }
-
-    EPI_DEBUG_FAIL_AT_TRUE(
-        virus_name != other.virus_name,
-        "Virus:: virus_name don't match"
-        )
-    
-
-
-
-
-
-
-    return true;
-
-}
-
 template<typename TSeq>
 inline bool Virus<TSeq>::operator==(const Virus<TSeq> & other) const
 {
     
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        EPI_DEBUG_FAIL_AT_TRUE(
-            baseline_sequence != other.baseline_sequence,
-            "Virus:: baseline_sequence don't match"
-        )
-    }
-    else
-    {
-        EPI_DEBUG_FAIL_AT_TRUE(
-            baseline_sequence != other.baseline_sequence,
-            "Virus:: baseline_sequence don't match"
-        )
-    }
-
     EPI_DEBUG_FAIL_AT_TRUE(
         virus_name != other.virus_name,
         "Virus:: virus_name don't match"
@@ -17197,51 +16445,13 @@ inline ToolFun<TSeq> tool_fun_logit(
 template<typename TSeq>
 inline Tool<TSeq>::Tool()
 {
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        sequence = -1;
-    }
-    else
-    {
-        sequence = nullptr;
-    }
-
     set_name("Tool");
 }
 
 template<typename TSeq>
 inline Tool<TSeq>::Tool(std::string name)
 {
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        sequence = -1;
-    }
-    else
-    {
-        sequence = nullptr;
-    }
-
     set_name(name);
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::set_sequence(TSeq d) {
-    sequence = std::make_shared<TSeq>(d);
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::set_sequence(std::shared_ptr<TSeq> d) {
-    sequence = d;
-}
-
-template<>
-inline void Tool<int>::set_sequence(int d) {
-    sequence = d;
-}
-
-template<typename TSeq>
-inline EPI_TYPENAME_TRAITS(TSeq, int) Tool<TSeq>::get_sequence() {
-    return sequence;
 }
 
 template<typename TSeq>
@@ -17606,50 +16816,9 @@ inline int Tool<TSeq>::get_date() const
     return date;
 }
 
-template<>
-inline bool Tool<std::vector<int>>::operator==(
-    const Tool<std::vector<int>> & other
-    ) const
-{
-    
-    if (sequence->size() != other.sequence->size())
-        return false;
-
-    for (size_t i = 0u; i < sequence->size(); ++i)
-    {
-        if (sequence->operator[](i) != other.sequence->operator[](i))
-            return false;
-    }
-
-    if (tool_name != other.tool_name)
-        return false;
-    
-
-
-
-
-    if (target_mask != other.target_mask)
-        return false;
-
-
-    return true;
-
-}
-
 template<typename TSeq>
 inline bool Tool<TSeq>::operator==(const Tool<TSeq> & other) const
 {
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        if (sequence != other.sequence)
-            return false;
-    }
-    else
-    {
-        if (*sequence != *other.sequence)
-            return false;
-    }
-
 
     if (tool_name != other.tool_name)
         return false;
@@ -24817,9 +23986,8 @@ public:
  * the model it returns has no layers, which are added the same way as for a
  * model built directly (`Model::add_layer()`). A virus a user adds to the
  * model is a strain of the model's own: a copy of `get_virus(0)` with its own
- * name, its own sequence (`Virus::set_sequence()`; a virus whose sequence is on
- * record is that variant) and, if need be, its own parameters
- * (`Virus::use_param()`), so it has the same stages.
+ * name and, if need be, its own parameters (`Virus::use_param()`), so it has
+ * the same stages.
  */
 template<typename TSeq = EPI_DEFAULT_TSEQ>
 struct ModelInfo {

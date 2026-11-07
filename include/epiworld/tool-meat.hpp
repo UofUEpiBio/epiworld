@@ -83,51 +83,13 @@ inline ToolFun<TSeq> tool_fun_logit(
 template<typename TSeq>
 inline Tool<TSeq>::Tool()
 {
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        sequence = -1;
-    }
-    else
-    {
-        sequence = nullptr;
-    }
-
     set_name("Tool");
 }
 
 template<typename TSeq>
 inline Tool<TSeq>::Tool(std::string name)
 {
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        sequence = -1;
-    }
-    else
-    {
-        sequence = nullptr;
-    }
-
     set_name(name);
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::set_sequence(TSeq d) {
-    sequence = std::make_shared<TSeq>(d);
-}
-
-template<typename TSeq>
-inline void Tool<TSeq>::set_sequence(std::shared_ptr<TSeq> d) {
-    sequence = d;
-}
-
-template<>
-inline void Tool<int>::set_sequence(int d) {
-    sequence = d;
-}
-
-template<typename TSeq>
-inline EPI_TYPENAME_TRAITS(TSeq, int) Tool<TSeq>::get_sequence() {
-    return sequence;
 }
 
 template<typename TSeq>
@@ -492,50 +454,9 @@ inline int Tool<TSeq>::get_date() const
     return date;
 }
 
-template<>
-inline bool Tool<std::vector<int>>::operator==(
-    const Tool<std::vector<int>> & other
-    ) const
-{
-    
-    if (sequence->size() != other.sequence->size())
-        return false;
-
-    for (size_t i = 0u; i < sequence->size(); ++i)
-    {
-        if (sequence->operator[](i) != other.sequence->operator[](i))
-            return false;
-    }
-
-    if (tool_name != other.tool_name)
-        return false;
-    
-
-
-
-
-    if (target_mask != other.target_mask)
-        return false;
-
-
-    return true;
-
-}
-
 template<typename TSeq>
 inline bool Tool<TSeq>::operator==(const Tool<TSeq> & other) const
 {
-    EPI_IF_TSEQ_LESS_EQ_INT( TSeq )
-    {
-        if (sequence != other.sequence)
-            return false;
-    }
-    else
-    {
-        if (*sequence != *other.sequence)
-            return false;
-    }
-
 
     if (tool_name != other.tool_name)
         return false;

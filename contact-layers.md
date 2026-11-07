@@ -1294,10 +1294,9 @@ transition rates), as for the consolidated SEIR models.
     numbers only: with entities gone and contact matrices on the layers, no
     registered model takes anything else.
   - A virus a user adds to a registered model is a strain of the model's own:
-    a copy of `get_virus(0)` with its own name, its own sequence
-    (`Virus::set_sequence()`: a virus whose sequence is on record is that
-    variant) and, if need be, its own parameters (`Virus::use_param()`), so it
-    has the same stages. A model still carries
+    a copy of `get_virus(0)` with its own name and, if need be, its own
+    parameters (`Virus::use_param()`), so it has the same stages (V-1 dropped
+    the sequence it also needed). A model still carries
     any number of viruses: this replaces epiworldR's per-model `add_virus.*`
     methods. (#356 gave each entry its `InfectionStates`, the init, post and
     removed states of the old API; #363 removed them with that API: see
@@ -1698,8 +1697,8 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-06).
 | `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`), #228 merged | #43 merged (`main` -> `v1-layers`: epiworldpy#34) | #29 merged (`main` -> `v1-layers`: epiworldjs#26, #28) | #71 merged (`main` -> `v1-layers`: measles#69) |
 | Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged (+ #230: the peer row is an approximation) | #43 merged (with 3d-3a, #351; first `Bubbles` binding: `epiworldpy.Bubbles`, `make_layer()`, `add_globalevent()`) | #29 merged (with 3d-3a, #351; re-vendor only) | #71 merged (with 3d-3a, #351 and measles#69; re-vendor only) |
 | Registry (#312) | #356 merged (its `InfectionStates` removed by #363: a user's virus is a strain of the model's) | | | | |
-| Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 merged (replaces #358-#360, closed); NH-1 and NH-2 (branch `nh-1-engine`): #363; NH-3, NH-4 not started | to port (NH-4) | to port (NH-4) | to port (NH-4) | to port (NH-4) |
-| Variants by id (V-1) and no `TSeq` template (V-2) (after #363, before NH-3) | not started | with NH-4 | with NH-4 | with NH-4 | with NH-4 |
+| Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 merged (replaces #358-#360, closed); NH-1 and NH-2: #363 merged; NH-3, NH-4 not started | to port (NH-4) | to port (NH-4) | to port (NH-4) | to port (NH-4) |
+| Variants by id (V-1) and no `TSeq` template (V-2) (after #363, before NH-3) | V-1 (branch `v1-variants-by-id`): #364; V-2 not started | with NH-4 | with NH-4 | with NH-4 | with NH-4 |
 | Phases 4, 5, 6 | not started | | | | |
 
 epiworldRShiny (Section 6): not started; one port after the registry.
@@ -1720,9 +1719,8 @@ Stages 3d-3a (#33) and 3d-3b (#34, pin 07ed7a0d) are merged with no
 regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 0.91 because the 0.x run happened to be faster (the 1.0 run was faster too).
 
-**Next** (as of the date above): #363 (NH-1 and NH-2, with the registry
-merged in) waits for review; then V-1 (variants by id) and V-2 (no `TSeq`
-template); then NH-3 (docs and runners) and NH-4 (the wrapper ports, which
+**Next** (as of the date above): V-1 (#364, variants by id) waits for review;
+then V-2 (no `TSeq` template), alone; then NH-3 (docs and runners) and NH-4 (the wrapper ports, which
 also port the registry; then the epiworldRShiny port); then Phase 4.
 
 ### 11.7 A benchmark rerun

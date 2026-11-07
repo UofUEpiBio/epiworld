@@ -75,17 +75,6 @@
     [](epiworld::Model<tseq>* m) -> void
 
 
-// Use this to make it more efficient for storage if the type is small
-// and the pointer is not needed
-#define EPI_TYPENAME_TRAITS(tseq, bound) typename std::conditional< \
-    sizeof( tseq ) <= sizeof( bound ), \
-    tseq, \
-    std::shared_ptr< tseq > \
-    >::type
-
-#define EPI_IF_TSEQ_LESS_EQ_INT(tseq) \
-    if constexpr (sizeof( tseq ) <= sizeof( int ))
-
 #define EPI_CHECK_COALESCE(proposed_, virus_tool_, alt_) \
     if (static_cast<int>(proposed_) == -99) {\
         if (static_cast<int>(virus_tool_) == -99) \

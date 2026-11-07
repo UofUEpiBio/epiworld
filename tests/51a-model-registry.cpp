@@ -97,10 +97,8 @@ EPIWORLD_TEST_CASE("Model registry - every model", "[registry]") {
     model->verbose_off();
     model->add_layer(layer::network("network", graph::smallworld<>(6, 0.1)));
 
-    // (Its own sequence: a virus whose sequence is on record is that variant)
     Virus<> other = model->get_virus(0u);
     other.set_name("other");
-    other.set_sequence(1);
     model->add_virus(other, assign::count<>(20u));
 
     // Seeded at reset (a run of 0 days)

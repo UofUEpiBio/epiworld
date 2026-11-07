@@ -6,7 +6,7 @@ We track data at multiple levels of granularity. At the agent level, it records 
 ## Recording During Simulations
 We automatically record data at each step of the simulation. This includes the current state of all agents, the distribution of states for each virus and tool, and the overall state distribution. For example, the `record` method is called at the end of each simulation step to update the internal data structures with the latest information. This ensures that the data remains consistent with the simulation's progression.
 
-In addition to automatic recording, the `DataBase` class provides methods for manually recording specific events. For instance, the `record_virus` method is used to register a new virus, while the `record_tool` method is used to register a new tool. These methods update the relevant data structures with information about the virus or tool, such as its name, sequence, and origin date. Similarly, the `record_transmission` method is used to record a transmission event, capturing the source, target, and timing of the event.
+In addition to automatic recording, the `DataBase` class provides methods for manually recording specific events. For instance, the `record_virus` method is used to register a new virus, while the `record_tool` method is used to register a new tool. These methods update the relevant data structures with information about the virus or tool, such as its name, origin date and, for a variant, its parent. Ids are given in order: the viruses added to the model, then the variants their mutations make during a run. Similarly, the `record_transmission` method is used to record a transmission event, capturing the source, target, and timing of the event.
 
 ```cpp
 #include "epiworld/database-bones.hpp"
@@ -47,9 +47,9 @@ db.write_data(
 ```
 
 Each file contains a specific subset of the simulation data:
-- `virus_info.csv`: Information about viruses, including their names, sequences, and origin dates.
+- `virus_info.csv`: Information about viruses, including their ids, names, origin dates, and parents.
 - `virus_hist.csv`: A history of virus-related events, such as the introduction of new variants.
-- `tool_info.csv`: Information about tools, including their names and sequences.
+- `tool_info.csv`: Information about tools, including their ids, names, and origin dates.
 - `tool_hist.csv`: A history of tool-related events.
 - `total_hist.csv`: The overall state distribution over time.
 - `transmission.csv`: The transmission network, including the source, target, and timing of each event.

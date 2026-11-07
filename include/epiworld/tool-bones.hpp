@@ -31,8 +31,6 @@ protected:
     int id   = -99;
     std::string tool_name;
     
-    EPI_TYPENAME_TRAITS(TSeq, int) sequence = 
-        EPI_TYPENAME_TRAITS(TSeq, int)(); ///< Sequence of the tool
 
     ToolFun<TSeq> susceptibility_reduction = nullptr;
     ToolFun<TSeq> transmission_reduction   = nullptr;
@@ -56,9 +54,6 @@ public:
 
     virtual ~Tool() = default;
 
-    void set_sequence(TSeq d);
-    void set_sequence(std::shared_ptr<TSeq> d);
-    EPI_TYPENAME_TRAITS(TSeq, int) get_sequence();
 
     /**
      * @name Get and set the tool functions

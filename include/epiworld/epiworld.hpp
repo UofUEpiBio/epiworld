@@ -82,7 +82,6 @@ namespace epiworld {
     #include "userdata-bones.hpp"
     #include "userdata-meat.hpp"
 
-    #include "seq_processing.hpp"
 
     #include "hospitalizationstracker-bones.hpp"
     #include "hospitalizationstracker-meat.hpp"

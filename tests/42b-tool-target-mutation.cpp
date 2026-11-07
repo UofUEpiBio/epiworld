@@ -18,10 +18,7 @@ EPIWORLD_TEST_CASE("Tool targeting a mutating virus", "[tool][target][mutation]"
     Virus<> & virus = model.get_virus(0);
     model.assign_virus(0, assign::agents(seeds));
     virus.set_mutation(
-        [](Agent<> *, Virus<> & v, Model<> *) -> bool {
-            v.set_sequence(v.get_sequence() + 1);
-            return true;
-        });
+        [](Agent<> *, Virus<> &, Model<> *) -> bool { return true; });
 
     // Protecting the even agents against A
     std::vector< size_t > protected_ids;
