@@ -42,7 +42,7 @@ inline epiworld_double Value::eval(
     }
 
     ParamId id = param.id(model);
-    if (virus != nullptr)
+    if ((virus != nullptr) && virus->has_param_redirects())
         id = virus->param_redirect(id, model);
 
     const epiworld_double x = model.par_at(id);

@@ -361,6 +361,9 @@ inline void Model::nh_step(Agent & p)
     // The stage's proposal --------------------------------------------------
     bool proposed = false;
 
+    // The values that apply to the agent (its virus's, or the model's)
+    const NaturalHistory & h = nh_of(p);
+
     // 1. Infection by contact (not out of the layers)
     if (
         (si.infection >= 0) && (p.virus == nullptr) &&
@@ -368,7 +371,7 @@ inline void Model::nh_step(Agent & p)
     )
     {
 
-        const auto & tr = nh_of(p).transitions[si.infection];
+        const auto & tr = h.transitions[si.infection];
         Virus * v = tr.sampler ? tr.sampler(p, *this) : sample_virus(&p);
         if (v != nullptr)
         {
@@ -387,7 +390,7 @@ inline void Model::nh_step(Agent & p)
         for (size_t k = 0u; k < nr; ++k)
         {
 
-            const auto & tr = nh_of(p).transitions[si.rates[k]];
+            const auto & tr = h.transitions[si.rates[k]];
             epiworld_double x = tr.value.eval(p, *this);
 
             if ((tr.effect != Effect::none) && (p.virus != nullptr))
@@ -415,9 +418,14 @@ inline void Model::nh_step(Agent & p)
     if (!proposed && (si.after >= 0) && (nh_until[static_cast< size_t >(p.id)] <= today()))
         nh_propose(si.after, p);
 
-    // The status's proposal (judged on the stage at the start of the day) ---
-    if (!st)
-        return;
+    // The status's proposal (judged on the stage at the start of the day)
+    if (st)
+        nh_step_status(p, c, s);
+
+}
+
+inline void Model::nh_step_status(Agent & p, unsigned int c, int s)
+{
 
     const int k = nh_status_of(c);
     const StageInfo & ki = st->stages[static_cast< size_t >(k)];

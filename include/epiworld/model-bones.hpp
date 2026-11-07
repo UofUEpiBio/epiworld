@@ -395,8 +395,15 @@ protected:
     std::vector< Reaction > nh_reactions;
 
     size_t nh_nstatus() const { return st ? st->get_n_stages() : 1u; }
-    int nh_stage_of(unsigned int cell) const { return static_cast< int >(cell / nh_nstatus()); }
-    int nh_status_of(unsigned int cell) const { return static_cast< int >(cell % nh_nstatus()); }
+    // Without statuses a cell is its stage (no division on the hot path)
+    int nh_stage_of(unsigned int cell) const
+    {
+        return static_cast< int >(st ? cell / st->get_n_stages() : cell);
+    }
+    int nh_status_of(unsigned int cell) const
+    {
+        return static_cast< int >(st ? cell % st->get_n_stages() : 0u);
+    }
     unsigned int nh_cell(int stage, int status) const
     {
         return static_cast< unsigned int >(stage) * static_cast< unsigned int >(nh_nstatus()) +
@@ -416,6 +423,7 @@ protected:
     void nh_install(std::shared_ptr< NaturalHistory > def);
     void nh_reset();
     void nh_step(Agent & p);
+    void nh_step_status(Agent & p, unsigned int cell, int stage); ///< nh_step()'s status part
 
     /// The natural history whose values apply to `p`: its virus's, or (no
     /// virus) the model's
@@ -1050,7 +1058,15 @@ public:
     void set_param(std::string_view pname, epiworld_double val);
     epiworld_double par(std::string_view pname) const;
     ParamId get_param_id(std::string_view pname) const;
-    epiworld_double par_at(ParamId id) const;
+    /// Read on every step: the bounds check stays cheap (it throws from
+    /// par_out_of_range()), so this can be inlined.
+    epiworld_double par_at(ParamId id) const
+    {
+        if (id.idx >= param_values.size())
+            par_out_of_range(id);
+        return param_values[id.idx];
+    }
+    [[noreturn]] void par_out_of_range(ParamId id) const;
     void set_param_at(ParamId id, epiworld_double val);
     size_t get_n_params() const { return param_values.size(); };
     uint32_t get_param_layout_id() const { return param_layout_id; };
