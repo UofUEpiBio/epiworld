@@ -2,9 +2,14 @@
 
 using namespace epiworld;
 
+// A mutation written with the function macro: it never changes the virus
+EPI_NEW_MUTFUN(never_mutates) { return false; }
+
 // Agent::mutate_virus() applies the virus' mutation with the model (#270).
 // Each mutation is a new variant: the next id, a child of the variant it
 // changed, in the same lineage. The next run starts from the model's viruses.
+// The mutations are written with the macros (EPI_NEW_MUTFUN_LAMBDA,
+// EPI_NEW_MUTFUN).
 EPIWORLD_TEST_CASE("Agent::mutate_virus()", "[mutation]") {
 
     // No transmission and no recovery: the seeded agents stay infected
@@ -12,8 +17,8 @@ EPIWORLD_TEST_CASE("Agent::mutate_virus()", "[mutation]") {
     add_random_mixing(model, 2.0);
     model.verbose_off();
 
-    model.get_virus(0).set_mutation(
-        [](Agent *, Virus &, Model *) -> bool { return true; });
+    EPI_NEW_MUTFUN_LAMBDA(always_mutates) { return true; };
+    model.get_virus(0).set_mutation(always_mutates);
 
     model.run(0, 123);
     REQUIRE(model.get_n_viruses() == 1u);
@@ -47,6 +52,12 @@ EPIWORLD_TEST_CASE("Agent::mutate_virus()", "[mutation]") {
     REQUIRE(std::get< std::vector< int > >(info.columns[3u]) == std::vector< int >({-99, 0, 1}));
 
     REQUIRE_THROWS_AS(susceptible->mutate_virus(model), std::logic_error);
+
+    // A mutation that returns false records nothing
+    infected->get_virus()->set_mutation(never_mutates);
+    infected->mutate_virus(model);
+    REQUIRE(model.get_n_viruses() == 3u);
+    REQUIRE(infected->get_virus()->get_id() == 2);
 
     // The next run drops the variants
     model.run(0, 123);

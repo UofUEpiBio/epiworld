@@ -59,7 +59,7 @@
     epiworld::MutFun funname = \
     [](epiworld::Agent * p, \
     epiworld::Virus & v, \
-    epiworld::Model * m) -> void
+    epiworld::Model * m) -> bool
 
 #define EPI_RUNIF() m->runif()
 
