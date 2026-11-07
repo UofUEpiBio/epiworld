@@ -4,7 +4,7 @@
 #include "../model-bones.hpp"
 
 /**
- * @brief Template for a Surveillance model
+ * @brief A Surveillance model
  * @ingroup special_models
  */
 class ModelSURV : public Model {

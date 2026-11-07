@@ -11,10 +11,14 @@ This C++ library provides a general framework for epidemiologic simulation. The
 core principle of `epiworld` is fast epidemiological prototyping for
 building complex models quickly. Here are some of its main features:
 
-  - It only depends on the standard library (C++11 required.)
-  - It is a template library.
+  - It only depends on the standard library (C++17 required.)
   - It is header-only ([single file](https://github.com/UofUEpiBio/epiworld/tree/master/epiworld.hpp)).
-  - Models can have an arbitrary set of states.
+  - A disease is declared as a natural history: its stages and the
+    transitions between them (by contact, at a daily rate, after a drawn
+    duration, or fired by code). Agents also have a status (free,
+    quarantined, isolated, ...) with transitions of its own.
+  - Contacts come from layers: networks, mixing by group, and mixing within
+    groups, any number of them in one model.
   - Viruses and tools (e.g., vaccines, mask-wearing) can be designed to have arbitrary features.
   - Multiple tools and viruses can live in the same simulation.
   - It is *FAST*: Over 150 Million person/day simulations per second (see example below).
@@ -89,12 +93,13 @@ SIMULATION STUDY
 Name of the model   : Susceptible-Infected-Recovered (SIR)
 Population size     : 100000
 Agents' data        : (none)
-Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 69.00ms
-Last run speed      : 143.87 million agents x day / second
-Rewiring            : off
+Last run elapsed t  : 93.00ms
+Last run speed      : 106.49 million agents x day / second
+Contact layers      : 1
+  - contacts (network)
+Last seed used      : 122
 
 Global events:
  (none)
@@ -106,13 +111,13 @@ Tool(s):
  (none)
 
 Model parameters:
- - Recovery rate     : 0.3000
- - Transmission rate : 0.1000
+ - Recovery rate            : 0.3000
+ - Transmission probability : 0.1000
 
 Distribution of the population at time 100:
-  - (0) Susceptible :  99000 -> 41957
-  - (1) Infected    :   1000 -> 70
-  - (2) Recovered   :      0 -> 57973
+  - (0) Susceptible :  99000 -> 40382
+  - (1) Infected    :   1000 -> 154
+  - (2) Recovered   :      0 -> 59464
 
 Transition Probabilities:
  - Susceptible  0.99  0.01     -
@@ -173,12 +178,13 @@ SIMULATION STUDY
 Name of the model   : (none)
 Population size     : 100000
 Agents' data        : (none)
-Number of entities  : 0
 Days (duration)     : 100 (of 100)
 Number of viruses   : 1
-Last run elapsed t  : 24.00ms
-Last run speed      : 410.34 million agents x day / second
-Rewiring            : off
+Last run elapsed t  : 26.00ms
+Last run speed      : 371.13 million agents x day / second
+Contact layers      : 1
+  - contacts (network)
+Last seed used      : 122
 
 Global events:
  (none)
@@ -190,73 +196,92 @@ Tool(s):
  (none)
 
 Model parameters:
- (none)
+ - covid 19: Infected -> Recovered   : 0.3000
+ - covid 19: Susceptible -> Infected : 0.1000
 
 Distribution of the population at time 100:
-  - (0) Susceptible :  99900 -> 78866
-  - (1) Infected    :    100 -> 625
-  - (2) Recovered   :      0 -> 20509
+  - (0) Susceptible :  99900 -> 82894
+  - (1) Infected    :    100 -> 519
+  - (2) Recovered   :      0 -> 16587
 
 Transition Probabilities:
  - Susceptible  1.00  0.00     -
  - Infected        -  0.70  0.30
- - Recovered       -     -  1.0
+ - Recovered       -     -  1.00
 ```
 
-Which took about 0.024 seconds (~ 401 million agents x day / second).
+Which took about 0.012 seconds (~ 776 million agents x day / second; run in
+a container, so take the speed as an order of magnitude). The model
+parameters are named after the virus and the transition: a number given to
+the natural history becomes a parameter of the model, which can be changed
+before a run (`model.set_param("covid 19: Susceptible -> Infected", 0.2)`).
+Each model's diagram is drawn from its declarations
+(`model.draw_natural_history()`, a mermaid flowchart).
 
 ## Simulation Steps
 
-The core logic of the model relies on user-defined statuses and their corresponding update functions. In particular, the model does not have a predefined set of statuses, e.g., susceptible, infected, recovered; the user establishes them. This provides flexibility as models in `epiworld` can have an arbitrary set of statuses.
+A model's states come from its natural history: the stages a virus declares
+(`Virus::add_stage()`) and the transitions between them, plus the agents'
+statuses (`Model::set_statuses()`; a model without statuses has one,
+"Free"). Each agent is in one stage and one status. The transitions are of
+four kinds:
 
-Like most other ABMs, `epiworld` simulates the evolution of a system in discrete steps. Each step represents a day in the system, and changes are reflected at the beginning of the following day. Therefore, agents can recover and transmit a virus on the same day. A single step of `epiworld` features the following procedures:
+- **infection**: from a contact with an infectious agent, with a probability
+  per contact (`Virus::infection()`);
+- **rate**: with a daily probability (`Virus::rate()`);
+- **after**: when a duration drawn on entering the stage ends
+  (`Virus::after()`, with `Duration::fixed()`, `geometric()`, `lognormal()`,
+  `gamma()`, or a function);
+- **external**: fired by code, such as a global event or a reaction
+  (`Model::fire()`).
 
-**Status update**: Agents are updated according to their status.
+Like most other ABMs, `epiworld` simulates the evolution of a system in
+discrete steps. Each step represents a day, and the changes of a day take
+effect at its end, so agents can recover and transmit a virus on the same
+day. A single step features the following procedures:
 
-2. (optional) **Execute Global events**: A call of user-defined functions affecting
-the system. These can make any type of change in the system.
+1. **Update the agents**: first the natural history (infections from the
+   day's contacts, rates, and the durations that end), then the statuses,
+   then the reactions to what changed (`Model::react()`).
 
-3. (optional) **Apply rewiring algorithm**: When specified, the network is rewired
-according to a user-defined function.
+2. (optional) **Execute global events**: user-defined functions that can make
+   any change in the system.
 
-4. **Lock the results**: The current date is incremented in one unit, and
-  the changes (exposition, new infections, recoveries, etc.) are recorded
-  in the database.
+3. **Lock the results**: the layers are updated (e.g., rewired), the changes
+   are applied, the date moves one day ahead, and the day is recorded in the
+   database.
 
-5. (optional) **Mutate Variants**: When defined, variants can mutate, with the new
-variants appearing the next day.
+4. (optional) **Mutate variants**: a virus with a mutation function can
+   become a new variant (a new id, a child of the one it was).
 
-To speed up computations, `epiworld` uses a queuing system that decides which agents will be active during each step and which will not. Agents are active when either they or at least one of their neighbors has a virus active. Agents' updates are triggered only for those in the queue, accelerating the completion of the current step.
+To speed up computations, `epiworld` uses a queuing system that decides
+which agents are visited in each step. Only the agents that can change are:
+those with something drawn in their stage or status, and those in contact
+with a carrier.
 
 ## Agents
 
-Agents carry two sets of important information: viruses and tools. Each agent
-can have multiple instances of them, meaning multiple viruses and tools can
-coexist in a model. At each step of the simulation, an agent can face the following
-changes:
+An agent has a stage and a status, at most one virus at a time (several
+viruses can circulate in a model, with the same stages), and any number of
+tools. During a run, an agent can face the following changes:
 
-- **Acquire a virus (`add_virus()`)**: Become exposed to a particular virus+host.
+- **Acquire a virus**: by an infection, or placed at the start of a run
+  (`Model::add_virus(virus, assign::share(0.01))`).
 
-- **Lose a virus (`rm_virus()`)**: Removing a virus from the agent. Losing a virus
-triggers a call to the virus's `postrecovery()` function, which can, for example,
-result in gaining immunity to that variant.
+- **Lose a virus**: when it moves from a stage that carries the virus
+  (declared with `stage::carrier` or `stage::infectious`) to one that does
+  not (e.g., recovers).
 
-- **Acquire a tool (`add_tool()`)**: For example, mask-wearing, vaccines, etc.
+- **Acquire or lose a tool** (`add_tool()`, `rm_tool()`): for example,
+  mask-wearing, vaccines, etc.
 
-- **Lose a tool (`rm_tool()`)**: For example, stop wearing masks, lose immunity, etc.
-
-- **Change status (`change_status()`)**: An arbitrary change in the status of the
-agent. Examples of this are moving from "exposed" to "infected," from "infected"
-to "ICU," etc.
-
-Any action in the model can trigger a change in its queuing system. By default, becoming exposed makes the agent (and its neighbors) active in the queuing system. Likewise, losing all viruses could make the agent and its neighbors inactive.
-
-<!--
-## Tools -->
+- **Change stage or status**: through the declared transitions, or fired by
+  code (`Model::fire()`). Examples are moving from "Exposed" to "Infected",
+  or from "Free" to "Quarantined".
 
 ## Contagion
 
-Susceptible individuals can acquire a virus from any of their infected connections. The probability that susceptible individual `i` gets the virus `v` from individual `j` depends on how three things:
+Susceptible individuals can acquire a virus from any of their infectious contacts, in any layer (see [combining exposures](docs/impl/combining-exposures.md)). The probability that susceptible individual `i` gets the virus `v` from individual `j` depends on three things:
 
 1. The transmissibility of the virus, <!-- $P_v \in [0,1]$ --> <img style="transform: translateY(0.1em); background: white;" src="https://latex.codecogs.com/svg.latex?P_v%20%5Cin%20%5B0%2C1%5D">,
 2. The contagion reduction factor of `i`, <!-- $C_r \in [0,1]$ --> <img style="transform: translateY(0.1em); background: white;" src="https://latex.codecogs.com/svg.latex?C_r%20%5Cin%20%5B0%2C1%5D">, and
@@ -270,7 +295,7 @@ $$ -->
 
 <div align="center"><img style="background: white;" src="https://latex.codecogs.com/svg.latex?P(Virus%20v)%20%3D%20P_v%20*%20(1%20-%20C_r)%20*(1%20-%20T_r)%20"></div>
 
-Nonetheless, the default behavior of the simulation model is to assume that individuals can acquire only one disease at a time, if any. This way, the actual probability is:
+Individuals acquire at most one virus at a time, if any. This way, the actual probability is:
 
 <!-- $$
 P(Virus v|\mbox{\text{at most one virus}}) = P_{ivj}

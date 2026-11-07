@@ -4,7 +4,7 @@
 #include "../model-bones.hpp"
 
 /**
- * @brief Template for a Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) model
+ * @brief A Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) model
  * 
  * ![Model Diagram](../assets/img/seird.png)
  * 

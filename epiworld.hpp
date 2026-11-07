@@ -4371,6 +4371,23 @@ public:
 
     /// What the engine derived about stage `s` (once added to a model).
     const StageInfo & get_stage_info(int s) const { return stages.at(s); }
+
+    /**
+     * @brief The stages and transitions as the body of a mermaid flowchart.
+     * @details One node per stage (id `prefix` + index; infectious, carrier
+     * and contact-0 stages get the classes `infectious`, `carrier` and
+     * `away`) and one edge per transition, labeled with its name (unless it
+     * is the default "From -> To"), its kind and its value: `-->` for an
+     * infection or a rate, `==>` for a duration, `-.->` for an external
+     * transition. See `Model::draw_natural_history()`.
+     * @param prefix Prefix of the node ids.
+     * @param stages The natural history whose stages `when()` and `since()`
+     * name (for statuses, the virus's; `nullptr`: this one).
+     */
+    std::string draw_mermaid(
+        const std::string & prefix,
+        const NaturalHistory * stages = nullptr
+    ) const;
 };
 
 /**
@@ -7256,6 +7273,15 @@ public:
         const std::string & fn_output = "",
         bool self = false
     );
+
+    /**
+     * @brief The model's natural history as a mermaid flowchart: the stages
+     * and, if the model has statuses, the statuses, each in a subgraph (see
+     * `NaturalHistory::draw_mermaid()`). Drawn from the declarations, so it
+     * needs no run.
+     * @throws std::logic_error if the model has no natural history.
+     */
+    std::string draw_natural_history() const;
 
     /**
      * @brief Record a hospitalization event for an agent.
@@ -21354,6 +21380,132 @@ inline void NaturalHistory::finalize(
 
 }
 
+inline std::string NaturalHistory::draw_mermaid(
+    const std::string & prefix,
+    const NaturalHistory * stage_names
+) const
+{
+
+    if (stage_names == nullptr)
+        stage_names = this;
+
+    auto number = [](epiworld_double x) {
+        std::ostringstream out;
+        out << x;
+        return out.str();
+    };
+
+    auto value = [&number](const Value & v) -> std::string {
+        switch (v.kind)
+        {
+            case Value::Kind::number:     return number(v.number);
+            case Value::Kind::param:      return v.param.name();
+            case Value::Kind::inverse:    return "1 / " + v.param.name();
+            case Value::Kind::complement: return "1 - " + v.param.name();
+            case Value::Kind::fun:        return "a function";
+            default:                      return "";
+        }
+    };
+
+    auto duration = [&](const Duration & d) -> std::string {
+        std::string out;
+        switch (d.kind)
+        {
+            case Duration::Kind::fixed:
+                out = "fixed(" + value(d.mean) + ")"; break;
+            case Duration::Kind::geometric:
+                out = "geometric(" + value(d.mean) + ")"; break;
+            case Duration::Kind::lognormal:
+                out = "lognormal(" + value(d.mean) + ", " + value(d.sd) + ")"; break;
+            case Duration::Kind::gamma:
+                out = "gamma(" + value(d.mean) + ", " + value(d.sd) + ")"; break;
+            case Duration::Kind::fun:
+                out = "a function"; break;
+            default: break;
+        }
+        if (d.anchor >= 0)
+            out += ", since " + stage_names->get_stages().at(d.anchor);
+        return out;
+    };
+
+    // Mermaid labels are double-quoted
+    auto quote = [](std::string x) {
+        std::string out;
+        for (char c : x)
+            out += (c == '"') ? std::string("#quot;") : std::string(1, c);
+        return "\"" + out + "\"";
+    };
+
+    std::ostringstream out;
+
+    for (size_t s = 0u; s < stage_labels.size(); ++s)
+    {
+        out << "    " << prefix << s << "[" << quote(stage_labels[s]) << "]";
+        if (stage_flags[s] & 2u)
+            out << ":::infectious";
+        else if (stage_flags[s] & stage::carrier)
+            out << ":::carrier";
+        else if (stage_contact[s] == 0.0)
+            out << ":::away";
+        out << "\n";
+    }
+
+    for (const auto & t : transitions)
+    {
+
+        // The label: the name (unless the default), the kind and value, and
+        // the stages a status transition is restricted to
+        std::string label;
+        std::string arrow = "-->";
+        // (a default name is "From -> To", or "From -> A or B" for a branch)
+        const std::string from_label = stage_labels[t.from[0u]] + " -> ";
+        const bool default_name =
+            (t.name == from_label + stage_labels[t.to]) ||
+            (!t.branch_to.empty() && (t.name.rfind(from_label, 0u) == 0u));
+        if (!default_name)
+            label = t.name + "<br>";
+
+        switch (t.kind)
+        {
+            case TransitionKind::infection:
+                label += "infection: " + value(t.value); break;
+            case TransitionKind::rate:
+                label += "rate: " + value(t.value); break;
+            case TransitionKind::after:
+                label += "after: " + duration(t.duration); arrow = "==>"; break;
+            case TransitionKind::external:
+                label += "external"; arrow = "-.->"; break;
+        }
+
+        if (!t.when.empty())
+        {
+            label += "<br>when: ";
+            for (size_t k = 0u; k < t.when.size(); ++k)
+                label += (k ? ", " : "") + stage_names->get_stages().at(t.when[k]);
+        }
+
+        // A branch goes to each of its targets, with its probability
+        std::vector< std::pair< int, std::string > > targets;
+        if (t.branch_to.empty())
+            targets.push_back({t.to, label});
+        else
+            for (size_t k = 0u; k < t.branch_to.size(); ++k)
+                targets.push_back(
+                    {t.branch_to[k], label + "<br>p = " + value(t.branch_prob[k])}
+                );
+
+        for (int from : t.from)
+            for (const auto & target : targets)
+                out << "    " << prefix << from << " " << arrow << "|" <<
+                    quote(target.second) << "| " << prefix << target.first <<
+                    "\n";
+
+    }
+
+    return out.str();
+
+}
+
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -22019,6 +22171,43 @@ inline epiworld_double Model::nh_infection_prob(
     // The infector's virus says how infectious it is
     const auto & h = v.nh_def ? *v.nh_def : *nh;
     return h.transitions[tr].value.eval(target, &v, *this);
+}
+
+inline std::string Model::draw_natural_history() const
+{
+
+    if (!nh)
+        throw std::logic_error(
+            "The model has no natural history to draw (add a virus first)."
+        );
+
+    std::string out = "flowchart LR\n";
+
+    auto subgraph = [&out](
+        const std::string & id,
+        const std::string & title,
+        const std::string & body
+    ) {
+        out += "    subgraph " + id + "[\"" + title + "\"]\n";
+        out += "        direction LR\n";
+        std::istringstream lines(body);
+        std::string line;
+        while (std::getline(lines, line))
+            out += "    " + line + "\n";
+        out += "    end\n";
+    };
+
+    subgraph("stages", "Stages: " + nh->get_name(), nh->draw_mermaid("s"));
+    if (st)
+        subgraph("statuses", "Statuses", st->draw_mermaid("q", nh.get()));
+
+    out +=
+        "    classDef infectious fill:#f8d7da,stroke:#b02a37\n"
+        "    classDef carrier fill:#fff3cd,stroke:#997404\n"
+        "    classDef away fill:#e2e3e5,stroke:#6c757d\n";
+
+    return out;
+
 }
 
 #endif
@@ -23628,7 +23817,7 @@ inline std::function<void(Model*)> globalevent_set_param(
 // (already included include/epiworld/models/../model-bones.hpp)
 
 /**
- * @brief Template for a Susceptible-Infected-Susceptible (SIS) model
+ * @brief A Susceptible-Infected-Susceptible (SIS) model
  * 
  * ![Model Diagram](../assets/img/sis.png)
  * 
@@ -23636,9 +23825,9 @@ inline std::function<void(Model*)> globalevent_set_param(
  * 
  * @param vname std::string Name of the virus
  * @param n Number of agents.
- * @param initial_prevalence epiworld_double Initial prevalence
- * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
- * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
+ * @param prevalence epiworld_double Initial share of infected agents
+ * @param transmission_prob epiworld_double Probability of transmission per contact
+ * @param recovery_rate epiworld_double Daily probability of recovery
  */
 class ModelSIS : public Model
 {
@@ -23738,7 +23927,7 @@ inline ModelInfo ModelSIS::model_info()
 // (already included include/epiworld/models/../model-bones.hpp)
 
 /**
- * @brief Template for a Susceptible-Infected-Removed (SIR) model
+ * @brief A Susceptible-Infected-Removed (SIR) model
  * 
  * ![Model Diagram](../assets/img/sir.png)
  * 
@@ -23853,7 +24042,7 @@ inline ModelInfo ModelSIR::model_info()
 // (already included include/epiworld/models/../model-bones.hpp)
 
 /**
- * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model
+ * @brief A Susceptible-Exposed-Infected-Removed (SEIR) model
  * 
  * ![Model Diagram](../assets/img/seir.png)
  * 
@@ -23980,7 +24169,7 @@ inline ModelInfo ModelSEIR::model_info()
 // (already included include/epiworld/models/../model-bones.hpp)
 
 /**
- * @brief Template for a Surveillance model
+ * @brief A Surveillance model
  * @ingroup special_models
  */
 class ModelSURV : public Model {
@@ -24318,7 +24507,7 @@ inline ModelInfo ModelSURV::model_info()
 // (already included include/epiworld/models/../model-bones.hpp)
 
 /**
- * @brief Template for a Susceptible-Infected-Removed-Deceased (SIRD) model
+ * @brief A Susceptible-Infected-Removed-Deceased (SIRD) model
  * 
  * ![Model Diagram](../assets/img/sird.png)
  * 
@@ -24448,7 +24637,7 @@ inline ModelInfo ModelSIRD::model_info()
 // (already included include/epiworld/models/../model-bones.hpp)
 
 /**
- * @brief Template for a Susceptible-Infected-Susceptible-Deceased (SISD) model
+ * @brief A Susceptible-Infected-Susceptible-Deceased (SISD) model
  * 
  * ![Model Diagram](../assets/img/sisd.png)
  * 
@@ -24568,7 +24757,7 @@ inline ModelInfo ModelSISD::model_info()
 // (already included include/epiworld/models/../model-bones.hpp)
 
 /**
- * @brief Template for a Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) model
+ * @brief A Susceptible-Exposed-Infected-Removed-Deceased (SEIRD) model
  * 
  * ![Model Diagram](../assets/img/seird.png)
  * 
@@ -24709,7 +24898,7 @@ inline ModelInfo ModelSEIRD::model_info()
 // (already included include/epiworld/models/../model-bones.hpp)
 
 /**
- * @brief Template for a Susceptible-Infected-Removed (SIR) model
+ * @brief A Susceptible-Infected-Removed (SIR) model
  * 
  * ![Model Diagram](../assets/img/sirlogit.png)
  * 
@@ -24823,7 +25012,7 @@ inline void ModelSIRLogit::reset()
 }
 
 /**
- * @brief Template for a Susceptible-Infected-Removed (SIR) model
+ * @brief A Susceptible-Infected-Removed (SIR) model
  * 
  * @param model A Model object where to set up the SIR.
  * @param vname std::string Name of the virus
@@ -24974,7 +25163,7 @@ inline ModelSIRLogit::ModelSIRLogit(
 // (already included include/epiworld/models/../model-bones.hpp)
 
 /**
- * @brief Template for a Network Diffusion Model
+ * @brief A Network Diffusion Model
  * @ingroup special_models
  * 
  * @param model A Model object where to set up the SIR.
@@ -25142,12 +25331,14 @@ inline ModelDiffNet::ModelDiffNet(
 
 /**
  * @file seirquarantine.hpp
- * @brief Template for a Susceptible-Exposed-Infected-Removed (SEIR) model
+ * @brief A Susceptible-Exposed-Infected-Removed (SEIR) model
  *        with quarantine, isolation, and contact tracing
  */
 
 /**
  * @brief SEIR model with quarantine, isolation, and contact tracing
+ *
+ * ![Model Diagram](../assets/img/seirquarantine.png)
  *
  * @details An SEIR model whose contacts come from its layers, of any kind
  * (see `Model::add_layer()`): networks, mixing by group, or both. Each agent

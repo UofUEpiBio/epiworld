@@ -4,7 +4,7 @@
 #include "../model-bones.hpp"
 
 /**
- * @brief Template for a Susceptible-Infected-Susceptible-Deceased (SISD) model
+ * @brief A Susceptible-Infected-Susceptible-Deceased (SISD) model
  * 
  * ![Model Diagram](../assets/img/sisd.png)
  * 

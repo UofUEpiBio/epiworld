@@ -1,11 +1,13 @@
-We provide a collection of pre-built epidemiological model templates that implement classical compartmental structures and a few specialized extensions. A model's compartments (states), parameters, and update rules describe the course of infection; its **contact layers** describe who meets whom (see `Model::add_layer()`): a network, mixing by group with a contact matrix, contacts within groups such as households, or several of them at once. So there is one model per compartmental structure, not one per kind of contact: the same `ModelSIR` runs on a network, on a contact matrix, or on both. A model is not limited to one pathogen either: like any `Model`, it can carry several viruses (`add_virus()`), each with its own parameters, that share its states.
+We provide a collection of pre-built epidemiological models that implement classical compartmental structures and a few specialized extensions. A model's natural history (the stages of its virus and the transitions between them, plus, in some models, the agents' statuses) and its parameters describe the course of infection; its **contact layers** describe who meets whom (see `Model::add_layer()`): a network, mixing by group with a contact matrix, contacts within groups such as households, or several of them at once. So there is one model per compartmental structure, not one per kind of contact: the same `ModelSIR` runs on a network, on a contact matrix, or on both. A model is not limited to one pathogen either: like any `Model`, it can carry several viruses (`add_virus()`), each with its own parameters, that share its stages.
 
 The models included in the core codebase are:
 
 - **SIS, SIR, SIRD, SEIR, SEIRD, and SISD models**, which represent standard compartmental processes with increasing biological detail.
 - **`SEIRQuarantine`**, an SEIR model with detection, isolation, contact tracing (from the logs of its layers), and quarantine.
 - **Disease-specific and specialized variants**, including `MeaslesMixing`, `MeaslesMixingRiskQuarantine`, `SIRLogit`, and `Surveillance`.
-- **Supporting modules**, including `init-functions.hpp`, which defines helper functions for initializing model states, and `globalevents.hpp`, which provides tools for defining time-dependent interventions.
+- **Supporting modules**, including `globalevents.hpp`, which provides tools for defining time-dependent interventions.
+
+Each model is built the way a user builds one (see [Extending the Library with Models](extending-the-library-with-models.md)): its constructor declares the virus's stages and transitions and, for the models with quarantine or isolation, the statuses. The diagram of each model (`include/epiworld/models/<model>.mmd`) is drawn from those declarations by `make diagrams`, and any model can draw its own with `model.draw_natural_history()` (a mermaid flowchart). The registered models can also be built by name (`ModelRegistry::make_model()`).
 
 Every number a user may set or calibrate is a model parameter. The names say what the code does, in the terms epidemiology uses; most are daily rates, the probability per day of leaving a state, so the mean time in it is 1 / rate days:
 
@@ -90,7 +92,7 @@ ModelSISD(
 
 ## SEIR and SEIRD Models
 
-The Susceptible–Exposed–Infected–Recovered (SEIR) model adds an Exposed compartment: agents who carry the virus but are not infectious yet. Only Infected agents transmit; the model says so with `set_infectious_states()`, and every layer follows it. SEIRD adds a Dead compartment.
+The Susceptible–Exposed–Infected–Removed (SEIR) model adds an Exposed stage: agents who carry the virus but are not infectious yet (a `stage::carrier` stage). Only Infected agents transmit (a `stage::infectious` stage), and every layer follows that. The latent period is a geometric duration with mean "Latent period". SEIRD adds a Dead stage.
 
 **Constructors:**
 ```cpp
@@ -146,11 +148,11 @@ mixing->set_contact_rate("Contact rate");
 model.add_layer(mixing);
 ```
 
-A mixing layer draws distinct contacts: an agent meets each other agent at most once a day. Every agent of a group counts in its contacts (everyone can be met), and only agents in the model's infectious states transmit. Layers combine: a household layer and a community contact matrix in the same model are exposures of one draw.
+A mixing layer draws distinct contacts: an agent meets each other agent at most once a day. Every agent of a group counts in its contacts (everyone can be met), and only agents in an infectious stage transmit. Layers combine: a household layer and a community contact matrix in the same model are exposures of one draw.
 
 ## SEIRQuarantine Model
 
-An SEIR model with detection, isolation, contact tracing, quarantine and hospitalization, on any layers. At reset, the model turns tracing on for each of its layers (`ContactLayer::enable_tracing()`); when an infected agent is detected, its contacts in every layer's log within the tracing window are traced, and those willing to comply are quarantined (or isolated, if infected). Isolated, quarantined and hospitalized agents are out of the mixing layers altogether: they are not met, and their group's contacts go to the others.
+An SEIR model with detection, isolation, contact tracing, quarantine and hospitalization, on any layers. Its stages are Susceptible, Exposed, Infected, Severe and Recovered; its statuses are Free, Quarantined, Isolated and Hospitalized, so an agent can be, e.g., (Quarantined, Exposed). At reset, the model turns tracing on for each of its layers (`ContactLayer::enable_tracing()`); when an infected agent is detected, its contacts in every layer's log within the tracing window are traced, and those willing to comply are quarantined (or isolated, if infected). Isolated, quarantined and hospitalized agents are out of every layer (those statuses have contact weight 0): they are not met and do not transmit, and in a mixing layer their group's contacts go to the others.
 
 **Constructor:**
 ```cpp
@@ -188,15 +190,15 @@ The SIRLogit model uses logistic regression to determine infection and recovery 
 **Constructor:**
 ```cpp
 ModelSIRLogit(
-    ModelSIRLogit & model,
     const std::string & vname,
+    epiworld_fast_uint n,
     double * data,
     size_t ncols,
     std::vector< double > coefs_infect,
     std::vector< double > coefs_recover,
     std::vector< size_t > coef_infect_cols,
     std::vector< size_t > coef_recover_cols,
-    epiworld_double transmission_rate,
+    epiworld_double transmission_prob,
     epiworld_double recovery_rate,
     epiworld_double prevalence
 );
@@ -215,9 +217,9 @@ The SURV (Surveillance) model integrates vaccination, infection, immunity, and o
 **Constructor:**
 ```cpp
 ModelSURV(
-    ModelSURV & model,
     const std::string & vname,
-    epiworld_fast_uint prevalence               = 50,
+    epiworld_fast_uint n,
+    epiworld_fast_uint prevalence         = 50,
     epiworld_double efficacy_vax          = 0.9,
     epiworld_double latent_period         = 3u,
     epiworld_double infect_period         = 6u,
@@ -240,7 +242,7 @@ ModelSURV(
 ## See Also
 
 - [Extending the Library with Models](extending-the-library-with-models.md) — how to create new models by inheriting from `Model`.
-- [Mixing and Entity Distribution](mixing-and-entity-distribution.md) — contact matrices and the mixing layer.
+- [Mixing by Group](mixing-and-entity-distribution.md) — contact matrices and the mixing layer.
 - [Sampling Contacts](sampling-contacts.md) — how a mixing layer draws contacts using binomial sampling.
 - [Virus and Tool Distribution Functions](virus-and-tool-distribution.md) — mechanisms for distributing viruses and tools to agents.
 - [Quarantine, Isolation, and Contact Tracing](quarantine-isolation-and-contact-tracing.md) — quarantine and isolation dynamics used by `SEIRQuarantine` and the measles models.

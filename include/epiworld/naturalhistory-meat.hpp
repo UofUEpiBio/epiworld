@@ -582,4 +582,130 @@ inline void NaturalHistory::finalize(
 
 }
 
+inline std::string NaturalHistory::draw_mermaid(
+    const std::string & prefix,
+    const NaturalHistory * stage_names
+) const
+{
+
+    if (stage_names == nullptr)
+        stage_names = this;
+
+    auto number = [](epiworld_double x) {
+        std::ostringstream out;
+        out << x;
+        return out.str();
+    };
+
+    auto value = [&number](const Value & v) -> std::string {
+        switch (v.kind)
+        {
+            case Value::Kind::number:     return number(v.number);
+            case Value::Kind::param:      return v.param.name();
+            case Value::Kind::inverse:    return "1 / " + v.param.name();
+            case Value::Kind::complement: return "1 - " + v.param.name();
+            case Value::Kind::fun:        return "a function";
+            default:                      return "";
+        }
+    };
+
+    auto duration = [&](const Duration & d) -> std::string {
+        std::string out;
+        switch (d.kind)
+        {
+            case Duration::Kind::fixed:
+                out = "fixed(" + value(d.mean) + ")"; break;
+            case Duration::Kind::geometric:
+                out = "geometric(" + value(d.mean) + ")"; break;
+            case Duration::Kind::lognormal:
+                out = "lognormal(" + value(d.mean) + ", " + value(d.sd) + ")"; break;
+            case Duration::Kind::gamma:
+                out = "gamma(" + value(d.mean) + ", " + value(d.sd) + ")"; break;
+            case Duration::Kind::fun:
+                out = "a function"; break;
+            default: break;
+        }
+        if (d.anchor >= 0)
+            out += ", since " + stage_names->get_stages().at(d.anchor);
+        return out;
+    };
+
+    // Mermaid labels are double-quoted
+    auto quote = [](std::string x) {
+        std::string out;
+        for (char c : x)
+            out += (c == '"') ? std::string("#quot;") : std::string(1, c);
+        return "\"" + out + "\"";
+    };
+
+    std::ostringstream out;
+
+    for (size_t s = 0u; s < stage_labels.size(); ++s)
+    {
+        out << "    " << prefix << s << "[" << quote(stage_labels[s]) << "]";
+        if (stage_flags[s] & 2u)
+            out << ":::infectious";
+        else if (stage_flags[s] & stage::carrier)
+            out << ":::carrier";
+        else if (stage_contact[s] == 0.0)
+            out << ":::away";
+        out << "\n";
+    }
+
+    for (const auto & t : transitions)
+    {
+
+        // The label: the name (unless the default), the kind and value, and
+        // the stages a status transition is restricted to
+        std::string label;
+        std::string arrow = "-->";
+        // (a default name is "From -> To", or "From -> A or B" for a branch)
+        const std::string from_label = stage_labels[t.from[0u]] + " -> ";
+        const bool default_name =
+            (t.name == from_label + stage_labels[t.to]) ||
+            (!t.branch_to.empty() && (t.name.rfind(from_label, 0u) == 0u));
+        if (!default_name)
+            label = t.name + "<br>";
+
+        switch (t.kind)
+        {
+            case TransitionKind::infection:
+                label += "infection: " + value(t.value); break;
+            case TransitionKind::rate:
+                label += "rate: " + value(t.value); break;
+            case TransitionKind::after:
+                label += "after: " + duration(t.duration); arrow = "==>"; break;
+            case TransitionKind::external:
+                label += "external"; arrow = "-.->"; break;
+        }
+
+        if (!t.when.empty())
+        {
+            label += "<br>when: ";
+            for (size_t k = 0u; k < t.when.size(); ++k)
+                label += (k ? ", " : "") + stage_names->get_stages().at(t.when[k]);
+        }
+
+        // A branch goes to each of its targets, with its probability
+        std::vector< std::pair< int, std::string > > targets;
+        if (t.branch_to.empty())
+            targets.push_back({t.to, label});
+        else
+            for (size_t k = 0u; k < t.branch_to.size(); ++k)
+                targets.push_back(
+                    {t.branch_to[k], label + "<br>p = " + value(t.branch_prob[k])}
+                );
+
+        for (int from : t.from)
+            for (const auto & target : targets)
+                out << "    " << prefix << from << " " << arrow << "|" <<
+                    quote(target.second) << "| " << prefix << target.first <<
+                    "\n";
+
+    }
+
+    return out.str();
+
+}
+
 #endif

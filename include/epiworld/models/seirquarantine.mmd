@@ -1,52 +1,35 @@
-flowchart TB
-
-    %% Disease progression states
-    subgraph Main[Disease Progression]
-        direction TB
-        S[Susceptible]
-        E[Exposed]
-        In[Infected]
-        H[Hospitalized]
-        R[Recovered]
+%% Drawn from the model's declarations by `make diagrams`; do not edit.
+flowchart LR
+    subgraph stages["Stages: Disease"]
+        direction LR
+        s0["Susceptible"]
+        s1["Exposed"]:::carrier
+        s2["Infected"]:::infectious
+        s3["Severe"]:::carrier
+        s4["Recovered"]
+        s0 -->|"infection: Transmission probability"| s1
+        s1 ==>|"after: geometric(Latent period)"| s2
+        s2 -->|"rate: Recovery rate"| s4
+        s2 -->|"rate: Hospitalization rate"| s3
+        s3 -->|"rate: 1 / Hospitalization period"| s4
     end
-
-    S --> E
-    E --> In
-    In --> H
-    H --> R
-    In --> R
-
-    %% Quarantine states
-    Qs[Quarantined<br>Susceptible]
-    Qe[Quarantined<br>Exposed]
-    I[Isolated]
-    Ir[Isolated<br>Recovered]
-
-    %% Infected to
-    In <==> I
-    In --> Ir
-    In --> H
-
-    %% Detected agents go to hospital as detected
-    Dh[Detected<br>Hospitalized]
-    In --> Dh
-    Dh --> R
-
-    %% Isolated to
-    I --> R
-    I --> Ir
-    I --> H
-    I --> Dh
-
-    %% Susceptible quarantined
-    S <==> Qs
-
-    %% Exposed
-    E <==> Qe
-
-    Qe --> I
-    Qe --> In
-
-    %% Isolated recovered
-    Ir --> R
-    
+    subgraph statuses["Statuses"]
+        direction LR
+        q0["Free"]
+        q1["Quarantined"]:::away
+        q2["Isolated"]:::away
+        q3["Hospitalized"]:::away
+        q0 -.->|"Quarantined<br>external"| q1
+        q1 ==>|"Quarantine ends<br>after: fixed(Quarantine period)"| q0
+        q0 -.->|"Isolated<br>external"| q2
+        q0 -.->|"Onset in quarantine<br>external"| q2
+        q1 -.->|"Onset in quarantine<br>external"| q2
+        q2 ==>|"Isolation ends<br>after: fixed(Isolation period), since Infected"| q0
+        q0 -.->|"Admitted<br>external"| q3
+        q1 -.->|"Admitted<br>external"| q3
+        q2 -.->|"Admitted<br>external"| q3
+        q3 -.->|"Discharged<br>external"| q0
+    end
+    classDef infectious fill:#f8d7da,stroke:#b02a37
+    classDef carrier fill:#fff3cd,stroke:#997404
+    classDef away fill:#e2e3e5,stroke:#6c757d

@@ -4,7 +4,7 @@
 #include "../model-bones.hpp"
 
 /**
- * @brief Template for a Susceptible-Infected-Susceptible (SIS) model
+ * @brief A Susceptible-Infected-Susceptible (SIS) model
  * 
  * ![Model Diagram](../assets/img/sis.png)
  * 
@@ -12,9 +12,9 @@
  * 
  * @param vname std::string Name of the virus
  * @param n Number of agents.
- * @param initial_prevalence epiworld_double Initial prevalence
- * @param initial_efficacy epiworld_double Initial susceptibility_reduction of the immune system
- * @param initial_recovery epiworld_double Initial recovery_rate rate of the immune system
+ * @param prevalence epiworld_double Initial share of infected agents
+ * @param transmission_prob epiworld_double Probability of transmission per contact
+ * @param recovery_rate epiworld_double Daily probability of recovery
  */
 class ModelSIS : public Model
 {

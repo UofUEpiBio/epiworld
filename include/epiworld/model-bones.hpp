@@ -1256,6 +1256,15 @@ public:
     );
 
     /**
+     * @brief The model's natural history as a mermaid flowchart: the stages
+     * and, if the model has statuses, the statuses, each in a subgraph (see
+     * `NaturalHistory::draw_mermaid()`). Drawn from the declarations, so it
+     * needs no run.
+     * @throws std::logic_error if the model has no natural history.
+     */
+    std::string draw_natural_history() const;
+
+    /**
      * @brief Record a hospitalization event for an agent.
      * 
      * @param agent Reference to the agent being hospitalized.

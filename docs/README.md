@@ -119,8 +119,9 @@ for current, scenario-specific comparisons.
 
 ### Fully Flexible
 
-Define arbitrary states, viruses, tools, and update rules. Build
-the exact model you need from composable primitives.
+Declare a disease's stages and transitions, the agents' statuses,
+viruses, tools, and contact layers. Build the exact model you need from
+composable primitives.
 </div>
 
 <div class="feature-card" markdown>
