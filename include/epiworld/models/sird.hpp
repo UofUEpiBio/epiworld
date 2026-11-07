@@ -4,7 +4,7 @@
 #include "../model-bones.hpp"
 
 /**
- * @brief Template for a Susceptible-Infected-Removed-Deceased (SIRD) model
+ * @brief A Susceptible-Infected-Removed-Deceased (SIRD) model
  * 
  * ![Model Diagram](../assets/img/sird.png)
  * 

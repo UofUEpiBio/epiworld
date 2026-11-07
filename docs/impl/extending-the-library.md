@@ -1,79 +1,54 @@
 ## Custom Agent Behaviors
-In epiworld, agents are the fundamental units of simulation. Each `Agent` represents an individual in the modeled population, and each agent’s state determines its behavior at a given time step. The system is designed so that the logic controlling what an agent does—how it becomes infected, recovers, or interacts with others—is completely user-definable. This flexibility makes it possible to implement models ranging from classical SIR structures to highly customized behavioral or biological mechanisms.
+In epiworld, agents are the fundamental units of simulation. Each `Agent` represents an individual in the modeled population; what it does at each step follows from its stage (in the virus's natural history) and its status (free, quarantined, isolated, ...). Both are declared, not coded: the transitions out of a stage or a status say how an agent leaves it (see [Extending the Library with Models](extending-the-library-with-models.md)).
 
-Custom agent behavior is defined through **state update functions**, which are registered using `Model::add_state()`. Each state (for example, _Susceptible_, _Infected_, _Recovered_) is associated with a specific function that implements the transition logic for agents currently in that state. These functions must match the signature:
-
-```cpp
-void custom_update(epiworld::Agent* agent, epiworld::Model* model);
-```
-
-Within this function, the agent pointer can be used to inspect or modify the agent’s state and attributes. The model pointer gives access to global simulation parameters, random number generators, or the full population. This allows for complex interactions between an agent and its neighbors or environment.
-
-A basic example is creating a new “Isolated” state, where agents skip infection checks and have reduced contact activity:
+A transition's value can be a function of the agent and the model, so behavior can depend on anything the model holds:
 
 ```cpp
-void update_isolated(Agent* agent, Model* model) {
-    /* Skip infection spread, but possibly leave isolation. */
-    if (model->runif() < 0.05)
-        agent->change_status(model->get_state_id("Susceptible"));
-}
+// The daily probability of recovery grows with the days infected
+virus.rate(I, R, Value([I](Agent & agent, Model & model) -> epiworld_double {
+    const int days = model.today() - model.get_stage_entered(agent.get_id(), I);
+    return std::min(1.0, 0.05 * days);
+})).effect(Effect::recovery);
 ```
 
-You would then register this state:
+So can a duration (`Duration` from a function) and the sampler of an infection (`.sampler()`, which picks the infector itself instead of using the contacts). A new "Isolated" behavior is a status with contact weight 0, which takes its agents out of every layer, and the transitions in and out of it:
 
 ```cpp
-model.add_state("Isolated", update_isolated);
+Statuses st;
+int free = st.add_status("Free");
+int isolated = st.add_status("Isolated");
+st.set_contact(isolated, 0.0);
+st.rate(free, isolated, 0.3).name("Detected").when({I});      // only infected agents
+st.after(isolated, free, Duration::fixed(7)).name("Released");
+model.set_statuses(st);
 ```
 
-Each day, every agent calls the function associated with its current state exactly once. The `Agent` class exposes methods such as:
-
-- `get_status()` and `change_status(new_state)`    
-- `add_virus()` and `rm_virus()`
-- `get_neighbors()` to access linked agents
-- and `get_model()` to retrieve the owning model.
-
-These make it straightforward to implement infection dynamics, behavior changes, or adaptive actions (e.g., adopting a tool, changing contact patterns).
-
-Custom behaviors can also interact with _tools_ or _viruses_ to model policy or health effects. For instance, an agent’s infection probability might depend on whether it carries a specific tool, like vaccination status. Users can extend this logic arbitrarily to encode complex biological or social behavior. Because the entire mechanism is based on function pointers, it’s easy to mix built-in and user-defined update functions in a single model. The engine manages function dispatch and queuing automatically.
+Code can move an agent along a declared transition with `Model::fire(transition, agent)` (e.g., from a global event), and `Model::react()` fires a transition, or calls a function, when an agent enters a stage or a status. `Model::get_stage(agent)` and `Model::get_status(agent)` read where an agent is. Tools (`add_tool()`) change what a virus does to an agent: its susceptibility, its transmission, its recovery and its death (`Effect` on a transition says which a rate takes).
 
 ## Custom Network Structures
--
+A network layer is built from a graph, fixed or drawn by a generator at every reset (`layer::network(name, graph)`, `layer::network(name, generator)`). Its ties can be edited at any point of a run with `add_edge()` and `rm_edge()`, and `set_rewiring()` gives it a function called at the end of every step, after the global events:
 
 ```cpp
-void custom_rewire(std::vector<epiworld::Agent>* agents, 
-                   epiworld::Model* model, 
-                   epiworld_double proportion);
+// Each day, infected agents drop their ties (e.g., they stay at home)
+auto net = layer::network("contacts", graph::smallworld(10, 0.05));
+net->set_rewiring([I](layer::Network & layer, Model & model) -> void {
+    for (auto & agent : model.get_agents())
+        if (model.get_stage(agent) == I)
+            while (layer.get_degree(agent.get_id()) > 0u)
+                layer.rm_edge(
+                    agent.get_id(),
+                    (*layer.neighbors_view(agent.get_id()).begin())->get_id()
+                );
+});
+model.add_layer(net);
 ```
 
-Inside this function, users can delete, swap, or create links based on model conditions (e.g., infection status, behavioral changes, or policy interventions). For instance:
-
-```cpp
-void quarantine_rewire(std::vector<epiworld::Agent>* agents,
-                       epiworld::Model* model,
-                       epiworld_double proportion) {
-    for (auto &agent : *agents) {
-        if (agent.get_status() == model->get_state_id("Infected")) {
-            agent.clear_neighbors();
-        }
-    }
-}
-```
-
-You can then attach it to your model:
-
-```cpp
-model.set_rewire_fun(quarantine_rewire);
-model.set_rewire_prop(0.1);
-```
-
-When `model.rewire()` is called (either manually or as part of a daily update), the provided function executes, potentially modifying the contact structure for that timestep. This mechanism allows for modeling adaptive behaviors like social distancing, network fragmentation under containment policies, or contact restoration after recovery.
-
-Because all of these mechanisms operate through the same `Model` abstraction, users can easily combine static and dynamic structural definitions. The system imposes no constraints on how edges are stored beyond ensuring that the network is represented as a set of agent-level connections. This means users can, for example, initialize a small-world network and then rewire a fixed percentage of edges each day according to a behavioral rule, or dynamically switch between directed and undirected configurations if required by their modeling assumptions. The same model can thus represent anything from simple compartmental interactions to fully heterogeneous, temporally varying social graphs.
+`graph::rewire_degseq()` returns a rewiring that swaps ties and keeps every agent's degree. An edit made during a run applies to that run only: the next reset restores a fixed graph, or draws a new one from the generator. A model can have several layers (a household network, a workplace network, a community mixing layer), and a layer can be restricted to some viruses or given a weight.
 
 ## Implementing New Global Events
 Global events represent actions that occur at the level of the entire simulation, rather than being tied to individual agents. They are executed either on specific dates or repeatedly at the end of every day, depending on how they are configured. The intent behind this system is to provide a clean and flexible way to modify the model state during runtime, such as changing parameters, adding or removing viruses, deploying tools, or otherwise altering the environment in which agents operate. This allows users to model interventions, seasonal effects, or policy implementations without having to modify agent-level logic directly.
 
-A global event is defined as a function matching the signature `void fun(Model*)`. Within this function, the user has access to the entire model object, and can therefore manipulate global variables, change parameters, modify the population, or trigger any built-in methods. For instance, a simple "lockdown" event might reduce the transmission rate parameter or rewire the network to lower contact density. To register such an event, the user calls `add_globalevent(fun, name, date)`, where `fun` is the function to execute, `name` is a descriptive label, and `date` determines when it will be triggered. If the date is a nonnegative integer, the event will be called at the end of that specific day; if it is negative (typically -1), it will be called after every simulation step.
+A global event is defined as a function matching the signature `void fun(Model*)`. Within this function, the user has access to the entire model object, and can therefore manipulate global variables, change parameters, modify the population, or trigger any built-in methods. For instance, a simple "lockdown" event might reduce the transmission probability or remove ties from a network layer. To register such an event, the user calls `add_globalevent(fun, name, date)`, where `fun` is the function to execute, `name` is a descriptive label, and `date` determines when it will be triggered. If the date is a nonnegative integer, the event will be called at the end of that specific day; if it is negative (typically -1), it will be called after every simulation step.
 
 ```cpp
 void lockdown_event(epiworld::Model* model) {
@@ -91,13 +66,14 @@ auto &ge = model.get_globalevent("Lockdown Policy");
 model.rm_globalevent("Lockdown Policy");
 ```
 
-Global events can also interact with the random number generator, the database, and other components of the model. For example, an event could sample a subset of agents and assign them a new tool, or it could introduce a second virus strain midway through the simulation.
+Global events can also interact with the random number generator, the database, and other components of the model. For example, an event could sample a subset of agents and give them a tool the model has:
 
 ```cpp
-void new_variant_event(epiworld::Model* model) {
-    epiworld::Virus variant("Variant B", 0.01, true);
-    variant.set_prob_infecting("Transmission probability");
-    model->add_virus(variant);
+void vaccination_event(epiworld::Model* model) {
+    epiworld::Tool & vaccine = model->get_tool("Vaccine");
+    for (auto & agent : model->get_agents())
+        if (model->runif() < 0.01)
+            agent.add_tool(*model, vaccine);
 }
 ```
 
@@ -112,12 +88,8 @@ For models requiring custom tracking, users can either subclass `DataBase` or de
 
 ```cpp
 void record_daily_prevalence(epiworld::Model* model) {
-    int infected = 0;
-    for (auto &agent : model->get_agents()) {
-        if (agent.get_status() == model->get_state_id("Infected"))
-            infected++;
-    }
-    model->add_user_data(0, (double)infected / model->size());
+    const int infected = model->get_db().get_today_total_stage("Infected");
+    model->add_user_data(0, static_cast< double >(infected) / model->size());
 }
 
 model.set_user_data({"Prevalence"});
@@ -154,6 +126,6 @@ Overall, custom data collection in epiworld is best thought of as an open system
 
 - [Library Architecture](library-architecture.md) — the modular `Agent`/`Model` design that these extension points build on.
 - [Extending the Library with Models](extending-the-library-with-models.md) — creating new models via inheritance from `Model`.
-- [Events and Multi-Event Handling](events-and-multi-event-handling.md) — the LIFO event dispatch system used by global events and state update functions.
+- [Events and Multi-Event Handling](events-and-multi-event-handling.md) — the event queue that applies the day's changes.
 - [Data Collection and Analysis](data-collection-and-analysis.md) — the `DataBase` class and built-in recording mechanisms.
 - [Reproducibility and `run_multiple`](reproducibility-and-run-multiple.md) — using saver callbacks and parallel execution with `run_multiple`.

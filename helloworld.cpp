@@ -9,14 +9,17 @@ int main()
     // of models, like the SIR
     epimodels::ModelSIR hello(
         "COVID-19", // Name of the virus
+        100000,     // Number of agents
         0.01,       // Initial prevalence
         0.1,        // Transmission probability
         0.3         // Recovery probability
         );
 
-    // We can simulate agents using a smallworld network
-    // with 100,000 individuals, in this case
-    hello.agents_smallworld(100000, 10L, false, .01);
+    // Contacts come from layers: here, a small-world network, drawn anew
+    // for every run
+    hello.add_layer(layer::network(
+        "contacts", graph::smallworld(10, .01)
+    ));
 
     // Running the model and printing the results
     // Setting the number of days (100) and seed (122)

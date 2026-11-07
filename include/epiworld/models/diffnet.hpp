@@ -7,7 +7,7 @@
 #include "../model-bones.hpp"
 
 /**
- * @brief Template for a Network Diffusion Model
+ * @brief A Network Diffusion Model
  * @ingroup special_models
  * 
  * @param model A Model object where to set up the SIR.
