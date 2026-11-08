@@ -146,6 +146,9 @@ public:
     /// The parameter this variant reads in place of `id`.
     ParamId param_redirect(ParamId id, const Model & model) const;
 
+    /// Whether it reads any parameter in place of another (`use_param()`).
+    bool has_param_redirects() const { return !param_redirects.empty(); }
+
     /// Throws if a parameter it reads (see `use_param()`) is not in `model`.
     void check_params(const Model & model) const;
 

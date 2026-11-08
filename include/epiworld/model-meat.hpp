@@ -1960,15 +1960,13 @@ inline ParamId Model::get_param_id(std::string_view pname) const
     return ParamId{iter->second};
 }
 
-inline epiworld_double Model::par_at(ParamId id) const
+inline void Model::par_out_of_range(ParamId id) const
 {
-    if (id.idx >= param_values.size())
-        throw std::out_of_range(
-            "The parameter position " + std::to_string(id.idx) +
-            " is out of range (the model has " +
-            std::to_string(param_values.size()) + " parameters)."
-        );
-    return param_values[id.idx];
+    throw std::out_of_range(
+        "The parameter position " + std::to_string(id.idx) +
+        " is out of range (the model has " +
+        std::to_string(param_values.size()) + " parameters)."
+    );
 }
 
 inline void Model::set_param_at(ParamId id, epiworld_double value)

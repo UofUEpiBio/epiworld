@@ -4890,6 +4890,9 @@ public:
     /// The parameter this variant reads in place of `id`.
     ParamId param_redirect(ParamId id, const Model & model) const;
 
+    /// Whether it reads any parameter in place of another (`use_param()`).
+    bool has_param_redirects() const { return !param_redirects.empty(); }
+
     /// Throws if a parameter it reads (see `use_param()`) is not in `model`.
     void check_params(const Model & model) const;
 
@@ -6438,8 +6441,15 @@ protected:
     std::vector< Reaction > nh_reactions;
 
     size_t nh_nstatus() const { return st ? st->get_n_stages() : 1u; }
-    int nh_stage_of(unsigned int cell) const { return static_cast< int >(cell / nh_nstatus()); }
-    int nh_status_of(unsigned int cell) const { return static_cast< int >(cell % nh_nstatus()); }
+    // Without statuses a cell is its stage (no division on the hot path)
+    int nh_stage_of(unsigned int cell) const
+    {
+        return static_cast< int >(st ? cell / st->get_n_stages() : cell);
+    }
+    int nh_status_of(unsigned int cell) const
+    {
+        return static_cast< int >(st ? cell % st->get_n_stages() : 0u);
+    }
     unsigned int nh_cell(int stage, int status) const
     {
         return static_cast< unsigned int >(stage) * static_cast< unsigned int >(nh_nstatus()) +
@@ -6459,6 +6469,7 @@ protected:
     void nh_install(std::shared_ptr< NaturalHistory > def);
     void nh_reset();
     void nh_step(Agent & p);
+    void nh_step_status(Agent & p, unsigned int cell, int stage); ///< nh_step()'s status part
 
     /// The natural history whose values apply to `p`: its virus's, or (no
     /// virus) the model's
@@ -7093,7 +7104,15 @@ public:
     void set_param(std::string_view pname, epiworld_double val);
     epiworld_double par(std::string_view pname) const;
     ParamId get_param_id(std::string_view pname) const;
-    epiworld_double par_at(ParamId id) const;
+    /// Read on every step: the bounds check stays cheap (it throws from
+    /// par_out_of_range()), so this can be inlined.
+    epiworld_double par_at(ParamId id) const
+    {
+        if (id.idx >= param_values.size())
+            par_out_of_range(id);
+        return param_values[id.idx];
+    }
+    [[noreturn]] void par_out_of_range(ParamId id) const;
     void set_param_at(ParamId id, epiworld_double val);
     size_t get_n_params() const { return param_values.size(); };
     uint32_t get_param_layout_id() const { return param_layout_id; };
@@ -17636,15 +17655,13 @@ inline ParamId Model::get_param_id(std::string_view pname) const
     return ParamId{iter->second};
 }
 
-inline epiworld_double Model::par_at(ParamId id) const
+inline void Model::par_out_of_range(ParamId id) const
 {
-    if (id.idx >= param_values.size())
-        throw std::out_of_range(
-            "The parameter position " + std::to_string(id.idx) +
-            " is out of range (the model has " +
-            std::to_string(param_values.size()) + " parameters)."
-        );
-    return param_values[id.idx];
+    throw std::out_of_range(
+        "The parameter position " + std::to_string(id.idx) +
+        " is out of range (the model has " +
+        std::to_string(param_values.size()) + " parameters)."
+    );
 }
 
 inline void Model::set_param_at(ParamId id, epiworld_double value)
@@ -20902,7 +20919,7 @@ inline epiworld_double Value::eval(
     }
 
     ParamId id = param.id(model);
-    if (virus != nullptr)
+    if ((virus != nullptr) && virus->has_param_redirects())
         id = virus->param_redirect(id, model);
 
     const epiworld_double x = model.par_at(id);
@@ -21950,6 +21967,9 @@ inline void Model::nh_step(Agent & p)
     // The stage's proposal --------------------------------------------------
     bool proposed = false;
 
+    // The values that apply to the agent (its virus's, or the model's)
+    const NaturalHistory & h = nh_of(p);
+
     // 1. Infection by contact (not out of the layers)
     if (
         (si.infection >= 0) && (p.virus == nullptr) &&
@@ -21957,7 +21977,7 @@ inline void Model::nh_step(Agent & p)
     )
     {
 
-        const auto & tr = nh_of(p).transitions[si.infection];
+        const auto & tr = h.transitions[si.infection];
         Virus * v = tr.sampler ? tr.sampler(p, *this) : sample_virus(&p);
         if (v != nullptr)
         {
@@ -21976,7 +21996,7 @@ inline void Model::nh_step(Agent & p)
         for (size_t k = 0u; k < nr; ++k)
         {
 
-            const auto & tr = nh_of(p).transitions[si.rates[k]];
+            const auto & tr = h.transitions[si.rates[k]];
             epiworld_double x = tr.value.eval(p, *this);
 
             if ((tr.effect != Effect::none) && (p.virus != nullptr))
@@ -22004,9 +22024,14 @@ inline void Model::nh_step(Agent & p)
     if (!proposed && (si.after >= 0) && (nh_until[static_cast< size_t >(p.id)] <= today()))
         nh_propose(si.after, p);
 
-    // The status's proposal (judged on the stage at the start of the day) ---
-    if (!st)
-        return;
+    // The status's proposal (judged on the stage at the start of the day)
+    if (st)
+        nh_step_status(p, c, s);
+
+}
+
+inline void Model::nh_step_status(Agent & p, unsigned int c, int s)
+{
 
     const int k = nh_status_of(c);
     const StageInfo & ki = st->stages[static_cast< size_t >(k)];
