@@ -19740,11 +19740,17 @@ inline void Agent::add_tool(
     epiworld_fast_int queue
 ) {
 
-    // Checking the tool exists
-    if (tool.get_id() >= static_cast<int>(model.get_db().get_n_tools()))
-        throw std::range_error("The tool with id: " + std::to_string(tool.get_id()) +
-            " has not been registered. There are only " + std::to_string(model.get_n_tools()) +
-            " included in the model.");
+    // The model's own copy: only it has an id in the model (a tool given to
+    // Model::add_tool() is copied, and the copy gets the id)
+    if (
+        (tool.get_id() < 0) ||
+        (tool.get_id() >= static_cast<int>(model.get_db().get_n_tools()))
+    )
+        throw std::range_error(
+            "The tool \"" + tool.get_name() + "\" is not in the model (id " +
+            std::to_string(tool.get_id()) + "): give agents the model's copy, "
+            "from Model::get_tool()."
+        );
 
     ToolPtr tool_ptr = std::shared_ptr<Tool>(tool.clone_ptr());
 
@@ -19762,11 +19768,17 @@ inline void Agent::set_virus(
 )
 {
     
-        // Checking the virus exists
-    if (virus.get_id() >= static_cast<int>(model.get_db().get_n_viruses()))
-        throw std::range_error("The virus with id: " + std::to_string(virus.get_id()) +
-            " has not been registered. There are only " + std::to_string(model.get_n_viruses()) +
-            " included in the model.");
+    // The model's own copy: only it has an id in the model (a virus given to
+    // Model::add_virus() is copied, and the copy gets the id)
+    if (
+        (virus.get_id() < 0) ||
+        (virus.get_id() >= static_cast<int>(model.get_db().get_n_viruses()))
+    )
+        throw std::range_error(
+            "The virus \"" + virus.get_name() + "\" is not in the model (id " +
+            std::to_string(virus.get_id()) + "): give agents the model's copy, "
+            "from Model::get_virus()."
+        );
 
     // With a natural history, a virus given from outside (seeding, an
     // import) follows the infection transition out of the agent's stage
@@ -23774,7 +23786,8 @@ namespace epimodels {
  * @ingroup model_utilities
  * 
  * @param p Probability of distributing the tool.
- * @param tool Tool function.
+ * @param tool The model's copy of the tool (`Model::get_tool()`); a tool not in
+ * the model has no id there, and giving it to an agent throws.
  * @return std::function<void(Model*)> 
  */
 inline std::function<void(Model*)> globalevent_tool(
