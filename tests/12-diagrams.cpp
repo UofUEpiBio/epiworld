@@ -52,7 +52,7 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
     REQUIRE_THROWS(diagram.draw_from_file(epiworld::DiagramType::Mermaid, "non_existant_file.txt"));
 
     // Drawn from the declarations (no run): the stages, with their classes,
-    // and one edge per transition, labeled with its kind and value
+    // and one unlabeled arrow per pair of nodes some transition joins
     {
         epimodels::ModelSEIR seir("flu", 100, 0.01, 0.5, 4.0, 0.2);
         const std::string d = seir.draw_natural_history();
@@ -60,24 +60,27 @@ EPIWORLD_TEST_CASE("Diagrams", "[ModelDiagram]") {
         REQUIRE(has("flowchart LR\n"));
         REQUIRE(has("s1[\"Exposed\"]:::carrier"));
         REQUIRE(has("s2[\"Infected\"]:::infectious"));
-        REQUIRE(has("s0 -->|\"infection: Transmission probability\"| s1"));
-        REQUIRE(has("s1 ==>|\"after: geometric(Latent period)\"| s2"));
-        REQUIRE(has("s2 -->|\"rate: Recovery rate\"| s3"));
+        REQUIRE(has("s0 --> s1\n"));
+        REQUIRE(has("s1 --> s2\n"));
+        REQUIRE(has("s2 --> s3\n"));
+        REQUIRE_FALSE(has("|"));
         REQUIRE_FALSE(has("subgraph statuses"));
 
-        // Statuses: their own subgraph; a restriction names the virus's stages
+        // Statuses: their own subgraph; two transitions between the same
+        // statuses draw one arrow
         Statuses st;
         st.add_status("Free");
         st.add_status("Isolated");
         st.rate(0, 1, 0.5).name("Detected").when({2});
+        st.external(0, 1, "Isolated");
         st.after(1, 0, Duration::fixed(7).since(2)).name("Released");
         seir.set_statuses(st);
         const std::string q = seir.draw_natural_history();
         REQUIRE(q.find("subgraph statuses[\"Statuses\"]") != std::string::npos);
-        REQUIRE(q.find("q0 -->|\"Detected<br>rate: ") != std::string::npos);
-        REQUIRE(q.find("<br>when: Infected\"| q1") != std::string::npos);
-        REQUIRE(q.find("q1 ==>|\"Released<br>after: fixed(") != std::string::npos);
-        REQUIRE(q.find("), since Infected\"| q0") != std::string::npos);
+        const size_t arrow = q.find("q0 --> q1\n");
+        REQUIRE(arrow != std::string::npos);
+        REQUIRE(q.find("q0 --> q1\n", arrow + 1u) == std::string::npos);
+        REQUIRE(q.find("q1 --> q0\n") != std::string::npos);
 
         REQUIRE_THROWS(Model(10).draw_natural_history());
     }

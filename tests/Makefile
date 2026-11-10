@@ -52,6 +52,7 @@ $(NAME)_SOURCES := \
 	18h-measles-mixing-layer.cpp \
 	18i-measles-mixing-small-log.cpp \
 	18j-measles-mixing-contact-cap.cpp \
+	18k-measles-mixing-quarantine-exempt.cpp \
 	19a-measles-mixing-risk-quarantine-basic.cpp \
 	19b-measles-mixing-risk-quarantine-transitions.cpp \
 	19c-measles-mixing-risk-quarantine-durations.cpp \

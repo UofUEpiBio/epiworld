@@ -7,11 +7,11 @@ flowchart LR
         s2["Infected"]:::infectious
         s3["Severe"]:::carrier
         s4["Recovered"]
-        s0 -->|"infection: Transmission probability"| s1
-        s1 ==>|"after: geometric(Latent period)"| s2
-        s2 -->|"rate: Recovery rate"| s4
-        s2 -->|"rate: Hospitalization rate"| s3
-        s3 -->|"rate: 1 / Hospitalization period"| s4
+        s0 --> s1
+        s1 --> s2
+        s2 --> s4
+        s2 --> s3
+        s3 --> s4
     end
     subgraph statuses["Statuses"]
         direction LR
@@ -19,16 +19,15 @@ flowchart LR
         q1["Quarantined"]:::away
         q2["Isolated"]:::away
         q3["Hospitalized"]:::away
-        q0 -.->|"Quarantined<br>external"| q1
-        q1 ==>|"Quarantine ends<br>after: fixed(Quarantine period)"| q0
-        q0 -.->|"Isolated<br>external"| q2
-        q0 -.->|"Onset in quarantine<br>external"| q2
-        q1 -.->|"Onset in quarantine<br>external"| q2
-        q2 ==>|"Isolation ends<br>after: fixed(Isolation period), since Infected"| q0
-        q0 -.->|"Admitted<br>external"| q3
-        q1 -.->|"Admitted<br>external"| q3
-        q2 -.->|"Admitted<br>external"| q3
-        q3 -.->|"Discharged<br>external"| q0
+        q0 --> q1
+        q1 --> q0
+        q0 --> q2
+        q1 --> q2
+        q2 --> q0
+        q0 --> q3
+        q1 --> q3
+        q2 --> q3
+        q3 --> q0
     end
     classDef infectious fill:#f8d7da,stroke:#b02a37
     classDef carrier fill:#fff3cd,stroke:#997404

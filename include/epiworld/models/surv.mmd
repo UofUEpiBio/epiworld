@@ -10,20 +10,20 @@ flowchart LR
         s5["Asymptomatic isolated"]:::carrier
         s6["Recovered"]
         s7["Removed"]:::away
-        s0 -->|"infection: Prob of transmission"| s1
-        s1 ==>|"after: a function<br>p = Prob of symptoms"| s2
-        s1 ==>|"after: a function<br>p = 1 - Prob of symptoms"| s4
-        s2 ==>|"after: a function"| s6
-        s3 ==>|"after: a function, since Symptomatic"| s6
-        s4 ==>|"after: a function"| s6
-        s5 ==>|"after: a function, since Asymptomatic"| s6
-        s2 -->|"Death<br>rate: Prob. death"| s7
-        s3 -->|"Death<br>rate: Prob. death"| s7
-        s4 -->|"Death<br>rate: Prob. death"| s7
-        s5 -->|"Death<br>rate: Prob. death"| s7
-        s1 -.->|"Detected<br>external"| s3
-        s2 -.->|"Detected<br>external"| s3
-        s4 -.->|"Detected asymptomatic<br>external"| s5
+        s0 --> s1
+        s1 --> s2
+        s1 --> s4
+        s2 --> s6
+        s3 --> s6
+        s4 --> s6
+        s5 --> s6
+        s2 --> s7
+        s3 --> s7
+        s4 --> s7
+        s5 --> s7
+        s1 --> s3
+        s2 --> s3
+        s4 --> s5
     end
     classDef infectious fill:#f8d7da,stroke:#b02a37
     classDef carrier fill:#fff3cd,stroke:#997404
