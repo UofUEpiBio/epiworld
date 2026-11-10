@@ -1681,7 +1681,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-11-09).
+Updated by every epiworld PR into `v1-layers` (last: 2026-11-10).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1704,6 +1704,8 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-09).
 | Registry (#312) | #356 merged (its `InfectionStates` removed by #363: a user's virus is a strain of the model's) | with NH-4 (#231 merged) | with NH-4 (#44 merged) | with NH-4 (#30 merged) | with NH-4 (#72 merged) |
 | Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 merged (replaces #358-#360, closed); NH-1 and NH-2: #363 merged; NH-3 (branch `nh-3-docs`: docs and diagrams drawn from the declarations): #366 merged; the benchmark runners and rerun: UofUEpiBio/epiworld-benchmark#35 (simulation time regressed in three rows, profiled to the reset); the reset fix (branch `reset-no-realloc`: placements in reused buffers, natural-history records made as agents move): #367 merged; its rerun (UofUEpiBio/epiworld-benchmark#36) fixed 1,000,000 agents, and left scenario_00 at 100,000 and GeoPops about 15% above 3d-3b, in the daily step; the step's cost (branch `nh-step-cost`: `par_at()` inlined, the stage of a cell without a division, the status part apart): #368 merged; its rerun (UofUEpiBio/epiworld-benchmark#37): no ratio grew by more than 10% (scenario_00 at 100,000 stays at 1.13; on denser and layered synthetic networks the remaining cost is per infected agent, not per contact or layer); found by the epiworldR port: an agent given a tool or virus the model does not hold crashed (since V-1 only the model's copy has an id), now an error: #369 merged; the benchmark reruns UofUEpiBio/epiworld-benchmark#35, #36 and #37 merged; the decisions that close the plan (16-21: `rule()` and the calendar deferred, the measles quarantine exemption by tool name, diagrams without transition labels): NH-close (this PR); next, NH-5 (several diseases per model, one infection per agent; the database per disease; accessors by margin), plan first | #231 merged (NH-4: natural history, placement, variants by id, plain classes, the registry; vendors fe2385a0) | #44 merged (NH-4; vendors fe2385a0) | #30 merged (NH-4; vendors fe2385a0) | #72 merged (NH-4; vendors fe2385a0; keeps `epiworldR (>= 1.0.0)`: see the release item in Phase 6) |
 | Variants by id (V-1) and no `TSeq` template (V-2) (after #363, before NH-3) | V-1: #364 merged; V-2: #365 merged | with NH-4 (#231 merged) | with NH-4 (#44 merged) | with NH-4 (#30 merged) | with NH-4 (#72 merged) |
+| NH-close (decisions 16-21, the measles quarantine exemption by tool name, diagrams without labels) | #370 merged | #232 merged | #45 merged | #31 merged (re-vendor only) | #73 (binds `set_quarantine_exempt_tools()`) |
+| NH-5: several diseases per model, one infection per agent (`several-diseases.md`, before Phase 4) | plan: this PR; NH-5a, NH-5b not started | | | | |
 | Phases 4, 5, 6 | not started | | | | |
 
 epiworldRShiny (Section 6): not started; one port after the registry.
@@ -1724,17 +1726,19 @@ Stages 3d-3a (#33) and 3d-3b (#34, pin 07ed7a0d) are merged with no
 regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 0.91 because the 0.x run happened to be faster (the 1.0 run was faster too).
 
-**Next** (as of the date above): NH-4 is merged in every wrapper, all on
-fe2385a0, and the benchmark is pinned to #368 (3944abd3; #369 only turns a
-crash into an error, so it is not rerun). The natural history closes with
-NH-close (this PR: decisions 16-21 of `natural-history.md`; the measles
-quarantine exemption by tool name, which the measles package and epiworldjs
-then bind: `set_quarantine_exempt_tools()`), then NH-5 (decision 21:
-several diseases per model, one infection per agent), whose plan is the
-next PR, followed by the engine, the database and the wrapper ports; then
-the epiworldRShiny port; then Phase 4. The diagrams' pictures
+**Next** (as of the date above): NH-close (#370, merged as 71124a95) is
+ported: epiworldR #232, epiworldpy #45 and epiworldjs #31 are merged, and
+measles #73 (which binds `set_quarantine_exempt_tools()`) waits for review.
+The benchmark stays pinned to #368 (3944abd3): #369 and #370 change nothing
+on the simulation's path. Next is NH-5, several diseases per model with one
+infection per agent: its plan, `several-diseases.md` (this PR), is reviewed
+before any code; then NH-5a (the engine on tracks, one disease, identical
+results), NH-5b (several diseases, the database per disease, the accessors
+by margin) and NH-5c (the wrapper ports), each with its benchmark rerun;
+then the epiworldRShiny port; then Phase 4. The diagrams' pictures
 (`docs/assets/img`) are rendered with `make -C include/measles all` and
-`make -C include/epiworld/models all` (mermaid.ink).
+`make -C include/epiworld/models all` (mermaid.ink); they still show the
+labeled diagrams from before #370.
 
 ### 11.7 A benchmark rerun
 

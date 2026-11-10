@@ -11,6 +11,9 @@ its **Section 11 (Runbook)**: it says how to find where things stand from the
 open pull requests and what to do next. Every epiworld PR into `v1-layers`
 updates the runbook's status table.
 
+The natural history (stages, statuses) follows `natural-history.md`, and
+several diseases per model (NH-5) follow `several-diseases.md`.
+
 ## Build Environment
 
 The repository ships a container image definition in `.devcontainer/` (`Containerfile`: Ubuntu 24.04, g++, make, gdb, doxygen, Perl, mkdocs). **Prefer building, testing and benchmarking inside that container whenever `docker` or `podman` is available** (check with `command -v podman docker`), so results do not depend on the host toolchain. Fall back to the host toolchain only when neither is installed.

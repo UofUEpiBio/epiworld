@@ -147,8 +147,8 @@ Settled 2026-11-09, after NH-4:
     the rash. **Names** (open question 4): `NaturalHistory` and `Statuses`, as
     built.
 21. **Several diseases per model, one infection per agent, in 1.0.0**
-    (NH-5, before Phase 4; its plan is the next PR and is reviewed before any
-    code). Settled so far:
+    (NH-5, before Phase 4; its plan is `several-diseases.md`, reviewed
+    before any code). Settled so far:
     - Each agent has a stage in every disease and one status; at most one
       disease is in a carrier stage. A disease is a natural history; its
       strains share it. Co-infection is not a priority, but the rule that
