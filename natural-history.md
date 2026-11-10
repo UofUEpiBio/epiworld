@@ -1,7 +1,10 @@
 # Natural history and agent status
 
-**Status: plan, 2026-11-04.** Supersedes PRs #358 (plan), #359 (NH-1) and #360
-(NH-2), which are closed without merging. Their branches stay for reference.
+**Status: NH-1 to NH-4 merged, 2026-11-09** (Section 11); the decisions of
+2026-11-09 (16-21) close the plan's open questions; several diseases per
+model are the next phase, NH-5, with its own plan (decision 21). Supersedes PRs
+#358 (plan), #359 (NH-1) and #360 (NH-2), which are closed without merging.
+Their branches stay for reference.
 This plan comes from a two-track review:
 - one reviewer checked the earlier plan and its code;
 - the other designed the API from scratch, without seeing that plan.
@@ -83,7 +86,8 @@ every compatible disease state.
     `SamplerMixing` does today. Traced network contacts are then the ties,
     which suits known contacts such as a household.
 11. **One natural history per model in 1.0.0.** A second one is an error. The
-    API keeps room for more (Section 12).
+    Superseded by decision 21: several diseases per model, one infection per
+    agent, are NH-5, before Phase 4.
 12. **Results**: bit-identical histories are not required. The statistical
     tests (R0 validation, rates, final sizes, stage durations) are the
     acceptance check.
@@ -108,6 +112,58 @@ every compatible disease state.
     is a group-by. The engine's index of the pair never leaves the engine:
     the database splits it in the one place that writes the rows, and no
     combined labels ("Quarantined Prodromal") are stored or built.
+
+Settled 2026-11-09, after NH-4:
+
+16. **`rule()` and the deadline calendar are deferred** (Section 13). No model
+    needs either: every port was written with the declared kinds, and the
+    engine derives each day's visits (Section 7.3) within the benchmark's 10%.
+    Both can be added later without changing the API; the calendar joins the
+    index-driven scheduler of issue #265.
+17. **Transition matrices and agent states by margin** (built in NH-5, with
+    the database's split by disease). The accessors that still return the
+    engine's cells (`Model::get_agents_states()`,
+    `DataBase::get_transition_probability()`,
+    `DataBase::get_today_transition_matrix()`) are replaced by accessors that
+    take a `Margin`: `pair` (status × stage, labeled by the pair, as stored),
+    `stage` or `status` (the pair counts summed over the other axis, so a
+    status change within a stage counts as staying in the stage matrix).
+    Agents' states become `get_agents_stages()` and `get_agents_statuses()`.
+    Transitions are recorded per strain.
+18. **Who is exempt from measles quarantine** (open question 1): the holders
+    of the tools a model lists by name, `{"MMR", "PEP MMR"}` by default
+    (`set_quarantine_exempt_tools()`), whether or not the tool protects them.
+    Documented MMR, routine or as post-exposure prophylaxis, is presumptive
+    evidence of immunity; immunoglobulin is not (CDC). Holding any tool no
+    longer exempts. Recovered agents are exempt by stage, as before.
+    `ModelSEIRQuarantine` keeps "any tool": the rule is measles policy.
+19. **PEP acts on the current episode** (open question 3): it may clear the
+    infection ("PEP cleared"), and the tool it gives stays (MMR protects
+    later; IG wanes). A milder course after IG is later (Section 13). PEP
+    applies the day's events before its efficacy draw so that the tool it
+    just gave counts; that stays.
+20. **Rash onset stays the measles landmark** (open question 2): prodromal is
+    not counted as symptom onset; the surveillance case definition starts at
+    the rash. **Names** (open question 4): `NaturalHistory` and `Statuses`, as
+    built.
+21. **Several diseases per model, one infection per agent, in 1.0.0**
+    (NH-5, before Phase 4; its plan is the next PR and is reviewed before any
+    code). Settled so far:
+    - Each agent has a stage in every disease and one status; at most one
+      disease is in a carrier stage. A disease is a natural history; its
+      strains share it. Co-infection is not a priority, but the rule that
+      forbids it is one check.
+    - One database, with its histories kept per disease. A long table
+      returns every disease with a `disease` column; what is shaped by one
+      disease's stages (a transition matrix, the agents' stages) needs the
+      disease when the model has several.
+    - A strain is made explicitly from a virus (`strain()`); a virus built
+      from scratch is a new disease.
+    - With several diseases, tools and stage references name their disease
+      (an error otherwise), and infections are pulled, not pushed.
+    - A removal in one disease moves the agent to a built-in "Removed
+      (other disease)" stage of the others (the competing-risks state), which
+      exists only when another disease can remove agents.
 
 ## 4. Concepts
 
@@ -146,6 +202,7 @@ public:
     Transition& after(int from, int to, Duration<TSeq> d);     // <= 1 per node
     Transition& external(Nodes from, int to, std::string name); // fired by code
     Transition& rule(int from, std::vector<int> transitions, RuleFun<TSeq> f);
+    // rule(): deferred (decision 16)
 };
 
 // Every transition can be refined:
@@ -465,7 +522,9 @@ arguments go away.
 - **Rates and rules** (either axis): visited through the agents-by-cell index.
 - **Infection**: by pull, or by push from the sources. Push applies only with
   the default sampler.
-- **Deadlines**: in a calendar, one bucket per due day, holding
+- **Deadlines** (deferred, decision 16: today each visited agent's deadline
+  is checked, and agents with a deadline are always visited): in a
+  calendar, one bucket per due day, holding
   `(agent, axis, epoch)`. Stale entries are skipped by epoch. A quarantined,
   unqueued susceptible is released without being visited, at O(1) per entry.
 
@@ -542,16 +601,15 @@ the other would visit. That is the class of bug found in #360.
 ## 10. Measles policy
 
 These are separate commits with their own tests:
-- **The Severe stage** (decision 9).
-- **The quarantine exemption by immunity.** Today an agent holding any tool
-  is exempt (`get_n_tools() != 0`). Proposed: exempt agents in an immune stage
-  or holding a tool that blocks infection (open question 1).
-- **Prodromal counts as symptomatic** in symptom-onset outputs. Rash onset
-  stays its own landmark (open question 2).
-- **What PEP acts on**: the current episode, or later protection (open
-  question 3). The CDC manual describes both: MMR within 72 hours can prevent
-  illness, and IG within 6 days can prevent or modify it. A modified course
-  would be a branch to a milder stage.
+- **The Severe stage** (decision 9). Done in NH-2.
+- **The quarantine exemption.** Done after NH-4 (decision 18): by tool name,
+  `{"MMR", "PEP MMR"}` by default; before, an agent holding any tool was
+  exempt (`get_n_tools() != 0`).
+- **Prodromal and symptom onset.** Settled with no change (decision 20).
+- **What PEP acts on.** Settled with no change (decision 19). The CDC manual
+  describes both: MMR within 72 hours can prevent illness, and IG within 6
+  days can prevent or modify it. A modified course would be a branch to a
+  milder stage (Section 13).
 
 ## 11. Phases
 
@@ -561,12 +619,16 @@ for the multi-status models. NH-2 removes it, before any release. Each phase
 updates the runbook table in `contact-layers.md` (Section 11.6) and reruns
 the benchmark (Section 11.7 there).
 
-Status (2026-11-06): NH-1 and NH-2 are done on `nh-1-engine` (one PR into
-`v1-layers`). Of Section 10, NH-2 includes the Severe stage; the other policy
-items are still open. Left from Section 9: PEP still runs the day's events
-before it checks the efficacy, `get_transition_probability()` and
-`get_agents_states()` still return the engine's states, and `rule()` and the
-deadline calendar are not built (the deadlines are checked per agent).
+Status (2026-11-09): NH-1 and NH-2 merged (#363), then V-1 (#364), V-2
+(#365), NH-3 (#366, with the benchmark follow-ups #367, #368 and #369) and
+NH-4 (epiworldR #231, epiworldpy #44, epiworldjs #30, measles #72). What
+was left is settled by decisions 16-21:
+- **NH-close** (one epiworld PR): the decisions, the quarantine exemption
+  (decision 18), and the runbook in `contact-layers.md`.
+- **NH-5** (decision 21): several diseases per model, the database kept per
+  disease, and the accessors by margin (decision 17). Its plan is the next
+  PR; then the engine, the database, and the wrapper ports.
+- Deferred: `rule()` and the calendar (decision 16).
 
 - **NH-1: the engine and the single-status models.**
   - Cells, the cell table, the natural history on the virus, the `Chart`
@@ -620,10 +682,14 @@ on fixed (drawn-once) networks. Also build with `-DEPI_DEBUG`, since
 
 ## 13. Later, out of scope for 1.0.0
 
-- **Several natural histories and co-infection.** A stage per history per
-  agent, a virus slot per history, and a rule for competing exposures. The
-  API gains a history argument on `get_stage()` and `infection()`. Cells stay
-  private, so their encoding can change.
+- **`rule()` and the deadline calendar** (decision 16; the calendar with
+  issue #265).
+- **A milder course after PEP** (decision 19): a branch from the exposed
+  stages to a milder stage when IG does not clear the infection.
+- **Co-infection** (not a priority): a stage per history per agent, a virus
+  slot per history, and a rule for competing exposures. The API gains a
+  history argument on `get_stage()` and `infection()`. Cells stay private, so
+  their encoding can change.
 - **An immunity record** per agent and pathogen (EMOD's `Susceptibility`),
   for cross-protection and immune amnesia.
 - **Interventions that add statuses and reactions to a model**, so that
@@ -636,12 +702,8 @@ on fixed (drawn-once) networks. Also build with `-DEPI_DEBUG`, since
 
 ## 14. Open questions
 
-1. **The quarantine exemption**: immunity (an immune stage, or a tool that
-   blocks infection), or holding any tool as today?
-2. **Is Prodromal symptomatic** for symptom-onset outputs?
-3. **PEP**: does it act on the current episode (clearance, or a milder
-   course), on later protection, or both?
-4. **Names**: `NaturalHistory` and `Statuses`, or `Disease` and `Statuses`?
+Questions 1 to 4 of this plan were settled on 2026-11-09 (decisions 18, 20,
+19 and 20). Several diseases per model (decision 21) get their own plan.
 
 ## 15. References
 

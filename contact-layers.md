@@ -1352,6 +1352,11 @@ natural history, the variants and the plain classes in one pass (Section
   each wrapper's `v1-layers` merges into its `main` and is released after
   epiworld 1.0.0 (measles after epiworldR is on CRAN, then epiworldRShiny
   after measles).
+- **measles needs the released epiworldR 1.0.0, with NH-4.** Its
+  `DESCRIPTION` requires `epiworldR (>= 1.0.0)`, which the development
+  version `1.0.0-0` on `v1-layers` does not satisfy, and is not bumped on
+  `v1-layers` (measles#72). Do not publish measles until epiworldR 1.0.0,
+  with the NH-4 port (epiworldR#231), is on CRAN.
 - Docs: new `docs/impl/contact-layers.md`; update
   `mixing-and-entity-distribution.md`, `queueing-system.md`,
   `transmission-sampling.md`; migration guide.
@@ -1676,7 +1681,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-11-08).
+Updated by every epiworld PR into `v1-layers` (last: 2026-11-09).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1696,9 +1701,9 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-08).
 | Phase 3d-3a (entities and the model tracer removed) | #349 merged | #228 merged (with #351) | with 3d-3b (#43 merged) | with 3d-3b (#29 merged) | with 3d-3b (#71 merged) |
 | `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`), #228 merged | #43 merged (`main` -> `v1-layers`: epiworldpy#34) | #29 merged (`main` -> `v1-layers`: epiworldjs#26, #28) | #71 merged (`main` -> `v1-layers`: measles#69) |
 | Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged (+ #230: the peer row is an approximation) | #43 merged (with 3d-3a, #351; first `Bubbles` binding: `epiworldpy.Bubbles`, `make_layer()`, `add_globalevent()`) | #29 merged (with 3d-3a, #351; re-vendor only) | #71 merged (with 3d-3a, #351 and measles#69; re-vendor only) |
-| Registry (#312) | #356 merged (its `InfectionStates` removed by #363: a user's virus is a strain of the model's) | with NH-4 (#231) | with NH-4 | with NH-4 | with NH-4 |
-| Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 merged (replaces #358-#360, closed); NH-1 and NH-2: #363 merged; NH-3 (branch `nh-3-docs`: docs and diagrams drawn from the declarations): #366 merged; the benchmark runners and rerun: UofUEpiBio/epiworld-benchmark#35 (simulation time regressed in three rows, profiled to the reset); the reset fix (branch `reset-no-realloc`: placements in reused buffers, natural-history records made as agents move): #367 merged; its rerun (UofUEpiBio/epiworld-benchmark#36) fixed 1,000,000 agents, and left scenario_00 at 100,000 and GeoPops about 15% above 3d-3b, in the daily step; the step's cost (branch `nh-step-cost`: `par_at()` inlined, the stage of a cell without a division, the status part apart): #368 merged; its rerun (UofUEpiBio/epiworld-benchmark#37): no ratio grew by more than 10% (scenario_00 at 100,000 stays at 1.13; on denser and layered synthetic networks the remaining cost is per infected agent, not per contact or layer); found by the epiworldR port: an agent given a tool or virus the model does not hold crashed (since V-1 only the model's copy has an id), now an error: #369 | #231 (NH-4: natural history, placement, variants by id, plain classes, the registry) | to port (NH-4) | to port (NH-4) | to port (NH-4) |
-| Variants by id (V-1) and no `TSeq` template (V-2) (after #363, before NH-3) | V-1: #364 merged; V-2: #365 merged | with NH-4 (#231) | with NH-4 | with NH-4 | with NH-4 |
+| Registry (#312) | #356 merged (its `InfectionStates` removed by #363: a user's virus is a strain of the model's) | with NH-4 (#231 merged) | with NH-4 (#44 merged) | with NH-4 (#30 merged) | with NH-4 (#72 merged) |
+| Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 merged (replaces #358-#360, closed); NH-1 and NH-2: #363 merged; NH-3 (branch `nh-3-docs`: docs and diagrams drawn from the declarations): #366 merged; the benchmark runners and rerun: UofUEpiBio/epiworld-benchmark#35 (simulation time regressed in three rows, profiled to the reset); the reset fix (branch `reset-no-realloc`: placements in reused buffers, natural-history records made as agents move): #367 merged; its rerun (UofUEpiBio/epiworld-benchmark#36) fixed 1,000,000 agents, and left scenario_00 at 100,000 and GeoPops about 15% above 3d-3b, in the daily step; the step's cost (branch `nh-step-cost`: `par_at()` inlined, the stage of a cell without a division, the status part apart): #368 merged; its rerun (UofUEpiBio/epiworld-benchmark#37): no ratio grew by more than 10% (scenario_00 at 100,000 stays at 1.13; on denser and layered synthetic networks the remaining cost is per infected agent, not per contact or layer); found by the epiworldR port: an agent given a tool or virus the model does not hold crashed (since V-1 only the model's copy has an id), now an error: #369 merged; the benchmark reruns UofUEpiBio/epiworld-benchmark#35, #36 and #37 merged; the decisions that close the plan (16-21: `rule()` and the calendar deferred, the measles quarantine exemption by tool name, diagrams without transition labels): NH-close (this PR); next, NH-5 (several diseases per model, one infection per agent; the database per disease; accessors by margin), plan first | #231 merged (NH-4: natural history, placement, variants by id, plain classes, the registry; vendors fe2385a0) | #44 merged (NH-4; vendors fe2385a0) | #30 merged (NH-4; vendors fe2385a0) | #72 merged (NH-4; vendors fe2385a0; keeps `epiworldR (>= 1.0.0)`: see the release item in Phase 6) |
+| Variants by id (V-1) and no `TSeq` template (V-2) (after #363, before NH-3) | V-1: #364 merged; V-2: #365 merged | with NH-4 (#231 merged) | with NH-4 (#44 merged) | with NH-4 (#30 merged) | with NH-4 (#72 merged) |
 | Phases 4, 5, 6 | not started | | | | |
 
 epiworldRShiny (Section 6): not started; one port after the registry.
@@ -1719,13 +1724,17 @@ Stages 3d-3a (#33) and 3d-3b (#34, pin 07ed7a0d) are merged with no
 regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 0.91 because the 0.x run happened to be faster (the 1.0 run was faster too).
 
-**Next** (as of the date above): the benchmark reruns
-UofUEpiBio/epiworld-benchmark#35, #36 and #37 (stacked, in that order) wait
-for review. NH-4 (the wrapper ports, which also port the registry, the
-variants by id and the plain classes) has started: epiworldR #231 and the
-agents' check it found (#369, re-vendored into #231
-once merged) wait for review; then epiworldpy and epiworldjs (named as in
-#231), measles once #231 merges, and the epiworldRShiny port; then Phase 4.
+**Next** (as of the date above): NH-4 is merged in every wrapper, all on
+fe2385a0, and the benchmark is pinned to #368 (3944abd3; #369 only turns a
+crash into an error, so it is not rerun). The natural history closes with
+NH-close (this PR: decisions 16-21 of `natural-history.md`; the measles
+quarantine exemption by tool name, which the measles package and epiworldjs
+then bind: `set_quarantine_exempt_tools()`), then NH-5 (decision 21:
+several diseases per model, one infection per agent), whose plan is the
+next PR, followed by the engine, the database and the wrapper ports; then
+the epiworldRShiny port; then Phase 4. The diagrams' pictures
+(`docs/assets/img`) are rendered with `make -C include/measles all` and
+`make -C include/epiworld/models all` (mermaid.ink).
 
 ### 11.7 A benchmark rerun
 

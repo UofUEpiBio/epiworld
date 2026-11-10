@@ -27,7 +27,8 @@ using namespace epiworld;
  *   quarantine" once a quarantine has been triggered;
  * - at its rash onset in quarantine (isolated by the base rules).
  *
- * The day's cases quarantine the free agents without tools who are willing to
+ * The day's cases quarantine the free agents not exempt (see
+ * `set_quarantine_exempt_tools()`) who are willing to
  * (and isolate those with rash willing to isolate), for a period that depends
  * on the agent's exposure risk:
  *
@@ -246,7 +247,7 @@ inline void ModelMeaslesMixingRiskQuarantine::_quarantine_process(Model * m) {
     {
 
         const size_t id = static_cast< size_t >(agent.get_id());
-        if (!can_quarantine[id] || (agent.get_n_tools() != 0u))
+        if (!can_quarantine[id] || model->is_quarantine_exempt(agent))
             continue;
 
         if (!model->quarantine_willingness[id])

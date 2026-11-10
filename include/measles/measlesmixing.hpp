@@ -23,7 +23,8 @@ using namespace epiworld;
  * global event) traces the contacts of the agents detected that day in the
  * layer's log, within
  * "Contact tracing days window" days of the rash onset, each found with
- * probability "Contact tracing success rate". A free contact without tools
+ * probability "Contact tracing success rate". A free contact not exempt (see
+ * `set_quarantine_exempt_tools()`)
  * who is willing to quarantine is quarantined ("Quarantined") if susceptible,
  * latent or prodromal, or isolated if it has rash and is willing to isolate.
  * Quarantine lasts "Quarantine period" days (negative: no quarantine).
@@ -214,8 +215,8 @@ inline void ModelMeaslesMixing::_quarantine_process(Model * m) {
             if ((m->get_status(agent) != FREE) || (s > RASH))
                 continue;
 
-            // Agents with some tool are not quarantined
-            if (agent.get_n_tools() != 0u)
+            // Agents with evidence of immunity are not quarantined
+            if (model->is_quarantine_exempt(agent))
                 continue;
 
             if (!model->quarantine_willingness[contact_id])

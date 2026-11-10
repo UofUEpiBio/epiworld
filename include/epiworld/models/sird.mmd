@@ -6,9 +6,9 @@ flowchart LR
         s1["Infected"]:::infectious
         s2["Recovered"]
         s3["Deceased"]:::away
-        s0 -->|"infection: Transmission probability"| s1
-        s1 -->|"rate: Recovery rate"| s2
-        s1 -->|"rate: Death rate"| s3
+        s0 --> s1
+        s1 --> s2
+        s1 --> s3
     end
     classDef infectious fill:#f8d7da,stroke:#b02a37
     classDef carrier fill:#fff3cd,stroke:#997404

@@ -17,7 +17,8 @@ using namespace epiworld;
  * with rash with probability 1 / "Days undetected" and isolates it
  * ("Isolated", if "Isolation period" is not negative); an agent becoming
  * severe that day is detected too. A detection quarantines every free
- * susceptible, latent or prodromal agent without tools, each with probability
+ * susceptible, latent or prodromal agent not exempt (see
+ * `set_quarantine_exempt_tools()`), each with probability
  * "Quarantine willingness" ("Quarantined", for "Quarantine period" days; a
  * negative period means no quarantine). The detected agents are the model's
  * quarantine triggers (see `QuarantineTrigger` and `InterventionMeaslesPEP`),
@@ -156,14 +157,14 @@ inline void ModelMeaslesSchool::_quarantine_agents(Model * m) {
     if (!triggered_today || !quarantine_on)
         return;
 
-    // Quarantining the free agents before their rash, without tools
+    // Quarantining the free agents before their rash, unless exempt
     for (auto & agent : model->get_agents())
     {
 
         if ((model->get_stage(agent) >= RASH) || (model->get_status(agent) != FREE))
             continue;
 
-        if (agent.get_n_tools() != 0u)
+        if (model->is_quarantine_exempt(agent))
             continue;
 
         if (model->runif() < willingness)

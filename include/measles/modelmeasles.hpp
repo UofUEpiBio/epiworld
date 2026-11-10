@@ -61,6 +61,12 @@ protected:
     std::vector< bool > quarantine_willingness; ///< Drawn at reset (some models)
     std::vector< bool > isolation_willingness;  ///< Drawn at reset (some models)
 
+    /// Tools that exempt a traced contact from quarantine (by name).
+    std::vector< std::string > quarantine_exempt_tools = {"MMR", "PEP MMR"};
+
+    /// Whether the agent holds one of the quarantine-exempt tools.
+    bool is_quarantine_exempt(const Agent & agent) const;
+
     /**
      * @brief Builds the disease, the statuses and their links.
      * @param seed Where the initial cases go.
@@ -118,6 +124,29 @@ public:
     {
         return isolation_willingness;
     }
+
+    /**
+     * @name Who is exempt from quarantine
+     * @brief The tools, by name, whose holders are not quarantined.
+     * @details An agent holding any of these tools is not quarantined when
+     * traced or when their group is exposed, whether or not the tool
+     * protects them: documented MMR vaccination, routine or as
+     * post-exposure prophylaxis, is presumptive evidence of immunity (CDC),
+     * while immunoglobulin is not. The default is `{"MMR", "PEP MMR"}`: the
+     * models' vaccine and `InterventionMeaslesPEP`'s MMR. A name that no
+     * tool has exempts no one.
+     */
+    ///@{
+    void set_quarantine_exempt_tools(std::vector< std::string > names)
+    {
+        quarantine_exempt_tools = std::move(names);
+    }
+
+    const std::vector< std::string > & get_quarantine_exempt_tools() const
+    {
+        return quarantine_exempt_tools;
+    }
+    ///@}
 
     #ifdef EPI_DEBUG
     const std::vector< int > & get_sampled_sizes() const
@@ -245,6 +274,15 @@ inline void ModelMeasles::draw_willingness()
         isolation_willingness[idx] =
             this->runif() < EPI_PAR(this, "Isolation willingness");
     }
+}
+
+inline bool ModelMeasles::is_quarantine_exempt(const Agent & agent) const
+{
+    for (const auto & name : quarantine_exempt_tools)
+        if (agent.has_tool(std::string_view(name)))
+            return true;
+
+    return false;
 }
 
 inline Virus * ModelMeasles::infect(Agent & p)

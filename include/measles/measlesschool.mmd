@@ -8,14 +8,14 @@ flowchart LR
         s3["Rash"]:::infectious
         s4["Severe"]:::carrier
         s5["Recovered"]
-        s0 -->|"infection: Transmission rate"| s1
-        s1 ==>|"after: lognormal(Incubation period, Incubation period sd)"| s2
-        s2 ==>|"after: lognormal(Prodromal period, Prodromal period sd)"| s3
-        s3 -->|"rate: Hospitalization rate"| s4
-        s3 ==>|"after: lognormal(Rash period, Rash period sd)"| s5
-        s4 -->|"rate: 1 / Hospitalization period"| s5
-        s1 -.->|"PEP cleared<br>external"| s5
-        s2 -.->|"PEP cleared<br>external"| s5
+        s0 --> s1
+        s1 --> s2
+        s2 --> s3
+        s3 --> s4
+        s3 --> s5
+        s4 --> s5
+        s1 --> s5
+        s2 --> s5
     end
     subgraph statuses["Statuses"]
         direction LR
@@ -23,17 +23,15 @@ flowchart LR
         q1["Quarantined"]:::away
         q2["Isolated"]:::away
         q3["Hospitalized"]:::away
-        q0 -.->|"Quarantined<br>external"| q1
-        q1 ==>|"Quarantine ends<br>after: fixed(Quarantine period)"| q0
-        q0 -.->|"Isolated<br>external"| q2
-        q0 -.->|"Onset in quarantine<br>external"| q2
-        q1 -.->|"Onset in quarantine<br>external"| q2
-        q2 ==>|"Isolation ends<br>after: fixed(Isolation period), since Rash"| q0
-        q0 -.->|"Admitted<br>external"| q3
-        q1 -.->|"Admitted<br>external"| q3
-        q2 -.->|"Admitted<br>external"| q3
-        q3 -.->|"Discharged<br>external"| q0
-        q1 -.->|"PEP release<br>external"| q0
+        q0 --> q1
+        q1 --> q0
+        q0 --> q2
+        q1 --> q2
+        q2 --> q0
+        q0 --> q3
+        q1 --> q3
+        q2 --> q3
+        q3 --> q0
     end
     classDef infectious fill:#f8d7da,stroke:#b02a37
     classDef carrier fill:#fff3cd,stroke:#997404
