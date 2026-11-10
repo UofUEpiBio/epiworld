@@ -37,8 +37,12 @@ own natural history, running on the same population, layers and statuses.
    scratch is a new disease. The structure of two viruses is never compared
    to guess which one was meant.
 6. **With several diseases, what refers to a stage names its disease**, and a
-   tool names the viruses it acts on. Leaving either out is an error at the
+   tool names the diseases it acts on. Leaving either out is an error at the
    start of the run that says how to fix it.
+   **Tools target whole diseases** (settled 2026-11-10): a tool acts on every
+   strain of the diseases it targets. This replaces the targets by virus
+   lineage. Strains that need their own tools are modeled as another
+   disease.
 7. **With several diseases, infections are pulled, not pushed.** A model with
    one disease keeps both.
 8. **A removal in one disease shows in the others** as a built-in stage,
@@ -89,7 +93,7 @@ model.get_stages(d);                              // its labels
 | `Model::transition_id(name)` | Unchanged. | Takes the disease when two diseases have a transition of that name. Status transitions never need it. |
 | `Model::fire(transition, agent)` | Unchanged. | `false` if it would give the agent a second infection (decision 9). |
 | `Agent::get_virus()` | Unchanged: the agent's one infection, or none. | Same. |
-| `Tool::add_target()` / `set_targets()` | Optional: a tool without targets acts on every virus. | Required (decision 6): a measles vaccine must not protect against influenza unless it says so. |
+| `Tool::add_target(disease)` / `set_targets(diseases)`, by name | Replaces the targets by lineage (`add_target(lineage_id)`, `add_target(virus)`). Optional: a tool without targets acts on the model's disease. | Required (decision 6): a measles vaccine must not protect against influenza unless it says so. |
 | `Model::record_hospitalization(agent)` | Unchanged. | Recorded under the disease of the virus the agent carries. |
 
 **The included models name their own disease** in their statuses and
@@ -204,6 +208,8 @@ track.
 ## 7. The wrappers
 
 One database object, so a port is "an argument and a column":
+- **Tool targets by disease** in epiworldR and epiworldpy (`add_target()` /
+  `set_targets()` take disease names); the forms by lineage become defunct.
 - **epiworldR:** the output functions and the `run_multiple()` savers gain
   `disease = NULL` and the `disease` column; plots facet by disease when
   there are several; `strain(virus, name)`; `get_diseases(model)`; the
@@ -249,17 +255,18 @@ A few end-to-end files, on fixed networks:
   statuses, so they are designed together.
 - Two diseases that read a parameter of the same name share it.
 
-## 11. Open questions
+## 11. Questions settled in review (2026-11-10)
 
-1. **Tool targets.** Tools already target virus lineages
-   (`Tool::add_target()`), and a strain added with `add_virus()` is its own
-   lineage. Proposed: keep that one mechanism and only require targets with
-   several diseases. Alternative: a target by disease, which also covers
-   strains added later.
-2. **The `disease` column with one disease.** Proposed: always present, so
-   code written for one disease keeps working with two. It moves the
-   positions of the columns once, in 1.0.0.
-3. **A second disease in an included model with a custom sampler** (the
-   measles models): the random order of Section 4.2 is fair but draws one
-   more random number per eligible agent a day. Acceptable?
-4. **The name** "Removed (other disease)".
+1. **Tool targets: by disease, as a whole** (decision 6). The targets by
+   lineage go; strains are rarely used, and those that differ enough (the
+   COVID-19 variants) can be another disease.
+2. **The `disease` column is always present**, with one disease too:
+   consistency first.
+3. **Diseases with custom samplers are tried in a random order** each day.
+4. **The name** is "Removed (other disease)".
+
+## 12. Open question
+
+- **Layers' virus targets** (`add_virus_target(layer, virus)`, also by
+  lineage). Proposed, for consistency with the tools: a layer targets
+  diseases as a whole too.
