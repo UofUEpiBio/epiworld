@@ -5076,20 +5076,11 @@ class Virus;
 class UserData;
 
 /**
- * @brief Statistical data about the process
- *
- * **Implementation details:**
- * <a href="../impl/data-collection-and-analysis.md">Data Collection and Analysis</a>,
- * <a href="../impl/generation-interval-and-reproductive-number.md">Generation Interval and Reproductive Number Calculation</a>
- *
+ * @brief The variants and the tools, by id.
+ * @details Kept once per model: a variant or a tool is not tied to one
+ * disease's records.
  */
-class DataBase {
-    friend class Model;
-private:
-    Model * model;
-
-    HospitalizationsTracker m_hospitalizations; ///< Tracker for hospitalization events
-
+struct DataRegistry {
     // Variants, by id: the viruses added to the model first (founders, kept
     // even if removed, so ids stay put), then the run's mutations
     size_t n_founders = 0u;
@@ -5100,6 +5091,19 @@ private:
     // Tools, by id
     std::vector< std::string > tool_name;
     std::vector< int > tool_origin_date;
+
+    bool operator==(const DataRegistry & other) const;
+};
+
+/**
+ * @brief What is recorded about one disease: counts by state (today and by
+ * day), the variants' and tools' histories, transitions, transmissions and
+ * hospitalizations.
+ * @details One per model for now; with several diseases (NH-5b), one per
+ * disease.
+ */
+struct DiseaseRecord {
+    HospitalizationsTracker m_hospitalizations; ///< Tracker for hospitalization events
 
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     std::vector< std::vector<int> > today_virus;
@@ -5112,8 +5116,6 @@ private:
 
     // Totals
     int today_total_nviruses_active = 0;
-
-    int sampling_freq = 1;
 
     // Variants history
     std::vector< int > hist_virus_date;
@@ -5154,8 +5156,31 @@ private:
     std::vector< int > hist_transition_date;
     std::vector< int > hist_transition_id;
     std::vector< int > hist_transition_counts;
-    void record_declared_transition(int id) { ++transition_today[static_cast< size_t >(id)]; }
     ///@}
+
+    bool operator==(const DiseaseRecord & other) const;
+};
+
+/**
+ * @brief Statistical data about the process
+ *
+ * **Implementation details:**
+ * <a href="../impl/data-collection-and-analysis.md">Data Collection and Analysis</a>,
+ * <a href="../impl/generation-interval-and-reproductive-number.md">Generation Interval and Reproductive Number Calculation</a>
+ *
+ * @details The database is the one entry point (`Model::get_db()`). It
+ * holds its data in parts: the variants and tools (`DataRegistry`) and the
+ * disease's records (`DiseaseRecord`).
+ */
+class DataBase {
+    friend class Model;
+private:
+    Model * model;
+
+    DataRegistry reg;  ///< Variants and tools
+    DiseaseRecord rec; ///< The disease's records
+
+    int sampling_freq = 1;
 
     UserData user_data;
 
@@ -5180,6 +5205,10 @@ private:
     );
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
+
+    /// One more agent took the declared transition `id` (see
+    /// `get_hist_transitions()`)
+    void record_declared_transition(int id) { ++rec.transition_today[static_cast< size_t >(id)]; }
 
     /**
      * @brief The status and the stage of a state of the engine (the one place
@@ -5210,7 +5239,7 @@ public:
     #endif
 
     DataBase() = delete;
-    DataBase(Model & m) : model(&m), m_hospitalizations(), user_data(m) {};
+    DataBase(Model & m) : model(&m), user_data(m) {};
     DataBase(const DataBase & db);
     // DataBase & operator=(const DataBase & m);
 
@@ -12715,135 +12744,97 @@ inline size_t HospitalizationsTracker::size() const
 // (already included include/epiworld/misc.hpp)
 // (already included include/epiworld/database-bones.hpp)
 
+/**
+ * @file database-meat.hpp
+ * @brief Recording: what the database does while a model runs. The
+ * queries are in `database-meat-queries.hpp`, the output tables and files
+ * in `database-meat-outputs.hpp`, and the comparison in
+ * `database-meat-compare.hpp`.
+ */
+
 inline void DataBase::reset()
 {
 
     // Initializing the counts
-    today_total.assign(model->nstates, 0);
+    rec.today_total.assign(model->nstates, 0);
     for (auto & p : model->get_agents())
-        ++today_total[p.get_state()];
+        ++rec.today_total[p.get_state()];
 
     #ifdef EPI_DEBUG
     // Only the first should be different from zero
     {
         int n = static_cast<int>(model->size());
-        if (today_total[0] != n)
+        if (rec.today_total[0] != n)
             throw std::runtime_error("The number of susceptible agents is not equal to the total number of agents.");
 
-        if (std::accumulate(today_total.begin(), today_total.end(), 0) != n)
+        if (std::accumulate(rec.today_total.begin(), rec.today_total.end(), 0) != n)
             throw std::runtime_error("The total number of agents is not equal to the sum of the number of agents in each state.");
             
     }
     #endif
 
     
-    transition_matrix.assign(model->nstates * model->nstates, 0);
+    rec.transition_matrix.assign(model->nstates * model->nstates, 0);
     for (size_t s = 0u; s < model->nstates; ++s)
-        transition_matrix[s + s * model->nstates] = today_total[s];
+        rec.transition_matrix[s + s * model->nstates] = rec.today_total[s];
 
     // The last run's variants go; the founders keep their ids
     drop_variants();
 
-    hist_virus_date.clear();
-    hist_virus_id.clear();
-    hist_virus_state.clear();
-    hist_virus_counts.clear();
+    rec.hist_virus_date.clear();
+    rec.hist_virus_id.clear();
+    rec.hist_virus_state.clear();
+    rec.hist_virus_counts.clear();
 
-    hist_tool_date.clear();
-    hist_tool_id.clear();
-    hist_tool_state.clear();
-    hist_tool_counts.clear();    
+    rec.hist_tool_date.clear();
+    rec.hist_tool_id.clear();
+    rec.hist_tool_state.clear();
+    rec.hist_tool_counts.clear();    
 
-    today_virus.resize(get_n_viruses());
-    for (auto& virus_states : today_virus)
+    rec.today_virus.resize(get_n_viruses());
+    for (auto& virus_states : rec.today_virus)
         virus_states.assign(model->nstates, 0);
 
-    today_tool.resize(get_n_tools());
-    for (auto& tool_states : today_tool)
+    rec.today_tool.resize(get_n_tools());
+    for (auto& tool_states : rec.today_tool)
         tool_states.assign(model->nstates, 0);
 
-    hist_total_date.clear();
-    hist_total_state.clear();
-    hist_total_nviruses_active.clear();
-    hist_total_counts.clear();
-    hist_transition_matrix.clear();
+    rec.hist_total_date.clear();
+    rec.hist_total_state.clear();
+    rec.hist_total_nviruses_active.clear();
+    rec.hist_total_counts.clear();
+    rec.hist_transition_matrix.clear();
 
-    transmission_date.clear();
-    transmission_virus.clear();
-    transmission_source.clear();
-    transmission_target.clear();
-    transmission_source_exposure_date.clear();
-    transmission_layer.clear();
+    rec.transmission_date.clear();
+    rec.transmission_virus.clear();
+    rec.transmission_source.clear();
+    rec.transmission_target.clear();
+    rec.transmission_source_exposure_date.clear();
+    rec.transmission_layer.clear();
 
-    transition_today.assign(
+    rec.transition_today.assign(
         !model->tracks.empty() ?
             model->tracks[0u].nh->get_n_transitions() +
                 (model->st ? model->st->get_n_transitions() : 0u) :
             0u,
         0
     );
-    hist_transition_date.clear();
-    hist_transition_id.clear();
-    hist_transition_counts.clear();
+    rec.hist_transition_date.clear();
+    rec.hist_transition_id.clear();
+    rec.hist_transition_counts.clear();
 
-    m_hospitalizations.reset();
+    rec.m_hospitalizations.reset();
 
     return;
 
 }
 
 inline DataBase::DataBase(const DataBase & db) :
-    m_hospitalizations(db.m_hospitalizations),
-    n_founders(db.n_founders),
-    virus_name(db.virus_name),
-    virus_origin_date(db.virus_origin_date),
-    virus_parent_id(db.virus_parent_id),
-    tool_name(db.tool_name),
-    tool_origin_date(db.tool_origin_date),
-    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
-    today_virus(db.today_virus),
-    // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
-    today_tool(db.today_tool),
-    // {Susceptible, Infected, etc.}
-    today_total(db.today_total),
-    // Totals
-    today_total_nviruses_active(db.today_total_nviruses_active),
+    reg(db.reg),
+    rec(db.rec),
     sampling_freq(db.sampling_freq),
-    // Variants history
-    hist_virus_date(db.hist_virus_date),
-    hist_virus_id(db.hist_virus_id),
-    hist_virus_state(db.hist_virus_state),
-    hist_virus_counts(db.hist_virus_counts),
-    // Tools history
-    hist_tool_date(db.hist_tool_date),
-    hist_tool_id(db.hist_tool_id),
-    hist_tool_state(db.hist_tool_state),
-    hist_tool_counts(db.hist_tool_counts),
-    // Overall hist
-    hist_total_date(db.hist_total_date),
-    hist_total_nviruses_active(db.hist_total_nviruses_active),
-    hist_total_state(db.hist_total_state),
-    hist_total_counts(db.hist_total_counts),
-    hist_transition_matrix(db.hist_transition_matrix),
-    // Transmission network
-    transmission_date(db.transmission_date),
-    transmission_source(db.transmission_source),
-    transmission_target(db.transmission_target),
-    transmission_virus(db.transmission_virus),
-    transmission_source_exposure_date(db.transmission_source_exposure_date),
-    transmission_layer(db.transmission_layer),
-    transition_matrix(db.transition_matrix),
-    transition_today(db.transition_today),
-    hist_transition_date(db.hist_transition_date),
-    hist_transition_id(db.hist_transition_id),
-    hist_transition_counts(db.hist_transition_counts),
     user_data(nullptr)
 {}
-
-// DataBase & DataBase::operator=(const DataBase & m)
-// {
-
-// }
 
 inline Model * DataBase::get_model() {
     return model;
@@ -12855,24 +12846,24 @@ inline void DataBase::record()
     ////////////////////////////////////////////////////////////////////////////
     // DEBUGGING BLOCK
     ////////////////////////////////////////////////////////////////////////////
-    EPI_DEBUG_SUM_INT(today_total, model->size())
-    EPI_DEBUG_ALL_NON_NEGATIVE(today_total)
+    EPI_DEBUG_SUM_INT(rec.today_total, model->size())
+    EPI_DEBUG_ALL_NON_NEGATIVE(rec.today_total)
 
     #ifdef EPI_DEBUG
     // Checking whether the sums correspond
-    std::vector< int > _today_total_cp(today_total.size(), 0);
+    std::vector< int > _today_total_cp(rec.today_total.size(), 0);
     for (auto & p : model->population)
         _today_total_cp[p.get_state()]++;
     
     EPI_DEBUG_VECTOR_MATCH_INT(
-        _today_total_cp, today_total,
+        _today_total_cp, rec.today_total,
         "Sums of __today_total_cp in database-meat.hpp"
         )
 
     // EPI_DEBUG only: the model's agents-by-state index (see
     // Model::get_agents_in_state()) is maintained incrementally, event by
     // event, so check it against the population once per step, next to the
-    // same check for today_total above. Each state's block must hold exactly
+    // same check for rec.today_total above. Each state's block must hold exactly
     // the agents in that state, each agent's recorded position must be right,
     // and the degree and carrier sums used by the transmission step must match
     // a recount. A drift here would silently bias which agents push, or which
@@ -12898,8 +12889,8 @@ inline void DataBase::record()
         {
 
             const auto members = model->state_index_members(s);
-            if (static_cast< int >(members.size()) != today_total[s])
-                throw std::logic_error("[epi-debug] DataBase::record state index size doesn't match today_total.");
+            if (static_cast< int >(members.size()) != rec.today_total[s])
+                throw std::logic_error("[epi-debug] DataBase::record state index size doesn't match rec.today_total.");
 
             for (size_t k = 0u; k < members.size(); ++k)
             {
@@ -12926,30 +12917,30 @@ inline void DataBase::record()
 
     if (model->today() == 0)
     {
-        if (hist_total_date.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_date should be of length 0.")
-        if (hist_total_nviruses_active.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_nviruses_active should be of length 0.")
-        if (hist_total_state.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_state should be of length 0.")
-        if (hist_total_counts.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_total_counts should be of length 0.")
-        if (hist_virus_date.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_virus_date should be of length 0.")
-        if (hist_virus_id.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_virus_id should be of length 0.")
-        if (hist_virus_state.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_virus_state should be of length 0.")
-        if (hist_virus_counts.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_virus_counts should be of length 0.")
-        if (hist_tool_date.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_date should be of length 0.")
-        if (hist_tool_id.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_id should be of length 0.")
-        if (hist_tool_state.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_state should be of length 0.")
-        if (hist_tool_counts.size() != 0)
-            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record hist_tool_counts should be of length 0.")
+        if (rec.hist_total_date.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record rec.hist_total_date should be of length 0.")
+        if (rec.hist_total_nviruses_active.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record rec.hist_total_nviruses_active should be of length 0.")
+        if (rec.hist_total_state.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record rec.hist_total_state should be of length 0.")
+        if (rec.hist_total_counts.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record rec.hist_total_counts should be of length 0.")
+        if (rec.hist_virus_date.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record rec.hist_virus_date should be of length 0.")
+        if (rec.hist_virus_id.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record rec.hist_virus_id should be of length 0.")
+        if (rec.hist_virus_state.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record rec.hist_virus_state should be of length 0.")
+        if (rec.hist_virus_counts.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record rec.hist_virus_counts should be of length 0.")
+        if (rec.hist_tool_date.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record rec.hist_tool_date should be of length 0.")
+        if (rec.hist_tool_id.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record rec.hist_tool_id should be of length 0.")
+        if (rec.hist_tool_state.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record rec.hist_tool_state should be of length 0.")
+        if (rec.hist_tool_counts.size() != 0)
+            EPI_DEBUG_ERROR(std::logic_error, "DataBase::record rec.hist_tool_counts should be of length 0.")
     }
     #endif
     ////////////////////////////////////////////////////////////////////////////
@@ -12959,40 +12950,40 @@ inline void DataBase::record()
     {
 
         // Recording virus's history
-        for (size_t v = 0u; v < today_virus.size(); ++v)
+        for (size_t v = 0u; v < rec.today_virus.size(); ++v)
         {
 
             for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
             {
 
-                hist_virus_date.push_back(model->today());
-                hist_virus_id.push_back(static_cast< int >(v));
-                hist_virus_state.push_back(s);
+                rec.hist_virus_date.push_back(model->today());
+                rec.hist_virus_id.push_back(static_cast< int >(v));
+                rec.hist_virus_state.push_back(s);
 
                 #ifdef EPI_DEBUG
-                if (today_virus[v][s] < 0)
+                if (rec.today_virus[v][s] < 0)
                     throw std::logic_error(
                         "The count of viruses in DataBase::record cannot be negative."
                     );
                 #endif
 
-                hist_virus_counts.push_back(today_virus[v][s]);
+                rec.hist_virus_counts.push_back(rec.today_virus[v][s]);
 
             }
 
         }
 
         // Recording tool's history
-        for (size_t t = 0u; t < today_tool.size(); ++t)
+        for (size_t t = 0u; t < rec.today_tool.size(); ++t)
         {
 
             for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
             {
 
-                hist_tool_date.push_back(model->today());
-                hist_tool_id.push_back(static_cast< int >(t));
-                hist_tool_state.push_back(s);
-                hist_tool_counts.push_back(today_tool[t][s]);
+                rec.hist_tool_date.push_back(model->today());
+                rec.hist_tool_id.push_back(static_cast< int >(t));
+                rec.hist_tool_state.push_back(s);
+                rec.hist_tool_counts.push_back(rec.today_tool[t][s]);
 
             }
 
@@ -13001,21 +12992,21 @@ inline void DataBase::record()
         // Recording the overall history
         for (epiworld_fast_uint s = 0u; s < model->nstates; ++s)
         {
-            hist_total_date.push_back(model->today());
-            hist_total_nviruses_active.push_back(today_total_nviruses_active);
-            hist_total_state.push_back(s);
-            hist_total_counts.push_back(today_total[s]);
+            rec.hist_total_date.push_back(model->today());
+            rec.hist_total_nviruses_active.push_back(rec.today_total_nviruses_active);
+            rec.hist_total_state.push_back(s);
+            rec.hist_total_counts.push_back(rec.today_total[s]);
         }
 
-        for (const auto& cell : transition_matrix)
-            hist_transition_matrix.push_back(cell);
+        for (const auto& cell : rec.transition_matrix)
+            rec.hist_transition_matrix.push_back(cell);
 
-        for (size_t k = 0u; k < transition_today.size(); ++k)
+        for (size_t k = 0u; k < rec.transition_today.size(); ++k)
         {
-            hist_transition_date.push_back(model->today());
-            hist_transition_id.push_back(static_cast< int >(k));
-            hist_transition_counts.push_back(transition_today[k]);
-            transition_today[k] = 0;
+            rec.hist_transition_date.push_back(model->today());
+            rec.hist_transition_id.push_back(static_cast< int >(k));
+            rec.hist_transition_counts.push_back(rec.transition_today[k]);
+            rec.transition_today[k] = 0;
         }
 
         // Now the diagonal must reflect the state
@@ -13025,12 +13016,12 @@ inline void DataBase::record()
             for (size_t s_j = 0u; s_j < model->nstates; ++s_j)
             {
                 
-                if ((s_i != s_j) && (transition_matrix[s_i + s_j * model->nstates] > 0))
+                if ((s_i != s_j) && (rec.transition_matrix[s_i + s_j * model->nstates] > 0))
                 {
-                    transition_matrix[s_j + s_j * model->nstates] +=
-                        transition_matrix[s_i + s_j * model->nstates];
+                    rec.transition_matrix[s_j + s_j * model->nstates] +=
+                        rec.transition_matrix[s_i + s_j * model->nstates];
 
-                    transition_matrix[s_i + s_j * model->nstates] = 0;
+                    rec.transition_matrix[s_i + s_j * model->nstates] = 0;
                 }
          
             }
@@ -13040,8 +13031,8 @@ inline void DataBase::record()
         #ifdef EPI_DEBUG
         for (size_t s_i = 0u; s_i < model->nstates; ++s_i)
         {
-            if (transition_matrix[s_i + s_i * model->nstates] != 
-                today_total[s_i])
+            if (rec.transition_matrix[s_i + s_i * model->nstates] != 
+                rec.today_total[s_i])
                 throw std::logic_error(
                     "The diagonal of the updated transition Matrix should match the daily totals"
                     );
@@ -13055,15 +13046,15 @@ inline void DataBase::record()
 inline void DataBase::drop_variants()
 {
 
-    const size_t n = n_founders;
-    if (virus_name.size() <= n)
+    const size_t n = reg.n_founders;
+    if (reg.virus_name.size() <= n)
         return;
 
-    virus_name.resize(n);
-    virus_origin_date.resize(n);
-    virus_parent_id.resize(n);
-    today_virus.resize(n);
-    today_total_nviruses_active = static_cast< int >(n);
+    reg.virus_name.resize(n);
+    reg.virus_origin_date.resize(n);
+    reg.virus_parent_id.resize(n);
+    rec.today_virus.resize(n);
+    rec.today_total_nviruses_active = static_cast< int >(n);
 
 }
 
@@ -13073,7 +13064,7 @@ inline void DataBase::record_virus(Virus & v, bool founder)
     if (founder)
     {
         drop_variants();
-        ++n_founders;
+        ++reg.n_founders;
     }
     else if (v.get_id() < 0)
         throw std::logic_error(
@@ -13081,13 +13072,13 @@ inline void DataBase::record_virus(Virus & v, bool founder)
         );
 
     const int parent = founder ? -99 : v.get_id();
-    const int id = static_cast< int >(virus_name.size());
+    const int id = static_cast< int >(reg.virus_name.size());
 
-    virus_name.push_back(v.get_name());
-    virus_origin_date.push_back(model->today());
-    virus_parent_id.push_back(parent);
-    today_virus.push_back(std::vector< int >(model->nstates, 0));
-    today_total_nviruses_active++;
+    reg.virus_name.push_back(v.get_name());
+    reg.virus_origin_date.push_back(model->today());
+    reg.virus_parent_id.push_back(parent);
+    rec.today_virus.push_back(std::vector< int >(model->nstates, 0));
+    rec.today_total_nviruses_active++;
 
     v.set_id(id);
     v.set_date(model->today());
@@ -13103,8 +13094,8 @@ inline void DataBase::record_virus(Virus & v, bool founder)
     {
         // The agent's counts move from the parent to the variant
         const auto s = v.get_agent()->get_state();
-        today_virus[parent][s]--;
-        today_virus[id][s]++;
+        rec.today_virus[parent][s]--;
+        rec.today_virus[id][s]++;
     }
 
 }
@@ -13112,17 +13103,17 @@ inline void DataBase::record_virus(Virus & v, bool founder)
 inline void DataBase::record_tool(Tool & t)
 {
 
-    t.set_id(static_cast< int >(tool_name.size()));
+    t.set_id(static_cast< int >(reg.tool_name.size()));
     t.set_date(model->today());
-    tool_name.push_back(t.get_name());
-    tool_origin_date.push_back(model->today());
-    today_tool.push_back(std::vector< int >(model->nstates, 0));
+    reg.tool_name.push_back(t.get_name());
+    reg.tool_origin_date.push_back(model->today());
+    rec.today_tool.push_back(std::vector< int >(model->nstates, 0));
 
 }
 
 inline size_t DataBase::size() const
 {
-    return virus_name.size();
+    return reg.virus_name.size();
 }
 
 inline void DataBase::update_state(
@@ -13153,13 +13144,13 @@ inline void DataBase::update_state(
     if (undo)
     {
 
-        today_total[prev_state]++;
-        today_total[new_state]--;
+        rec.today_total[prev_state]++;
+        rec.today_total[new_state]--;
         
     } else {
 
-        today_total[prev_state]--;
-        today_total[new_state]++;
+        rec.today_total[prev_state]--;
+        rec.today_total[new_state]++;
 
     }
 
@@ -13177,20 +13168,20 @@ inline void DataBase::update_virus(
 
     if (undo)
     {
-        today_virus[virus_id][prev_state]++;
-        today_virus[virus_id][new_state]--;
+        rec.today_virus[virus_id][prev_state]++;
+        rec.today_virus[virus_id][new_state]--;
     }
     else
     {
-        today_virus[virus_id][prev_state]--;
-        today_virus[virus_id][new_state]++;
+        rec.today_virus[virus_id][prev_state]--;
+        rec.today_virus[virus_id][new_state]++;
     }
 
     #ifdef EPI_DEBUG
-    if (today_virus[virus_id][prev_state] < 0)
-        throw std::logic_error("An entry in today_virus is negative.");
-    if (today_virus[virus_id][new_state] < 0)
-        throw std::logic_error("An entry in today_virus is negative (new_state).");
+    if (rec.today_virus[virus_id][prev_state] < 0)
+        throw std::logic_error("An entry in rec.today_virus is negative.");
+    if (rec.today_virus[virus_id][new_state] < 0)
+        throw std::logic_error("An entry in rec.today_virus is negative (new_state).");
     #endif
 
     return;
@@ -13206,13 +13197,13 @@ inline void DataBase::update_tool(
 
     if (undo)
     {
-        today_tool[tool_id][prev_state]++;
-        today_tool[tool_id][new_state]--;
+        rec.today_tool[tool_id][prev_state]++;
+        rec.today_tool[tool_id][new_state]--;
     }
     else
     {
-        today_tool[tool_id][prev_state]--;
-        today_tool[tool_id][new_state]++;
+        rec.today_tool[tool_id][prev_state]--;
+        rec.today_tool[tool_id][new_state]++;
     }
 
     return;
@@ -13228,22 +13219,114 @@ inline void DataBase::record_transition(
     if (undo)
     {   
 
-        transition_matrix[to * model->nstates + from]--;
-        transition_matrix[from * model->nstates + from]++;
+        rec.transition_matrix[to * model->nstates + from]--;
+        rec.transition_matrix[from * model->nstates + from]++;
 
     } else {
 
-        transition_matrix[to * model->nstates + from]++;
-        transition_matrix[from * model->nstates + from]--;
+        rec.transition_matrix[to * model->nstates + from]++;
+        rec.transition_matrix[from * model->nstates + from]--;
 
     }
 
     #ifdef EPI_DEBUG
-    if (transition_matrix[from * model->nstates + from] < 0)
+    if (rec.transition_matrix[from * model->nstates + from] < 0)
         throw std::logic_error("An entry in transition matrix is negative.");
     #endif
 
 }
+
+inline void DataBase::record_transmission(
+    int i,
+    int j,
+    int virus,
+    int i_expo_date,
+    int layer
+) {
+
+    rec.transmission_date.push_back(model->today());
+    rec.transmission_source.push_back(i);
+    rec.transmission_target.push_back(j);
+    rec.transmission_virus.push_back(virus);
+    rec.transmission_source_exposure_date.push_back(i_expo_date);
+    rec.transmission_layer.push_back(layer);
+
+}
+
+inline size_t DataBase::get_n_viruses() const
+{
+    return reg.virus_name.size();
+}
+
+inline size_t DataBase::get_n_tools() const
+{
+    return reg.tool_name.size();
+}
+
+inline void DataBase::set_user_data(
+    std::vector< std::string > names
+)
+{
+    user_data = UserData(names);
+    user_data.model = model;
+}
+
+inline void DataBase::add_user_data(
+    std::vector< epiworld_double > x
+)
+{
+
+    user_data.add(x);
+
+}
+
+inline void DataBase::add_user_data(
+    epiworld_fast_uint k,
+    epiworld_double x
+)
+{
+
+    user_data.add(k, x);
+
+}
+
+inline UserData & DataBase::get_user_data()
+{
+    return user_data;
+}
+
+inline void DataBase::record_hospitalization(Agent & agent)
+{
+    rec.m_hospitalizations.record(agent, *model);
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/database-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/database-meat-queries.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_DATABASE_MEAT_QUERIES_HPP
+#define EPIWORLD_DATABASE_MEAT_QUERIES_HPP
+
+/**
+ * @file database-meat-queries.hpp
+ * @brief Reading what the database recorded: counts, histories,
+ * transitions, transmissions, reproductive numbers and hospitalizations.
+ */
 
 inline void DataBase::split_state(
     epiworld_fast_uint state,
@@ -13300,13 +13383,13 @@ inline int DataBase::today_total_of(
     bool found = false;
     int total = 0;
     std::string k, s;
-    for (epiworld_fast_uint i = 0u; i < today_total.size(); ++i)
+    for (epiworld_fast_uint i = 0u; i < rec.today_total.size(); ++i)
     {
         split_state(i, k, s);
         if ((by_stage ? s : k) == name)
         {
             found = true;
-            total += today_total[i];
+            total += rec.today_total[i];
         }
     }
 
@@ -13341,14 +13424,14 @@ inline void DataBase::get_today_total(
 ) const
 {
 
-    std::vector< epiworld_fast_uint > states(today_total.size());
+    std::vector< epiworld_fast_uint > states(rec.today_total.size());
     for (size_t i = 0u; i < states.size(); ++i)
         states[i] = static_cast< epiworld_fast_uint >(i);
 
     split_states(states, status, stage);
 
     if (counts != nullptr)
-        *counts = today_total;
+        *counts = rec.today_total;
 
 }
 
@@ -13361,7 +13444,7 @@ inline void DataBase::get_today_virus(
 {
 
     // One row per virus and state
-    const size_t n_viruses = today_virus.size();
+    const size_t n_viruses = rec.today_virus.size();
     const size_t n_states = model->states_labels.size();
 
     std::vector< epiworld_fast_uint > states;
@@ -13374,7 +13457,7 @@ inline void DataBase::get_today_virus(
         {
             states.push_back(s);
             id.push_back(static_cast<int>(v));
-            counts.push_back(today_virus[v][s]);
+            counts.push_back(rec.today_virus[v][s]);
         }
 
     split_states(states, &status, &stage);
@@ -13390,12 +13473,12 @@ inline void DataBase::get_hist_total(
 {
 
     if (date != nullptr)
-        *date = hist_total_date;
+        *date = rec.hist_total_date;
 
-    split_states(hist_total_state, status, stage);
+    split_states(rec.hist_total_state, status, stage);
 
     if (counts != nullptr)
-        *counts = hist_total_counts;
+        *counts = rec.hist_total_counts;
 
 }
 
@@ -13407,10 +13490,10 @@ inline void DataBase::get_hist_virus(
     std::vector< int > & counts
 ) const {
 
-    date = hist_virus_date;
-    id = hist_virus_id;
-    split_states(hist_virus_state, &status, &stage);
-    counts = hist_virus_counts;
+    date = rec.hist_virus_date;
+    id = rec.hist_virus_id;
+    split_states(rec.hist_virus_state, &status, &stage);
+    counts = rec.hist_virus_counts;
 
 }
 
@@ -13422,10 +13505,10 @@ inline void DataBase::get_hist_tool(
     std::vector< int > & counts
 ) const {
 
-    date = hist_tool_date;
-    id = hist_tool_id;
-    split_states(hist_tool_state, &status, &stage);
-    counts = hist_tool_counts;
+    date = rec.hist_tool_date;
+    id = rec.hist_tool_id;
+    split_states(rec.hist_tool_state, &status, &stage);
+    counts = rec.hist_tool_counts;
 
 }
 
@@ -13434,7 +13517,7 @@ inline void DataBase::get_today_transition_matrix(
 ) const
 {
 
-    counts = transition_matrix;
+    counts = rec.transition_matrix;
 
     return;
 
@@ -13451,7 +13534,7 @@ inline void DataBase::get_hist_transition_matrix(
 ) const
 {
 
-    size_t n = this->hist_transition_matrix.size();
+    size_t n = rec.hist_transition_matrix.size();
 
     std::vector< epiworld_fast_uint > from, to;
     from.reserve(n);
@@ -13479,7 +13562,7 @@ inline void DataBase::get_hist_transition_matrix(
             for (size_t i = 0u; i < n_states; ++i)
             {
                 // Retrieving the value of the day
-                int v = hist_transition_matrix[
+                int v = rec.hist_transition_matrix[
                     step * n_states * n_states + // Day of the data
                     j * n_states +               // Column (to)
                     i                            // Row (from)
@@ -13491,7 +13574,7 @@ inline void DataBase::get_hist_transition_matrix(
                                 
                 from.push_back(static_cast< epiworld_fast_uint >(i));
                 to.push_back(static_cast< epiworld_fast_uint >(j));
-                date.push_back(hist_total_date[step * n_states]);
+                date.push_back(rec.hist_total_date[step * n_states]);
                 counts.push_back(v);
 
             }
@@ -13504,7 +13587,6 @@ inline void DataBase::get_hist_transition_matrix(
 
 
 }
-
 
 inline void DataBase::get_active_cases(
     std::vector<int> & date,
@@ -13522,15 +13604,15 @@ inline void DataBase::get_active_cases(
     virus_id.assign(n_days * n_viruses, 0);
     count.assign(n_days * n_viruses, 0);
 
-    for (size_t i = 0u; i < hist_virus_id.size(); ++i)
+    for (size_t i = 0u; i < rec.hist_virus_id.size(); ++i)
     {
 
         // With more viruses, there are more days
-        auto location = hist_virus_date[i] + hist_virus_id[i] * n_days;
+        auto location = rec.hist_virus_date[i] + rec.hist_virus_id[i] * n_days;
 
-        date[location] = hist_virus_date[i];
-        virus_id[location] = hist_virus_id[i];
-        count[location] += hist_virus_counts[i];
+        date[location] = rec.hist_virus_date[i];
+        virus_id[location] = rec.hist_virus_id[i];
+        count[location] += rec.hist_virus_counts[i];
 
     }
 
@@ -13561,10 +13643,10 @@ inline void DataBase::get_outbreak_size(
     outbreak_size.assign(n_days * n_viruses, 0);
 
     // With more viruses, there are more days;
-    for (size_t i = 0u; i < transmission_date.size(); ++i)
+    for (size_t i = 0u; i < rec.transmission_date.size(); ++i)
     {
         outbreak_size[
-            transmission_date[i] + transmission_virus[i] * n_days
+            rec.transmission_date[i] + rec.transmission_virus[i] * n_days
         ] += 1;
     }
 
@@ -13592,7 +13674,7 @@ inline void DataBase::get_transmissions(
 ) const 
 {
 
-    size_t nevents = transmission_date.size();
+    size_t nevents = rec.transmission_date.size();
 
     date.resize(nevents);
     source.resize(nevents);
@@ -13622,21 +13704,283 @@ inline void DataBase::get_transmissions(
 ) const 
 {
 
-    size_t nevents = transmission_date.size();
+    size_t nevents = rec.transmission_date.size();
 
     for (size_t i = 0u; i < nevents; ++i)
     {
 
-        *(date + i) = transmission_date.at(i);
-        *(source + i) = transmission_source.at(i);
-        *(target + i) = transmission_target.at(i);
-        *(virus + i) = transmission_virus.at(i);
-        *(source_exposure_date + i) = transmission_source_exposure_date.at(i);
-        *(layer + i) = transmission_layer.at(i);
+        *(date + i) = rec.transmission_date.at(i);
+        *(source + i) = rec.transmission_source.at(i);
+        *(target + i) = rec.transmission_target.at(i);
+        *(virus + i) = rec.transmission_virus.at(i);
+        *(source_exposure_date + i) = rec.transmission_source_exposure_date.at(i);
+        *(layer + i) = rec.transmission_layer.at(i);
 
     }
 
 }
+
+inline MapVec_type<int,int> DataBase::get_reproductive_number()
+const {
+
+    // Checking size
+    MapVec_type<int,int> map;
+
+    // Number of digits of maxid
+    for (size_t i = 0u; i < rec.transmission_date.size(); ++i)
+    {
+        // Fabricating id
+        std::vector< int > h = {
+            rec.transmission_virus[i],
+            rec.transmission_source[i],
+            rec.transmission_source_exposure_date[i]
+        };
+
+        // Adding to counter
+        if (map.find(h) == map.end())
+            map[h] = 1;
+        else
+            map[h]++;
+
+        // The target is added
+        std::vector< int > h_target = {
+            rec.transmission_virus[i],
+            rec.transmission_target[i],
+            rec.transmission_date[i]
+        };
+
+        map[h_target] = 0;
+        
+    }
+
+    return map;
+
+}
+
+inline std::vector< epiworld_double > DataBase::get_transition_probability(
+    bool print,
+    bool normalize
+) const {
+
+    const auto& states_labels = model->states_labels;
+    size_t n_state = states_labels.size();
+    size_t n_days   = model->get_ndays();
+    std::vector< epiworld_double > res(n_state * n_state, 0.0);
+    std::vector< epiworld_double > rowsums(n_state, 0.0);
+
+    for (size_t t = 0; t < n_days; ++t)
+    {
+
+        for (size_t s_i = 0; s_i < n_state; ++s_i)
+        {
+
+            for (size_t s_j = 0u; s_j < n_state; ++s_j)
+            {
+                res[s_i + s_j * n_state] += (
+                    rec.hist_transition_matrix[
+                        s_i + s_j * n_state +
+                        t * (n_state * n_state)
+                    ]
+                );
+                
+                rowsums[s_i] += rec.hist_transition_matrix[
+                    s_i + s_j * n_state +
+                    t * (n_state * n_state)
+                ];
+            
+            }
+
+        }
+
+    }
+
+    if (normalize)
+    {
+        for (size_t s_i = 0; s_i < n_state; ++s_i)
+        {
+            // Nothing to normalize if the row is zero
+            if (rowsums[s_i] == 0)
+                continue;
+
+            for (size_t s_j = 0; s_j < n_state; ++s_j)
+                res[s_i + s_j * n_state] /= rowsums[s_i];
+        }
+    }
+
+    if (print)
+    {   
+
+        size_t nchar = 0u;
+        for (auto & l : states_labels)
+            if (l.length() > nchar)
+                nchar = l.length();
+
+        std::string fmt = " - %-" + std::to_string(nchar) + "s";
+
+        std::string fmt_entry = " % 4.2f";
+        if (!normalize)
+        {
+            nchar = 0u;
+            for (auto & l: res)
+            {
+                std::string tmp = std::to_string(l);
+                if (tmp.length() > nchar)
+                    nchar = tmp.length();
+            }
+
+            fmt_entry = " % " + std::to_string(nchar) + ".0f";
+        } 
+
+        
+        printf_epiworld("\nTransition Probabilities:\n");
+        for (size_t s_i = 0u; s_i < n_state; ++s_i)
+        {
+            printf_epiworld(fmt.c_str(), states_labels[s_i].c_str());
+            for (size_t s_j = 0u; s_j < n_state; ++s_j)
+            {
+                if (
+                    std::isnan(res[s_i + s_j * n_state]) ||
+                    (res[s_i + s_j * n_state] < 1e-10)
+                )
+                {
+                    printf_epiworld("     -");
+                } else {
+                    printf_epiworld(
+                        fmt_entry.c_str(), res[s_i + s_j * n_state]
+                    );
+                }
+            }
+            printf_epiworld("\n");
+        }
+
+        printf_epiworld("\n");
+
+    }
+
+    return res;
+
+
+} 
+
+inline void DataBase::get_generation_time(
+    std::vector< int > & agent_id,
+    std::vector< int > & virus_id,
+    std::vector< int > & time,
+    std::vector< int > & gentime
+) const {
+    
+    size_t nevents = rec.transmission_date.size();
+
+    agent_id.reserve(nevents);
+    virus_id.reserve(nevents);
+    time.reserve(nevents);
+    gentime.reserve(nevents);
+
+    // Iterating through the individuals
+    for (size_t i = 0u; i < nevents; ++i)
+    {
+        int agent_id_i = rec.transmission_target[i];
+        agent_id.push_back(agent_id_i);
+        virus_id.push_back(rec.transmission_virus[i]);
+        time.push_back(rec.transmission_date[i]);
+
+        bool found = false;
+        for (size_t j = i; j < nevents; ++j)
+        {
+
+            if (rec.transmission_source[j] == agent_id_i)
+            {
+                gentime.push_back(rec.transmission_date[j] - time[i]);
+                found = true;
+                break;
+            }
+
+        }
+
+        // If there's no transmission, we set the generation time to
+        // minus 1;
+        if (!found)
+            gentime.push_back(-1);
+
+    }
+
+    agent_id.shrink_to_fit();
+    virus_id.shrink_to_fit();
+    time.shrink_to_fit();
+    gentime.shrink_to_fit();
+
+    return;
+
+}
+
+inline void DataBase::get_hospitalizations(
+    std::vector<int> & date,
+    std::vector<int> & virus_id,
+    std::vector<int> & tool_id,
+    std::vector<int> & count,
+    std::vector<double> & weight
+) const
+{
+    // Get the number of days from the model and add 1 since days are 0-indexed
+    // today() returns the last day, so we need today() + 1 for the full count
+    int ndays = model->today() + 1;
+    rec.m_hospitalizations.get(ndays, date, virus_id, tool_id, count, weight);
+}
+
+inline void DataBase::get_hist_transitions(
+    std::vector< int > & date,
+    std::vector< std::string > & transition,
+    std::vector< int > & counts
+) const
+{
+
+    if (model->tracks.empty())
+        throw std::logic_error(
+            "get_hist_transitions() needs a model with a natural history."
+        );
+
+    date = rec.hist_transition_date;
+    counts = rec.hist_transition_counts;
+    // Stage transitions first, then the status ones
+    const int n_stage = static_cast< int >(model->tracks[0u].nh->get_n_transitions());
+    transition.resize(rec.hist_transition_id.size());
+    for (size_t k = 0u; k < rec.hist_transition_id.size(); ++k)
+    {
+        const int t = rec.hist_transition_id[k];
+        transition[k] = (t < n_stage) ?
+            model->tracks[0u].nh->get_transition(t).name :
+            model->st->get_transition(t - n_stage).name;
+    }
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/database-meat-queries.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/database-meat-outputs.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_DATABASE_MEAT_OUTPUTS_HPP
+#define EPIWORLD_DATABASE_MEAT_OUTPUTS_HPP
+
+/**
+ * @file database-meat-outputs.hpp
+ * @brief The run's output tables (`get_run_outputs()`, used by the savers)
+ * and the files `write_data()` writes.
+ */
 
 inline RunOutputs DataBase::get_run_outputs(
     const std::vector< std::string > & whats
@@ -13648,7 +13992,7 @@ inline RunOutputs DataBase::get_run_outputs(
         std::vector< std::string > names;
         names.reserve(ids.size());
         for (auto i : ids)
-            names.push_back(virus_name[i]);
+            names.push_back(reg.virus_name[i]);
         return names;
     };
 
@@ -13685,53 +14029,53 @@ inline RunOutputs DataBase::get_run_outputs(
 
         if (what == "virus_info")
         {
-            std::vector< int > id(virus_name.size());
+            std::vector< int > id(reg.virus_name.size());
             std::iota(id.begin(), id.end(), 0);
             t.add("virus_id", id);
-            t.add("virus", virus_name);
-            t.add("date_recorded", virus_origin_date);
-            t.add("parent", virus_parent_id);
+            t.add("virus", reg.virus_name);
+            t.add("date_recorded", reg.virus_origin_date);
+            t.add("parent", reg.virus_parent_id);
         }
         else if (what == "virus_hist")
         {
-            t.add("date", hist_virus_date);
-            t.add("virus_id", hist_virus_id);
-            t.add("virus", vnames(hist_virus_id));
-            add_pairs(t, hist_virus_state, "");
-            t.add("n", hist_virus_counts);
+            t.add("date", rec.hist_virus_date);
+            t.add("virus_id", rec.hist_virus_id);
+            t.add("virus", vnames(rec.hist_virus_id));
+            add_pairs(t, rec.hist_virus_state, "");
+            t.add("n", rec.hist_virus_counts);
         }
         else if (what == "tool_info")
         {
-            std::vector< int > id(tool_name.size());
+            std::vector< int > id(reg.tool_name.size());
             std::iota(id.begin(), id.end(), 0);
             t.add("id", id);
-            t.add("tool_name", tool_name);
-            t.add("date_recorded", tool_origin_date);
+            t.add("reg.tool_name", reg.tool_name);
+            t.add("date_recorded", reg.tool_origin_date);
         }
         else if (what == "tool_hist")
         {
-            t.add("date", hist_tool_date);
-            t.add("id", hist_tool_id);
-            add_pairs(t, hist_tool_state, "");
-            t.add("n", hist_tool_counts);
+            t.add("date", rec.hist_tool_date);
+            t.add("id", rec.hist_tool_id);
+            add_pairs(t, rec.hist_tool_state, "");
+            t.add("n", rec.hist_tool_counts);
         }
         else if (what == "total_hist")
         {
-            t.add("date", hist_total_date);
-            t.add("nviruses", hist_total_nviruses_active);
-            add_pairs(t, hist_total_state, "");
-            t.add("counts", hist_total_counts);
+            t.add("date", rec.hist_total_date);
+            t.add("nviruses", rec.hist_total_nviruses_active);
+            add_pairs(t, rec.hist_total_state, "");
+            t.add("counts", rec.hist_total_counts);
         }
         else if (what == "transmission")
         {
-            t.add("date", transmission_date);
-            t.add("virus_id", transmission_virus);
-            t.add("virus", vnames(transmission_virus));
-            t.add("source_exposure_date", transmission_source_exposure_date);
-            t.add("source", transmission_source);
-            t.add("target", transmission_target);
-            t.add("layer_id", transmission_layer);
-            t.add("layer", lnames(transmission_layer));
+            t.add("date", rec.transmission_date);
+            t.add("virus_id", rec.transmission_virus);
+            t.add("virus", vnames(rec.transmission_virus));
+            t.add("source_exposure_date", rec.transmission_source_exposure_date);
+            t.add("source", rec.transmission_source);
+            t.add("target", rec.transmission_target);
+            t.add("layer_id", rec.transmission_layer);
+            t.add("layer", lnames(rec.transmission_layer));
         }
         else if (what == "transition")
         {
@@ -13742,7 +14086,7 @@ inline RunOutputs DataBase::get_run_outputs(
                 for (int f = 0; f < ns; ++f)
                     for (int s = 0; s < ns; ++s)
                     {
-                        int n = hist_transition_matrix[i * (ns * ns) + s * ns + f];
+                        int n = rec.hist_transition_matrix[i * (ns * ns) + s * ns + f];
                         if (n == 0)
                             continue;
                         date.push_back(i);
@@ -13883,103 +14227,6 @@ inline void DataBase::write_data(
 
 }
 
-inline void DataBase::record_transmission(
-    int i,
-    int j,
-    int virus,
-    int i_expo_date,
-    int layer
-) {
-
-    transmission_date.push_back(model->today());
-    transmission_source.push_back(i);
-    transmission_target.push_back(j);
-    transmission_virus.push_back(virus);
-    transmission_source_exposure_date.push_back(i_expo_date);
-    transmission_layer.push_back(layer);
-
-}
-
-inline size_t DataBase::get_n_viruses() const
-{
-    return virus_name.size();
-}
-
-inline size_t DataBase::get_n_tools() const
-{
-    return tool_name.size();
-}
-
-
-inline void DataBase::set_user_data(
-    std::vector< std::string > names
-)
-{
-    user_data = UserData(names);
-    user_data.model = model;
-}
-
-inline void DataBase::add_user_data(
-    std::vector< epiworld_double > x
-)
-{
-
-    user_data.add(x);
-
-}
-
-inline void DataBase::add_user_data(
-    epiworld_fast_uint k,
-    epiworld_double x
-)
-{
-
-    user_data.add(k, x);
-
-}
-
-inline UserData & DataBase::get_user_data()
-{
-    return user_data;
-}
-
-inline MapVec_type<int,int> DataBase::get_reproductive_number()
-const {
-
-    // Checking size
-    MapVec_type<int,int> map;
-
-    // Number of digits of maxid
-    for (size_t i = 0u; i < transmission_date.size(); ++i)
-    {
-        // Fabricating id
-        std::vector< int > h = {
-            transmission_virus[i],
-            transmission_source[i],
-            transmission_source_exposure_date[i]
-        };
-
-        // Adding to counter
-        if (map.find(h) == map.end())
-            map[h] = 1;
-        else
-            map[h]++;
-
-        // The target is added
-        std::vector< int > h_target = {
-            transmission_virus[i],
-            transmission_target[i],
-            transmission_date[i]
-        };
-
-        map[h_target] = 0;
-        
-    }
-
-    return map;
-
-}
-
 inline void DataBase::get_reproductive_number(
     std::string fn
 ) const {
@@ -13988,110 +14235,50 @@ inline void DataBase::get_reproductive_number(
 
 }
 
-inline std::vector< epiworld_double > DataBase::get_transition_probability(
-    bool print,
-    bool normalize
-) const {
+inline void DataBase::get_generation_time(
+    std::string fn
+) const
+{
 
-    const auto& states_labels = model->states_labels;
-    size_t n_state = states_labels.size();
-    size_t n_days   = model->get_ndays();
-    std::vector< epiworld_double > res(n_state * n_state, 0.0);
-    std::vector< epiworld_double > rowsums(n_state, 0.0);
+    write_table(fn, get_run_outputs({"generation"}).at("generation"));
 
-    for (size_t t = 0; t < n_days; ++t)
-    {
+}
 
-        for (size_t s_i = 0; s_i < n_state; ++s_i)
-        {
+inline void SaverMemory::operator()(size_t sim_id, Model * model) const
+{
+    auto out = model->get_db().get_run_outputs(state->whats);
+    if (sim_id >= state->runs.size())
+        state->runs.resize(sim_id + 1u);
+    state->runs[sim_id] = std::move(out);
+}
 
-            for (size_t s_j = 0u; s_j < n_state; ++s_j)
-            {
-                res[s_i + s_j * n_state] += (
-                    hist_transition_matrix[
-                        s_i + s_j * n_state +
-                        t * (n_state * n_state)
-                    ]
-                );
-                
-                rowsums[s_i] += hist_transition_matrix[
-                    s_i + s_j * n_state +
-                    t * (n_state * n_state)
-                ];
-            
-            }
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-        }
+ End of -./include/epiworld/database-meat-outputs.hpp-
 
-    }
-
-    if (normalize)
-    {
-        for (size_t s_i = 0; s_i < n_state; ++s_i)
-        {
-            // Nothing to normalize if the row is zero
-            if (rowsums[s_i] == 0)
-                continue;
-
-            for (size_t s_j = 0; s_j < n_state; ++s_j)
-                res[s_i + s_j * n_state] /= rowsums[s_i];
-        }
-    }
-
-    if (print)
-    {   
-
-        size_t nchar = 0u;
-        for (auto & l : states_labels)
-            if (l.length() > nchar)
-                nchar = l.length();
-
-        std::string fmt = " - %-" + std::to_string(nchar) + "s";
-
-        std::string fmt_entry = " % 4.2f";
-        if (!normalize)
-        {
-            nchar = 0u;
-            for (auto & l: res)
-            {
-                std::string tmp = std::to_string(l);
-                if (tmp.length() > nchar)
-                    nchar = tmp.length();
-            }
-
-            fmt_entry = " % " + std::to_string(nchar) + ".0f";
-        } 
-
-        
-        printf_epiworld("\nTransition Probabilities:\n");
-        for (size_t s_i = 0u; s_i < n_state; ++s_i)
-        {
-            printf_epiworld(fmt.c_str(), states_labels[s_i].c_str());
-            for (size_t s_j = 0u; s_j < n_state; ++s_j)
-            {
-                if (
-                    std::isnan(res[s_i + s_j * n_state]) ||
-                    (res[s_i + s_j * n_state] < 1e-10)
-                )
-                {
-                    printf_epiworld("     -");
-                } else {
-                    printf_epiworld(
-                        fmt_entry.c_str(), res[s_i + s_j * n_state]
-                    );
-                }
-            }
-            printf_epiworld("\n");
-        }
-
-        printf_epiworld("\n");
-
-    }
-
-    return res;
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
 
 
-} 
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/database-meat-compare.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_DATABASE_MEAT_COMPARE_HPP
+#define EPIWORLD_DATABASE_MEAT_COMPARE_HPP
+
+/**
+ * @file database-meat-compare.hpp
+ * @brief Comparing databases (each part compares its own fields; with
+ * `EPI_DEBUG`, a mismatch throws naming the field).
+ */
 
 #define VECT_MATCH(a, b, c) \
     EPI_DEBUG_FAIL_AT_TRUE(a.size() != b.size(), c) \
@@ -14100,7 +14287,7 @@ inline std::vector< epiworld_double > DataBase::get_transition_probability(
         EPI_DEBUG_FAIL_AT_TRUE(a[__i] != b[__i], c) \
     }
 
-inline bool DataBase::operator==(const DataBase & other) const
+inline bool DataRegistry::operator==(const DataRegistry & other) const
 {
     VECT_MATCH(
         virus_name,
@@ -14133,12 +14320,15 @@ inline bool DataBase::operator==(const DataBase & other) const
     )
 
     
-    EPI_DEBUG_FAIL_AT_TRUE(
-        sampling_freq != other.sampling_freq,
-        "DataBase:: sampling_freq don't match."
-    )
 
+    return true;
+
+}
+
+inline bool DiseaseRecord::operator==(const DiseaseRecord & other) const
+{
     // Variants history
+
     VECT_MATCH(
         hist_virus_date,
         other.hist_virus_date,
@@ -14164,6 +14354,7 @@ inline bool DataBase::operator==(const DataBase & other) const
     )
 
     // Tools history
+
     VECT_MATCH(
         hist_tool_date,
         other.hist_tool_date,
@@ -14189,6 +14380,7 @@ inline bool DataBase::operator==(const DataBase & other) const
     )
 
     // Overall hist
+
     VECT_MATCH(
         hist_total_date,
         other.hist_total_date,
@@ -14220,6 +14412,7 @@ inline bool DataBase::operator==(const DataBase & other) const
     )
 
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
+
     EPI_DEBUG_FAIL_AT_TRUE(
         today_virus.size() != other.today_virus.size(),
         "DataBase:: today_virus.size() don't match."
@@ -14234,6 +14427,7 @@ inline bool DataBase::operator==(const DataBase & other) const
     }
 
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
+
     EPI_DEBUG_FAIL_AT_TRUE(
         today_tool.size() != other.today_tool.size(),
         "DataBase:: today_tool.size() don't match."
@@ -14248,18 +14442,21 @@ inline bool DataBase::operator==(const DataBase & other) const
     }
 
     // {Susceptible, Infected, etc.}
+
     VECT_MATCH(
         today_total, other.today_total,
         "DataBase:: today_total[i] don't match"
         )
 
     // Totals
+
     EPI_DEBUG_FAIL_AT_TRUE(
         today_total_nviruses_active != other.today_total_nviruses_active,
         "DataBase:: today_total_nviruses_active don't match."
     )
 
     // Transmission network
+
     VECT_MATCH( ///< Date of the transmission eve
         transmission_date,
         other.transmission_date,
@@ -14306,127 +14503,28 @@ inline bool DataBase::operator==(const DataBase & other) const
 
 }
 
-inline void DataBase::get_generation_time(
-    std::vector< int > & agent_id,
-    std::vector< int > & virus_id,
-    std::vector< int > & time,
-    std::vector< int > & gentime
-) const {
-    
-    size_t nevents = transmission_date.size();
-
-    agent_id.reserve(nevents);
-    virus_id.reserve(nevents);
-    time.reserve(nevents);
-    gentime.reserve(nevents);
-
-    // Iterating through the individuals
-    for (size_t i = 0u; i < nevents; ++i)
-    {
-        int agent_id_i = transmission_target[i];
-        agent_id.push_back(agent_id_i);
-        virus_id.push_back(transmission_virus[i]);
-        time.push_back(transmission_date[i]);
-
-        bool found = false;
-        for (size_t j = i; j < nevents; ++j)
-        {
-
-            if (transmission_source[j] == agent_id_i)
-            {
-                gentime.push_back(transmission_date[j] - time[i]);
-                found = true;
-                break;
-            }
-
-        }
-
-        // If there's no transmission, we set the generation time to
-        // minus 1;
-        if (!found)
-            gentime.push_back(-1);
-
-    }
-
-    agent_id.shrink_to_fit();
-    virus_id.shrink_to_fit();
-    time.shrink_to_fit();
-    gentime.shrink_to_fit();
-
-    return;
-
-}
-
-inline void DataBase::get_generation_time(
-    std::string fn
-) const
+inline bool DataBase::operator==(const DataBase & other) const
 {
 
-    write_table(fn, get_run_outputs({"generation"}).at("generation"));
+    if (!(reg == other.reg))
+        return false;
 
-}
+    EPI_DEBUG_FAIL_AT_TRUE(
+        sampling_freq != other.sampling_freq,
+        "DataBase:: sampling_freq don't match."
+    )
 
-inline void DataBase::record_hospitalization(Agent & agent)
-{
-    m_hospitalizations.record(agent, *model);
-}
+    return rec == other.rec;
 
-inline void DataBase::get_hospitalizations(
-    std::vector<int> & date,
-    std::vector<int> & virus_id,
-    std::vector<int> & tool_id,
-    std::vector<int> & count,
-    std::vector<double> & weight
-) const
-{
-    // Get the number of days from the model and add 1 since days are 0-indexed
-    // today() returns the last day, so we need today() + 1 for the full count
-    int ndays = model->today() + 1;
-    m_hospitalizations.get(ndays, date, virus_id, tool_id, count, weight);
 }
 
 #undef VECT_MATCH
-
-inline void DataBase::get_hist_transitions(
-    std::vector< int > & date,
-    std::vector< std::string > & transition,
-    std::vector< int > & counts
-) const
-{
-
-    if (model->tracks.empty())
-        throw std::logic_error(
-            "get_hist_transitions() needs a model with a natural history."
-        );
-
-    date = hist_transition_date;
-    counts = hist_transition_counts;
-    // Stage transitions first, then the status ones
-    const int n_stage = static_cast< int >(model->tracks[0u].nh->get_n_transitions());
-    transition.resize(hist_transition_id.size());
-    for (size_t k = 0u; k < hist_transition_id.size(); ++k)
-    {
-        const int t = hist_transition_id[k];
-        transition[k] = (t < n_stage) ?
-            model->tracks[0u].nh->get_transition(t).name :
-            model->st->get_transition(t - n_stage).name;
-    }
-
-}
-
-inline void SaverMemory::operator()(size_t sim_id, Model * model) const
-{
-    auto out = model->get_db().get_run_outputs(state->whats);
-    if (sim_id >= state->runs.size())
-        state->runs.resize(sim_id + 1u);
-    state->runs[sim_id] = std::move(out);
-}
 
 #endif
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
- End of -./include/epiworld/database-meat.hpp-
+ End of -./include/epiworld/database-meat-compare.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -17293,7 +17391,7 @@ inline const Model & Model::print(bool lite) const
             {
                 printf_epiworld(
                     "%i %s%s",
-                    static_cast<int>(db.today_total[ i ]),
+                    static_cast<int>(db.rec.today_total[ i ]),
                     states_labels[i].c_str(),
                     (
                         i == (nstate_int - 2)
@@ -17550,8 +17648,8 @@ inline const Model & Model::print(bool lite) const
                     fmt.c_str(),
                     s,
                     states_labels[s].c_str(),
-                    db.hist_total_counts[s],
-                    db.today_total[ s ]
+                    db.rec.hist_total_counts[s],
+                    db.rec.today_total[ s ]
                     );
 
         }
@@ -19448,11 +19546,11 @@ inline void Model::_event_add_virus(Event & a)
 
     // Lastly, we increase the daily count of the virus
     #ifdef EPI_DEBUG
-    db.today_virus.at(p->virus->get_id()).at(
+    db.rec.today_virus.at(p->virus->get_id()).at(
         a.new_state != -99 ? a.new_state : p->state
     )++;
     #else
-    db.today_virus[p->virus->get_id()][
+    db.rec.today_virus[p->virus->get_id()][
         a.new_state != -99 ? a.new_state : p->state
     ]++;
     #endif
@@ -19488,7 +19586,7 @@ inline void Model::_event_add_tool(Event & a)
             );
     }
 
-    db.today_tool[p->tools[tool_pos]->get_id()][
+    db.rec.today_tool[p->tools[tool_pos]->get_id()][
         a.new_state != -99 ? a.new_state : p->state
     ]++;
 
@@ -19523,9 +19621,9 @@ inline void Model::_event_rm_virus(Event & a)
     // agent's current state (pre-transition), not state_prev.
     // state_prev may refer to an earlier same-day state.
     #ifdef EPI_DEBUG
-    db.today_virus.at(v->get_id()).at(p->state)--;
+    db.rec.today_virus.at(v->get_id()).at(p->state)--;
     #else
-    db.today_virus[v->get_id()][p->state]--;
+    db.rec.today_virus[v->get_id()][p->state]--;
     #endif
 
     
@@ -19581,9 +19679,9 @@ inline void Model::_event_rm_tool(Event & a)
     if (removed)
     {
         #ifdef EPI_DEBUG
-        db.today_tool.at(t->get_id()).at(p->state)--;
+        db.rec.today_tool.at(t->get_id()).at(p->state)--;
         #else
-        db.today_tool[t->get_id()][p->state]--;
+        db.rec.today_tool[t->get_id()][p->state]--;
         #endif
 
         t->agent = nullptr;
