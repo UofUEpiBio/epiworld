@@ -6400,22 +6400,41 @@ protected:
      * shares it. It is shared by the model's copies (it does not change once
      * installed); what it stores per agent is the model's, and is reset with
      * it.
+     *
+     * What the engine keeps for one disease is a **track** (see
+     * `several-diseases.md`). A model has one track for now; the functions
+     * below take theirs, so that a second disease is a second track.
      */
     ///@{
-    std::shared_ptr< const NaturalHistory > nh = nullptr;
-    std::vector< int > nh_until;    ///< [agent] Day the stage's duration ends
-    std::vector< int > nh_row;      ///< [agent] Its record in nh_rows (-1: none yet)
-    /**
-     * Per agent that has left the first stage (`nh_row`), `1 + stages` ints:
-     * its infections so far, then the day it entered each stage in this
-     * infection (-1: not). An agent without a record has been in the first
-     * stage since day 0, with no infection; the records are made as agents
-     * move, so a run touches memory for the agents that do.
-     */
-    std::vector< int > nh_rows;
-    int * nh_record(size_t id);     ///< The agent's record, made on first use
-    std::vector< char > nh_queue;   ///< [stage] Queue mode: 0 none, 1 self, 2 everyone
-    Assign nh_initial;        ///< See set_initial()
+    struct Track {
+        std::shared_ptr< const NaturalHistory > nh; ///< The disease
+        std::vector< int > until;  ///< [agent] Day the stage's duration ends
+        std::vector< int > row;    ///< [agent] Its record in `rows` (-1: none yet)
+        /**
+         * Per agent that has left the first stage (`row`), `1 + stages`
+         * ints: its infections so far, then the day it entered each stage in
+         * this infection (-1: not). An agent without a record has been in
+         * the first stage since day 0, with no infection; the records are
+         * made as agents move, so a run touches memory for the agents that
+         * do.
+         */
+        std::vector< int > rows;
+        std::vector< char > queue; ///< [cell] Queue mode: 0 none, 1 self, 2 everyone
+        Assign initial;            ///< See set_initial()
+
+        int * record(size_t id);   ///< The agent's record, made on first use
+        bool removed(int stage) const; ///< No contacts and no exit
+    };
+    std::vector< Track > tracks;
+
+    /// The track of a virus (its disease), and of an agent's infection
+    /// (without one, the first)
+    Track & nh_track(const Virus *) { return tracks[0u]; }
+    const Track & nh_track(const Virus *) const { return tracks[0u]; }
+
+    /// The agent's cell in a track. The first track's is kept in the agent.
+    unsigned int nh_cell_of(const Track &, const Agent & p) const { return p.state; }
+
     int nh_pending = -1;            ///< Transition of the next event (see _add_event())
 
     /// Event: a seeded infection, and an initial placement (status transitions
@@ -6455,26 +6474,26 @@ protected:
     int nh_db_id(int t) const
     {
         return nh_is_status_tr(t) ?
-            static_cast< int >(nh->get_n_transitions()) + nh_status_tr(t) : t;
+            static_cast< int >(tracks[0u].nh->get_n_transitions()) + nh_status_tr(t) : t;
     }
     void nh_build_states();
     void nh_react(Agent & p, int transition, int stage_old);
-    bool nh_removed(int stage) const;
 
     void nh_install(std::shared_ptr< NaturalHistory > def);
     void nh_reset();
     void nh_step(Agent & p);
+    bool nh_step_stage(Track & track, Agent & p, unsigned int cell); ///< nh_step()'s stage part
     void nh_step_status(Agent & p, unsigned int cell, int stage); ///< nh_step()'s status part
 
-    /// The natural history whose values apply to `p`: its virus's, or (no
-    /// virus) the model's
-    const NaturalHistory & nh_of(const Agent & p) const
+    /// The natural history whose values apply to `p` in a track: its
+    /// virus's (a strain's values), or (no virus) the track's
+    const NaturalHistory & nh_of(const Track & track, const Agent & p) const
     {
         const auto & v = p.get_virus();
-        return (v && v->nh_def) ? *v->nh_def : *nh;
+        return (v && v->nh_def) ? *v->nh_def : *track.nh;
     }
     void nh_propose(int transition, Agent & p, Virus * virus = nullptr);
-    void nh_enter(Agent & p, unsigned int state_old, int transition);
+    void nh_enter(Track & track, Agent & p, unsigned int state_old, int transition);
     void nh_queue_move(Agent & p, unsigned int state_old);
     void nh_initial_place();
     epiworld_double nh_infection_prob(Agent & target, const Virus & v);
@@ -6848,7 +6867,10 @@ public:
     ///@{
 
     /// The natural history of the model's viruses (`nullptr` if none has one).
-    const NaturalHistory * get_natural_history() const { return nh.get(); }
+    const NaturalHistory * get_natural_history() const
+    {
+        return tracks.empty() ? nullptr : tracks[0u].nh.get();
+    }
 
     /**
      * @brief Fires a declared transition on an agent, applied at the end of
@@ -12754,8 +12776,8 @@ inline void DataBase::reset()
     transmission_layer.clear();
 
     transition_today.assign(
-        model->nh ?
-            model->nh->get_n_transitions() +
+        !model->tracks.empty() ?
+            model->tracks[0u].nh->get_n_transitions() +
                 (model->st ? model->st->get_n_transitions() : 0u) :
             0u,
         0
@@ -13230,7 +13252,7 @@ inline void DataBase::split_state(
 ) const
 {
 
-    if (!model->nh)
+    if (model->tracks.empty())
     {
         status = "Free";
         stage = model->states_labels[state];
@@ -13238,7 +13260,7 @@ inline void DataBase::split_state(
     }
 
     const unsigned int c = static_cast< unsigned int >(state);
-    stage = model->nh->get_stages()[static_cast< size_t >(model->nh_stage_of(c))];
+    stage = model->tracks[0u].nh->get_stages()[static_cast< size_t >(model->nh_stage_of(c))];
     status = model->st ?
         model->st->get_stages()[static_cast< size_t >(model->nh_status_of(c))] :
         std::string("Free");
@@ -14372,7 +14394,7 @@ inline void DataBase::get_hist_transitions(
 ) const
 {
 
-    if (!model->nh)
+    if (model->tracks.empty())
         throw std::logic_error(
             "get_hist_transitions() needs a model with a natural history."
         );
@@ -14380,13 +14402,13 @@ inline void DataBase::get_hist_transitions(
     date = hist_transition_date;
     counts = hist_transition_counts;
     // Stage transitions first, then the status ones
-    const int n_stage = static_cast< int >(model->nh->get_n_transitions());
+    const int n_stage = static_cast< int >(model->tracks[0u].nh->get_n_transitions());
     transition.resize(hist_transition_id.size());
     for (size_t k = 0u; k < hist_transition_id.size(); ++k)
     {
         const int t = hist_transition_id[k];
         transition[k] = (t < n_stage) ?
-            model->nh->get_transition(t).name :
+            model->tracks[0u].nh->get_transition(t).name :
             model->st->get_transition(t - n_stage).name;
     }
 
@@ -15704,7 +15726,7 @@ inline void Model::events_run()
         // its sources (it may have moved earlier in the same pass). Its event
         // carries the target stage or status, made a cell here.
         const int transition = a.transition;
-        if (nh && (transition != -1))
+        if (!tracks.empty() && (transition != -1))
         {
 
             const unsigned int c = a.agent->state;
@@ -15713,7 +15735,7 @@ inline void Model::events_run()
 
             if (nh_is_status_tr(transition))
             {
-                if (!st->is_source(nh_status_tr(transition), k) || nh_removed(s))
+                if (!st->is_source(nh_status_tr(transition), k) || tracks[0u].removed(s))
                     continue;
                 a.new_state = static_cast< epiworld_fast_int >(
                     nh_cell(s, static_cast< int >(a.new_state))
@@ -15721,7 +15743,7 @@ inline void Model::events_run()
             }
             else
             {
-                if ((transition >= 0) && !nh->is_source(transition, s))
+                if ((transition >= 0) && !tracks[0u].nh->is_source(transition, s))
                     continue;
                 a.new_state = static_cast< epiworld_fast_int >(
                     nh_cell(static_cast< int >(a.new_state), k)
@@ -15806,7 +15828,7 @@ inline void Model::events_run()
 
         // The natural history's bookkeeping: entry days, the stage's duration,
         // the transition counts, and the queue (derived from the stages)
-        if (nh)
+        if (!tracks.empty())
         {
 
             const int s_old = nh_stage_of(state_old);
@@ -15818,7 +15840,10 @@ inline void Model::events_run()
                 (transition == NH_SEED) ||
                 (transition == NH_INITIAL)
             )
-                nh_enter(*p, static_cast< unsigned int >(s_old), transition);
+                nh_enter(
+                    nh_track(p->virus.get()), *p,
+                    static_cast< unsigned int >(s_old), transition
+                );
 
             // Entering a status: its day, and its duration (which may count
             // from a stage's entry)
@@ -16043,12 +16068,7 @@ inline Model::Model(const Model & model) :
     transmission_mode(model.transmission_mode),
     transmission_mode_last(model.transmission_mode_last),
     transmission_kappa(model.transmission_kappa),
-    nh(model.nh),
-    nh_until(model.nh_until),
-    nh_row(model.nh_row),
-    nh_rows(model.nh_rows),
-    nh_queue(model.nh_queue),
-    nh_initial(model.nh_initial),
+    tracks(model.tracks),
     st(model.st),
     nh_status_until(model.nh_status_until),
     nh_status_sod(model.nh_status_sod),
@@ -16154,12 +16174,7 @@ inline Model::Model(Model && model) :
     transmission_mode(model.transmission_mode),
     transmission_mode_last(model.transmission_mode_last),
     transmission_kappa(model.transmission_kappa),
-    nh(std::move(model.nh)),
-    nh_until(std::move(model.nh_until)),
-    nh_row(std::move(model.nh_row)),
-    nh_rows(std::move(model.nh_rows)),
-    nh_queue(std::move(model.nh_queue)),
-    nh_initial(std::move(model.nh_initial)),
+    tracks(std::move(model.tracks)),
     st(std::move(model.st)),
     nh_status_until(std::move(model.nh_status_until)),
     nh_status_sod(std::move(model.nh_status_sod)),
@@ -16258,12 +16273,7 @@ inline Model & Model::operator=(const Model & m)
     transmission_mode_last = m.transmission_mode_last;
     transmission_kappa = m.transmission_kappa;
 
-    nh = m.nh;
-    nh_until = m.nh_until;
-    nh_row = m.nh_row;
-    nh_rows = m.nh_rows;
-    nh_queue = m.nh_queue;
-    nh_initial = m.nh_initial;
+    tracks = m.tracks;
     st = m.st;
     nh_status_until = m.nh_status_until;
     nh_status_sod = m.nh_status_sod;
@@ -16355,11 +16365,11 @@ inline void Model::dist_virus()
     // that can be infected. By state first, so the pass over the agents is a
     // lookup.
     std::vector< char > infectable(
-        nh ? nh->get_n_stages() * nh_nstatus() : 1u, 1
+        !tracks.empty() ? tracks[0u].nh->get_n_stages() * nh_nstatus() : 1u, 1
     );
-    if (nh)
+    if (!tracks.empty())
         for (size_t c = 0u; c < infectable.size(); ++c)
-            infectable[c] = nh->stages[
+            infectable[c] = tracks[0u].nh->stages[
                 static_cast< size_t >(nh_stage_of(static_cast< unsigned int >(c)))
             ].infection >= 0;
 
@@ -16371,7 +16381,7 @@ inline void Model::dist_virus()
             continue;
 
         buf.eligible.resize(population.size());
-        if (nh)
+        if (!tracks.empty())
             for (auto & p : population)
                 buf.eligible[static_cast< size_t >(p.id)] =
                     (p.virus == nullptr) & infectable[p.state];
@@ -16390,13 +16400,13 @@ inline void Model::dist_virus()
 
             if (label == assign::ANY)
             {
-                if (nh)
+                if (!tracks.empty())
                     nh_pending = NH_SEED;
                 population[i].set_virus(*this, v);
             }
             else
             {
-                if (!nh || (label < 0) || (static_cast< size_t >(label) >= nh->get_n_stages()) || !nh->is_carrier(label))
+                if (tracks.empty() || (label < 0) || (static_cast< size_t >(label) >= tracks[0u].nh->get_n_stages()) || !tracks[0u].nh->is_carrier(label))
                     throw std::logic_error(
                         "The virus \"" + v.get_name() + "\" is assigned to "
                         "the label " + std::to_string(label) + ", which is not "
@@ -16477,12 +16487,12 @@ inline void Model::add_virus(
         auto def = std::make_shared< NaturalHistory >(*v.nh_def);
         def->finalize(*this, v.get_name());
 
-        if (!nh)
+        if (tracks.empty())
             nh_install(def);
-        else if (!nh->same_structure(*def))
+        else if (!tracks[0u].nh->same_structure(*def))
             throw std::logic_error(
                 "The natural history of \"" + v.get_name() + "\" differs from "
-                "the model's (\"" + nh->get_name() + "\"): the viruses of a "
+                "the model's (\"" + tracks[0u].nh->get_name() + "\"): the viruses of a "
                 "model have the same stages and transitions (their values may "
                 "differ). Several diseases per model, each with its own "
                 "natural history, are planned (natural-history.md, NH-5)."
@@ -17178,10 +17188,14 @@ inline void Model::reset() {
     for (auto & v : viruses)
         v->check_params(*this);
 
-    if (nh)
+    if (!tracks.empty())
     {
         for (auto & v : viruses)
-            if (!v->nh_def || ((v->nh_def.get() != nh.get()) && !nh->same_structure(*v->nh_def)))
+            if (
+                !v->nh_def ||
+                ((v->nh_def.get() != nh_track(v.get()).nh.get()) &&
+                    !nh_track(v.get()).nh->same_structure(*v->nh_def))
+            )
                 throw std::logic_error(
                     "The natural history of the virus \"" + v->get_name() +
                     "\" no longer matches the model's (was it edited after "
@@ -17202,7 +17216,7 @@ inline void Model::reset() {
     dist_tools();
 
     // The initial stages, if any
-    if (nh)
+    if (!tracks.empty())
         nh_initial_place();
 
     // Global events set themselves up for the run. This happens last, with the
@@ -19778,18 +19792,19 @@ inline void Agent::set_virus(
 
     // With a natural history, a virus given from outside (seeding, an
     // import) follows the infection transition out of the agent's stage
-    if (model.nh && (state_new == -99))
+    if (!model.tracks.empty() && (state_new == -99))
     {
 
-        const int tr = model.nh->get_stage_info(model.nh_stage_of(state)).infection;
+        const auto & nh = *model.nh_track(&virus).nh;
+        const int tr = nh.get_stage_info(model.nh_stage_of(state)).infection;
         if (tr < 0)
             throw std::logic_error(
                 "Agent " + std::to_string(id) + " is in the stage \"" +
-                model.nh->get_stages()[model.nh_stage_of(state)] + "\", which has no infection "
+                nh.get_stages()[model.nh_stage_of(state)] + "\", which has no infection "
                 "transition, so it cannot be given a virus."
             );
 
-        state_new = model.nh->get_transition(tr).to;
+        state_new = nh.get_transition(tr).to;
         queue = Queue::NoOne;
         if (model.nh_pending == -1)
             model.nh_pending = Model::NH_SEED;
@@ -20428,7 +20443,7 @@ inline bool Model::transmission_prepare()
     bool any = false;
 
     // A natural history says which stages are pushed to
-    if (nh)
+    if (!tracks.empty())
     {
         // A cell is pushed to if its stage's only drawn exit is a default
         // infection, its status has no drawn exit, and it is in the layers
@@ -20439,7 +20454,7 @@ inline bool Model::transmission_prepare()
                 st->stages[static_cast< size_t >(nh_status_of(cu))].needs_visit;
             const bool excluded = !state_excluded.empty() && state_excluded[c];
             if (
-                nh->stages[static_cast< size_t >(nh_stage_of(cu))].pushable &&
+                tracks[0u].nh->stages[static_cast< size_t >(nh_stage_of(cu))].pushable &&
                 !status_drawn && !excluded
             )
             {
@@ -20732,9 +20747,9 @@ inline void Model::transmission_push_impl()
         #endif
 
         sampled_layer = target.layer;
-        if (nh)
+        if (!tracks.empty())
             nh_propose(
-                nh->stages[static_cast< size_t >(nh_stage_of(i.state))].infection,
+                tracks[0u].nh->stages[static_cast< size_t >(nh_stage_of(i.state))].infection,
                 i, target.candidate
             );
         else
@@ -21589,7 +21604,8 @@ inline void Model::nh_install(std::shared_ptr< NaturalHistory > def)
             "by contact but no infectious stage (stage::infectious)."
         );
 
-    nh = std::move(def);
+    tracks.emplace_back();
+    tracks.back().nh = std::move(def);
     nh_build_states();
 
 }
@@ -21606,7 +21622,7 @@ inline void Model::set_statuses(Statuses s)
     s.finalize(*this, "Statuses");
     st = std::make_shared< const Statuses >(std::move(s));
 
-    if (nh)
+    if (!tracks.empty())
         nh_build_states();
 
 }
@@ -21614,7 +21630,8 @@ inline void Model::set_statuses(Statuses s)
 inline void Model::nh_build_states()
 {
 
-    const int ns = static_cast< int >(nh->get_n_stages());
+    Track & track = tracks[0u];
+    const int ns = static_cast< int >(track.nh->get_n_stages());
     const int nk = static_cast< int >(nh_nstatus());
 
     // A status transition's stages (`.when()` and a duration's `.since()`)
@@ -21625,14 +21642,14 @@ inline void Model::nh_build_states()
         {
             const auto & tr = st->get_transition(static_cast< int >(t));
             for (int s : tr.when)
-                nh->check_stage(s, "when");
+                track.nh->check_stage(s, "when");
             if (
                 (tr.kind == TransitionKind::after) &&
                 (tr.duration.get_anchor() >= 0)
             )
-                nh->check_stage(tr.duration.get_anchor(), "anchor");
-            for (size_t u = 0u; u < nh->get_n_transitions(); ++u)
-                if (nh->get_transition(static_cast< int >(u)).name == tr.name)
+                track.nh->check_stage(tr.duration.get_anchor(), "anchor");
+            for (size_t u = 0u; u < track.nh->get_n_transitions(); ++u)
+                if (track.nh->get_transition(static_cast< int >(u)).name == tr.name)
                     throw std::logic_error(
                         "The virus and the statuses both have a transition "
                         "named \"" + tr.name + "\"; give them different names."
@@ -21649,30 +21666,30 @@ inline void Model::nh_build_states()
     nstates = 0u;
     infectious_states.clear();
     excluded_states.clear();
-    nh_queue.assign(static_cast< size_t >(ns * nk), 0);
+    track.queue.assign(static_cast< size_t >(ns * nk), 0);
 
     for (int s = 0; s < ns; ++s)
         for (int k = 0; k < nk; ++k)
         {
 
-            const auto & sinfo = nh->get_stage_info(s);
+            const auto & sinfo = track.nh->get_stage_info(s);
             const bool status_drawn = st && st->get_stage_info(k).needs_visit;
             const bool drawn = (sinfo.infection >= 0) || sinfo.needs_visit ||
                 status_drawn;
 
             states_labels.push_back(
-                (nk == 1) ? nh->get_stages()[s] :
-                st->get_stages()[k] + " / " + nh->get_stages()[s]
+                (nk == 1) ? track.nh->get_stages()[s] :
+                st->get_stages()[k] + " / " + track.nh->get_stages()[s]
             );
             state_fun.push_back(drawn ? update : nullptr);
 
             const int c = s * nk + k;
-            const bool excluded = (nh->get_contact(s) <= 0.0) ||
+            const bool excluded = (track.nh->get_contact(s) <= 0.0) ||
                 (st && (st->get_contact(k) <= 0.0));
 
             if (excluded)
                 excluded_states.push_back(c);
-            else if (nh->is_infectious(s))
+            else if (track.nh->is_infectious(s))
                 infectious_states.push_back(c);
 
             // Carriers in the layers queue their contacts; the others with a
@@ -21681,7 +21698,7 @@ inline void Model::nh_build_states()
             // which the carriers queue. A custom sampler need not use the
             // contacts, so its agents queue themselves.
             const bool contact_driven = sinfo.pushable && !status_drawn;
-            nh_queue[c] = (nh->is_carrier(s) && !excluded) ? 2 :
+            track.queue[c] = (track.nh->is_carrier(s) && !excluded) ? 2 :
                 ((drawn && !contact_driven) ? 1 : 0);
 
         }
@@ -21697,14 +21714,14 @@ inline void Model::nh_build_states()
 
 inline int Model::get_stage(const Agent & agent) const
 {
-    if (!nh)
+    if (tracks.empty())
         throw std::logic_error("The model has no natural history.");
     return nh_stage_of(agent.state);
 }
 
 inline int Model::get_status(const Agent & agent) const
 {
-    if (!nh)
+    if (tracks.empty())
         throw std::logic_error("The model has no natural history.");
     return nh_status_of(agent.state);
 }
@@ -21712,11 +21729,12 @@ inline int Model::get_status(const Agent & agent) const
 inline int Model::transition_id(std::string_view name) const
 {
 
-    if (!nh)
+    if (tracks.empty())
         throw std::logic_error("The model has no natural history.");
 
-    for (size_t t = 0u; t < nh->get_n_transitions(); ++t)
-        if (nh->get_transition(static_cast< int >(t)).name == name)
+    const Track & track = tracks[0u];
+    for (size_t t = 0u; t < track.nh->get_n_transitions(); ++t)
+        if (track.nh->get_transition(static_cast< int >(t)).name == name)
             return static_cast< int >(t);
 
     if (st)
@@ -21730,51 +21748,53 @@ inline int Model::transition_id(std::string_view name) const
 
 inline int Model::get_stage_entered(size_t id, int stage) const
 {
-    if (!nh)
+    if (tracks.empty())
         throw std::logic_error("The model has no natural history.");
-    nh->check_stage(stage, "");
-    const int row = nh_row.at(id);
+    const Track & track = tracks[0u];
+    track.nh->check_stage(stage, "");
+    const int row = track.row.at(id);
     if (row < 0)
         return (stage == 0) ? 0 : -1;
-    return nh_rows[static_cast< size_t >(row) * (1u + nh->get_n_stages()) +
+    return track.rows[static_cast< size_t >(row) * (1u + track.nh->get_n_stages()) +
         1u + static_cast< size_t >(stage)];
 }
 
 inline int Model::get_stage_until(size_t id) const
 {
-    if (!nh)
+    if (tracks.empty())
         throw std::logic_error("The model has no natural history.");
-    return nh_until.at(id);
+    return tracks[0u].until.at(id);
 }
 
 inline int Model::get_episode(size_t id) const
 {
-    if (!nh)
+    if (tracks.empty())
         throw std::logic_error("The model has no natural history.");
-    const int row = nh_row.at(id);
+    const Track & track = tracks[0u];
+    const int row = track.row.at(id);
     if (row < 0)
         return 0;
-    return nh_rows[static_cast< size_t >(row) * (1u + nh->get_n_stages())];
+    return track.rows[static_cast< size_t >(row) * (1u + track.nh->get_n_stages())];
 }
 
-inline int * Model::nh_record(size_t id)
+inline int * Model::Track::record(size_t id)
 {
 
     const size_t width = 1u + nh->get_n_stages();
-    if (nh_row[id] < 0)
+    if (row[id] < 0)
     {
         // No infection yet, in the first stage since day 0
-        nh_row[id] = static_cast< int >(nh_rows.size() / width);
-        nh_rows.resize(nh_rows.size() + width, -1);
-        nh_rows[nh_rows.size() - width]      = 0;
-        nh_rows[nh_rows.size() - width + 1u] = 0;
+        row[id] = static_cast< int >(rows.size() / width);
+        rows.resize(rows.size() + width, -1);
+        rows[rows.size() - width]      = 0;
+        rows[rows.size() - width + 1u] = 0;
     }
 
-    return nh_rows.data() + static_cast< size_t >(nh_row[id]) * width;
+    return rows.data() + static_cast< size_t >(row[id]) * width;
 
 }
 
-inline bool Model::nh_removed(int stage) const
+inline bool Model::Track::removed(int stage) const
 {
     // A stage that takes agents out of every layer and has no exit
     if (nh->get_contact(stage) > 0.0)
@@ -21790,10 +21810,11 @@ inline bool Model::nh_removed(int stage) const
 inline bool Model::fire(int transition, Agent & agent)
 {
 
-    if (!nh)
+    if (tracks.empty())
         throw std::logic_error("fire() needs a natural history.");
 
-    const int s = nh_stage_of(agent.state);
+    const Track & track = tracks[0u];
+    const int s = nh_stage_of(nh_cell_of(track, agent));
 
     if (nh_is_status_tr(transition))
     {
@@ -21804,24 +21825,24 @@ inline bool Model::fire(int transition, Agent & agent)
                 "There is no status transition " + std::to_string(k) + "."
             );
 
-        if (!st->is_source(k, nh_status_of(agent.state)) || nh_removed(s))
+        if (!st->is_source(k, nh_status_of(agent.state)) || track.removed(s))
             return false;
 
     }
     else
     {
 
-        if ((transition < 0) || (static_cast< size_t >(transition) >= nh->get_n_transitions()))
+        if ((transition < 0) || (static_cast< size_t >(transition) >= track.nh->get_n_transitions()))
             throw std::range_error(
                 "There is no transition " + std::to_string(transition) + "."
             );
 
-        if (nh->get_transition(transition).kind == TransitionKind::infection)
+        if (track.nh->get_transition(transition).kind == TransitionKind::infection)
             throw std::logic_error(
                 "An infection is not fired; seed the virus instead."
             );
 
-        if (!nh->is_source(transition, s))
+        if (!track.nh->is_source(transition, s))
             return false;
 
     }
@@ -21833,7 +21854,7 @@ inline bool Model::fire(int transition, Agent & agent)
 
 inline void Model::react(Trigger on, int transition)
 {
-    if (!nh)
+    if (tracks.empty())
         throw std::logic_error("react() needs a natural history.");
     nh_reactions.push_back({std::move(on), transition, nullptr});
 }
@@ -21843,7 +21864,7 @@ inline void Model::react(
     std::function< void(Agent &, Model &) > fun
 )
 {
-    if (!nh)
+    if (tracks.empty())
         throw std::logic_error("react() needs a natural history.");
     nh_reactions.push_back({std::move(on), -1, std::move(fun)});
 }
@@ -21851,10 +21872,10 @@ inline void Model::react(
 inline void Model::set_initial(Assign a)
 {
 
-    if (!nh)
+    if (tracks.empty())
         throw std::logic_error("set_initial() needs a natural history.");
 
-    nh_initial = std::move(a);
+    tracks[0u].initial = std::move(a);
 
 }
 
@@ -21865,27 +21886,36 @@ inline void Model::nh_reset()
 
     const size_t n = population.size();
 
-    nh_until.assign(n, INT_MAX);
-    nh_row.assign(n, -1);
-    nh_rows.clear();
+    bool first_timed = false;
+    for (auto & track : tracks)
+    {
+        track.until.assign(n, INT_MAX);
+        track.row.assign(n, -1);
+        track.rows.clear();
+        first_timed = first_timed || (track.nh->stages[0u].after >= 0);
+    }
     nh_status_until.assign(st ? n : 0u, INT_MAX);
     nh_status_sod.assign(st ? n : 0u, 0);
     nh_pending = -1;
 
-    // Everyone starts in the first stage and the first status, on day 0
-    const int after = nh->stages[0u].after;
+    // Everyone starts in the first stage of each disease and the first
+    // status, on day 0 (per agent: its stages' durations, then its status's)
     const int s_after = st ? st->stages[0u].after : -1;
-    if ((after >= 0) || (s_after >= 0))
+    if (first_timed || (s_after >= 0))
         for (auto & p : population)
         {
             const size_t id = static_cast< size_t >(p.id);
-            if (after >= 0)
-                nh_until[id] = nh->transitions[after].duration.draw(p, *this);
+            for (auto & track : tracks)
+            {
+                const int after = track.nh->stages[0u].after;
+                if (after >= 0)
+                    track.until[id] = track.nh->transitions[after].duration.draw(p, *this);
+            }
             if (s_after >= 0)
                 nh_status_until[id] = st->transitions[s_after].duration.draw(p, *this);
         }
 
-    if (use_queuing && (nh_queue[0u] == 1))
+    if (use_queuing && (tracks[0u].queue[0u] == 1))
         for (size_t id = 0u; id < n; ++id)
             queue.shift(id, 1);
 
@@ -21894,15 +21924,27 @@ inline void Model::nh_reset()
 inline void Model::nh_step(Agent & p)
 {
 
+    // The stage's proposal, in each disease, then the status's (judged on
+    // the stage at the start of the day)
     const unsigned int c = p.state;
-    const int s = nh_stage_of(c);
-    const StageInfo & si = nh->stages[static_cast< size_t >(s)];
+    for (auto & track : tracks)
+        nh_step_stage(track, p, nh_cell_of(track, p));
 
-    // The stage's proposal --------------------------------------------------
+    if (st)
+        nh_step_status(p, c, nh_stage_of(c));
+
+}
+
+inline bool Model::nh_step_stage(Track & track, Agent & p, unsigned int c)
+{
+
+    const int s = nh_stage_of(c);
+    const StageInfo & si = track.nh->stages[static_cast< size_t >(s)];
+
     bool proposed = false;
 
-    // The values that apply to the agent (its virus's, or the model's)
-    const NaturalHistory & h = nh_of(p);
+    // The values that apply to the agent (its virus's, or the track's)
+    const NaturalHistory & h = nh_of(track, p);
 
     // 1. Infection by contact (not out of the layers)
     if (
@@ -21955,12 +21997,13 @@ inline void Model::nh_step(Agent & p)
     }
 
     // 3. The duration, if it ended (a deadline: the rates went first)
-    if (!proposed && (si.after >= 0) && (nh_until[static_cast< size_t >(p.id)] <= today()))
+    if (!proposed && (si.after >= 0) && (track.until[static_cast< size_t >(p.id)] <= today()))
+    {
         nh_propose(si.after, p);
+        proposed = true;
+    }
 
-    // The status's proposal (judged on the stage at the start of the day)
-    if (st)
-        nh_step_status(p, c, s);
+    return proposed;
 
 }
 
@@ -22012,6 +22055,7 @@ inline void Model::nh_propose(
 {
 
     const bool status = nh_is_status_tr(transition);
+    const Track & track = nh_track(virus ? virus : p.virus.get());
 
     // The infection's target is the infecting virus's; the others, the agent's
     // (a status transition, the model's statuses)
@@ -22019,7 +22063,7 @@ inline void Model::nh_propose(
         st->transitions[nh_status_tr(transition)] :
         (((virus != nullptr) && virus->nh_def) ?
             virus->nh_def->transitions[transition] :
-            nh_of(p).transitions[transition]);
+            nh_of(track, p).transitions[transition]);
 
     // A branch draws its target
     int to = tr.to;
@@ -22042,12 +22086,12 @@ inline void Model::nh_propose(
     // it a cell when it applies it
     nh_pending = transition;
 
-    const int s = nh_stage_of(p.state);
+    const int s = nh_stage_of(nh_cell_of(track, p));
     if (status)
         p.change_state(*this, static_cast< epiworld_fast_uint >(to), Queue::NoOne);
     else if (tr.kind == TransitionKind::infection)
         p.set_virus(*this, *virus, to, Queue::NoOne);
-    else if (nh->is_carrier(s) && !nh->is_carrier(to))
+    else if (track.nh->is_carrier(s) && !track.nh->is_carrier(to))
         p.rm_virus(*this, to, Queue::NoOne);
     else
         p.change_state(*this, static_cast< epiworld_fast_uint >(to), Queue::NoOne);
@@ -22057,6 +22101,7 @@ inline void Model::nh_propose(
 }
 
 inline void Model::nh_enter(
+    Track & track,
     Agent & p,
     unsigned int stage_old,
     int transition
@@ -22064,15 +22109,15 @@ inline void Model::nh_enter(
 {
 
     const size_t id = static_cast< size_t >(p.id);
-    const size_t ns = nh->get_n_stages();
-    const int s = nh_stage_of(p.state);
+    const size_t ns = track.nh->get_n_stages();
+    const int s = nh_stage_of(nh_cell_of(track, p));
 
     // A new infection starts a new episode: its entry days start afresh
     const bool infected =
         (transition == NH_SEED) ||
-        (!nh->is_carrier(static_cast< int >(stage_old)) && nh->is_carrier(s));
+        (!track.nh->is_carrier(static_cast< int >(stage_old)) && track.nh->is_carrier(s));
 
-    int * record  = nh_record(id);
+    int * record  = track.record(id);
     int * entered = record + 1;
     if (infected)
     {
@@ -22082,20 +22127,20 @@ inline void Model::nh_enter(
 
     entered[s] = today();
 
-    const int after = nh->stages[static_cast< size_t >(s)].after;
+    const int after = track.nh->stages[static_cast< size_t >(s)].after;
     if (after >= 0)
     {
 
-        const auto & d = nh_of(p).transitions[after].duration;
+        const auto & d = nh_of(track, p).transitions[after].duration;
         int base = today();
         if ((d.get_anchor() >= 0) && (entered[d.get_anchor()] >= 0))
             base = entered[d.get_anchor()];
 
-        nh_until[id] = base + d.draw(p, *this);
+        track.until[id] = base + d.draw(p, *this);
 
     }
     else
-        nh_until[id] = INT_MAX;
+        track.until[id] = INT_MAX;
 
 }
 
@@ -22140,8 +22185,9 @@ inline void Model::nh_react(Agent & p, int transition, int stage_old)
 inline void Model::nh_queue_move(Agent & p, unsigned int state_old)
 {
 
-    const char from = nh_queue[state_old];
-    const char to = nh_queue[p.state];
+    const Track & track = tracks[0u];
+    const char from = track.queue[state_old];
+    const char to = track.queue[p.state];
     if (from == to)
         return;
 
@@ -22162,7 +22208,8 @@ inline void Model::nh_queue_move(Agent & p, unsigned int state_old)
 inline void Model::nh_initial_place()
 {
 
-    if (!nh_initial.is_set())
+    Track & track = tracks[0u];
+    if (!track.initial.is_set())
         return;
 
     // The agents left without the virus, in the first stage
@@ -22170,9 +22217,9 @@ inline void Model::nh_initial_place()
     buf.eligible.resize(population.size());
     for (auto & p : population)
         buf.eligible[static_cast< size_t >(p.id)] =
-            (p.virus == nullptr) && (nh_stage_of(p.state) == 0);
+            (p.virus == nullptr) && (nh_stage_of(nh_cell_of(track, p)) == 0);
 
-    nh_initial.draw(*this, buf);
+    track.initial.draw(*this, buf);
 
     for (const auto & x : buf.out)
     {
@@ -22181,8 +22228,8 @@ inline void Model::nh_initial_place()
         const int s    = x.second;
 
         if (
-            (s < 0) || (static_cast< size_t >(s) >= nh->get_n_stages()) ||
-            nh->is_carrier(s)
+            (s < 0) || (static_cast< size_t >(s) >= track.nh->get_n_stages()) ||
+            track.nh->is_carrier(s)
         )
             throw std::logic_error(
                 "set_initial(): the label " + std::to_string(s) + " is not a "
@@ -22208,19 +22255,22 @@ inline epiworld_double Model::nh_infection_prob(
     const Virus & v
 )
 {
-    const int tr = nh->stages[static_cast< size_t >(nh_stage_of(target.state))].infection;
+    const Track & track = nh_track(&v);
+    const int tr = track.nh->stages[
+        static_cast< size_t >(nh_stage_of(nh_cell_of(track, target)))
+    ].infection;
     if (tr < 0)
         return 0.0;
 
     // The infector's virus says how infectious it is
-    const auto & h = v.nh_def ? *v.nh_def : *nh;
+    const auto & h = v.nh_def ? *v.nh_def : *track.nh;
     return h.transitions[tr].value.eval(target, &v, *this);
 }
 
 inline std::string Model::draw_natural_history() const
 {
 
-    if (!nh)
+    if (tracks.empty())
         throw std::logic_error(
             "The model has no natural history to draw (add a virus first)."
         );
@@ -22241,7 +22291,8 @@ inline std::string Model::draw_natural_history() const
         out += "    end\n";
     };
 
-    subgraph("stages", "Stages: " + nh->get_name(), nh->draw_mermaid("s"));
+    const auto & nh = *tracks[0u].nh;
+    subgraph("stages", "Stages: " + nh.get_name(), nh.draw_mermaid("s"));
     if (st)
         subgraph("statuses", "Statuses", st->draw_mermaid("q"));
 

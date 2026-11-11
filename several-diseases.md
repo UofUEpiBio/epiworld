@@ -228,6 +228,14 @@ rerun and the wrapper ports, as in `contact-layers.md` (Section 11).
   becomes a list of tracks of length one. No public change; a second disease
   is still an error. **Gate:** histories identical to the previous commit
   for every model, and the benchmark within its 10% rule.
+  Done as: a `Model::Track` holds a disease's natural history and its
+  per-agent records (deadlines, stage-entry days, episodes), its queue modes
+  and its initial placement; the step proposes a stage transition in each
+  track, then the status. The track's cell is still the agent's `state`, and
+  the agents-by-cell index, the push masks and the database counts stay as
+  they are: they serve the first disease, since push is for one disease
+  only. Each further track's per-agent cell, counts and event tagging come
+  with NH-5b, where a second disease tests them.
 - **NH-5b: several diseases.** `strain()` and the disease of a virus; the
   sampling across diseases; the rules of Sections 4.3 to 4.5; the explicit
   references (`.of()`, tool targets); the database per disease, the

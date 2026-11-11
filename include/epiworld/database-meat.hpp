@@ -69,8 +69,8 @@ inline void DataBase::reset()
     transmission_layer.clear();
 
     transition_today.assign(
-        model->nh ?
-            model->nh->get_n_transitions() +
+        !model->tracks.empty() ?
+            model->tracks[0u].nh->get_n_transitions() +
                 (model->st ? model->st->get_n_transitions() : 0u) :
             0u,
         0
@@ -545,7 +545,7 @@ inline void DataBase::split_state(
 ) const
 {
 
-    if (!model->nh)
+    if (model->tracks.empty())
     {
         status = "Free";
         stage = model->states_labels[state];
@@ -553,7 +553,7 @@ inline void DataBase::split_state(
     }
 
     const unsigned int c = static_cast< unsigned int >(state);
-    stage = model->nh->get_stages()[static_cast< size_t >(model->nh_stage_of(c))];
+    stage = model->tracks[0u].nh->get_stages()[static_cast< size_t >(model->nh_stage_of(c))];
     status = model->st ?
         model->st->get_stages()[static_cast< size_t >(model->nh_status_of(c))] :
         std::string("Free");
@@ -1687,7 +1687,7 @@ inline void DataBase::get_hist_transitions(
 ) const
 {
 
-    if (!model->nh)
+    if (model->tracks.empty())
         throw std::logic_error(
             "get_hist_transitions() needs a model with a natural history."
         );
@@ -1695,13 +1695,13 @@ inline void DataBase::get_hist_transitions(
     date = hist_transition_date;
     counts = hist_transition_counts;
     // Stage transitions first, then the status ones
-    const int n_stage = static_cast< int >(model->nh->get_n_transitions());
+    const int n_stage = static_cast< int >(model->tracks[0u].nh->get_n_transitions());
     transition.resize(hist_transition_id.size());
     for (size_t k = 0u; k < hist_transition_id.size(); ++k)
     {
         const int t = hist_transition_id[k];
         transition[k] = (t < n_stage) ?
-            model->nh->get_transition(t).name :
+            model->tracks[0u].nh->get_transition(t).name :
             model->st->get_transition(t - n_stage).name;
     }
 
