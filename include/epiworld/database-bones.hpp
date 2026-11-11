@@ -8,20 +8,11 @@ class Virus;
 class UserData;
 
 /**
- * @brief Statistical data about the process
- *
- * **Implementation details:**
- * <a href="../impl/data-collection-and-analysis.md">Data Collection and Analysis</a>,
- * <a href="../impl/generation-interval-and-reproductive-number.md">Generation Interval and Reproductive Number Calculation</a>
- *
+ * @brief The variants and the tools, by id.
+ * @details Kept once per model: a variant or a tool is not tied to one
+ * disease's records.
  */
-class DataBase {
-    friend class Model;
-private:
-    Model * model;
-
-    HospitalizationsTracker m_hospitalizations; ///< Tracker for hospitalization events
-
+struct DataRegistry {
     // Variants, by id: the viruses added to the model first (founders, kept
     // even if removed, so ids stay put), then the run's mutations
     size_t n_founders = 0u;
@@ -32,6 +23,19 @@ private:
     // Tools, by id
     std::vector< std::string > tool_name;
     std::vector< int > tool_origin_date;
+
+    bool operator==(const DataRegistry & other) const;
+};
+
+/**
+ * @brief What is recorded about one disease: counts by state (today and by
+ * day), the variants' and tools' histories, transitions, transmissions and
+ * hospitalizations.
+ * @details One per model for now; with several diseases (NH-5b), one per
+ * disease.
+ */
+struct DiseaseRecord {
+    HospitalizationsTracker m_hospitalizations; ///< Tracker for hospitalization events
 
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
     std::vector< std::vector<int> > today_virus;
@@ -44,8 +48,6 @@ private:
 
     // Totals
     int today_total_nviruses_active = 0;
-
-    int sampling_freq = 1;
 
     // Variants history
     std::vector< int > hist_virus_date;
@@ -86,8 +88,31 @@ private:
     std::vector< int > hist_transition_date;
     std::vector< int > hist_transition_id;
     std::vector< int > hist_transition_counts;
-    void record_declared_transition(int id) { ++transition_today[static_cast< size_t >(id)]; }
     ///@}
+
+    bool operator==(const DiseaseRecord & other) const;
+};
+
+/**
+ * @brief Statistical data about the process
+ *
+ * **Implementation details:**
+ * <a href="../impl/data-collection-and-analysis.md">Data Collection and Analysis</a>,
+ * <a href="../impl/generation-interval-and-reproductive-number.md">Generation Interval and Reproductive Number Calculation</a>
+ *
+ * @details The database is the one entry point (`Model::get_db()`). It
+ * holds its data in parts: the variants and tools (`DataRegistry`) and the
+ * disease's records (`DiseaseRecord`).
+ */
+class DataBase {
+    friend class Model;
+private:
+    Model * model;
+
+    DataRegistry reg;  ///< Variants and tools
+    DiseaseRecord rec; ///< The disease's records
+
+    int sampling_freq = 1;
 
     UserData user_data;
 
@@ -112,6 +137,10 @@ private:
     );
 
     void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
+
+    /// One more agent took the declared transition `id` (see
+    /// `get_hist_transitions()`)
+    void record_declared_transition(int id) { ++rec.transition_today[static_cast< size_t >(id)]; }
 
     /**
      * @brief The status and the stage of a state of the engine (the one place
@@ -142,7 +171,7 @@ public:
     #endif
 
     DataBase() = delete;
-    DataBase(Model & m) : model(&m), m_hospitalizations(), user_data(m) {};
+    DataBase(Model & m) : model(&m), user_data(m) {};
     DataBase(const DataBase & db);
     // DataBase & operator=(const DataBase & m);
 
