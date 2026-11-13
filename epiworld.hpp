@@ -14049,7 +14049,7 @@ inline RunOutputs DataBase::get_run_outputs(
             std::vector< int > id(reg.tool_name.size());
             std::iota(id.begin(), id.end(), 0);
             t.add("id", id);
-            t.add("reg.tool_name", reg.tool_name);
+            t.add("tool_name", reg.tool_name);
             t.add("date_recorded", reg.tool_origin_date);
         }
         else if (what == "tool_hist")
