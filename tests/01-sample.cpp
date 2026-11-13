@@ -51,11 +51,11 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
     model.run(100, 123);
     model.print();
 
-    // Will print the transition matrix
-    (void) model.get_db().get_transition_probability();
+    // Prints the transition matrix
+    model.get_db().get_transition_probability().print();
 
     // Counts: entry [from + to * n_states]
-    auto transitions = model.get_db().get_transition_probability(false, false);
+    auto transitions = model.get_db().get_transition_probability(Margin::pair, all_diseases, false).values;
     const size_t n_states = model.get_n_states();
     auto moves = [&](size_t from, size_t to) {
         return transitions[from + to * n_states];
@@ -103,8 +103,8 @@ EPIWORLD_TEST_CASE("AgentsSample", "[model-methods]") {
     std::sort(target.begin(), target.end());
     REQUIRE(std::adjacent_find(target.begin(), target.end()) == target.end());
     REQUIRE(target.size() == model.size());
-    REQUIRE(model.get_agents_states() == std::vector< epiworld_fast_uint >(
-        model.size(), susceptible_state
+    REQUIRE(model.get_agents_stages() == std::vector< int >(
+        model.size(), static_cast< int >(susceptible_state)
     ));
     for (const auto & agent : model.get_agents())
         REQUIRE(agent.get_n_tools() == 2u);

@@ -308,8 +308,11 @@ inline const Model & Model::print(bool lite) const
         }
     }
 
+    // Over the stages without statuses (the labels the model had before)
     if (today() != 0)
-        (void) db.get_transition_probability(true);
+        db.get_transition_probability(
+            st ? Margin::pair : Margin::stage
+        ).print();
 
     return *this;
 

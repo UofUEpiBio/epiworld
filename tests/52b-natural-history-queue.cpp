@@ -194,7 +194,7 @@ EPIWORLD_TEST_CASE("Natural history - queue and reinfection and variants", "[nat
         REQUIRE(n_never == 0);   // the early carriers mutated, then recovered
 
         auto info = model.get_db().get_run_outputs({"virus_info"}).at("virus_info");
-        const auto & parent = std::get< std::vector< int > >(info.columns[3u]);
+        const auto & parent = std::get< std::vector< int > >(info.columns[4u]);
         REQUIRE(parent.size() >= 2u);
         REQUIRE(parent[0u] == -99);
         for (size_t k = 1u; k < parent.size(); ++k)

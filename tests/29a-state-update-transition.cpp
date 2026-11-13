@@ -49,7 +49,7 @@ EPIWORLD_TEST_CASE("Competing rates of a natural history", "[state-update-transi
     // short run is sufficient for the empirical probabilities to stabilize.
     model.run(N_DAYS, 123);
 
-    auto tprobs = model.get_db().get_transition_probability(false, true);
+    auto tprobs = model.get_db().get_transition_probability().values;
 
     // The transition matrix uses column-major layout:
     //   index = from + to * n_state

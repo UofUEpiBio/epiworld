@@ -113,23 +113,24 @@ EPIWORLD_TEST_CASE("SaverMemory matches the saved files", "[saver-memory]") {
 
     }
 
-    // The columns of each table (after sim_id): what the wrappers read
+    // The columns of each table (after sim_id): what the wrappers read. Every
+    // table but the tools' starts with the disease of the row
     const std::map< std::string, std::vector< std::string > > columns = {
-        {"virus_info", {"virus_id", "virus", "date_recorded", "parent"}},
-        {"virus_hist", {"date", "virus_id", "virus", "status", "stage", "n"}},
+        {"virus_info", {"disease", "virus_id", "virus", "date_recorded", "parent"}},
+        {"virus_hist", {"disease", "date", "virus_id", "virus", "status", "stage", "n"}},
         {"tool_info", {"id", "tool_name", "date_recorded"}},
-        {"tool_hist", {"date", "id", "status", "stage", "n"}},
-        {"total_hist", {"date", "nviruses", "status", "stage", "counts"}},
-        {"transmission", {"date", "virus_id", "virus", "source_exposure_date",
+        {"tool_hist", {"disease", "date", "id", "status", "stage", "n"}},
+        {"total_hist", {"disease", "date", "nviruses", "status", "stage", "counts"}},
+        {"transmission", {"disease", "date", "virus_id", "virus", "source_exposure_date",
             "source", "target", "layer_id", "layer"}},
-        {"transition", {"date", "from_status", "from_stage", "to_status",
+        {"transition", {"disease", "date", "from_status", "from_stage", "to_status",
             "to_stage", "counts"}},
-        {"reproductive", {"virus_id", "virus", "source", "source_exposure_date",
+        {"reproductive", {"disease", "virus_id", "virus", "source", "source_exposure_date",
             "rt"}},
-        {"generation", {"virus", "source", "source_exposure_date", "gentime"}},
-        {"active_cases", {"date", "virus_id", "virus", "active_cases"}},
-        {"outbreak_size", {"date", "virus_id", "virus", "outbreak_size"}},
-        {"hospitalizations", {"date", "virus_id", "tool_id", "count", "weight"}}
+        {"generation", {"disease", "virus", "source", "source_exposure_date", "gentime"}},
+        {"active_cases", {"disease", "date", "virus_id", "virus", "active_cases"}},
+        {"outbreak_size", {"disease", "date", "virus_id", "virus", "outbreak_size"}},
+        {"hospitalizations", {"disease", "date", "virus_id", "tool_id", "count", "weight"}}
     };
     REQUIRE(columns.size() == whats.size());
     for (const auto & what : whats)

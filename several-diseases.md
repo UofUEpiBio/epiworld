@@ -236,11 +236,21 @@ rerun and the wrapper ports, as in `contact-layers.md` (Section 11).
   they are: they serve the first disease, since push is for one disease
   only. Each further track's per-agent cell, counts and event tagging come
   with NH-5b, where a second disease tests them.
-- **NH-5b: several diseases.** `strain()` and the disease of a virus; the
-  sampling across diseases; the rules of Sections 4.3 to 4.5; the explicit
-  references (`.of()`, tool targets); the database per disease, the
-  `disease` column and the accessors by margin; the savers. The benchmark
-  gains a two-disease scenario.
+- **NH-5b: several diseases**, in two PRs:
+  - **NH-5b-1: the outputs by disease, with one disease.** The disease
+    argument and column on every function that returns rows, the `disease`
+    column first in every output table and file but `tool_info`, the
+    accessors by margin (`Margin`, `TransitionMatrix`,
+    `get_agents_stages()`, `get_agents_statuses()`) and the model's
+    diseases (`get_n_diseases()`, `get_diseases()`, `disease_id()`).
+    Removed: `get_agents_states()` and `get_today_transition_matrix()`; the
+    array form of `get_transmissions()` became private. Identical numbers.
+    Transitions by strain are left for NH-5b-2 (they need new recording).
+  - **NH-5b-2: several diseases in the engine.** `strain()` and the
+    disease of a virus; a record per disease; the sampling across diseases;
+    the rules of Sections 4.3 to 4.5; the explicit references (`.of()`,
+    tool and layer targets by disease); transitions by strain. The
+    benchmark gains a two-disease scenario.
 - **NH-5c: the wrapper ports**, in the usual order.
 
 ## 9. Tests
@@ -273,8 +283,6 @@ A few end-to-end files, on fixed networks:
 3. **Diseases with custom samplers are tried in a random order** each day.
 4. **The name** is "Removed (other disease)".
 
-## 12. Open question
-
-- **Layers' virus targets** (`add_virus_target(layer, virus)`, also by
-  lineage). Proposed, for consistency with the tools: a layer targets
-  diseases as a whole too.
+5. **Layers' virus targets** (`add_virus_target(layer, virus)`) go by
+   disease too, as the tools' (settled 2026-11-11, by default after no
+   objection).

@@ -941,13 +941,29 @@ inline Agent & Model::get_agent(size_t i)
     return population[i];
 }
 
-inline std::vector< epiworld_fast_uint > Model::get_agents_states() const
+inline std::vector< int > Model::get_agents_stages(int disease) const
 {
-    std::vector< epiworld_fast_uint > states(population.size());
-    for (size_t i = 0u; i < population.size(); ++i)
-        states[i] = population[i].get_state();
+    if (tracks.empty())
+        throw std::logic_error("The model has no natural history.");
+    db.check_disease(disease);
 
-    return states;
+    std::vector< int > stages(population.size());
+    for (size_t i = 0u; i < population.size(); ++i)
+        stages[i] = nh_stage_of(nh_cell_of(tracks[0u], population[i]));
+
+    return stages;
+}
+
+inline std::vector< int > Model::get_agents_statuses() const
+{
+    if (tracks.empty())
+        throw std::logic_error("The model has no natural history.");
+
+    std::vector< int > statuses(population.size());
+    for (size_t i = 0u; i < population.size(); ++i)
+        statuses[i] = nh_status_of(population[i].state);
+
+    return statuses;
 }
 
 
@@ -2617,7 +2633,7 @@ inline void Model::draw(
     diagram.draw_from_data(
         diagram_type,
         states_labels,
-        this->get_db().get_transition_probability(false),
+        this->get_db().get_transition_probability(Margin::pair).values,
         fn_output,
         self
     );

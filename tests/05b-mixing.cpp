@@ -39,7 +39,7 @@ EPIWORLD_TEST_CASE("SEIRMixing R0", "[SEIR-mixing R0]") {
     auto saver = [&transitions, &R0s](size_t n, Model* m) -> void{
 
         // Saving the transition probabilities
-        transitions[n] = m->get_db().get_transition_probability(false, false);
+        transitions[n] = m->get_db().get_transition_probability(Margin::pair, all_diseases, false).values;
 
         // Recording the R0 from the index case
         auto rts = m->get_db().get_reproductive_number();      

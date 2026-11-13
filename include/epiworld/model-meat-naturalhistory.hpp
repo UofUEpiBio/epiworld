@@ -157,6 +157,32 @@ inline void Model::nh_build_states()
 
 // Accessors -------------------------------------------------------------------
 
+inline std::vector< std::string > Model::get_diseases() const
+{
+    std::vector< std::string > names;
+    for (const auto & track : tracks)
+        names.push_back(track.nh->get_name());
+    return names;
+}
+
+inline int Model::disease_id(std::string_view name) const
+{
+
+    for (size_t d = 0u; d < tracks.size(); ++d)
+        if (tracks[d].nh->get_name() == name)
+            return static_cast< int >(d);
+
+    std::string names;
+    for (const auto & n : get_diseases())
+        names += (names.empty() ? "\"" : ", \"") + n + "\"";
+
+    throw std::range_error(
+        "The model has no disease \"" + std::string(name) + "\". Its diseases "
+        "are: " + (names.empty() ? std::string("none") : names) + "."
+    );
+
+}
+
 inline int Model::get_stage(const Agent & agent) const
 {
     if (tracks.empty())
