@@ -207,6 +207,15 @@ inline RunOutputs DataBase::get_run_outputs(
             );
         }
 
+        // The disease of each row, first (tools are not one disease's)
+        if (what != "tool_info")
+        {
+            std::vector< std::string > names;
+            disease_rows(&names, t.nrow());
+            t.colnames.insert(t.colnames.begin(), "disease");
+            t.columns.insert(t.columns.begin(), std::move(names));
+        }
+
         out[what] = std::move(t);
 
     }

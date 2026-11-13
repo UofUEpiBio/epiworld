@@ -248,7 +248,7 @@ inline std::function<void(size_t, epiworld::Model*)> tests_create_saver(
         outbreak_sizes, hospitalizations
     ](size_t n, epiworld::Model* m) -> void {
         // Saving the transition probabilities
-        transitions[n] = m->get_db().get_transition_probability(false, false);
+        transitions[n] = m->get_db().get_transition_probability(epiworld::Margin::pair, epiworld::all_diseases, false).values;
 
         // Recording the R0 from the index case
         auto rts = m->get_db().get_reproductive_number();

@@ -46,10 +46,10 @@ EPIWORLD_TEST_CASE("Agent::mutate_virus()", "[mutation]") {
 
     auto info = model.get_db().get_run_outputs({"virus_info"}).at("virus_info");
     REQUIRE(info.colnames == std::vector< std::string >(
-        {"virus_id", "virus", "date_recorded", "parent"}
+        {"disease", "virus_id", "virus", "date_recorded", "parent"}
     ));
-    REQUIRE(std::get< std::vector< int > >(info.columns[0u]) == std::vector< int >({0, 1, 2}));
-    REQUIRE(std::get< std::vector< int > >(info.columns[3u]) == std::vector< int >({-99, 0, 1}));
+    REQUIRE(std::get< std::vector< int > >(info.columns[1u]) == std::vector< int >({0, 1, 2}));
+    REQUIRE(std::get< std::vector< int > >(info.columns[4u]) == std::vector< int >({-99, 0, 1}));
 
     REQUIRE_THROWS_AS(susceptible->mutate_virus(model), std::logic_error);
 

@@ -17,7 +17,7 @@ namespace {
 
 struct Outcome {
     std::vector< int > date, source, target, virus, exposure, layer, hist;
-    std::vector< epiworld_fast_uint > states;
+    std::vector< int > states;
 };
 
 Outcome outcome_of(Model & model)
@@ -31,7 +31,7 @@ Outcome outcome_of(Model & model)
     std::vector< std::string > state;
     model.get_db().get_hist_total(&date, nullptr, &state, &o.hist);
 
-    o.states = model.get_agents_states();
+    o.states = model.get_agents_stages();
     return o;
 }
 
@@ -97,7 +97,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     };
 
     const epiworld_fast_uint infected = 1u; // Susceptible, Infected, Recovered
-    std::vector< epiworld_fast_uint > everyone(n, infected);
+    std::vector< int > everyone(n, infected);
 
     for (bool queuing : {true, false})
     {
@@ -121,7 +121,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
 
         // Seeded at the start: agent 0 is exposed to 1, but nobody to 0.
         Outcome down = run_path(true, 0u, queuing);
-        std::vector< epiworld_fast_uint > only_0(n, 0u);
+        std::vector< int > only_0(n, 0u);
         only_0[0u] = infected;
         REQUIRE(down.states == only_0);
         REQUIRE(down.source == std::vector< int >({-1}));
@@ -192,7 +192,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
         model.run(15, 42);
 
         INFO("queuing " << (queuing ? "on" : "off"));
-        REQUIRE(model.get_agents_states() == everyone);
+        REQUIRE(model.get_agents_stages() == everyone);
         REQUIRE(offered == 54u + 6u * 10u);
 
     }

@@ -703,7 +703,16 @@ public:
 
     Agent & get_agent(size_t i);
 
-    std::vector< epiworld_fast_uint > get_agents_states() const; ///< Returns a vector with the states of the agents.
+    /**
+     * @brief Each agent's stage in a disease, and each agent's status
+     * (indices into `get_stages()` and the statuses).
+     * @param disease The disease (`disease_id()`); `all_diseases`, the
+     * default, is the one disease of a model with one.
+     */
+    ///@{
+    std::vector< int > get_agents_stages(int disease = all_diseases) const;
+    std::vector< int > get_agents_statuses() const;
+    ///@}
 
 
 
@@ -830,6 +839,17 @@ public:
     {
         return tracks.empty() ? nullptr : tracks[0u].nh.get();
     }
+
+    /**
+     * @name The model's diseases
+     * @details A disease is a natural history; its strains share it (see
+     * `several-diseases.md`). A model has one for now.
+     */
+    ///@{
+    size_t get_n_diseases() const { return tracks.size(); }
+    std::vector< std::string > get_diseases() const; ///< Their names, by index
+    int disease_id(std::string_view name) const;     ///< Throws if there is none
+    ///@}
 
     /**
      * @brief Fires a declared transition on an agent, applied at the end of

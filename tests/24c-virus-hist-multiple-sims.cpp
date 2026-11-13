@@ -75,16 +75,12 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
         // Read data lines
         while (std::getline(file, line)) {
             line_count++;
-            // Extract date (first column after thread column in debug mode)
-            std::istringstream iss(line);
-            
-            #ifdef EPI_DEBUG
-            int thread_id, date;
-            iss >> thread_id >> date;
-            #else
+            // The date comes after the disease, which is quoted and may
+            // have spaces (and after the thread column in debug mode)
+            const size_t close = line.find('"', line.find('"') + 1u);
+            std::istringstream iss(line.substr(close + 1u));
             int date;
             iss >> date;
-            #endif
             
             dates_in_file.insert(date);
         }

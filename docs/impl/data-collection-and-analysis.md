@@ -28,6 +28,13 @@ std::vector< std::string > transition;
 db.get_hist_transitions(tdate, transition, tcounts);
 ```
 
+Every function that returns rows ends with two optional arguments: the disease (`Model::disease_id()`; `all_diseases`, the default, asks for every disease) and a vector to fill with the disease of each row. A model has one disease for now (several: `several-diseases.md`).
+
+```cpp
+std::vector< std::string > disease;
+db.get_hist_total(&date, &status, &stage, &counts, all_diseases, &disease);
+```
+
 A stage and a status may share a name: each of `get_today_total_stage()` and `get_today_total_status()` looks only among its own, and throws if the name is not one of them.
 
 ## Exporting Data
@@ -61,13 +68,26 @@ Each file contains a specific subset of the simulation data:
 - `reproductive_number.csv`: The reproductive number for each case.
 - `generation_time.csv`: The generation time, which is the time between the infection of the source and the infection of the target.
 
+Every file and table but the tools' (`tool_info`) starts with a `disease` column, the disease of each row.
+
 The same tables are available in memory: `db.get_run_outputs({"total_hist", "transmission"})` returns them (see `run_output_names()` for the names), and `SaverMemory` keeps them for every replicate of `run_multiple()`.
 
 ## Basic Analysis
 The `DataBase` class includes methods for performing basic analysis on the simulation data. These methods allow users to calculate metrics such as transition probabilities, reproductive numbers, and generation times. For example, the `get_transition_probability` method calculates the probability of transitioning from one state to another, while the `get_reproductive_number` method computes the reproductive number for each case.
 
+Transition matrices come over a margin: the (status, stage) pair the engine records, or the stage or the status alone, each the pair's counts summed over the other (so a change of status within a stage counts as staying, in the stage matrix):
+
 ```cpp
-std::vector<epiworld_double> transition_probs = db.get_transition_probability(true, true);
+TransitionMatrix tm = db.get_transition_probability(Margin::stage); // probabilities
+tm.print();
+epiworld_double p = tm(0, 1); // from stage 0 to stage 1 (labels: tm.stage)
+
+// Each agent's stage and status
+std::vector< int > stages = model.get_agents_stages();
+std::vector< int > statuses = model.get_agents_statuses();
+```
+
+```cpp
 MapVec_type<int, int> reproductive_numbers = db.get_reproductive_number();
 
 std::vector<int> agent_id, virus_id, time, gentime;
