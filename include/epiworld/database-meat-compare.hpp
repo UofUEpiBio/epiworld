@@ -241,7 +241,7 @@ inline bool DataBase::operator==(const DataBase & other) const
         "DataBase:: sampling_freq don't match."
     )
 
-    return rec == other.rec;
+    return recs == other.recs;
 
 }
 

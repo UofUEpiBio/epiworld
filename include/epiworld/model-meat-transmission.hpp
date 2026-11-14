@@ -94,9 +94,19 @@ inline size_t Model::add_exposures(
         if ((layer != nullptr) && !layer->admits(*v))
             continue;
 
+        // Several diseases: only those of the draw (see nh_step_infection()),
+        // and those the agent can catch
+        const bool several = tracks.size() > 1u;
+        if (several && !(nh_trial_mask & (uint64_t(1) << v->disease)))
+            continue;
+
+        const epiworld_double p_inf = nh_infection_prob(*agent, *v);
+        if (several && (p_inf <= 0.0))
+            continue;
+
         epiworld_double p =
             (1.0 - agent->get_susceptibility_reduction(v, *this)) *
-            nh_infection_prob(*agent, *v) *
+            p_inf *
             (1.0 - contact.get_transmission_reduction(v, *this))
             ;
 
@@ -205,8 +215,9 @@ inline bool Model::transmission_prepare()
 
     bool any = false;
 
-    // A natural history says which stages are pushed to
-    if (!tracks.empty())
+    // A natural history says which stages are pushed to (several diseases
+    // are pulled: several-diseases.md, Section 4.2)
+    if (tracks.size() == 1u)
     {
         // A cell is pushed to if its stage's only drawn exit is a default
         // infection, its status has no drawn exit, and it is in the layers
@@ -512,6 +523,7 @@ inline void Model::transmission_push_impl()
         sampled_layer = target.layer;
         if (!tracks.empty())
             nh_propose(
+                tracks[0u],
                 tracks[0u].nh->stages[static_cast< size_t >(nh_stage_of(i.state))].infection,
                 i, target.candidate
             );
