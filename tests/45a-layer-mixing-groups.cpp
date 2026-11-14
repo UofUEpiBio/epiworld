@@ -74,8 +74,7 @@ EPIWORLD_TEST_CASE("Mixing layer groups agents on its own", "[layer-mixing-group
     // also opens: from day 2 on there is no one to be infected by
     epimodels::ModelSIR solo("Flu", 100u, 0.0, 1.0, 0.0);
     add_group_mixing(solo, {0.0}, std::vector< size_t >(100u, 0u));
-    solo.rm_virus(0);
-    solo.add_virus(v, dist_virus(0));
+    solo.assign_virus(0, dist_virus(0));
     solo.add_globalevent(
         [no_group](Model * m) -> void {
             auto & layer = m->get_layer_as< layer::Mixing >("mixing");

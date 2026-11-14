@@ -234,7 +234,7 @@ inline void SamplerMixing::update(Model & model)
         if ((g == none) || (model.get_status(a) != free_status))
             continue;
 
-        const int stage = model.get_stage(a);
+        const int stage = model.get_stage(a, 0);
 
         if (stage == primary_infectious_stage)
         {
@@ -315,7 +315,7 @@ inline size_t SamplerMixing::sample(
                 auto & a = model.get_agents().at(
                     primary_infectious.at(group_start[g] + which)
                 );
-                if (model.get_stage(a) != primary_infectious_stage)
+                if (model.get_stage(a, 0) != primary_infectious_stage)
                     throw std::logic_error(
                         "The sampled agent is not in the primary infectious stage."
                     );
@@ -353,7 +353,7 @@ inline size_t SamplerMixing::sample(
                 auto & a = model.get_agents().at(
                     reduced_infectious.at(group_start[g] + which)
                 );
-                if (model.get_stage(a) != reduced_infectious_stage)
+                if (model.get_stage(a, 0) != reduced_infectious_stage)
                     throw std::logic_error(
                         "The sampled agent is not in the reduced infectious stage."
                     );

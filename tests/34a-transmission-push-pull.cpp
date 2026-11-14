@@ -45,15 +45,26 @@ void make_star(Model & model, int nleaves)
     ));
 }
 
-// The viruses: only I transmits (E carries the virus but does not); E and I
-// never change. Each virus has its own probability of transmission.
-Virus make_virus(std::string name, epiworld_double p)
+// The disease: only I transmits (E carries the virus but does not); E and I
+// never change. Its strains (make_virus()) each read their own probability of
+// transmission.
+Virus make_base()
 {
-    Virus v(name);
+    Virus v("T");
     v.add_stage("Susceptible");
     v.add_stage("Exposed", stage::carrier);
     v.add_stage("Infected", stage::infectious);
-    v.infection(0, E_, p);
+    v.infection(0, E_, "p");
+    return v;
+}
+
+Virus make_virus(Model & m, const Virus & base, std::string name, epiworld_double p)
+{
+    if (!m.has_param("p"))
+        m.add_param(0.0, "p");
+    m.add_param(p, "p " + name);
+    Virus v = base.strain(name);
+    v.use_param("p", "p " + name);
     return v;
 }
 
@@ -142,9 +153,10 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
 
         Model model(7);
         make_star(model, 6);
-        model.add_virus(make_virus("A", 0.2), at({1u, 2u}, I_, 7u));
-        model.add_virus(make_virus("B", 0.6), at({3u, 4u}, I_, 7u));
-        model.add_virus(make_virus("C", 0.9), at({5u}, E_, 7u));
+        const Virus base = make_base();
+        model.add_virus(make_virus(model, base, "A", 0.2), at({1u, 2u}, I_, 7u));
+        model.add_virus(make_virus(model, base, "B", 0.6), at({3u, 4u}, I_, 7u));
+        model.add_virus(make_virus(model, base, "C", 0.9), at({5u}, E_, 7u));
 
         // When pushing, the vaccine reads a parameter and the mask is a
         // function: same reductions, so the same probabilities
@@ -191,8 +203,9 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
 
         Model model(4);
         make_star(model, 3);
-        model.add_virus(make_virus("sure", 1.0), at({1u, 3u}, I_, 4u));
-        model.add_virus(make_virus("maybe", 0.3), at({2u}, I_, 4u));
+        const Virus base = make_base();
+        model.add_virus(make_virus(model, base, "sure", 1.0), at({1u, 3u}, I_, 4u));
+        model.add_virus(make_virus(model, base, "maybe", 0.3), at({2u}, I_, 4u));
 
         model.set_transmission_mode(mode);
         auto counts = count_infectors(model, nsims / 4, 77);

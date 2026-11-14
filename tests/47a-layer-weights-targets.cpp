@@ -4,8 +4,8 @@ using namespace epiworld;
 
 // Several layers in one model draw one infection from all their contacts, and
 // each transmission records the layer it came through. A layer's weight scales
-// the odds of infection through it, a layer can be restricted to some viruses,
-// and a mixing layer works next to a network (the model then pulls).
+// the odds of infection through it, a layer can be restricted to some
+// diseases, and a mixing layer works next to a network (the model then pulls).
 
 namespace {
 
@@ -105,9 +105,9 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
         REQUIRE(infected_odds("Weight", 1.0) == none);
     }
 
-    // -- virus targets and layer ids ------------------------------------------
-    // Two layers over the same agents; flu A spreads through layer 0 only and
-    // flu B through layer 1 only. Every transmission names the layer it used,
+    // -- disease targets and layer ids ----------------------------------------
+    // Two layers over the same agents; flu A (a disease) spreads through layer
+    // 0 only and flu B (another) through layer 1 only. Every transmission names the layer it used,
     // and the seeds belong to none.
     {
         const size_t n = 2000u;
@@ -121,8 +121,9 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
         auto net_a = layer::network("a", rgraph_smallworld(n, 6, 0.1, false, m));
         auto net_b = layer::network("b", rgraph_smallworld(n, 6, 0.1, false, m));
-        net_a->add_virus_target(m.get_virus(0));
-        net_b->add_virus_target(m.get_virus(1));
+        net_a->add_target("flu A");
+        net_b->add_target("flu B");
+        REQUIRE(net_a->get_targets() == std::vector< std::string >{"flu A"});
         m.add_layer(net_a);
         m.add_layer(net_b);
 
@@ -149,9 +150,9 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
         REQUIRE(through[0][1] == 0u);
         REQUIRE(through[1][0] == 0u);
 
-        // A virus the model does not have cannot be a target
-        Virus loose = make_virus("loose", 0.1);
-        REQUIRE_THROWS_AS(net_a->add_virus_target(loose), std::logic_error);
+        // A disease the model does not have cannot be a target
+        net_a->add_target("loose");
+        REQUIRE_THROWS_AS(m.run(1, 3), std::range_error);
     }
 
     // -- a mixing layer next to a network -------------------------------------
@@ -221,21 +222,24 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
             Virus v = make_virus("flu", 1.0);
             m.add_virus(v, assign::agents({0u}));
             m.add_param(0.0, "Weight");
-            Virus other = make_virus("other", 1.0);
-            m.add_virus(other);
 
+            // Closed to the hub's disease: open to another one only (a model
+            // with two diseases pulls)
             auto net = layer::network("star", star);
             if (scenario == 0)
                 net->set_weight("Weight");
             else if (scenario == 1)
-                net->add_virus_target(m.get_virus(1));
+            {
+                m.add_virus(make_virus("other", 1.0));
+                net->add_target("other");
+            }
             m.add_layer(net);
 
-            m.set_transmission_mode(mode);
+            m.set_transmission_mode((scenario == 1) ? "pull" : mode);
             m.run(1, 1);
 
             INFO("mode " << mode << ", scenario " << scenario);
-            const size_t infected = m.get_db().get_today_total_stage("Infected");
+            const size_t infected = m.get_db().get_today_total_stage("Infected", 0);
 
             if (scenario < 2)
                 REQUIRE(infected == 1u);

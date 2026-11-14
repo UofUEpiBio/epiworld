@@ -54,21 +54,27 @@ struct DataRegistry {
     std::vector< int > virus_origin_date;
     std::vector< int > virus_parent_id;
 
+    std::vector< int > virus_disease; ///< The disease of each variant
+
     // Tools, by id
     std::vector< std::string > tool_name;
+    std::vector< uint64_t > tool_mask; ///< The diseases each acts on (see `DiseaseTargets`)
     std::vector< int > tool_origin_date;
 
     bool operator==(const DataRegistry & other) const;
 };
 
 /**
- * @brief What is recorded about one disease: counts by state (today and by
- * day), the variants' and tools' histories, transitions, transmissions and
- * hospitalizations.
- * @details One per model for now; with several diseases (NH-5b), one per
- * disease.
+ * @brief What is recorded about one disease: counts by cell (the disease's
+ * stage × the status; today and by day), the variants' and tools'
+ * histories, transitions, transmissions and hospitalizations.
+ * @details One per disease. The engine's state of an agent combines its
+ * stages in every disease (see `Model`); each record counts its own
+ * disease's cells (`DataBase::cell_of()`).
  */
 struct DiseaseRecord {
+    size_t ncells = 0u; ///< Its cells: stages × statuses
+
     HospitalizationsTracker m_hospitalizations; ///< Tracker for hospitalization events
 
     // {Variant 1: {state 1, state 2, etc.}, Variant 2: {...}, ...}
@@ -144,7 +150,27 @@ private:
     Model * model;
 
     DataRegistry reg;  ///< Variants and tools
-    DiseaseRecord rec; ///< The disease's records
+    std::vector< DiseaseRecord > recs; ///< One per disease (one without any)
+
+    /// The cells of disease `d` (the engine's states without a natural history)
+    size_t ncells_of(int d) const;
+
+    /// The cell of disease `d` of an engine state (with one disease, the state)
+    epiworld_fast_uint cell_of(int d, epiworld_fast_uint state) const;
+
+    /// The diseases a `disease` argument asks for (checked)
+    std::vector< int > diseases_of(int disease) const;
+
+    /// Counts the virus (or the tool, in the diseases it targets) in an
+    /// engine state
+    void count_virus(int virus_id, epiworld_fast_uint state, int delta);
+    void count_tool(int tool_id, epiworld_fast_uint state, int delta);
+
+    /// A variant's disease (0 for viruses without one)
+    int disease_of_virus(int virus_id) const;
+
+    /// The records of one disease, made into its history (see `record()`)
+    void record_disease(DiseaseRecord & r);
 
     int sampling_freq = 1;
 
@@ -154,6 +180,13 @@ private:
         epiworld_fast_uint prev_state,
         epiworld_fast_uint new_state,
         bool undo = false
+    );
+
+    /// update_state() with several diseases (each counts its own cells)
+    void update_state_several(
+        epiworld_fast_uint prev_state,
+        epiworld_fast_uint new_state,
+        bool undo
     );
 
     void update_virus(
@@ -170,47 +203,50 @@ private:
         bool undo = false
     );
 
-    void record_transition(epiworld_fast_uint from, epiworld_fast_uint to, bool undo);
-
-    /// One more agent took the declared transition `id` (see
-    /// `get_hist_transitions()`)
-    void record_declared_transition(int id) { ++rec.transition_today[static_cast< size_t >(id)]; }
+    void record_transition(
+        DiseaseRecord & r,
+        epiworld_fast_uint from,
+        epiworld_fast_uint to,
+        bool undo
+    );
 
     /**
-     * @brief The status and the stage of a state of the engine (the one place
+     * One more agent took the declared transition `t` (see
+     * `get_hist_transitions()`): of disease `track`, or (`t` a status
+     * transition, `-2 - index`) of the statuses, recorded once, after the
+     * first disease's transitions.
+     */
+    void record_declared_transition(int track, int t);
+
+    /**
+     * @brief The status and the stage of a cell of disease `d` (the one place
      * the pair is split; models without statuses have the status "Free").
      */
     void split_state(
-        epiworld_fast_uint state,
+        int d,
+        epiworld_fast_uint cell,
         std::string & status,
         std::string & stage
     ) const;
 
-    /// `split_state()` over a vector of states.
+    /// `split_state()` over a vector of cells, appended.
     void split_states(
-        const std::vector< epiworld_fast_uint > & states,
+        int d,
+        const std::vector< epiworld_fast_uint > & cells,
         std::vector< std::string > * status,
         std::vector< std::string > * stage
     ) const;
 
-    /// Today's total of a stage (`by_stage`) or of a status.
-    int today_total_of(const std::string & name, bool by_stage) const;
+    /// Today's total of a stage (`by_stage`, of the diseases `disease` asks
+    /// for) or of a status.
+    int today_total_of(const std::string & name, bool by_stage, int disease) const;
 
     /// Checks a disease argument: `all_diseases`, or a disease of the model.
     void check_disease(int disease) const;
 
-    /// The transmissions, written into arrays (see `get_transmissions()`).
-    void get_transmissions_into(
-        int * date,
-        int * source,
-        int * target,
-        int * virus,
-        int * source_exposure_date,
-        int * layer
-    ) const;
-
-    /// The disease column of `n` rows (if `names` is not `nullptr`).
-    void disease_rows(std::vector< std::string > * names, size_t n) const;
+    /// Appends the disease column of `n` rows of disease `d` (if `names` is
+    /// not `nullptr`; `d < 0`: "").
+    void disease_rows(std::vector< std::string > * names, size_t n, int d) const;
 
 
 public:

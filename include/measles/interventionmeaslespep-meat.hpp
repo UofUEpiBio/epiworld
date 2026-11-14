@@ -112,6 +112,7 @@ inline void InterventionMeaslesPEP::_setup(
         // Creating the PEP vaccine tool
         ToolVaccine pep("PEP MMR");
         pep.set_susceptibility_reduction(model->par(this->_par_mmr_efficacy));
+        pep.add_target("Measles");
         model->add_tool(pep);
 
     }
@@ -125,7 +126,7 @@ inline void InterventionMeaslesPEP::_setup(
             this->_par_half_life_mean,
             this->_par_half_life_sd
         );
-        
+        ig.add_target("Measles");
         model->add_tool(ig);
     }
 
@@ -351,7 +352,7 @@ inline void InterventionMeaslesPEP::operator()(Model * model, int) {
         auto & agent = model->get_agent(agent_i);
 
         // Is the agent eligible for PEP?
-        if (!IN(model->get_stage(agent), this->_target_stages))
+        if (!IN(model->get_stage(agent, 0), this->_target_stages))
             continue;
 
         if (

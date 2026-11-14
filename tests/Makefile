@@ -138,7 +138,10 @@ $(NAME)_SOURCES := \
 	52a-natural-history.cpp \
 	52b-natural-history-queue.cpp \
 	52c-natural-history-models.cpp \
-	53a-outputs-by-disease.cpp
+	53a-outputs-by-disease.cpp \
+	54a-two-diseases.cpp \
+	54b-second-disease-unseeded.cpp \
+	54c-two-diseases-rules.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
 # covered and would inflate the figure.
