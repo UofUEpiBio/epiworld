@@ -229,13 +229,13 @@ inline void ModelMeasles::measles_build(
                 const epiworld_double days = m.par("Days undetected");
                 return (days <= 1.0) ? 1.0 : (1.0 / days);
             }
-        )).when({RASH}).name("Detected");
+        )).when({RASH}).of("Measles").name("Detected");
     const int onset_q = s.external(
         {FREE, QUARANTINED}, ISOLATED, "Onset in quarantine"
     );
     s.after(
         ISOLATED, FREE,
-        Duration::fixed("Isolation period").since(RASH)
+        Duration::fixed("Isolation period").since(RASH).of("Measles")
     ).name("Isolation ends");
     const int admit = s.external(
         {FREE, QUARANTINED, ISOLATED}, HOSPITALIZED, "Admitted"
@@ -244,11 +244,12 @@ inline void ModelMeasles::measles_build(
     s.external(QUARANTINED, FREE, "PEP release");
     this->set_statuses(std::move(s));
 
-    // How the two are linked
-    this->react(Trigger::entered(RASH).was({QUARANTINED}), onset_q);
-    this->react(Trigger::entered(SEVERE), admit);
+    // How the two are linked (naming the disease, so the model can take
+    // another one)
+    this->react(Trigger::entered(RASH).of("Measles").was({QUARANTINED}), onset_q);
+    this->react(Trigger::entered(SEVERE).of("Measles"), admit);
     this->react(
-        Trigger::entered(SEVERE),
+        Trigger::entered(SEVERE).of("Measles"),
         [](Agent & p, Model & m) { m.record_hospitalization(p); }
     );
     this->react(Trigger::fired(out_severe), discharge);

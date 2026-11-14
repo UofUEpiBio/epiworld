@@ -72,6 +72,21 @@ inline size_t Model::add_exposures(
     size_t n_exposures
 )
 {
+    // Decided once per call: several diseases filter the exposures
+    return (tracks.size() > 1u) ?
+        add_exposures_impl< true >(agent, layer, contacts, n, n_exposures) :
+        add_exposures_impl< false >(agent, layer, contacts, n, n_exposures);
+}
+
+template< bool Several >
+inline size_t Model::add_exposures_impl(
+    Agent * agent,
+    const ContactLayer * layer,
+    const size_t * contacts,
+    size_t n,
+    size_t n_exposures
+)
+{
 
     const bool weighted = (layer != nullptr) && layer->has_weight();
     const epiworld_double weight = weighted ? layer->get_weight(*this) : 1.0;
@@ -96,12 +111,13 @@ inline size_t Model::add_exposures(
 
         // Several diseases: only those of the draw (see nh_step_infection()),
         // and those the agent can catch
-        const bool several = tracks.size() > 1u;
-        if (several && !(nh_trial_mask & (uint64_t(1) << v->disease)))
+        if (Several && !(nh_trial_mask & v->disease_bit))
             continue;
 
-        const epiworld_double p_inf = nh_infection_prob(*agent, *v);
-        if (several && (p_inf <= 0.0))
+        const epiworld_double p_inf = nh_infection_prob(
+            *agent, *v, Several ? nh_track(v.get()) : tracks[0u]
+        );
+        if (Several && (p_inf <= 0.0))
             continue;
 
         epiworld_double p =
@@ -428,7 +444,7 @@ inline void Model::transmission_push_impl()
                     // Exactly the expression the pull uses, in the same order.
                     epiworld_double p =
                         (1.0 - i.get_susceptibility_reduction(v, *this)) *
-                        nh_infection_prob(i, *v) *
+                        nh_infection_prob(i, *v, tracks[0u]) *
                         (1.0 - j.get_transmission_reduction(v, *this))
                         ;
 

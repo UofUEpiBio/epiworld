@@ -209,6 +209,14 @@ protected:
     int sampled_layer = -1; ///< See `take_sampled_layer()`
 
     /// Adds the exposures of `contacts` to the arrays; returns their number.
+    template< bool Several >
+    size_t add_exposures_impl(
+        Agent * agent,
+        const ContactLayer * layer,
+        const size_t * contacts,
+        size_t n,
+        size_t n_exposures
+    );
     size_t add_exposures(
         Agent * agent,
         const ContactLayer * layer,
@@ -376,6 +384,7 @@ protected:
         int removed_other = -1;    ///< Index of "Removed (other disease)" (-1: none)
         unsigned int stride = 1u;  ///< Cells between two of its stages
         unsigned int n = 0u;       ///< Its stages (in `nh`)
+        std::vector< int > stage_at; ///< [cell] Its stage in each cell
         std::vector< int > until;  ///< [agent] Day the stage's duration ends
         std::vector< int > row;    ///< [agent] Its record in `rows` (-1: none yet)
         /**
@@ -432,18 +441,25 @@ protected:
     int nh_resolve_name(const std::string & name, const std::string & what) const;
 
     /// The track a function asks for: `disease`, or (`all_diseases`) the one
-    /// disease of a model with one (`fn` names the function in errors)
-    const Track & nh_disease(int disease, const char * fn) const;
+    /// disease of a model with one (`fn` names the function in errors). Read
+    /// on every step by the models: the check is inline, the error is not.
+    const Track & nh_disease(int disease, const char * fn) const
+    {
+        if (
+            (static_cast< unsigned int >(disease) < tracks.size()) ||
+            ((disease == all_diseases) && (tracks.size() == 1u))
+        )
+            return tracks[(disease < 0) ? 0u : static_cast< size_t >(disease)];
+        nh_disease_error(disease, fn);
+    }
+    [[noreturn]] void nh_disease_error(int disease, const char * fn) const;
 
     size_t nh_nstatus() const { return st ? st->get_n_stages() : 1u; }
 
-    /// The stage of a cell in a track (one disease without statuses: the
-    /// cell; no division on the hot path)
+    /// The stage of a cell in a track (a lookup: no division on the hot path)
     int nh_stage_of(const Track & t, unsigned int cell) const
     {
-        if (tracks.size() == 1u)
-            return static_cast< int >(st ? cell / t.stride : cell);
-        return static_cast< int >((cell / t.stride) % t.n);
+        return t.stage_at[cell];
     }
     int nh_stage_of(unsigned int cell) const { return nh_stage_of(tracks[0u], cell); }
     int nh_status_of(unsigned int cell) const
@@ -484,7 +500,9 @@ protected:
     /// The diseases (bits) whose viruses the current draw may give (see
     /// nh_step_infection(); all, except during a draw of several diseases)
     uint64_t nh_trial_mask = ~uint64_t(0);
-    bool nh_step_stage(Track & track, Agent & p, unsigned int cell); ///< nh_step()'s stage part
+    /// nh_step()'s stage part (`one`: the model has one disease, whose
+    /// infection is drawn first)
+    bool nh_step_stage(Track & track, Agent & p, unsigned int cell, bool one);
     void nh_step_status(Agent & p, unsigned int cell); ///< nh_step()'s status part
 
     /// The natural history whose values apply to `p` in a track: its
@@ -498,7 +516,8 @@ protected:
     void nh_enter(Track & track, Agent & p, unsigned int state_old, int transition);
     void nh_queue_move(Agent & p, unsigned int state_old);
     void nh_initial_place();
-    epiworld_double nh_infection_prob(Agent & target, const Virus & v);
+    /// The probability of infection of `target` by `v`, of disease `track`
+    epiworld_double nh_infection_prob(Agent & target, const Virus & v, const Track & track);
     std::vector< int > nh_infection_order; ///< Scratch of nh_step_infection()
     ///@}
 

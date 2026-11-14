@@ -392,7 +392,7 @@ inline void Model::events_run()
                     q->virus &&
                     (
                         (a.action == EventAction::AddVirus) ||
-                        (t.nh->is_carrier(to) && (q->virus->disease != t.id))
+                        ((q->virus->disease != t.id) && t.nh->is_carrier(to))
                     )
                 )
                     continue;
@@ -508,7 +508,20 @@ inline void Model::events_run()
             // Entering a stage, in each disease where the agent moved: entry
             // days, the stage's duration, episodes
             int s_old_ev = 0;
-            for (auto & t : tracks)
+            if (tracks.size() == 1u)
+            {
+                // One disease: its stage
+                s_old_ev = nh_stage_of(state_old);
+                if (
+                    (nh_stage_of(p->state) != s_old_ev) ||
+                    (transition == NH_SEED) || (transition == NH_INITIAL)
+                )
+                    nh_enter(
+                        tracks[0u], *p, static_cast< unsigned int >(s_old_ev),
+                        transition
+                    );
+            }
+            else for (auto & t : tracks)
             {
                 const int s_old = nh_stage_of(t, state_old);
                 const bool own = (t.id == ev_track);
@@ -750,10 +763,13 @@ inline Model::Model(const Model & model) :
     transmission_mode_last(model.transmission_mode_last),
     transmission_kappa(model.transmission_kappa),
     tracks(model.tracks),
+    nh_queue(model.nh_queue),
     st(model.st),
     nh_status_until(model.nh_status_until),
     nh_status_sod(model.nh_status_sod),
-    nh_reactions(model.nh_reactions)
+    nh_reactions(model.nh_reactions),
+    nh_st_when(model.nh_st_when),
+    nh_st_anchor(model.nh_st_anchor)
 {
 
     // Pointing to the right place. This needs
@@ -856,10 +872,13 @@ inline Model::Model(Model && model) :
     transmission_mode_last(model.transmission_mode_last),
     transmission_kappa(model.transmission_kappa),
     tracks(std::move(model.tracks)),
+    nh_queue(std::move(model.nh_queue)),
     st(std::move(model.st)),
     nh_status_until(std::move(model.nh_status_until)),
     nh_status_sod(std::move(model.nh_status_sod)),
-    nh_reactions(std::move(model.nh_reactions))
+    nh_reactions(std::move(model.nh_reactions)),
+    nh_st_when(std::move(model.nh_st_when)),
+    nh_st_anchor(std::move(model.nh_st_anchor))
 {
 
     db.model = this;
@@ -959,6 +978,9 @@ inline Model & Model::operator=(const Model & m)
     nh_status_until = m.nh_status_until;
     nh_status_sod = m.nh_status_sod;
     nh_reactions = m.nh_reactions;
+    nh_queue = m.nh_queue;
+    nh_st_when = m.nh_st_when;
+    nh_st_anchor = m.nh_st_anchor;
 
     agents_data = m.agents_data;
     agents_data_ncols = m.agents_data_ncols;
@@ -1234,6 +1256,7 @@ inline void Model::add_virus(
 
     cloned->nh_def = def;
     cloned->disease = disease;
+    cloned->disease_bit = uint64_t(1) << disease;
 
     db.record_virus(*cloned, true);
     viruses.push_back(std::shared_ptr<Virus>(std::move(cloned)));
@@ -1244,8 +1267,11 @@ inline void Model::add_virus(
 inline void Model::add_tool(const Tool & t, Assign a)
 {
 
-    // The model keeps its own copy (of the derived class, if any)
+    // The model keeps its own copy (of the derived class, if any); one added
+    // during a run (e.g., by a global event) has its targets resolved now
     auto cloned = t.clone_ptr();
+    if (running && !tracks.empty())
+        cloned->targets_.resolve(*this, "The tool \"" + cloned->get_name() + "\"", true);
     db.record_tool(*cloned);
     tools.push_back(std::shared_ptr<Tool>(std::move(cloned)));
     tool_assign.push_back(std::move(a));

@@ -317,7 +317,7 @@ inline void DiseaseTargets::add(std::string disease)
 
 inline bool DiseaseTargets::has(const Virus & v) const
 {
-    return (v.get_disease() < 0) || ((mask >> v.get_disease()) & 1u);
+    return (mask & v.disease_bit) != 0u;
 }
 
 inline void Tool::add_target(std::string disease)

@@ -26,6 +26,7 @@ struct DiseaseTargets {
      */
     void resolve(const Model & model, const std::string & owner, bool required);
 
+    /// Whether it acts on `v` (a virus not in a model: no)
     bool has(const Virus & v) const;
 
     bool operator==(const DiseaseTargets & o) const { return names == o.names; }
@@ -38,6 +39,7 @@ struct DiseaseTargets {
 class Tool {
     friend class Agent;
     friend class Model;
+    friend class DataBase;
 protected:
 
     Agent * agent = nullptr;

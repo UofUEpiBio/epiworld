@@ -49,6 +49,7 @@ inline Virus::Virus(const Virus& other)
       id(other.id),
       lineage_id(other.lineage_id),
       disease(other.disease),
+      disease_bit(other.disease_bit),
       param_redirects(other.param_redirects),
       nh_def(other.nh_def)
 {
@@ -63,6 +64,7 @@ inline Virus::Virus(Virus&& other) noexcept
       id(other.id),
       lineage_id(other.lineage_id),
       disease(other.disease),
+      disease_bit(other.disease_bit),
       param_redirects(std::move(other.param_redirects)),
       nh_def(std::move(other.nh_def))
 {
@@ -80,6 +82,7 @@ inline Virus& Virus::operator=(const Virus& other)
         id = other.id;
         lineage_id = other.lineage_id;
         disease = other.disease;
+        disease_bit = other.disease_bit;
         param_redirects = other.param_redirects;
         nh_def = other.nh_def;
         counter_copy_assign++;
@@ -97,6 +100,7 @@ inline Virus& Virus::operator=(Virus&& other) noexcept
         id = other.id;
         lineage_id = other.lineage_id;
         disease = other.disease;
+        disease_bit = other.disease_bit;
         param_redirects = std::move(other.param_redirects);
         nh_def = std::move(other.nh_def);
         other.agent = nullptr;
@@ -283,6 +287,7 @@ inline Virus Virus::strain(std::string name) const
     v.id = -99;
     v.lineage_id = -99;
     v.disease = -1;
+    v.disease_bit = 0u;
     return v;
 }
 

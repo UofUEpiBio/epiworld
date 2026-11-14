@@ -24,6 +24,7 @@ class Virus {
     friend class DataBase;
     friend class Tool;
     friend class ContactLayer;
+    friend struct DiseaseTargets;
 private:
     
     Agent * agent = nullptr;
@@ -34,6 +35,7 @@ private:
     int id   = -99;    
     int lineage_id = -99; ///< Id of the founding virus (kept across mutations).
     int disease = -1;     ///< The model's disease it belongs to (see `Model::add_virus()`)
+    uint64_t disease_bit = 0u; ///< Its bit in a target mask (none: not in a model)
     MutFun          mutation                 = nullptr;
 
     /// Parameters this variant reads in place of others (see `use_param()`)

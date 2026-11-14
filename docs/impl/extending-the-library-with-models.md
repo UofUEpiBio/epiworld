@@ -15,6 +15,35 @@ A value is a number, the name of a model parameter, `Value::inverse(name)` (`1 /
 
 Agents can also have a status, such as free, quarantined or isolated (`Statuses`, set with `Model::set_statuses()`), with transitions of their own (`rate()`, `after()`, `external()`); a status transition can be restricted to agents in some stages (`.when()`). Reactions (`Model::react()`) respond to agents entering a stage or a status, for example by quarantining their contacts.
 
+## Several diseases
+
+A natural history is a disease, and a model can hold several, say influenza and measles, on the same population, layers and statuses. Every agent has a stage in every disease and one status, and carries at most one infection at a time: an agent recovered from influenza can catch measles, but an agent with influenza catches nothing else until it recovers.
+
+```cpp
+Virus flu("Influenza");     // its stages and transitions, as above
+Virus measles("Measles");   // its own
+
+model.add_virus(flu, assign::share(0.01));      // disease 0
+model.add_virus(measles, assign::count(5));     // disease 1
+
+Virus flu_b = flu.strain("Influenza B");        // a strain: the same disease
+flu_b.use_param("Flu transmission rate", "Flu B transmission rate");
+model.add_virus(flu_b, assign::count(10));
+
+int d = model.disease_id("Measles");
+model.get_stage(agent, d);
+```
+
+A virus built from scratch is a new disease, with a name of its own; a copy of a virus (`strain()`, or a variant from a mutation) belongs to its disease and keeps its stages. With several diseases, what a model with one disease infers must be named, or the run stops at its start with an error saying how:
+
+- what refers to a stage names its disease: `Trigger::entered(s).of("Measles")`, `st.rate(...).when({s}).of("Measles")`, `Duration::fixed(14).since(s).of("Measles")`, and the functions about an agent's stage (`get_stage(agent, d)`, `get_stage_entered()`, `set_initial(a, d)`, ...);
+- a tool names the diseases it acts on (`Tool::add_target("Measles")`); a layer carries every disease unless restricted (`ContactLayer::add_target()`);
+- infections are pulled (`set_transmission_mode("push")` is refused).
+
+Each day an agent without an infection draws at most one, from the contacts carrying a disease it can catch (its stage in that disease has an infection); the diseases with custom samplers are tried in a random order. A transition's id in the model (`transition_id(name, disease)`) counts the earlier diseases' transitions first. When a disease removes agents (a stage with contact weight 0 and no exits, e.g., Dead), the others get a built-in last stage, "Removed (other disease)", where the agent moves, without reactions, in the same step.
+
+The engine combines an agent's status and its stage in every disease into one state, so the number of states is the product of their numbers: two diseases of 6 stages with 4 statuses make 144. Each disease's records are kept apart (see [Data Collection and Analysis](data-collection-and-analysis.md)). Limits: a long infection blocks the others (a chronic carrier catches nothing else); the diseases share the statuses; two diseases reading a parameter of the same name share it.
+
 ## Example: the ModelSIS class
 
 The SIS (Susceptible-Infected-Susceptible) model is one of the simplest models included in epiworld:

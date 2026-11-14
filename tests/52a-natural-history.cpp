@@ -206,18 +206,20 @@ EPIWORLD_TEST_CASE("Natural history - built and run end to end", "[natural-histo
         auto model = make_model("pull");
         REQUIRE_THROWS(model->fire(0, model->get_agent(0)));   // an infection
 
-        // A strain: a copy that reads its own parameter is welcome; a virus
-        // with other stages, or none, is not
-        Virus strain = make_disease();
-        strain.set_name("Strain");
+        // A strain: a copy that reads its own parameter is welcome; a strain
+        // with other stages is not, nor a virus without any, nor a new
+        // disease with a taken name (a virus from scratch is a new disease)
+        Virus strain = model->get_virus(0).strain("Strain");
         strain.use_param("Death", "Death (strain)");
         model->add_param(0.5, "Death (strain)");
         REQUIRE_NOTHROW(model->add_virus(strain));
+        REQUIRE(model->get_n_diseases() == 1u);
 
-        Virus other("Other");
-        other.add_stage("Susceptible");
+        Virus other = model->get_virus(0).strain("Other");
+        other.add_stage("Extra");
         REQUIRE_THROWS(model->add_virus(other));
         REQUIRE_THROWS(model->add_virus(Virus("Plain")));
+        REQUIRE_THROWS(model->add_virus(make_disease()));
 
         // Copies share the natural history until one is edited
         Virus a = make_disease();
@@ -286,12 +288,15 @@ EPIWORLD_TEST_CASE("Natural history - built and run end to end", "[natural-histo
         first.set_statuses(st);
         REQUIRE_NOTHROW(first.add_virus(make_disease()));
 
-        // Stage 6 is no disease stage, though the statuses have seven
+        // Stage 6 is no disease stage, though the statuses have seven: the
+        // run stops at its start (when the references are resolved)
         Statuses bad;
         for (int k = 0; k < 7; ++k)
             bad.add_status("Status " + std::to_string(k));
         bad.after(1, 0, Duration::fixed(5).since(D + 2));
-        REQUIRE_THROWS(make_model("pull")->set_statuses(bad));
+        auto m = make_model("pull");
+        m->set_statuses(bad);
+        REQUIRE_THROWS(m->run(1, 1));
     }
 
 }

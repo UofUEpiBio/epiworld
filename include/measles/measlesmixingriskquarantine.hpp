@@ -193,7 +193,7 @@ inline void ModelMeaslesMixingRiskQuarantine::_quarantine_process(Model * m) {
     std::vector< bool > can_quarantine(m->size(), false);
     for (auto & agent: m->get_agents())
     {
-        if ((m->get_stage(agent) <= RASH) && (m->get_status(agent) == FREE))
+        if ((m->get_stage(agent, 0) <= RASH) && (m->get_status(agent) == FREE))
         {
             model->quarantine_risk_level[agent.get_id()] = RISK_LOW;
             can_quarantine[agent.get_id()] = true;
@@ -217,7 +217,7 @@ inline void ModelMeaslesMixingRiskQuarantine::_quarantine_process(Model * m) {
         const size_t n_contacts = std::min(
             ct.get_n_contacts(agent_i_idx), ct.get_max_contacts()
         );
-        const int onset = m->get_stage_entered(agent_i_idx, RASH);
+        const int onset = m->get_stage_entered(agent_i_idx, RASH, 0);
 
         for (size_t contact_j_idx = 0u; contact_j_idx < n_contacts; ++contact_j_idx)
         {
@@ -253,7 +253,7 @@ inline void ModelMeaslesMixingRiskQuarantine::_quarantine_process(Model * m) {
         if (!model->quarantine_willingness[id])
             continue;
 
-        if (m->get_stage(agent) != RASH)
+        if (m->get_stage(agent, 0) != RASH)
             m->fire(quarantined, agent);
         else if (model->isolation_willingness[id])
             m->fire(isolated, agent);
@@ -338,12 +338,12 @@ inline ModelMeaslesMixingRiskQuarantine::ModelMeaslesMixingRiskQuarantine(
         );
     };
     this->react(Trigger::fired(this->transition_id("Detected")), add_case);
-    this->react(Trigger::entered(this->RASH).was({this->QUARANTINED}), add_case);
+    this->react(Trigger::entered(this->RASH).of("Measles").was({this->QUARANTINED}), add_case);
 
     // Once a quarantine has been triggered, a free agent's rash onset is a
     // case with probability "Detection rate quarantine"
     this->react(
-        Trigger::entered(this->RASH).was({this->FREE}),
+        Trigger::entered(this->RASH).of("Measles").was({this->FREE}),
         [](Agent & p, Model & m) {
             auto & mm = dynamic_cast< ModelMeaslesMixingRiskQuarantine & >(m);
             if (
@@ -362,6 +362,7 @@ inline ModelMeaslesMixingRiskQuarantine::ModelMeaslesMixingRiskQuarantine(
     // The vaccine
     ToolVaccine vaccine("MMR");
     vaccine.set_susceptibility_reduction(this->get_param("Vax efficacy"));
+    vaccine.add_target("Measles");
     this->add_tool(vaccine, assign::share(prop_vaccinated));
 
     this->add_globalevent(this->_quarantine_process, "Update infected individuals");

@@ -199,9 +199,9 @@ inline void ModelSEIRQuarantine::_quarantine_process(Model * m)
             // agent are in the logs by then
             const size_t id = static_cast< size_t >(p.get_id());
             if (
-                (m->get_stage(p) != INFECTED) || (m->get_status(p) != FREE) ||
+                (m->get_stage(p, 0) != INFECTED) || (m->get_status(p) != FREE) ||
                 (model->agent_quarantine_triggered[id] != QUARANTINE_PROCESS_INACTIVE) ||
-                (m->get_stage_entered(id, INFECTED) >= m->today())
+                (m->get_stage_entered(id, INFECTED, 0) >= m->today())
             )
                 continue;
 
@@ -258,7 +258,7 @@ inline void ModelSEIRQuarantine::_quarantine_process(Model * m)
                     continue;
 
                 auto & agent = m->get_agent(contact_id);
-                const int s = m->get_stage(agent);
+                const int s = m->get_stage(agent, 0);
                 if ((m->get_status(agent) != FREE) || (s > INFECTED))
                     continue;
 
@@ -349,17 +349,18 @@ inline ModelSEIRQuarantine::ModelSEIRQuarantine(
     const int onset_q = s.external({FREE, QUARANTINED}, ISOLATED, "Onset in quarantine");
     s.after(
         ISOLATED, FREE,
-        Duration::fixed("Isolation period").since(INFECTED)
+        Duration::fixed("Isolation period").since(INFECTED).of(vname)
     ).name("Isolation ends");
     const int admit = s.external({FREE, QUARANTINED, ISOLATED}, HOSPITALIZED, "Admitted");
     const int discharge = s.external(HOSPITALIZED, FREE, "Discharged");
     this->set_statuses(std::move(s));
 
-    // How the two are linked
-    this->react(Trigger::entered(INFECTED).was({QUARANTINED}), onset_q);
-    this->react(Trigger::entered(SEVERE), admit);
+    // How the two are linked (naming the disease, so the model can take
+    // another one)
+    this->react(Trigger::entered(INFECTED).of(vname).was({QUARANTINED}), onset_q);
+    this->react(Trigger::entered(SEVERE).of(vname), admit);
     this->react(
-        Trigger::entered(SEVERE),
+        Trigger::entered(SEVERE).of(vname),
         [](Agent & p, Model & m) { m.record_hospitalization(p); }
     );
     this->react(Trigger::fired(out_severe), discharge);

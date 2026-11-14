@@ -55,7 +55,7 @@ inline int DataBase::disease_of_virus(int virus_id) const
 
 inline void DataBase::count_virus(int virus_id, epiworld_fast_uint state, int delta)
 {
-    const int d = disease_of_virus(virus_id);
+    const int d = (recs.size() == 1u) ? 0 : disease_of_virus(virus_id);
     auto & r = recs[static_cast< size_t >(d)];
     #ifdef EPI_DEBUG
     r.today_virus.at(static_cast< size_t >(virus_id)).at(cell_of(d, state)) += delta;
@@ -66,10 +66,19 @@ inline void DataBase::count_virus(int virus_id, epiworld_fast_uint state, int de
 
 inline void DataBase::count_tool(int tool_id, epiworld_fast_uint state, int delta)
 {
+    // One disease: a tool always acts on it (see DiseaseTargets::resolve())
+    if (recs.size() == 1u)
+    {
+        recs[0u].today_tool[static_cast< size_t >(tool_id)][state] += delta;
+        return;
+    }
+
+    const uint64_t mask = reg.tool_mask[static_cast< size_t >(tool_id)];
     for (size_t d = 0u; d < recs.size(); ++d)
-        recs[d].today_tool[static_cast< size_t >(tool_id)][
-            cell_of(static_cast< int >(d), state)
-        ] += delta;
+        if ((mask >> d) & 1u)
+            recs[d].today_tool[static_cast< size_t >(tool_id)][
+                cell_of(static_cast< int >(d), state)
+            ] += delta;
 }
 
 inline void DataBase::reset()
@@ -313,9 +322,12 @@ inline void DataBase::record_disease(DiseaseRecord & r)
 
     }
 
-    // Recording tool's history
+    // Recording tool's history (in the diseases each targets)
     for (size_t t = 0u; t < r.today_tool.size(); ++t)
     {
+
+        if (!((reg.tool_mask[t] >> d) & 1u))
+            continue;
 
         for (epiworld_fast_uint s = 0u; s < nc; ++s)
         {
@@ -450,6 +462,7 @@ inline void DataBase::record_tool(Tool & t)
     t.set_date(model->today());
     reg.tool_name.push_back(t.get_name());
     reg.tool_origin_date.push_back(model->today());
+    reg.tool_mask.push_back(t.targets_.mask);
 
     if (recs.empty())
         recs.resize(1u);
@@ -485,6 +498,35 @@ inline void DataBase::update_state(
         );
     #endif
 
+    // One disease: the engine's states are its cells
+    if (recs.size() == 1u)
+    {
+        auto & r = recs[0u];
+        if (undo)
+        {
+            r.today_total[prev_state]++;
+            r.today_total[new_state]--;
+        }
+        else
+        {
+            r.today_total[prev_state]--;
+            r.today_total[new_state]++;
+        }
+        record_transition(r, prev_state, new_state, undo);
+        return;
+    }
+
+    update_state_several(prev_state, new_state, undo);
+
+}
+
+inline void DataBase::update_state_several(
+    epiworld_fast_uint prev_state,
+    epiworld_fast_uint new_state,
+    bool undo
+)
+{
+
     // Each disease counts its own cells (a status change moves the agent
     // in every disease; a stage change, in one)
     for (size_t di = 0u; di < recs.size(); ++di)
@@ -512,7 +554,6 @@ inline void DataBase::update_state(
 
     }
 
-    return;
 }
 
 inline void DataBase::update_virus(

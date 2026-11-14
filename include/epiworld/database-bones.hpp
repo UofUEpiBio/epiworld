@@ -58,6 +58,7 @@ struct DataRegistry {
 
     // Tools, by id
     std::vector< std::string > tool_name;
+    std::vector< uint64_t > tool_mask; ///< The diseases each acts on (see `DiseaseTargets`)
     std::vector< int > tool_origin_date;
 
     bool operator==(const DataRegistry & other) const;
@@ -160,7 +161,8 @@ private:
     /// The diseases a `disease` argument asks for (checked)
     std::vector< int > diseases_of(int disease) const;
 
-    /// Counts the virus (or the tool, in every disease) in an engine state
+    /// Counts the virus (or the tool, in the diseases it targets) in an
+    /// engine state
     void count_virus(int virus_id, epiworld_fast_uint state, int delta);
     void count_tool(int tool_id, epiworld_fast_uint state, int delta);
 
@@ -178,6 +180,13 @@ private:
         epiworld_fast_uint prev_state,
         epiworld_fast_uint new_state,
         bool undo = false
+    );
+
+    /// update_state() with several diseases (each counts its own cells)
+    void update_state_several(
+        epiworld_fast_uint prev_state,
+        epiworld_fast_uint new_state,
+        bool undo
     );
 
     void update_virus(

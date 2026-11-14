@@ -1681,7 +1681,7 @@ that on `v1-layers` this plan is the source of truth.
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-11-13).
+Updated by every epiworld PR into `v1-layers` (last: 2026-11-14).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1705,9 +1705,9 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-13).
 | Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 merged (replaces #358-#360, closed); NH-1 and NH-2: #363 merged; NH-3 (branch `nh-3-docs`: docs and diagrams drawn from the declarations): #366 merged; the benchmark runners and rerun: UofUEpiBio/epiworld-benchmark#35 (simulation time regressed in three rows, profiled to the reset); the reset fix (branch `reset-no-realloc`: placements in reused buffers, natural-history records made as agents move): #367 merged; its rerun (UofUEpiBio/epiworld-benchmark#36) fixed 1,000,000 agents, and left scenario_00 at 100,000 and GeoPops about 15% above 3d-3b, in the daily step; the step's cost (branch `nh-step-cost`: `par_at()` inlined, the stage of a cell without a division, the status part apart): #368 merged; its rerun (UofUEpiBio/epiworld-benchmark#37): no ratio grew by more than 10% (scenario_00 at 100,000 stays at 1.13; on denser and layered synthetic networks the remaining cost is per infected agent, not per contact or layer); found by the epiworldR port: an agent given a tool or virus the model does not hold crashed (since V-1 only the model's copy has an id), now an error: #369 merged; the benchmark reruns UofUEpiBio/epiworld-benchmark#35, #36 and #37 merged; the decisions that close the plan (16-21: `rule()` and the calendar deferred, the measles quarantine exemption by tool name, diagrams without transition labels): NH-close (this PR); next, NH-5 (several diseases per model, one infection per agent; the database per disease; accessors by margin), plan first | #231 merged (NH-4: natural history, placement, variants by id, plain classes, the registry; vendors fe2385a0) | #44 merged (NH-4; vendors fe2385a0) | #30 merged (NH-4; vendors fe2385a0) | #72 merged (NH-4; vendors fe2385a0; keeps `epiworldR (>= 1.0.0)`: see the release item in Phase 6) |
 | Variants by id (V-1) and no `TSeq` template (V-2) (after #363, before NH-3) | V-1: #364 merged; V-2: #365 merged | with NH-4 (#231 merged) | with NH-4 (#44 merged) | with NH-4 (#30 merged) | with NH-4 (#72 merged) |
 | NH-close (decisions 16-21, the measles quarantine exemption by tool name, diagrams without labels) | #370 merged | #232 merged | #45 merged | #31 merged (re-vendor only) | #73 merged (binds `set_quarantine_exempt_tools()`) |
-| NH-5: several diseases per model, one infection per agent (`several-diseases.md`, before Phase 4) | plan: #371 merged; NH-5a (one track per disease, still one disease; identical histories, about +2% instructions): #372; the database in parts (`DataRegistry`, `DiseaseRecord`) and its implementation in four files, identical results: #373 merged (it renamed the `tool_info` column to `reg.tool_name` by mistake; fixed, with the columns of every output table now tested: #374 merged); NH-5b-1 (the outputs by disease: a `disease` argument and column everywhere, the accessors by margin; identical numbers): #375 merged; benchmark rerun at #373: UofUEpiBio/epiworld-benchmark#38 merged (no regression); NH-5b-2 not started | | | | |
-| C++ extensions in the wrappers (user-written C++ on a model built in R or Python: `as_model()`, checked by the epiworld major version) | -- | #233 merged (`cpp_source_epiworld()`, `<epiworldR/extension.h>`) | #46 (`cpp_source()`, `get_include()`, `<epiworldpy/extension.hpp>`) | -- | -- |
-| MSVC: `M_PI` (not standard) in the lognormal draw broke the Windows wheels since #363 | this PR | re-vendor | re-vendor (with #46) | re-vendor later | re-vendor later |
+| NH-5: several diseases per model, one infection per agent (`several-diseases.md`, before Phase 4) | plan: #371 merged; NH-5a (one track per disease, still one disease; identical histories, about +2% instructions): #372; the database in parts (`DataRegistry`, `DiseaseRecord`) and its implementation in four files, identical results: #373 merged (it renamed the `tool_info` column to `reg.tool_name` by mistake; fixed, with the columns of every output table now tested: #374 merged); NH-5b-1 (the outputs by disease: a `disease` argument and column everywhere, the accessors by margin; identical numbers): #375 merged; benchmark rerun at #373: UofUEpiBio/epiworld-benchmark#38 merged (no regression); rerun at #376 (with #375): stage `nh-5b-1`, branch `port-nh-5b1-outputs`, to be rerun on a quiet machine (the first run shared it with other work; callgrind: +45 instructions in 1.12 billion, SEIR at 100,000 agents); NH-5b-2 (several diseases in the engine: one engine state per agent, a record per disease, `strain()`, targets by disease, `.of()`, "Removed (other disease)"; identical with one disease): this PR; transitions by strain: a follow-up | re-vendored to #376 by #234 (merged); NH-5a/5b ports with NH-5c | re-vendored to #376 with #46 (merged); NH-5c | NH-5c | NH-5c |
+| C++ extensions in the wrappers (user-written C++ on a model built in R or Python: `as_model()`, checked by the epiworld major version) | -- | #233 merged (`cpp_source_epiworld()`, `<epiworldR/extension.h>`) | #46 merged (`cpp_source()`, `get_include()`, `<epiworldpy/extension.hpp>`) | -- | -- |
+| MSVC: `M_PI` (not standard) in the lognormal draw broke the Windows wheels since #363 | #376 merged | #234 merged (re-vendor) | with #46 (merged) | with NH-5c | with NH-5c |
 | Phases 4, 5, 6 | not started | | | | |
 
 epiworldRShiny (Section 6): not started; one port after the registry.
@@ -1728,17 +1728,13 @@ Stages 3d-3a (#33) and 3d-3b (#34, pin 07ed7a0d) are merged with no
 regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 0.91 because the 0.x run happened to be faster (the 1.0 run was faster too).
 
-**Next** (as of the date above): NH-close (#370) is ported everywhere
-(epiworldR #232, epiworldpy #45, epiworldjs #31, measles #73). The NH-5
-plan (#371, `several-diseases.md`) is merged. NH-5a (#372) puts the
-engine's per-disease state in a `Track`, with one disease: no API change,
-identical histories, so the wrappers only re-vendor it with NH-5b's port.
-Its benchmark rerun follows its merge. The database split (this PR,
-stacked on #372) prepares NH-5b's records per disease. Then NH-5b (several diseases, the
-database per disease, the accessors by margin, tools that target diseases),
-NH-5c (the wrapper ports), the epiworldRShiny port, and Phase 4. The
-diagrams' pictures (`docs/assets/img`) are rendered with `make -C
-include/measles all` and `make -C include/epiworld/models all`
+**Next** (as of the date above): NH-5b-2 (this PR) puts several diseases
+in the engine; transitions by strain follow it. The benchmark reruns stage
+`nh-5b-1` on a quiet machine, then NH-5b-2 with a two-disease scenario.
+Then NH-5c (the wrapper ports of NH-5a, 5b-1 and 5b-2: the `disease`
+argument and column, targets by disease, `strain()`), the epiworldRShiny
+port, and Phase 4. The diagrams' pictures (`docs/assets/img`) are rendered
+with `make -C include/measles all` and `make -C include/epiworld/models all`
 (mermaid.ink); they still show the labeled diagrams from before #370.
 
 ### 11.7 A benchmark rerun
