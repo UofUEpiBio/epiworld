@@ -197,7 +197,7 @@ inline void ModelMeaslesMixing::_quarantine_process(Model * m) {
             ct.get_n_contacts(agent_i), ct.get_max_contacts()
         );
 
-        const int onset = m->get_stage_entered(agent_i, RASH);
+        const int onset = m->get_stage_entered(agent_i, RASH, 0);
 
         for (size_t contact_i = 0u; contact_i < n_contacts; ++contact_i)
         {
@@ -211,7 +211,7 @@ inline void ModelMeaslesMixing::_quarantine_process(Model * m) {
                 continue;
 
             auto & agent = m->get_agent(contact_id);
-            const int s = m->get_stage(agent);
+            const int s = m->get_stage(agent, 0);
             if ((m->get_status(agent) != FREE) || (s > RASH))
                 continue;
 
@@ -326,6 +326,7 @@ inline ModelMeaslesMixing::ModelMeaslesMixing(
     // The vaccine
     ToolVaccine vaccine("MMR");
     vaccine.set_susceptibility_reduction(this->get_param("Vax efficacy"));
+    vaccine.add_target("Measles");
     this->add_tool(vaccine, assign::share(prop_vaccinated));
 
     this->add_globalevent(_quarantine_process, "Quarantine process");

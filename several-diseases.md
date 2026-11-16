@@ -1,6 +1,7 @@
 # Several diseases per model (NH-5)
 
-**Status: plan, 2026-11-10, for review before any code.** It carries out
+**Status: plan, 2026-11-10; NH-5a and NH-5b-1 merged, NH-5b-2 in review
+(Section 8).** It carries out
 decision 21 of `natural-history.md`, whose vocabulary (stage, status,
 transition, reaction, cell) it uses. It comes before Phase 4 of
 `contact-layers.md` and is part of 1.0.0.
@@ -168,23 +169,34 @@ adding up to the population, and no dead agent is counted as susceptible.
 
 ## 5. The engine
 
-Each disease gets a **track**, which is today's machinery for one natural
-history: the cell of each agent (its stage in that disease × its status),
-the agents-by-cell index, the per-agent records (`nh_row`, `nh_rows`,
-`nh_until`), and its part of the database. The status is stored once and is
-part of every track's cell, so a status change moves the agent in each
-track.
+Each disease gets a **track**: its natural history and the per-agent
+records (deadlines, entry days, episodes), and its record in the database.
 
-- `Model::nh` (about 130 references) becomes the list of tracks.
-- Events carry their track.
-- With one track, the code path is today's.
+**One engine state per agent** (settled 2026-11-13, replacing a cell and an
+index per track): the agent's status and its stage in every disease, in
+mixed radix, `cell = status + n_statuses * (stage_0 + n_0 * (stage_1 +
+...))`. With one disease it is today's cell. The agents-by-state index, the
+infectious and excluded masks, the queue modes, the update functions and the
+mixing layers' carrier pools keep working per state, and are right for
+several diseases: a cell is infectious when one of its stages is, excluded
+when its status or one of its stages is, and visited when one of them has a
+drawn exit. Each disease's record maps the engine state onto its own cells
+(stage × status), O(number of diseases) per event. The cost is that the
+states multiply (two diseases of 6 stages and 4 statuses: 144; the most is
+65,536), and that moving an agent in the agents-by-state index walks the
+states in between. The user's criteria: efficiency first and simplicity; one
+or two diseases per model, at most five.
+
+- Events carry their track; a stage transition's id in the model counts the
+  earlier diseases' transitions first.
+- With one track, the code path and the results are today's.
 
 ## 6. The database and the outputs
 
 | Kept once | Kept per disease |
 |---|---|
 | The viruses (name, origin, parent, and now their disease) and the tools | Counts by status × stage, today and by day |
-| Counts by status, and the status transitions | Transitions, by strain |
+| Counts by status, and the status transitions | Transitions (by strain: a follow-up to NH-5b-2) |
 | Run settings, `n_founders`, user data | Virus and tool histories by status × stage (a tool's, only for the diseases it targets) |
 | | Transmissions, reproductive numbers, generation times, active cases, hospitalizations |
 
@@ -196,7 +208,8 @@ track.
   too. The savers and `SaverMemory` write the same tables: one file per
   output, not per disease.
 - **By margin** (decision 17 of `natural-history.md`):
-  `get_transition_probability(Margin, disease, strain)` returns a
+  `get_transition_probability(Margin, disease)` (a `strain` argument comes
+  with the transitions by strain) returns a
   `TransitionMatrix` (the labels of the status and of the stage, apart, and
   the values), for `Margin::pair`, `stage` or `status`, over every strain or
   one. `Model::get_agents_stages(disease)` and `get_agents_statuses()`
@@ -251,6 +264,17 @@ rerun and the wrapper ports, as in `contact-layers.md` (Section 11).
     the rules of Sections 4.3 to 4.5; the explicit references (`.of()`,
     tool and layer targets by disease); transitions by strain. The
     benchmark gains a two-disease scenario.
+    Done as: the engine state of Section 5; a virus's disease by the key its
+    natural history is created with (copies share it); `DataBase::recs`, one
+    `DiseaseRecord` per disease; tools and layers target diseases by name
+    (`DiseaseTargets`, resolved when a run starts, with the reactions' and
+    statuses' `.of()`); "Removed (other disease)" appended to a disease's
+    stages when another removes agents. The identity harness gives the same
+    outputs for every registered model with one disease. A declared
+    transition cannot enter a carrier stage from a stage without the virus,
+    so `fire()` cannot give a second infection; seeding and imports can, and
+    are refused when the events apply. Transitions by strain are left for a
+    follow-up (they need recording per variant).
 - **NH-5c: the wrapper ports**, in the usual order.
 
 ## 9. Tests

@@ -39,7 +39,7 @@ model.add_virus(other, assign::agents({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
 
 A virus or a tool added without a placement (`model.add_virus(v)`) is recorded but given to no one; `Model::assign_virus(id, a)` and `Model::assign_tool(id, a)` change the placement of one already added. During a run, a global event can give a tool to an agent with `agent.add_tool(model, tool)` and move agents along declared transitions with `Model::fire()`.
 
-Each `add_virus()` records a new variant with its own id (the founder of a lineage); a tool can target the viruses of some lineages only (`Tool::add_target()`).
+Each `add_virus()` records a new variant with its own id (the founder of a lineage). A copy of a virus (`Virus::strain(name)`) is a strain of its disease; a virus built from scratch is another disease (see [Extending the Library with Models](extending-the-library-with-models.md#several-diseases)). A tool acts on the diseases it targets, by name (`Tool::add_target("Measles")`): in a model with one disease a tool without targets acts on it; with several, every tool names its diseases.
 
 ## See Also
 

@@ -2,7 +2,7 @@
 
 using namespace epiworld;
 
-// A tool that targets a virus also acts on its variants
+// A tool that targets a disease also acts on its variants
 EPIWORLD_TEST_CASE("Tool targeting a mutating virus", "[tool][target][mutation]") {
 
     // No recovery: infected agents stay infected
@@ -27,7 +27,7 @@ EPIWORLD_TEST_CASE("Tool targeting a mutating virus", "[tool][target][mutation]"
 
     Tool tool("Vaccine against A");
     tool.set_susceptibility_reduction(1.0);
-    tool.add_target(virus);
+    tool.add_target("A");
     model.add_tool(tool, assign::agents(protected_ids));
 
     model.run(30, 2231);

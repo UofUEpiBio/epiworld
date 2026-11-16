@@ -2,7 +2,8 @@
 
 using namespace epiworld;
 
-// A virus added to a second model starts a lineage of that model
+// A virus added to a second model starts a lineage (and, built from scratch, a
+// disease) of that model
 EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target]") {
 
     Virus virus_a = sir_virus("A");
@@ -34,11 +35,12 @@ EPIWORLD_TEST_CASE("Tool targeting a virus reused across models", "[tool][target
 
     Tool tool("Vaccine against A");
     tool.set_susceptibility_reduction(1.0);
-    tool.add_target(second.get_virus(2));
-    REQUIRE_FALSE(tool.targets(second.get_virus(1)));
+    tool.add_target("A");
     second.add_tool(tool, assign::share(1.0));
 
     second.run(30, 1231);
+    REQUIRE(second.get_tool(0u).targets(second.get_virus(2)));
+    REQUIRE_FALSE(second.get_tool(0u).targets(second.get_virus(1)));
 
     std::vector< int > date, id, counts;
     std::vector< std::string > status, state;

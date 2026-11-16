@@ -131,7 +131,7 @@ inline void ModelMeaslesSchool::_quarantine_agents(Model * m) {
     {
 
         const size_t id = static_cast< size_t >(agent.get_id());
-        const int s = model->get_stage(agent);
+        const int s = model->get_stage(agent, 0);
 
         bool detected = false;
         if ((s == RASH) && (model->get_status(agent) == FREE))
@@ -140,7 +140,7 @@ inline void ModelMeaslesSchool::_quarantine_agents(Model * m) {
             if (detected && isolation_on)
                 model->fire(isolated, agent);
         }
-        else if ((s == SEVERE) && (model->get_stage_entered(id, SEVERE) == today))
+        else if ((s == SEVERE) && (model->get_stage_entered(id, SEVERE, 0) == today))
             detected = true;
 
         if (!detected)
@@ -148,7 +148,7 @@ inline void ModelMeaslesSchool::_quarantine_agents(Model * m) {
 
         // When public health considers the agent infectious
         model->add_triggering_agent(
-            *model, agent, model->get_stage_entered(id, RASH) - prodromal_period
+            *model, agent, model->get_stage_entered(id, RASH, 0) - prodromal_period
         );
         triggered_today = true;
 
@@ -161,7 +161,7 @@ inline void ModelMeaslesSchool::_quarantine_agents(Model * m) {
     for (auto & agent : model->get_agents())
     {
 
-        if ((model->get_stage(agent) >= RASH) || (model->get_status(agent) != FREE))
+        if ((model->get_stage(agent, 0) >= RASH) || (model->get_status(agent) != FREE))
             continue;
 
         if (model->is_quarantine_exempt(agent))
@@ -262,6 +262,7 @@ inline ModelMeaslesSchool::ModelMeaslesSchool(
     // The vaccine
     ToolVaccine vaccine("MMR");
     vaccine.set_susceptibility_reduction(EPI_PAR(this, "Vax efficacy"));
+    vaccine.add_target("Measles");
     this->add_tool(vaccine, assign::share(prop_vaccinated));
 
     this->add_globalevent(this->_quarantine_agents, "Quarantine process");
