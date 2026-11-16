@@ -130,6 +130,24 @@ struct DiseaseRecord {
     std::vector< int > hist_transition_counts;
     ///@}
 
+    /**
+     * @name Declared transitions by variant
+     * @details The transitions taken by agents carrying a variant of the
+     * disease (or catching it, for an infection), by variant: today's counts
+     * `[variant][transition]` (empty until one is counted) and the history
+     * (see `get_hist_virus_transitions()`). Recorded for the transitions an
+     * agent with the virus can take (`virus_transitions`: the infections and
+     * those leaving a carrier stage).
+     */
+    ///@{
+    std::vector< std::vector< int > > transition_virus_today;
+    std::vector< int > virus_transitions;
+    std::vector< int > hist_transition_virus_date;
+    std::vector< int > hist_transition_virus_id;
+    std::vector< int > hist_transition_virus_transition;
+    std::vector< int > hist_transition_virus_counts;
+    ///@}
+
     bool operator==(const DiseaseRecord & other) const;
 };
 
@@ -214,9 +232,11 @@ private:
      * One more agent took the declared transition `t` (see
      * `get_hist_transitions()`): of disease `track`, or (`t` a status
      * transition, `-2 - index`) of the statuses, recorded once, after the
-     * first disease's transitions.
+     * first disease's transitions. A stage transition is also counted under
+     * `virus` (the agent's variant, -1 for none) if that variant is of the
+     * disease (see `get_hist_virus_transitions()`).
      */
-    void record_declared_transition(int track, int t);
+    void record_declared_transition(int track, int t, int virus);
 
     /**
      * @brief The status and the stage of a cell of disease `d` (the one place
@@ -372,6 +392,34 @@ public:
      */
     void get_hist_transitions(
         std::vector< int > & date,
+        std::vector< std::string > & transition,
+        std::vector< int > & counts,
+        int disease = all_diseases,
+        std::vector< std::string > * disease_names = nullptr
+    ) const;
+
+    /**
+     * @brief How many agents carrying each variant took each declared
+     * transition of its disease.
+     * @details One row per recorded day, variant and transition, in that
+     * order. The transitions are those an agent with the virus can take: the
+     * infections (counted under the variant caught) and those leaving a
+     * carrier stage. Over the variants of a disease, a transition's counts add
+     * up to its count in `get_hist_transitions()`, except for an external
+     * transition that also leaves stages without the virus (its count there
+     * includes those agents). Seeding and imports are not transitions, as in
+     * `get_hist_transitions()`. The status transitions are not by variant.
+     * @param date The day.
+     * @param id The variant (`get_virus()` id).
+     * @param transition The transition's name.
+     * @param counts How many agents took it that day.
+     * @param disease Only this disease's variants (`all_diseases`: every
+     * disease, one after the other).
+     * @param disease_names If given, the disease of each row.
+     */
+    void get_hist_virus_transitions(
+        std::vector< int > & date,
+        std::vector< int > & id,
         std::vector< std::string > & transition,
         std::vector< int > & counts,
         int disease = all_diseases,

@@ -775,6 +775,42 @@ inline void DataBase::get_hospitalizations(
 
 }
 
+inline void DataBase::get_hist_virus_transitions(
+    std::vector< int > & date,
+    std::vector< int > & id,
+    std::vector< std::string > & transition,
+    std::vector< int > & counts,
+    int disease,
+    std::vector< std::string > * disease_names
+) const
+{
+
+    if (model->tracks.empty())
+        throw std::logic_error(
+            "get_hist_virus_transitions() needs a model with a natural history."
+        );
+
+    date.clear();
+    id.clear();
+    transition.clear();
+    counts.clear();
+    if (disease_names != nullptr)
+        disease_names->clear();
+
+    for (int d : diseases_of(disease))
+    {
+        const auto & r = recs[static_cast< size_t >(d)];
+        const auto & nh = *model->tracks[static_cast< size_t >(d)].nh;
+        epi_append(date, r.hist_transition_virus_date);
+        epi_append(id, r.hist_transition_virus_id);
+        epi_append(counts, r.hist_transition_virus_counts);
+        for (int t : r.hist_transition_virus_transition)
+            transition.push_back(nh.get_transition(t).name);
+        disease_rows(disease_names, r.hist_transition_virus_id.size(), d);
+    }
+
+}
+
 inline void DataBase::get_hist_transitions(
     std::vector< int > & date,
     std::vector< std::string > & transition,

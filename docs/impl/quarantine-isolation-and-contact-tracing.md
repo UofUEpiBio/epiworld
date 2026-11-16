@@ -51,10 +51,13 @@ A layer keeps a log of its contacts once `ContactLayer::enable_tracing(max_conta
 - `ModelSEIRQuarantine`: stages Susceptible, Exposed, Infected, Severe, Recovered; statuses Free, Quarantined, Isolated, Hospitalized.
 - `ModelMeaslesMixing`, `ModelMeaslesMixingRiskQuarantine`, `ModelMeaslesSchool`: measles stages (Susceptible, Latent, Prodromal, Rash, Severe, Recovered) with the same statuses; post-exposure prophylaxis (`InterventionMeaslesPEP`) fires the transitions out of quarantine.
 
+With several diseases, these models' detection, tracing and declared rules follow their own disease (the first); quarantine and isolation still take the agent out of every layer, so they stop the other diseases' contacts too. `ModelSEIRQuarantine` exempts from quarantine a contact holding a tool for its disease; the measles models exempt by tool name (`set_quarantine_exempt_tools()`).
+
 Each model's diagram, drawn from its declarations (`model.draw_natural_history()`), shows both its stages and its statuses.
 
 ## See Also
 
+- [Natural History and Statuses](natural-history-and-statuses.md) — rates, durations, `.when()`, `.since()` and `.of()` in detail.
 - [Core Simulation Models](core-simulation-models.md) — `SEIRQuarantine` and its policy parameters.
 - [Extending the Library with Models](extending-the-library-with-models.md) — declaring a natural history.
 - [Events and Multi-Event Handling](events-and-multi-event-handling.md) — how the day's changes are applied.

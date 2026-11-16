@@ -7,7 +7,7 @@ using namespace epiworld;
 // disease infers must be named with several (a stage referred to without its
 // disease, a tool without targets) and pushing is refused, each with its
 // message; code cannot give an agent a second infection; a tool acts on the
-// diseases it targets only.
+// diseases it targets only, also in the SEIR quarantine model's exemption.
 static Virus sird(const std::string & name, bool deadly)
 {
     Virus v(name);
@@ -159,5 +159,35 @@ EPIWORLD_TEST_CASE("Rules of several diseases", "[two-diseases]") {
         m.get_db().get_hist_tool(tdate, tid, tstatus, tstage, tcounts, 1);
         REQUIRE(std::accumulate(tcounts.begin(), tcounts.end(), 0) == 2000 * 61);
     }
+
+
+    // The SEIR quarantine model with a second disease: a vaccine for the
+    // second disease, held by everyone, does not exempt contacts from the
+    // model's quarantine (only a tool for the model's disease does)
+    auto quarantined = [](const std::string & target) {
+        epimodels::ModelSEIRQuarantine m(
+            "Flu", 3000u, 0.01, 0.1, 3.0, 0.2, 0.0, 4.0,
+            1.0, 7, 1.0, 1.0, 7, 1.0, 4u
+        );
+        m.verbose_off();
+        m.add_layer(layer::network("contacts", graph::smallworld(8, 0.1)));
+        m.add_param(0.1, "RSV transmission");
+        m.add_param(0.1, "RSV recovery");
+        m.add_virus(sird("RSV", false));
+        Tool vax(target + " vaccine");
+        vax.set_susceptibility_reduction(0.1);
+        vax.add_target(target);
+        m.add_tool(vax, assign::share(1.0));
+        m.run(40, 3);
+        std::vector< int > date, counts;
+        std::vector< std::string > name;
+        m.get_db().get_hist_transitions(date, name, counts);
+        int n = 0;
+        for (size_t i = 0u; i < name.size(); ++i)
+            n += (name[i] == "Quarantined") ? counts[i] : 0;
+        return n;
+    };
+    REQUIRE(quarantined("RSV") > 0);
+    REQUIRE(quarantined("Flu") == 0);
 
 }

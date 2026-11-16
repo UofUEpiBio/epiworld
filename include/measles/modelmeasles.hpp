@@ -50,6 +50,12 @@ using namespace epiworld;
  * The lognormal durations are rounded to whole days, with a minimum of one; a
  * standard deviation of zero gives a fixed duration.
  *
+ * With several diseases (see `Model::add_virus()`), detection, tracing and
+ * the declared rules follow measles, the model's first disease, and the
+ * quarantine exemption goes by tool name. Quarantine and isolation still take
+ * the agent out of every layer, so they stop the other diseases' contacts
+ * too.
+ *
  * @ingroup disease_specific
  */
 class ModelMeasles : public Model

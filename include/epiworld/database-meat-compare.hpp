@@ -168,6 +168,11 @@ inline bool DiseaseRecord::operator==(const DiseaseRecord & other) const
             )
     }
 
+    VECT_MATCH(
+        hist_transition_virus_counts, other.hist_transition_virus_counts,
+        "DataBase:: hist_transition_virus_counts[i] don't match"
+    )
+
     // {Susceptible, Infected, etc.}
 
     VECT_MATCH(

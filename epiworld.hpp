@@ -5278,6 +5278,24 @@ struct DiseaseRecord {
     std::vector< int > hist_transition_counts;
     ///@}
 
+    /**
+     * @name Declared transitions by variant
+     * @details The transitions taken by agents carrying a variant of the
+     * disease (or catching it, for an infection), by variant: today's counts
+     * `[variant][transition]` (empty until one is counted) and the history
+     * (see `get_hist_virus_transitions()`). Recorded for the transitions an
+     * agent with the virus can take (`virus_transitions`: the infections and
+     * those leaving a carrier stage).
+     */
+    ///@{
+    std::vector< std::vector< int > > transition_virus_today;
+    std::vector< int > virus_transitions;
+    std::vector< int > hist_transition_virus_date;
+    std::vector< int > hist_transition_virus_id;
+    std::vector< int > hist_transition_virus_transition;
+    std::vector< int > hist_transition_virus_counts;
+    ///@}
+
     bool operator==(const DiseaseRecord & other) const;
 };
 
@@ -5362,9 +5380,11 @@ private:
      * One more agent took the declared transition `t` (see
      * `get_hist_transitions()`): of disease `track`, or (`t` a status
      * transition, `-2 - index`) of the statuses, recorded once, after the
-     * first disease's transitions.
+     * first disease's transitions. A stage transition is also counted under
+     * `virus` (the agent's variant, -1 for none) if that variant is of the
+     * disease (see `get_hist_virus_transitions()`).
      */
-    void record_declared_transition(int track, int t);
+    void record_declared_transition(int track, int t, int virus);
 
     /**
      * @brief The status and the stage of a cell of disease `d` (the one place
@@ -5520,6 +5540,34 @@ public:
      */
     void get_hist_transitions(
         std::vector< int > & date,
+        std::vector< std::string > & transition,
+        std::vector< int > & counts,
+        int disease = all_diseases,
+        std::vector< std::string > * disease_names = nullptr
+    ) const;
+
+    /**
+     * @brief How many agents carrying each variant took each declared
+     * transition of its disease.
+     * @details One row per recorded day, variant and transition, in that
+     * order. The transitions are those an agent with the virus can take: the
+     * infections (counted under the variant caught) and those leaving a
+     * carrier stage. Over the variants of a disease, a transition's counts add
+     * up to its count in `get_hist_transitions()`, except for an external
+     * transition that also leaves stages without the virus (its count there
+     * includes those agents). Seeding and imports are not transitions, as in
+     * `get_hist_transitions()`. The status transitions are not by variant.
+     * @param date The day.
+     * @param id The variant (`get_virus()` id).
+     * @param transition The transition's name.
+     * @param counts How many agents took it that day.
+     * @param disease Only this disease's variants (`all_diseases`: every
+     * disease, one after the other).
+     * @param disease_names If given, the disease of each row.
+     */
+    void get_hist_virus_transitions(
+        std::vector< int > & date,
+        std::vector< int > & id,
         std::vector< std::string > & transition,
         std::vector< int > & counts,
         int disease = all_diseases,
@@ -13181,6 +13229,29 @@ inline void DataBase::reset()
         r.hist_transition_id.clear();
         r.hist_transition_counts.clear();
 
+        // By variant: the transitions an agent with the virus can take
+        r.virus_transitions.clear();
+        if (!model->tracks.empty())
+        {
+            const auto & nh = *model->tracks[di].nh;
+            for (size_t t = 0u; t < nh.get_n_transitions(); ++t)
+            {
+                const auto & tr = nh.get_transition(static_cast< int >(t));
+                bool carries = (tr.kind == TransitionKind::infection);
+                for (int s : tr.from)
+                    carries = carries || nh.is_carrier(s);
+                if (carries)
+                    r.virus_transitions.push_back(static_cast< int >(t));
+            }
+        }
+        r.transition_virus_today.resize(get_n_viruses());
+        for (auto & c : r.transition_virus_today)
+            c.clear();
+        r.hist_transition_virus_date.clear();
+        r.hist_transition_virus_id.clear();
+        r.hist_transition_virus_transition.clear();
+        r.hist_transition_virus_counts.clear();
+
         r.m_hospitalizations.reset();
 
     }
@@ -13373,6 +13444,28 @@ inline void DataBase::record_disease(DiseaseRecord & r)
         r.transition_today[k] = 0;
     }
 
+    // By variant (the disease's variants)
+    if (!r.virus_transitions.empty())
+        for (size_t v = 0u; v < r.transition_virus_today.size(); ++v)
+        {
+
+            if ((recs.size() > 1u) && (disease_of_virus(static_cast< int >(v)) != d))
+                continue;
+
+            auto & c = r.transition_virus_today[v];
+            for (int t : r.virus_transitions)
+            {
+                r.hist_transition_virus_date.push_back(model->today());
+                r.hist_transition_virus_id.push_back(static_cast< int >(v));
+                r.hist_transition_virus_transition.push_back(t);
+                r.hist_transition_virus_counts.push_back(
+                    c.empty() ? 0 : c[static_cast< size_t >(t)]
+                );
+            }
+            std::fill(c.begin(), c.end(), 0);
+
+        }
+
     // Now the diagonal must reflect the state
     for (size_t s_i = 0u; s_i < nc; ++s_i)
     {
@@ -13416,7 +13509,10 @@ inline void DataBase::drop_variants()
     reg.virus_parent_id.resize(n);
     reg.virus_disease.resize(n);
     for (auto & r : recs)
+    {
         r.today_virus.resize(n);
+        r.transition_virus_today.resize(n);
+    }
 
 }
 
@@ -13445,9 +13541,12 @@ inline void DataBase::record_virus(Virus & v, bool founder)
         recs.resize(1u);
 
     for (size_t d = 0u; d < recs.size(); ++d)
+    {
         recs[d].today_virus.push_back(
             std::vector< int >(recs[d].ncells, 0)
         );
+        recs[d].transition_virus_today.emplace_back();
+    }
     if (static_cast< size_t >(disease_of_virus(id)) < recs.size())
         recs[static_cast< size_t >(disease_of_virus(id))].today_total_nviruses_active++;
 
@@ -13633,15 +13732,30 @@ inline void DataBase::record_transition(
 
 }
 
-inline void DataBase::record_declared_transition(int track, int t)
+inline void DataBase::record_declared_transition(int track, int t, int virus)
 {
+
     if (Model::nh_is_status_tr(t))
+    {
         ++recs[0u].transition_today[
             model->tracks[0u].nh->get_n_transitions() +
             static_cast< size_t >(Model::nh_status_tr(t))
         ];
-    else
-        ++recs[static_cast< size_t >(track)].transition_today[static_cast< size_t >(t)];
+        return;
+    }
+
+    auto & r = recs[static_cast< size_t >(track)];
+    ++r.transition_today[static_cast< size_t >(t)];
+
+    // By variant, if the agent carries (or caught) one of the disease
+    if ((virus < 0) || ((recs.size() > 1u) && (disease_of_virus(virus) != track)))
+        return;
+
+    auto & c = r.transition_virus_today[static_cast< size_t >(virus)];
+    if (c.empty())
+        c.assign(r.transition_today.size(), 0);
+    ++c[static_cast< size_t >(t)];
+
 }
 
 inline void DataBase::record_transmission(
@@ -14508,6 +14622,42 @@ inline void DataBase::get_hospitalizations(
 
 }
 
+inline void DataBase::get_hist_virus_transitions(
+    std::vector< int > & date,
+    std::vector< int > & id,
+    std::vector< std::string > & transition,
+    std::vector< int > & counts,
+    int disease,
+    std::vector< std::string > * disease_names
+) const
+{
+
+    if (model->tracks.empty())
+        throw std::logic_error(
+            "get_hist_virus_transitions() needs a model with a natural history."
+        );
+
+    date.clear();
+    id.clear();
+    transition.clear();
+    counts.clear();
+    if (disease_names != nullptr)
+        disease_names->clear();
+
+    for (int d : diseases_of(disease))
+    {
+        const auto & r = recs[static_cast< size_t >(d)];
+        const auto & nh = *model->tracks[static_cast< size_t >(d)].nh;
+        epi_append(date, r.hist_transition_virus_date);
+        epi_append(id, r.hist_transition_virus_id);
+        epi_append(counts, r.hist_transition_virus_counts);
+        for (int t : r.hist_transition_virus_transition)
+            transition.push_back(nh.get_transition(t).name);
+        disease_rows(disease_names, r.hist_transition_virus_id.size(), d);
+    }
+
+}
+
 inline void DataBase::get_hist_transitions(
     std::vector< int > & date,
     std::vector< std::string > & transition,
@@ -15152,6 +15302,11 @@ inline bool DiseaseRecord::operator==(const DiseaseRecord & other) const
             "DataBase:: today_tool[i] don't match"
             )
     }
+
+    VECT_MATCH(
+        hist_transition_virus_counts, other.hist_transition_virus_counts,
+        "DataBase:: hist_transition_virus_counts[i] don't match"
+    )
 
     // {Susceptible, Infected, etc.}
 
@@ -16626,6 +16781,7 @@ inline void Model::events_run()
         const epiworld_fast_int queue_change = a.queue;
         const unsigned int state_old = p->state;
         const bool had_virus = (p->virus != nullptr);
+        const int virus_old = had_virus ? p->virus->get_id() : -1;
 
         #ifdef EPI_DEBUG
         if (new_state >= static_cast<epiworld_fast_int>(nstates))
@@ -16751,10 +16907,14 @@ inline void Model::events_run()
 
             }
 
-            // Counted, if a declared transition did it
+            // Counted, if a declared transition did it (by variant: the one
+            // the agent carries, caught, or just released)
             if ((transition != -1) && (transition != NH_SEED) &&
                 (transition != NH_INITIAL) && (p->state != state_old))
-                db.record_declared_transition(ev_track, transition);
+                db.record_declared_transition(
+                    ev_track, transition,
+                    (p->virus != nullptr) ? p->virus->get_id() : virus_old
+                );
 
             if (use_queuing && (p->state != state_old))
                 nh_queue_move(*p, state_old);
@@ -26884,9 +27044,9 @@ inline ModelDiffNet::ModelDiffNet(
  * 2. traces the contacts of the detected agents in every layer's log (the
  *    model turns tracing on at reset), within "Contact tracing window" days,
  *    each found with probability "Contact tracing probability". A free
- *    contact without tools who is willing to quarantine is quarantined if
- *    susceptible or exposed ("Quarantined"), or isolated if infected and
- *    willing to isolate ("Isolated").
+ *    contact without a tool for the model's disease who is willing to
+ *    quarantine is quarantined if susceptible or exposed ("Quarantined"), or
+ *    isolated if infected and willing to isolate ("Isolated").
  *
  * Declared rules:
  *
@@ -26897,6 +27057,13 @@ inline ModelDiffNet::ModelDiffNet(
  *   that day ("Onset in quarantine").
  * - Entering Severe admits the agent ("Admitted", recorded as a
  *   hospitalization); leaving it discharges the agent ("Discharged").
+ *
+ * **With several diseases** (see `Model::add_virus()`), detection, tracing
+ * and the declared rules follow the model's own disease (the first): an
+ * agent sick with another disease is not detected, and a traced contact is
+ * judged by its stage in the model's disease. Quarantine and isolation still
+ * take the agent out of every layer, so they stop the other diseases'
+ * contacts too.
  *
  * **Implementation details:**
  * <a href="../impl/quarantine-isolation-and-contact-tracing.md">Quarantine, Isolation, and Contact Tracing</a>
@@ -27111,8 +27278,14 @@ inline void ModelSEIRQuarantine::_quarantine_process(Model * m)
                 if ((m->get_status(agent) != FREE) || (s > INFECTED))
                     continue;
 
-                // Agents with some tool are not quarantined
-                if (agent.get_n_tools() != 0u)
+                // Agents with a tool for the model's disease are not
+                // quarantined
+                bool protected_ = false;
+                for (size_t k = 0u; (k < agent.get_n_tools()) && !protected_; ++k)
+                    protected_ = agent.get_tool(static_cast< int >(k))->targets(
+                        m->get_virus(0u)
+                    );
+                if (protected_)
                     continue;
 
                 if (!model->quarantine_willingness[contact_id])

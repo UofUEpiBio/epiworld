@@ -35,9 +35,9 @@
  * 2. traces the contacts of the detected agents in every layer's log (the
  *    model turns tracing on at reset), within "Contact tracing window" days,
  *    each found with probability "Contact tracing probability". A free
- *    contact without tools who is willing to quarantine is quarantined if
- *    susceptible or exposed ("Quarantined"), or isolated if infected and
- *    willing to isolate ("Isolated").
+ *    contact without a tool for the model's disease who is willing to
+ *    quarantine is quarantined if susceptible or exposed ("Quarantined"), or
+ *    isolated if infected and willing to isolate ("Isolated").
  *
  * Declared rules:
  *
@@ -48,6 +48,13 @@
  *   that day ("Onset in quarantine").
  * - Entering Severe admits the agent ("Admitted", recorded as a
  *   hospitalization); leaving it discharges the agent ("Discharged").
+ *
+ * **With several diseases** (see `Model::add_virus()`), detection, tracing
+ * and the declared rules follow the model's own disease (the first): an
+ * agent sick with another disease is not detected, and a traced contact is
+ * judged by its stage in the model's disease. Quarantine and isolation still
+ * take the agent out of every layer, so they stop the other diseases'
+ * contacts too.
  *
  * **Implementation details:**
  * <a href="../impl/quarantine-isolation-and-contact-tracing.md">Quarantine, Isolation, and Contact Tracing</a>
@@ -262,8 +269,14 @@ inline void ModelSEIRQuarantine::_quarantine_process(Model * m)
                 if ((m->get_status(agent) != FREE) || (s > INFECTED))
                     continue;
 
-                // Agents with some tool are not quarantined
-                if (agent.get_n_tools() != 0u)
+                // Agents with a tool for the model's disease are not
+                // quarantined
+                bool protected_ = false;
+                for (size_t k = 0u; (k < agent.get_n_tools()) && !protected_; ++k)
+                    protected_ = agent.get_tool(static_cast< int >(k))->targets(
+                        m->get_virus(0u)
+                    );
+                if (protected_)
                     continue;
 
                 if (!model->quarantine_willingness[contact_id])
