@@ -439,6 +439,7 @@ inline void Model::events_run()
         const epiworld_fast_int queue_change = a.queue;
         const unsigned int state_old = p->state;
         const bool had_virus = (p->virus != nullptr);
+        const int virus_old = had_virus ? p->virus->get_id() : -1;
 
         #ifdef EPI_DEBUG
         if (new_state >= static_cast<epiworld_fast_int>(nstates))
@@ -564,10 +565,14 @@ inline void Model::events_run()
 
             }
 
-            // Counted, if a declared transition did it
+            // Counted, if a declared transition did it (by variant: the one
+            // the agent carries, caught, or just released)
             if ((transition != -1) && (transition != NH_SEED) &&
                 (transition != NH_INITIAL) && (p->state != state_old))
-                db.record_declared_transition(ev_track, transition);
+                db.record_declared_transition(
+                    ev_track, transition,
+                    (p->virus != nullptr) ? p->virus->get_id() : virus_old
+                );
 
             if (use_queuing && (p->state != state_old))
                 nh_queue_move(*p, state_old);

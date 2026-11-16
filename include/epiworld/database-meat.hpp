@@ -169,6 +169,29 @@ inline void DataBase::reset()
         r.hist_transition_id.clear();
         r.hist_transition_counts.clear();
 
+        // By variant: the transitions an agent with the virus can take
+        r.virus_transitions.clear();
+        if (!model->tracks.empty())
+        {
+            const auto & nh = *model->tracks[di].nh;
+            for (size_t t = 0u; t < nh.get_n_transitions(); ++t)
+            {
+                const auto & tr = nh.get_transition(static_cast< int >(t));
+                bool carries = (tr.kind == TransitionKind::infection);
+                for (int s : tr.from)
+                    carries = carries || nh.is_carrier(s);
+                if (carries)
+                    r.virus_transitions.push_back(static_cast< int >(t));
+            }
+        }
+        r.transition_virus_today.resize(get_n_viruses());
+        for (auto & c : r.transition_virus_today)
+            c.clear();
+        r.hist_transition_virus_date.clear();
+        r.hist_transition_virus_id.clear();
+        r.hist_transition_virus_transition.clear();
+        r.hist_transition_virus_counts.clear();
+
         r.m_hospitalizations.reset();
 
     }
@@ -361,6 +384,28 @@ inline void DataBase::record_disease(DiseaseRecord & r)
         r.transition_today[k] = 0;
     }
 
+    // By variant (the disease's variants)
+    if (!r.virus_transitions.empty())
+        for (size_t v = 0u; v < r.transition_virus_today.size(); ++v)
+        {
+
+            if ((recs.size() > 1u) && (disease_of_virus(static_cast< int >(v)) != d))
+                continue;
+
+            auto & c = r.transition_virus_today[v];
+            for (int t : r.virus_transitions)
+            {
+                r.hist_transition_virus_date.push_back(model->today());
+                r.hist_transition_virus_id.push_back(static_cast< int >(v));
+                r.hist_transition_virus_transition.push_back(t);
+                r.hist_transition_virus_counts.push_back(
+                    c.empty() ? 0 : c[static_cast< size_t >(t)]
+                );
+            }
+            std::fill(c.begin(), c.end(), 0);
+
+        }
+
     // Now the diagonal must reflect the state
     for (size_t s_i = 0u; s_i < nc; ++s_i)
     {
@@ -404,7 +449,10 @@ inline void DataBase::drop_variants()
     reg.virus_parent_id.resize(n);
     reg.virus_disease.resize(n);
     for (auto & r : recs)
+    {
         r.today_virus.resize(n);
+        r.transition_virus_today.resize(n);
+    }
 
 }
 
@@ -433,9 +481,12 @@ inline void DataBase::record_virus(Virus & v, bool founder)
         recs.resize(1u);
 
     for (size_t d = 0u; d < recs.size(); ++d)
+    {
         recs[d].today_virus.push_back(
             std::vector< int >(recs[d].ncells, 0)
         );
+        recs[d].transition_virus_today.emplace_back();
+    }
     if (static_cast< size_t >(disease_of_virus(id)) < recs.size())
         recs[static_cast< size_t >(disease_of_virus(id))].today_total_nviruses_active++;
 
@@ -621,15 +672,30 @@ inline void DataBase::record_transition(
 
 }
 
-inline void DataBase::record_declared_transition(int track, int t)
+inline void DataBase::record_declared_transition(int track, int t, int virus)
 {
+
     if (Model::nh_is_status_tr(t))
+    {
         ++recs[0u].transition_today[
             model->tracks[0u].nh->get_n_transitions() +
             static_cast< size_t >(Model::nh_status_tr(t))
         ];
-    else
-        ++recs[static_cast< size_t >(track)].transition_today[static_cast< size_t >(t)];
+        return;
+    }
+
+    auto & r = recs[static_cast< size_t >(track)];
+    ++r.transition_today[static_cast< size_t >(t)];
+
+    // By variant, if the agent carries (or caught) one of the disease
+    if ((virus < 0) || ((recs.size() > 1u) && (disease_of_virus(virus) != track)))
+        return;
+
+    auto & c = r.transition_virus_today[static_cast< size_t >(virus)];
+    if (c.empty())
+        c.assign(r.transition_today.size(), 0);
+    ++c[static_cast< size_t >(t)];
+
 }
 
 inline void DataBase::record_transmission(

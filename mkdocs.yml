@@ -92,6 +92,7 @@ nav:
     - Performance Optimization: impl/performance-optimization.md
     - Extending the Library: impl/extending-the-library.md
     - Extending the Library with Models: impl/extending-the-library-with-models.md
+    - Natural History and Statuses: impl/natural-history-and-statuses.md
     - Core Simulation Models: impl/core-simulation-models.md
     - Queueing System: impl/queueing-system.md
     - Data Collection and Analysis: impl/data-collection-and-analysis.md

@@ -196,7 +196,7 @@ or two diseases per model, at most five.
 | Kept once | Kept per disease |
 |---|---|
 | The viruses (name, origin, parent, and now their disease) and the tools | Counts by status × stage, today and by day |
-| Counts by status, and the status transitions | Transitions (by strain: a follow-up to NH-5b-2) |
+| Counts by status, and the status transitions | Transitions, also by strain (`get_hist_virus_transitions()`, NH-5b-3) |
 | Run settings, `n_founders`, user data | Virus and tool histories by status × stage (a tool's, only for the diseases it targets) |
 | | Transmissions, reproductive numbers, generation times, active cases, hospitalizations |
 
@@ -208,11 +208,12 @@ or two diseases per model, at most five.
   too. The savers and `SaverMemory` write the same tables: one file per
   output, not per disease.
 - **By margin** (decision 17 of `natural-history.md`):
-  `get_transition_probability(Margin, disease)` (a `strain` argument comes
-  with the transitions by strain) returns a
+  `get_transition_probability(Margin, disease)` returns a
   `TransitionMatrix` (the labels of the status and of the stage, apart, and
-  the values), for `Margin::pair`, `stage` or `status`, over every strain or
-  one. `Model::get_agents_stages(disease)` and `get_agents_statuses()`
+  the values), for `Margin::pair`, `stage` or `status`, over every strain.
+  The matrices are not split by strain: that would keep a cell-by-cell
+  matrix per strain and day. The counts of the declared transitions are
+  (`get_hist_virus_transitions()`, NH-5b-3). `Model::get_agents_stages(disease)` and `get_agents_statuses()`
   replace `get_agents_states()`. The status margin and the agents' statuses
   need no disease.
 - `get_today_total_stage(name)` needs the disease when two diseases have a
@@ -275,6 +276,15 @@ rerun and the wrapper ports, as in `contact-layers.md` (Section 11).
     so `fire()` cannot give a second infection; seeding and imports can, and
     are refused when the events apply. Transitions by strain are left for a
     follow-up (they need recording per variant).
+  - **NH-5b-3: transitions by strain.** Done as: the declared stage
+    transitions counted by the agent's variant (the one caught, for an
+    infection), for the transitions an agent with the virus can take, in
+    `get_hist_virus_transitions()`; over a disease's variants they add up to
+    `get_hist_transitions()`. Not the transition matrices (above). With it:
+    `ModelSEIRQuarantine` exempts from quarantine only a contact holding a
+    tool for its own disease (any tool did), the included quarantine models
+    say what they do with several diseases, and a docs page on the natural
+    history and the statuses (`docs/impl/natural-history-and-statuses.md`).
 - **NH-5c: the wrapper ports**, in the usual order.
 
 ## 9. Tests

@@ -156,6 +156,7 @@ Changes to agents during a day (adding or removing tools and viruses, moving to 
 
 ## See Also
 
+- [Natural History and Statuses](natural-history-and-statuses.md) — how each kind of transition is evaluated, how rates compete, durations, and statuses.
 - [Library Architecture](library-architecture.md) — the `Agent`/`Model` class hierarchy that new models inherit from.
 - [Extending the Library](extending-the-library.md) — defining custom agent behaviors, network structures, and global events.
 - [Core Simulation Models](core-simulation-models.md) — the full catalog of pre-built models.

@@ -13,6 +13,7 @@ you can extend it with your own modules and code.
 
 - [Extending the Library](extending-the-library.md) — custom agent behaviors, network rewiring, global events, and data collection strategies.
 - [Extending the Library with Models](extending-the-library-with-models.md) — declaring a natural history (stages, transitions, statuses, reactions) and building models on it.
+- [Natural History and Statuses](natural-history-and-statuses.md) — the kinds of transitions (rate, after, external, infection), how they are evaluated and compete, durations, statuses.
 
 ## Models and Simulation
 

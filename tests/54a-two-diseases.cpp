@@ -6,7 +6,8 @@ using namespace epiworld;
 // one infection per agent at a time. Agents recovered from one disease can
 // catch the other; no agent ever carries two infections; each disease's
 // counts add up to the population every day; the disease column splits the
-// transmissions; a strain joins its virus's disease.
+// transmissions; a strain joins its virus's disease, and the transitions are
+// counted by strain.
 static Virus sir(const std::string & name)
 {
     Virus v(name);
@@ -26,6 +27,7 @@ EPIWORLD_TEST_CASE("Two diseases", "[two-diseases]") {
     model.add_param(0.08, "Flu transmission");
     model.add_param(0.08, "Flu B transmission");
     model.add_param(0.1, "Flu recovery");
+    model.add_param(0.25, "Flu B recovery");
     model.add_param(0.06, "Measles transmission");
     model.add_param(0.1, "Measles recovery");
     model.add_layer(layer::network("contacts", graph::smallworld(10, 0.1)));
@@ -38,6 +40,7 @@ EPIWORLD_TEST_CASE("Two diseases", "[two-diseases]") {
     // an error
     Virus flu_b = flu.strain("Flu B");
     flu_b.use_param("Flu transmission", "Flu B transmission");
+    flu_b.use_param("Flu recovery", "Flu B recovery");
     model.add_virus(flu_b, assign::count(5));
     REQUIRE_THROWS_AS(model.add_virus(sir("Flu")), std::logic_error);
 
@@ -113,6 +116,53 @@ EPIWORLD_TEST_CASE("Two diseases", "[two-diseases]") {
     db.get_transmissions(date, source, target, virus, expo, layer, 0);
     REQUIRE(date.size() == n_flu);
     REQUIRE(std::count(virus.begin(), virus.end(), 2) > 0); // Flu B spread
+
+    // The transitions by strain: each disease's strains only, adding up to
+    // the disease's transitions every day; the infections by strain are its
+    // transmissions; each strain recovers at its own rate
+    std::map< std::pair< int, std::string >, int > by_day, by_strain;
+    for (int d = 0; d < 2; ++d)
+    {
+        std::vector< int > tdate, tid, tcounts;
+        std::vector< std::string > tname, tdis;
+        db.get_hist_virus_transitions(tdate, tid, tname, tcounts, d, &tdis);
+        REQUIRE(!tdate.empty());
+        REQUIRE(tdis == std::vector< std::string >(tdate.size(), model.get_diseases()[d]));
+        by_day.clear();
+        for (size_t i = 0u; i < tdate.size(); ++i)
+        {
+            REQUIRE(model.get_virus(static_cast< size_t >(tid[i])).get_disease() == d);
+            by_day[{tdate[i], tname[i]}] += tcounts[i];
+            by_strain[{tid[i], tname[i]}] += tcounts[i];
+        }
+        db.get_hist_transitions(tdate, tname, tcounts, d);
+        for (size_t i = 0u; i < tdate.size(); ++i)
+            REQUIRE(by_day[{tdate[i], tname[i]}] == tcounts[i]);
+    }
+
+    std::vector< int > hdate, hid, hcounts;
+    std::vector< std::string > hstatus, hstage;
+    db.get_hist_virus(hdate, hid, hstatus, hstage, hcounts);
+    std::map< int, double > infected_days;
+    for (size_t i = 0u; i < hdate.size(); ++i)
+        if (hstage[i] == "Infected")
+            infected_days[hid[i]] += hcounts[i];
+
+    std::map< int, double > recovery;
+    for (int v = 0; v < 3; ++v)
+    {
+        int caught = 0;
+        std::vector< int > d2, s2, t2, v2, e2, l2;
+        db.get_transmissions(d2, s2, t2, v2, e2, l2);
+        for (size_t i = 0u; i < v2.size(); ++i)
+            caught += ((v2[i] == v) && (s2[i] >= 0)) ? 1 : 0;
+        REQUIRE(caught > 0);
+        REQUIRE(by_strain[{v, "Susceptible -> Infected"}] == caught);
+        recovery[v] = by_strain[{v, "Infected -> Recovered"}] / infected_days[v];
+    }
+    REQUIRE_THAT(recovery[0], Catch::Matchers::WithinAbs(0.1, 0.02));  // Flu
+    REQUIRE_THAT(recovery[1], Catch::Matchers::WithinAbs(0.1, 0.02));  // Measles
+    REQUIRE_THAT(recovery[2], Catch::Matchers::WithinAbs(0.25, 0.05)); // Flu B
 
     // The output tables list each disease's rows under its name
     auto out = db.get_run_outputs({"total_hist", "virus_info"});

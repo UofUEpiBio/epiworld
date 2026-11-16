@@ -26,9 +26,13 @@ db.get_hist_total(&date, &status, &stage, &counts);
 std::vector< int > tdate, tcounts;
 std::vector< std::string > transition;
 db.get_hist_transitions(tdate, transition, tcounts);
+
+// The same, by strain (the stage transitions an agent with the virus takes)
+std::vector< int > vid;
+db.get_hist_virus_transitions(tdate, vid, transition, tcounts);
 ```
 
-Every function that returns rows ends with two optional arguments: the disease (`Model::disease_id()`; `all_diseases`, the default, asks for every disease, one after the other) and a vector to fill with the disease of each row. Each disease's counts are by its stage and the status, and add up to the population; a virus's history is in its disease, a tool's in the diseases it targets. The statuses' transitions are counted once: with several diseases, `get_hist_transitions()` lists them after the diseases', with the disease `""`, when every disease is asked for. What is shaped by one disease's stages (a pair or stage transition matrix, the agents' stages, a total by stage whose name two diseases share) needs the disease when the model has several.
+Every function that returns rows ends with two optional arguments: the disease (`Model::disease_id()`; `all_diseases`, the default, asks for every disease, one after the other) and a vector to fill with the disease of each row. Each disease's counts are by its stage and the status, and add up to the population; a virus's history is in its disease, a tool's in the diseases it targets. The statuses' transitions are counted once: with several diseases, `get_hist_transitions()` lists them after the first disease's, with the disease `""`, when every disease is asked for. What is shaped by one disease's stages (a pair or stage transition matrix, the agents' stages, a total by stage whose name two diseases share) needs the disease when the model has several.
 
 ```cpp
 std::vector< std::string > disease;
