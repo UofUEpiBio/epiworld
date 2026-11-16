@@ -710,7 +710,7 @@ in the release notes.
 All work goes on the long-lived integration branch **`v1-layers`**, one PR per
 phase into it. `master` stays releasable (0.x fixes keep landing there and are
 merged into `v1-layers` regularly). `v1-layers` merges into `master` and is
-released as 1.0.0 when Phase 6 is done. Version bumps: none per phase on
+released as 1.0.0 when Phase 7 is done. Version bumps: none per phase on
 `v1-layers`; the first commit there sets the development version to 1.0.0.
 
 **Wrappers follow the core, one merged phase at a time.** epiworldR,
@@ -1245,7 +1245,7 @@ identical to `ModelSEIRQuarantine` on the same layer.
 
 ### Measles consolidation
 
-Moved to Phase 7, the plan's final step (2026-11-16).
+Moved to Phase 7, the plan's final step before the 1.0.0 release (2026-11-16).
 
 ### Phase 5 -- push for mixing layers
 
@@ -1333,25 +1333,16 @@ then written once against the final types, and each wrapper ports the
 natural history, the variants and the plain classes in one pass (Section
 11.5). Both PRs come before Phase 4.
 
-### Phase 6 -- independent exposures, 1.0.0, bindings, docs
+### Phase 6 -- independent exposures, docs
 
 - Switch the combination rule to independent exposures (D1) in one commit that
   updates the expected results; add the analytic P(infection) test.
-- Merge `v1-layers` into `master`; release 1.0.0.
-- Wrappers: the port of Phase 6 updates expected values for the new rule; then
-  each wrapper's `v1-layers` merges into its `main` and is released after
-  epiworld 1.0.0 (measles after epiworldR is on CRAN, then epiworldRShiny
-  after measles).
-- **measles needs the released epiworldR 1.0.0, with NH-4.** Its
-  `DESCRIPTION` requires `epiworldR (>= 1.0.0)`, which the development
-  version `1.0.0-0` on `v1-layers` does not satisfy, and is not bumped on
-  `v1-layers` (measles#72). Do not publish measles until epiworldR 1.0.0,
-  with the NH-4 port (epiworldR#231), is on CRAN.
+- Wrappers: the port of Phase 6 updates expected values for the new rule.
 - Docs: new `docs/impl/contact-layers.md`; update
   `mixing-and-entity-distribution.md`, `queueing-system.md`,
   `transmission-sampling.md`; migration guide.
 
-### Phase 7 -- measles as presets (the final step; settled 2026-11-16)
+### Phase 7 -- measles as presets (the final step before 1.0.0; settled 2026-11-16)
 
 With the natural history and several diseases, the measles disease is about
 90 lines of declarations (`measles_build()`). What remains measles-specific
@@ -1393,10 +1384,10 @@ its knowledge: the disease's declaration, PEP, and validated parameters.
   windows, the IG half-life, the exposure dating and cohort of #253), the
   registered presets, and, in the R package, the parameter table with
   sources, the Short Creek data, calibration and the vignettes.
-- **When.** Last: it needs Phase 4's participation, and it changes the
-  measles results, so it goes after the combination rule (Phase 6) has
-  settled the expected values once. Its results change in a minor release
-  (epiworld 1.1.0 and the next measles release), with a note on the change.
+- **When.** Last, and in 1.0.0: it needs Phase 4's participation, and it
+  changes the measles results, so it follows the combination rule (Phase 6).
+  The measles expected values are then updated once for both changes, and the
+  release waits for it. The migration guide covers the removed models.
 - Tests (end-to-end):
   - `ModelMeasles` on a mixing layer against today's `ModelMeaslesMixing`:
     final size, R0 and the stage durations agree statistically; the same
@@ -1405,6 +1396,18 @@ its knowledge: the disease's declaration, PEP, and validated parameters.
     same layer (who is quarantined, by day), given the same draws where the
     order allows, statistically otherwise.
   - Measles plus a second disease in one model, with PEP.
+
+### Release 1.0.0 -- after Phase 7
+
+- Merge `v1-layers` into `master`; release 1.0.0.
+- Each wrapper's `v1-layers` merges into its `main` and is released after
+  epiworld 1.0.0 (measles after epiworldR is on CRAN, then epiworldRShiny
+  after measles).
+- **measles needs the released epiworldR 1.0.0, with NH-4.** Its
+  `DESCRIPTION` requires `epiworldR (>= 1.0.0)`, which the development
+  version `1.0.0-0` on `v1-layers` does not satisfy, and is not bumped on
+  `v1-layers` (measles#72). Do not publish measles until epiworldR 1.0.0,
+  with the NH-4 port (epiworldR#231), is on CRAN.
 
 ---
 
@@ -1723,8 +1726,9 @@ that on `v1-layers` this plan is the source of truth.
 | 4 | Exclusion / `isolate(agent, keep)`, layer-targeted tools, schedules, persistence. |
 | 5 | Re-vendor only, unless a push/pull setting becomes public. |
 | epiworldRShiny (once, after the registry) | Its apps (`inst/models/shiny_*.R`) build every model through the registry and layers: networks from `agents_smallworld()` become a `layer_network()`, the `*CONN` apps a base model with a random-mixing layer (or dropped, since the base apps then cover them), renamed arguments (`transmission_prob`, `latent_period`); the measles app follows the measles port. |
-| 6 | Expected values for the new combination rule; vignettes and migration guide; release in order (epiworld 1.0.0, then epiworldR, epiworldpy, epiworldjs, then measles after epiworldR is on CRAN, then epiworldRShiny). |
+| 6 | Expected values for the new combination rule; vignettes and migration guide. |
 | 7 | `ModelMeaslesMixing` and `ModelMeaslesSchool` become defunct stubs naming `ModelMeasles` plus a layer; `ModelSEIRQuarantine` one naming `ModelSEIR` plus the tracing intervention; bind the intervention; measles: constructors, tests and vignettes rewritten (expected values statistical); epiworldjs and epiworldRShiny: the measles presets and app follow. |
+| Release 1.0.0 (after 7) | Release in order: epiworld 1.0.0, then epiworldR, epiworldpy, epiworldjs, then measles after epiworldR is on CRAN, then epiworldRShiny. |
 
 ### 11.6 Status
 
@@ -1756,7 +1760,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-14).
 | C++ extensions in the wrappers (user-written C++ on a model built in R or Python: `as_model()`, checked by the epiworld major version) | -- | #233 merged (`cpp_source_epiworld()`, `<epiworldR/extension.h>`) | #46 merged (`cpp_source()`, `get_include()`, `<epiworldpy/extension.hpp>`) | -- | -- |
 | MSVC: `M_PI` (not standard) in the lognormal draw broke the Windows wheels since #363 | #376 merged | #234 merged (re-vendor) | with #46 (merged) | with NH-5c | with NH-5c |
 | Phases 4, 5, 6 | not started | | | | |
-| Phase 7 (measles as presets: the generic sampler, one contact-tracing intervention; the final step) | not started | | | | |
+| Phase 7 (measles as presets: the generic sampler, one contact-tracing intervention; the final step before 1.0.0) | not started | | | | |
 
 epiworldRShiny (Section 6): not started; one port after the registry.
 
@@ -1781,7 +1785,7 @@ in the engine; transitions by strain follow it. The benchmark reruns stage
 `nh-5b-1` on a quiet machine, then NH-5b-2 with a two-disease scenario.
 Then NH-5c (the wrapper ports of NH-5a, 5b-1 and 5b-2: the `disease`
 argument and column, targets by disease, `strain()`), the epiworldRShiny
-port, and Phases 4 to 6; Phase 7 (measles as presets) is the final step. The diagrams' pictures (`docs/assets/img`) are rendered
+port, and Phases 4 to 6; Phase 7 (measles as presets) is the final step before the 1.0.0 release. The diagrams' pictures (`docs/assets/img`) are rendered
 with `make -C include/measles all` and `make -C include/epiworld/models all`
 (mermaid.ink); they still show the labeled diagrams from before #370.
 
