@@ -51,6 +51,13 @@ EPIWORLD_TEST_CASE("Agent::mutate_virus()", "[mutation]") {
     REQUIRE(std::get< std::vector< int > >(info.columns[1u]) == std::vector< int >({0, 1, 2}));
     REQUIRE(std::get< std::vector< int > >(info.columns[4u]) == std::vector< int >({-99, 0, 1}));
 
+    // The database names every variant, including those not in the model
+    const auto & db = model.get_db();
+    REQUIRE(db.get_virus_name(2) == "a virus");
+    REQUIRE(db.get_virus_disease(2) == 0);
+    REQUIRE_THROWS_AS(db.get_virus_name(3), std::out_of_range);
+    REQUIRE_THROWS_AS(db.get_virus_disease(-1), std::out_of_range);
+
     REQUIRE_THROWS_AS(susceptible->mutate_virus(model), std::logic_error);
 
     // A mutation that returns false records nothing
