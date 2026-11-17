@@ -5558,7 +5558,7 @@ public:
      * includes those agents). Seeding and imports are not transitions, as in
      * `get_hist_transitions()`. The status transitions are not by variant.
      * @param date The day.
-     * @param id The variant (`get_virus()` id).
+     * @param id The variant (its id; see `get_virus_name()`).
      * @param transition The transition's name.
      * @param counts How many agents took it that day.
      * @param disease Only this disease's variants (`all_diseases`: every
@@ -5664,6 +5664,22 @@ public:
     void record_transmission(int i, int j, int virus, int i_expo_date, int layer = -1);
 
     size_t get_n_viruses() const; ///< Get the number of viruses
+
+    /**
+     * @brief A variant's name and disease, by its id.
+     * @details Every variant is recorded here, including those from
+     * mutations, which are not among the model's viruses (`Model::get_virus()`
+     * takes a position in the model, not a variant's id). Use these to label
+     * the variant ids the outputs return.
+     * @param virus_id The variant's id (`Virus::get_id()`).
+     * @return `get_virus_name()`, its name; `get_virus_disease()`, the index
+     * of its disease in `Model::get_diseases()`.
+     * @throws std::out_of_range If no variant has that id.
+     */
+    ///@{
+    const std::string & get_virus_name(int virus_id) const;
+    int get_virus_disease(int virus_id) const;
+    ///@}
     size_t get_n_tools() const; ///< Get the number of tools
 
     void set_user_data(std::vector< std::string > names);
@@ -6798,7 +6814,10 @@ protected:
     const Track & nh_local(int global, int & local) const;
 
     void nh_build_states();
+
+    /// The reactions to `p`'s change (checked inline: most models have none)
     void nh_react(Agent & p, int transition, int track, int stage_old);
+    void nh_react_fire(Agent & p, int transition, int track, int stage_old);
 
     void nh_install(std::shared_ptr< NaturalHistory > def);
     void nh_reset();
@@ -6808,9 +6827,14 @@ protected:
     /// The diseases (bits) whose viruses the current draw may give (see
     /// nh_step_infection(); all, except during a draw of several diseases)
     uint64_t nh_trial_mask = ~uint64_t(0);
-    /// nh_step()'s stage part (`one`: the model has one disease, whose
-    /// infection is drawn first)
-    bool nh_step_stage(Track & track, Agent & p, unsigned int cell, bool one);
+    /**
+     * nh_step()'s stage part. `One`: the model has one disease, whose
+     * infection is drawn first; a template, so that the one-disease update
+     * (the common case) is compiled without the checks of several diseases
+     * and can be inlined.
+     */
+    template< bool One >
+    bool nh_step_stage(Track & track, Agent & p, unsigned int cell);
     void nh_step_status(Agent & p, unsigned int cell); ///< nh_step()'s status part
 
     /// The natural history whose values apply to `p` in a track: its
@@ -13779,6 +13803,21 @@ inline void DataBase::record_transmission(
 inline size_t DataBase::get_n_viruses() const
 {
     return reg.virus_name.size();
+}
+
+inline const std::string & DataBase::get_virus_name(int virus_id) const
+{
+    if ((virus_id < 0) || (static_cast< size_t >(virus_id) >= reg.virus_name.size()))
+        throw std::out_of_range(
+            "No variant has the id " + std::to_string(virus_id) + "."
+        );
+    return reg.virus_name[static_cast< size_t >(virus_id)];
+}
+
+inline int DataBase::get_virus_disease(int virus_id) const
+{
+    get_virus_name(virus_id); // Checks the id
+    return disease_of_virus(virus_id);
 }
 
 inline size_t DataBase::get_n_tools() const
@@ -22891,7 +22930,7 @@ inline void Model::nh_build_states()
         UpdateFun([](Agent * p, Model * m) -> void { m->nh_step(*p); }) :
         UpdateFun([](Agent * p, Model * m) -> void {
             const unsigned int c = p->state;
-            m->nh_step_stage(m->tracks[0u], *p, c, true);
+            m->nh_step_stage< true >(m->tracks[0u], *p, c);
             if (m->st)
                 m->nh_step_status(*p, c);
         });
@@ -23403,7 +23442,7 @@ inline void Model::nh_step(Agent & p)
     const int infected = (p.virus == nullptr) ? nh_step_infection(p, c) : -1;
     for (auto & track : tracks)
         if (track.id != infected)
-            nh_step_stage(track, p, c, false);
+            nh_step_stage< false >(track, p, c);
 
     if (st)
         nh_step_status(p, c);
@@ -23484,11 +23523,11 @@ inline int Model::nh_step_infection(Agent & p, unsigned int c)
 
 }
 
+template< bool One >
 inline bool Model::nh_step_stage(
     Track & track,
     Agent & p,
-    unsigned int c,
-    bool one
+    unsigned int c
 )
 {
 
@@ -23499,12 +23538,12 @@ inline bool Model::nh_step_stage(
     // track's (with one disease the virus is always of it; see nh_of())
     const auto & v = p.virus;
     const NaturalHistory & h =
-        (v && v->nh_def && (one || (v->disease == track.id))) ?
+        (v && v->nh_def && (One || (v->disease == track.id))) ?
         *v->nh_def : *track.nh;
 
     // 1. Infection by contact (one disease; not out of the layers)
     if (
-        one && (si.infection >= 0) && (p.virus == nullptr) &&
+        One && (si.infection >= 0) && (p.virus == nullptr) &&
         (state_excluded.empty() || !state_excluded[c])
     )
     {
@@ -23715,9 +23754,12 @@ inline void Model::nh_enter(
 
 inline void Model::nh_react(Agent & p, int transition, int track, int stage_old)
 {
+    if (!nh_reactions.empty())
+        nh_react_fire(p, transition, track, stage_old);
+}
 
-    if (nh_reactions.empty())
-        return;
+inline void Model::nh_react_fire(Agent & p, int transition, int track, int stage_old)
+{
 
     const size_t id = static_cast< size_t >(p.id);
     const Track & t = tracks[static_cast< size_t >(track)];

@@ -109,7 +109,7 @@ EPIWORLD_TEST_CASE("Two diseases", "[two-diseases]") {
     size_t n_flu = 0u;
     for (size_t i = 0u; i < virus.size(); ++i)
     {
-        const int d = model.get_virus(static_cast< size_t >(virus[i])).get_disease();
+        const int d = db.get_virus_disease(virus[i]);
         REQUIRE(names[i] == model.get_diseases()[static_cast< size_t >(d)]);
         n_flu += (d == 0) ? 1u : 0u;
     }
