@@ -6800,11 +6800,7 @@ protected:
     void nh_build_states();
 
     /// The reactions to `p`'s change (checked inline: most models have none)
-    void nh_react(Agent & p, int transition, int track, int stage_old)
-    {
-        if (!nh_reactions.empty())
-            nh_react_fire(p, transition, track, stage_old);
-    }
+    void nh_react(Agent & p, int transition, int track, int stage_old);
     void nh_react_fire(Agent & p, int transition, int track, int stage_old);
 
     void nh_install(std::shared_ptr< NaturalHistory > def);
@@ -23723,6 +23719,12 @@ inline void Model::nh_enter(
     else
         track.until[id] = INT_MAX;
 
+}
+
+inline void Model::nh_react(Agent & p, int transition, int track, int stage_old)
+{
+    if (!nh_reactions.empty())
+        nh_react_fire(p, transition, track, stage_old);
 }
 
 inline void Model::nh_react_fire(Agent & p, int transition, int track, int stage_old)

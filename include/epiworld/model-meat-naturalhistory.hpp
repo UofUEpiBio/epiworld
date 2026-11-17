@@ -980,6 +980,12 @@ inline void Model::nh_enter(
 
 }
 
+inline void Model::nh_react(Agent & p, int transition, int track, int stage_old)
+{
+    if (!nh_reactions.empty())
+        nh_react_fire(p, transition, track, stage_old);
+}
+
 inline void Model::nh_react_fire(Agent & p, int transition, int track, int stage_old)
 {
 
