@@ -121,9 +121,9 @@ inline size_t Model::add_exposures_impl(
             continue;
 
         epiworld_double p =
-            (1.0 - agent->get_susceptibility_reduction(v, *this)) *
+            (1.0 - agent->get_susceptibility_reduction(v, *this, layer_id)) *
             p_inf *
-            (1.0 - contact.get_transmission_reduction(v, *this))
+            (1.0 - contact.get_transmission_reduction(v, *this, layer_id))
             ;
 
         // The weight scales the odds p / (1 - p); a certain exposure stays so
@@ -403,8 +403,10 @@ inline void Model::transmission_push_impl()
             for (auto * net : network_layers)
             {
 
-                // A closed layer, or one the carrier is out of, reaches no one
-                if (net->is_closed() || net->excludes(agent_state[j_id]))
+                // A closed layer, or one whose statuses leave the carrier out,
+                // reaches no one (a carrier out of every layer is no source)
+                const std::vector< char > * net_out = net->own_exclusions();
+                if (net->is_closed() || ((net_out != nullptr) && (*net_out)[agent_state[j_id]]))
                     continue;
 
                 // Layer rules, as add_exposures() applies them in a pull
@@ -413,7 +415,6 @@ inline void Model::transmission_push_impl()
                     net->get_weight(*this) : 1.0;
                 const bool admitted = net->admits(*v);
                 const int layer_id = static_cast< int >(net->get_id());
-                const std::vector< char > * net_out = net->own_exclusions();
 
                 for (size_t i_id : net->ties[j_id])
                 {
@@ -454,9 +455,9 @@ inline void Model::transmission_push_impl()
 
                     // Exactly the expression the pull uses, in the same order.
                     epiworld_double p =
-                        (1.0 - i.get_susceptibility_reduction(v, *this)) *
+                        (1.0 - i.get_susceptibility_reduction(v, *this, layer_id)) *
                         nh_infection_prob(i, *v, tracks[0u]) *
-                        (1.0 - j.get_transmission_reduction(v, *this))
+                        (1.0 - j.get_transmission_reduction(v, *this, layer_id))
                         ;
 
                     // The weight scales the odds; a certain exposure stays so

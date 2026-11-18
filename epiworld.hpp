@@ -4711,8 +4711,10 @@ public:
      * @return epiworld_double 
      */
     ///@{
-    epiworld_double get_susceptibility_reduction(VirusPtr & v, Model & model);
-    epiworld_double get_transmission_reduction(VirusPtr & v, Model & model);
+    /// The tools' combined contact effects on a contact through layer
+    /// `layer` (-1: not through a layer; see `Tool::add_layer_target()`).
+    epiworld_double get_susceptibility_reduction(VirusPtr & v, Model & model, int layer = -1);
+    epiworld_double get_transmission_reduction(VirusPtr & v, Model & model, int layer = -1);
     epiworld_double get_recovery_enhancer(VirusPtr & v, Model & model);
     epiworld_double get_death_reduction(VirusPtr & v, Model & model);
     ///@}
@@ -5014,6 +5016,28 @@ struct DiseaseTargets {
 };
 
 /**
+ * @brief The contact layers a tool's contact effects act in, by name (see
+ * `Tool::add_layer_target()`).
+ */
+struct LayerTargets {
+    std::vector< std::string > names; ///< Empty: every layer
+    uint64_t mask = ~uint64_t(0);     ///< Bit `l`: layer `l` (once resolved)
+    bool resolved = false;            ///< Whether `mask` matches `names`
+
+    void add(std::string layer);
+
+    /// Makes the names a mask (an unknown layer is an error naming `owner`).
+    void resolve(Model & model, const std::string & owner);
+
+    /// Whether it acts through layer `layer` (-1: not through a layer, where
+    /// only a tool without layer targets acts). With names, `resolve()` must
+    /// have run since they last changed (`Tool::acts_in()` checks).
+    bool has(int layer) const;
+
+    bool operator==(const LayerTargets & o) const { return names == o.names; }
+};
+
+/**
  * @brief Tools for defending the agent against the virus
  * 
  */
@@ -5038,6 +5062,7 @@ protected:
 
 
     DiseaseTargets targets_; ///< The diseases it acts on (see add_target())
+    LayerTargets layers_;    ///< The layers its contact effects act in
 
 
     void set_agent(Agent * p, size_t idx);
@@ -5105,6 +5130,32 @@ public:
     const std::vector< std::string > & get_targets() const { return targets_.names; }
     void clear_targets() { targets_ = DiseaseTargets(); }
     bool targets(const Virus & v) const { return targets_.has(v); }
+    ///@}
+
+    /**
+     * @name Layer targets
+     *
+     * @details A tool's contact effects (susceptibility and transmission
+     * reduction) act on the contacts through the layers it targets, by the
+     * layer's name (see `Model::add_layer()`): e.g., a mask worn at work and
+     * school, not at home. Without layer targets, they act in every layer.
+     * The recovery enhancer and death reduction are not about contacts, so
+     * layer targets leave them alone. An infection not drawn from a layer
+     * (e.g., given by code) sees only the tools without layer targets. A
+     * name the model has no layer of is an error at the start of the run; at
+     * most 64 layers can be targeted (ids 0 to 63).
+     *
+     * @param layer The name of a layer of the model.
+     */
+    ///@{
+    void add_layer_target(std::string layer);
+    void set_layer_targets(std::vector< std::string > layers);
+    const std::vector< std::string > & get_layer_targets() const { return layers_.names; }
+    void clear_layer_targets() { layers_ = LayerTargets(); }
+    /// Whether its contact effects act through layer `layer` (-1: no layer).
+    /// With layer targets, an error until they are resolved: when the run
+    /// starts, or when the tool is added to a running model.
+    bool acts_in(int layer) const;
     ///@}
 
     void set_name(std::string name);
@@ -6904,11 +6955,14 @@ protected:
      * the susceptibility for a given virus.
      *
      */
+    ///
+    /// The contact effects take the layer of the contact (-1: none; see
+    /// `Tool::add_layer_target()`).
     virtual epiworld_double susceptibility_reduction_mixer(
-        Agent * agent, VirusPtr & virus
+        Agent * agent, VirusPtr & virus, int layer = -1
     );
     virtual epiworld_double transmission_reduction_mixer(
-        Agent * agent, VirusPtr & virus
+        Agent * agent, VirusPtr & virus, int layer = -1
     );
     virtual epiworld_double recovery_enhancer_mixer(
         Agent * agent, VirusPtr & virus
@@ -8062,6 +8116,10 @@ public:
     /// Whether an agent in engine state `state` is out of the layer.
     bool excludes(epiworld_fast_uint state) const;
 
+    /// Whether agent `agent_id` is out of this layer (by its excluded
+    /// statuses, or a contact weight of 0), for samplers of their own.
+    bool excludes_agent(size_t agent_id) const;
+
     /// The states out of this layer by its excluded statuses (`nullptr`: none;
     /// `excludes()` adds the states out of every layer).
     const std::vector< char > * own_exclusions() const
@@ -8221,6 +8279,11 @@ inline bool ContactLayer::excludes(epiworld_fast_uint state) const
 {
     return (!model->state_excluded.empty() && model->state_excluded[state]) ||
         (!state_out.empty() && state_out[state]);
+}
+
+inline bool ContactLayer::excludes_agent(size_t agent_id) const
+{
+    return excludes(model->agent_state[agent_id]);
 }
 
 inline const std::vector< bool > * ContactLayer::silent() const
@@ -17264,13 +17327,14 @@ inline void Model::events_run()
 ///@{
 inline epiworld_double Model::susceptibility_reduction_mixer(
     Agent* p,
-    VirusPtr & v
+    VirusPtr & v,
+    int layer
 )
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
     {
-        if (!tool->targets(*v))
+        if (!tool->targets(*v) || !tool->acts_in(layer))
             continue;
 
         total *= (1.0 - tool->get_susceptibility_reduction(v, this));
@@ -17282,13 +17346,14 @@ inline epiworld_double Model::susceptibility_reduction_mixer(
 
 inline epiworld_double Model::transmission_reduction_mixer(
     Agent* p,
-    VirusPtr & v
+    VirusPtr & v,
+    int layer
 )
 {
     epiworld_double total = 1.0;
     for (auto & tool : p->get_tools())
     {
-        if (!tool->targets(*v))
+        if (!tool->targets(*v) || !tool->acts_in(layer))
             continue;
 
         total *= (1.0 - tool->get_transmission_reduction(v, this));
@@ -17911,6 +17976,10 @@ inline void Model::add_tool(const Tool & t, Assign a)
     auto cloned = t.clone_ptr();
     if (running && !tracks.empty())
         cloned->targets_.resolve(*this, "The tool \"" + cloned->get_name() + "\"", true);
+    if (running)
+        cloned->layers_.resolve(*this, "The tool \"" + cloned->get_name() + "\"");
+    else
+        cloned->layers_.resolved = false; // A copy may carry another model's mask
     db.record_tool(*cloned);
     tools.push_back(std::shared_ptr<Tool>(std::move(cloned)));
     tool_assign.push_back(std::move(a));
@@ -18611,6 +18680,11 @@ inline void Model::reset() {
         nh_resolve();
         nh_reset();
     }
+
+    // The layers the tools' contact effects act in (with or without a
+    // natural history)
+    for (auto & t : tools)
+        t->layers_.resolve(*this, "The tool \"" + t->get_name() + "\"");
 
     // The batch of sampled contacts
     if (post_sampling_on)
@@ -20707,6 +20781,93 @@ inline void Tool::add_target(std::string disease)
     targets_.add(std::move(disease));
 }
 
+inline void LayerTargets::add(std::string layer)
+{
+    if (std::find(names.begin(), names.end(), layer) != names.end())
+        return;
+
+    names.push_back(std::move(layer));
+    resolved = false;
+}
+
+inline bool LayerTargets::has(int layer) const
+{
+    if (names.empty())
+        return true;
+
+    return (layer >= 0) && (layer < 64) && (((mask >> layer) & 1u) != 0u);
+}
+
+inline void LayerTargets::resolve(Model & model, const std::string & owner)
+{
+
+    // Unresolved until the loop ends (an unknown layer leaves it so)
+    resolved = false;
+    if (names.empty())
+    {
+        mask = ~uint64_t(0);
+        resolved = true;
+        return;
+    }
+
+    mask = 0u;
+    for (const auto & n : names)
+    {
+        size_t id = 0u;
+        try
+        {
+            id = model.get_layer_id(n);
+        }
+        catch (const std::exception &)
+        {
+            std::string all;
+            for (size_t l = 0u; l < model.get_n_layers(); ++l)
+                all += (all.empty() ? "\"" : ", \"") +
+                    model.get_layer(l).get_name() + "\"";
+            throw std::logic_error(
+                owner + " targets the layer \"" + n + "\", which the model "
+                "does not have (its layers: " + (all.empty() ? "none" : all) +
+                ")."
+            );
+        }
+
+        if (id >= 64u)
+            throw std::logic_error(
+                owner + " targets the layer \"" + n + "\", whose id (" +
+                std::to_string(id) + ") is above 63, the most a tool can target."
+            );
+
+        mask |= uint64_t(1) << id;
+    }
+
+    resolved = true;
+
+}
+
+inline bool Tool::acts_in(int layer) const
+{
+    if (!layers_.resolved && !layers_.names.empty())
+        throw std::logic_error(
+            "The tool \"" + get_name() + "\" has layer targets that are not "
+            "resolved yet: they are resolved when the run starts, or when the "
+            "tool is added to a running model (change them before then)."
+        );
+
+    return layers_.has(layer);
+}
+
+inline void Tool::add_layer_target(std::string layer)
+{
+    layers_.add(std::move(layer));
+}
+
+inline void Tool::set_layer_targets(std::vector< std::string > layers)
+{
+    layers_ = LayerTargets();
+    for (auto & l : layers)
+        layers_.add(std::move(l));
+}
+
 inline void Tool::set_targets(std::vector< std::string > diseases)
 {
     targets_ = DiseaseTargets();
@@ -20756,6 +20917,9 @@ inline bool Tool::operator==(const Tool & other) const
 
 
     if (!(targets_ == other.targets_))
+        return false;
+
+    if (!(layers_ == other.layers_))
         return false;
 
     return true;
@@ -21166,6 +21330,13 @@ inline void Agent::add_tool(
 
     ToolPtr tool_ptr = std::shared_ptr<Tool>(tool.clone_ptr());
 
+    // The model's copy is resolved at reset, or when added during a run; one
+    // added between a reset and a manual day loop is resolved here
+    if (!tool_ptr->layers_.resolved)
+        tool_ptr->layers_.resolve(
+            model, "The tool \"" + tool_ptr->get_name() + "\""
+        );
+
     model._add_event(
         this, nullptr, tool_ptr, state_new, queue, EventAction::AddTool
         );
@@ -21313,17 +21484,19 @@ inline void Agent::rm_virus(
 
 inline epiworld_double Agent::get_susceptibility_reduction(
     VirusPtr & v,
-    Model & model
+    Model & model,
+    int layer
 ) {
 
-    return model.susceptibility_reduction_mixer(this, v);
+    return model.susceptibility_reduction_mixer(this, v, layer);
 }
 
 inline epiworld_double Agent::get_transmission_reduction(
     VirusPtr & v,
-    Model & model
+    Model & model,
+    int layer
 ) {
-    return model.transmission_reduction_mixer(this, v);
+    return model.transmission_reduction_mixer(this, v, layer);
 }
 
 inline epiworld_double Agent::get_recovery_enhancer(
@@ -21774,9 +21947,9 @@ inline size_t Model::add_exposures_impl(
             continue;
 
         epiworld_double p =
-            (1.0 - agent->get_susceptibility_reduction(v, *this)) *
+            (1.0 - agent->get_susceptibility_reduction(v, *this, layer_id)) *
             p_inf *
-            (1.0 - contact.get_transmission_reduction(v, *this))
+            (1.0 - contact.get_transmission_reduction(v, *this, layer_id))
             ;
 
         // The weight scales the odds p / (1 - p); a certain exposure stays so
@@ -22056,8 +22229,10 @@ inline void Model::transmission_push_impl()
             for (auto * net : network_layers)
             {
 
-                // A closed layer, or one the carrier is out of, reaches no one
-                if (net->is_closed() || net->excludes(agent_state[j_id]))
+                // A closed layer, or one whose statuses leave the carrier out,
+                // reaches no one (a carrier out of every layer is no source)
+                const std::vector< char > * net_out = net->own_exclusions();
+                if (net->is_closed() || ((net_out != nullptr) && (*net_out)[agent_state[j_id]]))
                     continue;
 
                 // Layer rules, as add_exposures() applies them in a pull
@@ -22066,7 +22241,6 @@ inline void Model::transmission_push_impl()
                     net->get_weight(*this) : 1.0;
                 const bool admitted = net->admits(*v);
                 const int layer_id = static_cast< int >(net->get_id());
-                const std::vector< char > * net_out = net->own_exclusions();
 
                 for (size_t i_id : net->ties[j_id])
                 {
@@ -22107,9 +22281,9 @@ inline void Model::transmission_push_impl()
 
                     // Exactly the expression the pull uses, in the same order.
                     epiworld_double p =
-                        (1.0 - i.get_susceptibility_reduction(v, *this)) *
+                        (1.0 - i.get_susceptibility_reduction(v, *this, layer_id)) *
                         nh_infection_prob(i, *v, tracks[0u]) *
-                        (1.0 - j.get_transmission_reduction(v, *this))
+                        (1.0 - j.get_transmission_reduction(v, *this, layer_id))
                         ;
 
                     // The weight scales the odds; a certain exposure stays so
@@ -27069,12 +27243,22 @@ inline ModelSIRLogit::ModelSIRLogit(
 
             size_t nviruses_tmp = 0u;
 
-            // Every network layer, in the order the layers were added
+            // Every network layer, in the order the layers were added: open,
+            // and without p or the neighbor in a status it excludes
             for (auto * net : m.get_network_layers())
+            {
+
+            if (net->is_closed() || net->excludes_agent(static_cast< size_t >(p.get_id())))
+                continue;
+
+            const int layer_id = static_cast< int >(net->get_id());
             for (auto * neighbor : net->neighbors_view(static_cast< size_t >(p.get_id())))
             {
 
                 if (neighbor->get_virus() == nullptr)
+                    continue;
+
+                if (net->excludes_agent(static_cast< size_t >(neighbor->get_id())))
                     continue;
 
                 auto & v = neighbor->get_virus();
@@ -27082,13 +27266,15 @@ inline ModelSIRLogit::ModelSIRLogit(
                 m.reserve_tmp(nviruses_tmp + 1u);
 
                 const double x = baseline +
-                    (1.0 - p.get_susceptibility_reduction(v, m)) *
+                    (1.0 - p.get_susceptibility_reduction(v, m, layer_id)) *
                     p_contact.eval(p, v.get(), m) *
-                    (1.0 - neighbor->get_transmission_reduction(v, m)) *
+                    (1.0 - neighbor->get_transmission_reduction(v, m, layer_id)) *
                     coef_exposure;
 
                 m.array_double_tmp[nviruses_tmp] = 1.0 / (1.0 + std::exp(-x));
                 m.array_virus_tmp[nviruses_tmp++] = &(*v);
+
+            }
 
             }
 
@@ -27232,10 +27418,20 @@ inline ModelDiffNet::ModelDiffNet(
         ModelDiffNet * diffmodel = model_cast<ModelDiffNet>(&m);
 
         size_t n_neighbors = 0u;
-        // Every network layer, in the order the layers were added
+        // Every network layer, in the order the layers were added: open, and
+        // without the agent or the neighbor out of it
         for (auto * net : m.get_network_layers())
+        {
+
+        if (net->is_closed() || net->excludes_agent(static_cast< size_t >(agent.get_id())))
+            continue;
+
+        const int layer_id = static_cast< int >(net->get_id());
         for (auto * neighbor : net->neighbors_view(static_cast< size_t >(agent.get_id())))
         {
+
+            if (net->excludes_agent(static_cast< size_t >(neighbor->get_id())))
+                continue;
 
             ++n_neighbors;
 
@@ -27248,8 +27444,10 @@ inline ModelDiffNet::ModelDiffNet(
                 innovations[vid] = &(*v);
 
             exposure[vid] +=
-                (1.0 - agent.get_susceptibility_reduction(v, m)) *
-                (1.0 - agent.get_transmission_reduction(v, m));
+                (1.0 - agent.get_susceptibility_reduction(v, m, layer_id)) *
+                (1.0 - neighbor->get_transmission_reduction(v, m, layer_id));
+
+        }
 
         }
 

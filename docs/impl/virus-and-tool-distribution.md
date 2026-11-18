@@ -41,6 +41,8 @@ A virus or a tool added without a placement (`model.add_virus(v)`) is recorded b
 
 Each `add_virus()` records a new variant with its own id (the founder of a lineage). A copy of a virus (`Virus::strain(name)`) is a strain of its disease; a virus built from scratch is another disease (see [Extending the Library with Models](extending-the-library-with-models.md#several-diseases)). A tool acts on the diseases it targets, by name (`Tool::add_target("Measles")`): in a model with one disease a tool without targets acts on it; with several, every tool names its diseases.
 
+A tool's contact effects (susceptibility and transmission reduction) can also be restricted to some contact layers, by name (`Tool::add_layer_target("work")`): a mask worn at work and school but not at home. Without layer targets they act in every layer. The recovery enhancer and death reduction are not about contacts, so layer targets leave them alone, and an infection not drawn from a layer (e.g., given by code) sees only the tools without layer targets. A layer name the model does not have is an error at the start of the run.
+
 ## See Also
 
 - [Core Simulation Models](core-simulation-models.md) — the models' `prevalence` arguments are `assign::share()` placements.

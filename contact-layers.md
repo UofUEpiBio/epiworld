@@ -1271,9 +1271,39 @@ benchmark rerun. 4a and 4b are what Phase 7 needs.
     present agent match the contact rate times the carriers' share among those
     present (not half of it).
 
-**4b -- tools that target layers** (D7: the 63-bit mask of disease targets).
-Bubbles exclude their members from other layers. Test: a tool targeting a
-layer reduces transmission in that layer only.
+**4b -- tools that target layers** (D7: a 64-bit mask, like the disease
+targets).
+
+- `Tool::add_layer_target(layer)` (with `set_`, `get_` and
+  `clear_layer_targets()`), by name, resolved to a mask at the start of the
+  run (an unknown name is an error; layer ids up to 63). The tool's contact
+  effects (susceptibility and transmission reduction) act on contacts through
+  those layers only; the recovery enhancer and death reduction are not about
+  contacts and are left alone. An infection not drawn from a layer sees only
+  the tools without layer targets.
+- The contact mixers (`susceptibility_reduction_mixer()`,
+  `transmission_reduction_mixer()`) and `Agent::get_*_reduction()` take the
+  layer of the contact (-1: none). Pull and push pass it; so does
+  `ModelSIRLogit`'s own sampler, which now also honors 4a's closures and
+  excluded statuses, and skips carriers of contact weight 0 (it let them
+  transmit before: a fix that changes its results only for such models).
+  `ModelDiffNet`'s exposure loop does the same (layer, closures,
+  exclusions), and now reads the transmission reduction of the neighbor, not
+  of the adopting agent (a fix: it changes DiffNet's results with tools that
+  reduce transmission). The measles mixing models refuse tools with layer
+  targets until Phase 7 (their sampler does not pass its layer). Layer targets resolve at every reset, with or without a
+  natural history,
+  and for a tool added during a run.
+- **Bubbles stay as they are** (decided 2026-11-17). Their out-of-bubble
+  damping already acts per pair (bubblemates are left alone in every layer),
+  and taking bubble members out of other layers is now a status the other
+  layers exclude (4a). Changing `Bubbles` itself would change the results of
+  a validated intervention for no new capability.
+- Test (end-to-end): a perfect mask worn at work only: no transmission at
+  work, the home layer carries the epidemic (pulled and pushed); the same
+  mask without layer targets stops every transmission; the effect is 1
+  through work and 0 through home or outside any layer; an unknown layer is
+  an error.
 
 **4c -- schedules and persistence.** Schedules (D10: routine ones in the
 layer, one-off closures as global events), persistence (D8: per-layer `q`, a
@@ -1804,7 +1834,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-16).
 | NH-5: several diseases per model, one infection per agent (`several-diseases.md`, before Phase 4) | plan: #371 merged; NH-5a (one track per disease, still one disease; identical histories, about +2% instructions): #372; the database in parts (`DataRegistry`, `DiseaseRecord`) and its implementation in four files, identical results: #373 merged (it renamed the `tool_info` column to `reg.tool_name` by mistake; fixed, with the columns of every output table now tested: #374 merged); NH-5b-1 (the outputs by disease: a `disease` argument and column everywhere, the accessors by margin; identical numbers): #375 merged; benchmark rerun at #373: UofUEpiBio/epiworld-benchmark#38 merged (no regression); rerun at #376 (with #375): stage `nh-5b-1`, branch `port-nh-5b1-outputs`, to be rerun on a quiet machine (the first run shared it with other work; callgrind: +45 instructions in 1.12 billion, SEIR at 100,000 agents); NH-5b-2 (several diseases in the engine: one engine state per agent, a record per disease, `strain()`, targets by disease, `.of()`, "Removed (other disease)"; identical with one disease): #377 merged; benchmark rerun at #376: UofUEpiBio/epiworld-benchmark#39 (no regression); NH-5b-3 (transitions by strain, `get_hist_virus_transitions()`; the SEIR quarantine exemption by disease; the natural-history docs page): #378 merged; benchmark rerun at #377: UofUEpiBio/epiworld-benchmark#40 (scenario_04, GeoPops, 0.97 to 1.08: the one-disease stage update no longer inlined); its fix (`nh_step_stage<One>()`, the reaction check inline) with `DataBase::get_virus_name(id)` and `get_virus_disease(id)` (the wrappers label variant ids with them; mutations are not among the model's viruses): #379 merged; benchmark rerun at #379 (stage `nh-5b-3`): UofUEpiBio/epiworld-benchmark#41 merged (scenario_04 back to 0.96; no ratio grew by more than 10%) | re-vendored to #376 by #234 (merged); NH-5c (the ports of NH-5b-1 to 5b-3, vendoring #379): #235 merged | re-vendored to #376 with #46 (merged); NH-5c: #47 merged | NH-5c (the `disease` column; no targets bound): #32 merged | NH-5c (the `disease` column): #74 merged |
 | C++ extensions in the wrappers (user-written C++ on a model built in R or Python: `as_model()`, checked by the epiworld major version) | -- | #233 merged (`cpp_source_epiworld()`, `<epiworldR/extension.h>`) | #46 merged (`cpp_source()`, `get_include()`, `<epiworldpy/extension.hpp>`) | -- | -- |
 | MSVC: `M_PI` (not standard) in the lognormal draw broke the Windows wheels since #363 | #376 merged | #234 merged (re-vendor) | with #46 (merged) | with NH-5c | with NH-5c |
-| Phase 4 (split into 4a-4d, Section 6) | 4a (exclusion by status per layer, closing a layer, the order of interventions; identical results for every registered model): this PR (branch `phase-4a-participation`) | | | | |
+| Phase 4 (split into 4a-4d, Section 6) | 4a (exclusion by status per layer, closing a layer, the order of interventions; identical results for every registered model): #380 merged; benchmark rerun at #380 (stage `4a`): branch `port-phase-4a`; 4b (tools that target layers, `add_layer_target()`; identical results): this PR (branch `phase-4b-tool-layers`) | 4a, 4b: after 4b | 4a, 4b: after 4b | 4a, 4b: after 4b | 4a, 4b: after 4b |
 | Phases 5, 6 | not started | | | | |
 | Phase 7 (measles as presets: the generic sampler, one contact-tracing intervention; the final step before 1.0.0) | not started | | | | |
 
@@ -1835,9 +1865,10 @@ regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 benchmark rerun (no regression). A two-disease benchmark scenario would need
 every engine, so the cost of several diseases stays measured with callgrind
 (#377). The epiworldRShiny port is merged. Phase 4 is split into 4a-4d;
-this PR is 4a (participation). Then its ports and a benchmark rerun, 4b
-(tools that target layers), 4c, 4d, Phases 5 and 6; Phase 7 (measles as
-presets) is the final step before the 1.0.0 release. The diagrams' pictures (`docs/assets/img`) are rendered
+4a (participation) is merged, and this PR is 4b (tools that target layers).
+The wrappers port 4a and 4b together, then a benchmark rerun; then 4c, 4d,
+Phases 5 and 6; Phase 7 (measles as presets) is the final step before the
+1.0.0 release. The diagrams' pictures (`docs/assets/img`) are rendered
 with `make -C include/measles all` and `make -C include/epiworld/models all`
 (mermaid.ink); they still show the labeled diagrams from before #370.
 

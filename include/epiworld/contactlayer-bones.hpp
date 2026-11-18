@@ -233,6 +233,10 @@ public:
     /// Whether an agent in engine state `state` is out of the layer.
     bool excludes(epiworld_fast_uint state) const;
 
+    /// Whether agent `agent_id` is out of this layer (by its excluded
+    /// statuses, or a contact weight of 0), for samplers of their own.
+    bool excludes_agent(size_t agent_id) const;
+
     /// The states out of this layer by its excluded statuses (`nullptr`: none;
     /// `excludes()` adds the states out of every layer).
     const std::vector< char > * own_exclusions() const
