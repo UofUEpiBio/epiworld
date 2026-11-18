@@ -6532,6 +6532,11 @@ protected:
     std::vector< epiworld_double > param_values;
     std::map<std::string, size_t, std::less<> > param_index;
     uint32_t param_layout_id = new_param_layout_id();
+
+    // Parameters that follow a cycle (set_param_cycle()), by position
+    std::map< size_t, std::vector< epiworld_double > > param_cycles;
+    void apply_param_cycles(int day);
+
     epiworld_fast_uint ndays = 0;
     Progress pb;
 
@@ -7593,6 +7598,43 @@ public:
     uint32_t get_param_layout_id() const { return param_layout_id; };
     ///@}
 
+    /**
+     * @name Parameters that follow a cycle
+     *
+     * @details `set_param_cycle(pname, values)` makes the parameter take
+     * `values[(d - 1) % values.size()]` on day `d`: the first value on day 1,
+     * the last on day `values.size()`, then the first again. Seven values give
+     * a weekly cycle, from a Monday:
+     *
+     * ```
+     * model.set_param_cycle("Public contact rate", {4, 4, 4, 4, 4, 6, 6});
+     * ```
+     *
+     * Anything that reads the parameter every day follows it: a layer's
+     * contact rate (`set_contact_rate()`) or weight (`set_weight()`), a rate in
+     * a natural history, a tool's effect. The day's value is set when the day
+     * is prepared, after the global events of the day before (where a global
+     * event that sets the parameter would set it), and at `reset()` for the
+     * start of a run (day 1's value). After a run, the parameter has the
+     * last day's value.
+     *
+     * While a cycle is set, it decides the parameter's value: `set_param()`
+     * lasts until the next day is prepared. The cycle is a setting: it lasts
+     * across runs, and setting or clearing it during a run is an error.
+     *
+     * Beware double counting: a rate from weekly-averaged data (e.g., a contact
+     * survey weighted by day of the week) already includes the weekends. A
+     * cycle around it should keep its weekly mean, as a weekday rate of
+     * `7/5` times the mean on a weekday-only layer does.
+     */
+    ///@{
+    void set_param_cycle(
+        std::string_view pname, std::vector< epiworld_double > values
+    );
+    void clear_param_cycle(std::string_view pname);
+    bool has_param_cycle(std::string_view pname) const;
+    ///@}
+
     void get_elapsed(
         std::string unit = "auto",
         epiworld_double * last_elapsed = nullptr,
@@ -7944,6 +7986,12 @@ public:
  * probability per pair does). Who is out is the status, so the status history
  * already counts them. Excluded statuses are a setting, made between runs.
  *
+ * `set_schedule()` makes a layer sample contacts on some days only, routinely
+ * (work and transit on weekdays): a day off the schedule is a day closed, but
+ * the schedule is a setting, made between runs, while `close()` is the
+ * one-off intervention a global event makes during a run. `is_closed()` says
+ * whether the layer has contacts today, for either reason.
+ *
  * `close()` takes the whole layer out (a school closure) until `reopen()`:
  * it samples no contacts, so it logs none and transmits nothing, and the
  * days it was closed are not days shared in `layer::Mixing::groupmates_of()`.
@@ -7992,15 +8040,20 @@ private:
     std::vector< bool > state_silent;   ///< [state] Transmits nothing here; empty: the model's
 
     bool closed_base = false; ///< Closed in every run (closed between runs)
-    bool closed = false;      ///< Closed today
+    bool closed = false;      ///< No contacts today (closed, or off its schedule)
     bool closed_next = false; ///< Closed from tomorrow (applied at the step's end)
-    /// The spans of days closed this run, `[first, last]` (`INT_MAX`: still)
+    /// The spans of days without contacts this run, `[first, last]`
+    /// (`INT_MAX`: still)
     std::vector< std::pair< int, int > > closed_spans;
+
+    /// The days the layer samples contacts (empty: every day; see set_schedule())
+    std::function< bool(int) > schedule;
 
     /// The masks of the run and the baseline closure (the model calls it at reset).
     void reset_participation(const Model & model);
 
-    /// Applies today's `close()` / `reopen()` (the model calls it at the step's end).
+    /// Applies today's `close()` / `reopen()` and the schedule, for tomorrow
+    /// (the model calls it at the step's end).
     void apply_closure(int today);
 
 protected:
@@ -8022,6 +8075,9 @@ protected:
     /// Call it from `reset()` once the baseline has been restored.
     void mark_clean() { dirty = false; }
 
+    /// Whether the model runs (settings are made between runs).
+    bool in_a_run() const { return in_run; }
+
 public:
 
     explicit ContactLayer(std::string name_) : name(std::move(name_)) {}
@@ -8034,7 +8090,7 @@ public:
         excluded_statuses(other.excluded_statuses), state_out(other.state_out),
         state_silent(other.state_silent), closed_base(other.closed_base),
         closed(other.closed), closed_next(other.closed_next),
-        closed_spans(other.closed_spans) {}
+        closed_spans(other.closed_spans), schedule(other.schedule) {}
 
     ContactLayer & operator=(const ContactLayer &) = delete;
 
@@ -8111,7 +8167,28 @@ public:
 
     void close();  ///< Closed from the next day (or every run, between runs)
     void reopen(); ///< Open from the next day (or every run, between runs)
-    bool is_closed() const { return closed; } ///< Closed today
+    /// No contacts today: closed, or off its schedule. After a run, "today"
+    /// is the day after its last (the run's last step prepares it).
+    bool is_closed() const { return closed; }
+
+    /**
+     * @brief The days the layer samples contacts, as a cycle (between runs).
+     * @param days Day `d` (contacts start on day 1) is on if `days[(d - 1) %
+     * days.size()]`; e.g., five `true` and two `false` for weekdays only, the
+     * run starting on a Monday.
+     */
+    void set_schedule(std::vector< bool > days);
+
+    /// The days the layer samples contacts: those where `on(day)` is true
+    /// (between runs; read at the end of the day before).
+    void set_schedule(std::function< bool(int day) > on);
+
+    void clear_schedule(); ///< Every day (the default; between runs)
+    bool has_schedule() const { return static_cast< bool >(schedule); }
+
+    /// Whether the schedule has day `day` on (always, without one); a closure
+    /// takes the layer out on top of it.
+    bool is_scheduled(int day) const { return !schedule || schedule(day); }
 
     /// Whether an agent in engine state `state` is out of the layer.
     bool excludes(epiworld_fast_uint state) const;
@@ -8240,8 +8317,8 @@ inline ContactTracing & ContactLayer::get_tracing()
 
 /**
  * @file contactlayer-meat.hpp
- * @brief Who takes part in a contact layer: its excluded statuses and its
- * closures (see `ContactLayer`).
+ * @brief Who takes part in a contact layer: its excluded statuses, its
+ * closures and its schedule (see `ContactLayer`).
  */
 
 inline void ContactLayer::exclude_status(std::string status)
@@ -8273,6 +8350,54 @@ inline void ContactLayer::reopen()
     closed_next = false;
     if (!in_run)
         closed_base = closed = false;
+}
+
+inline void ContactLayer::set_schedule(std::vector< bool > days)
+{
+
+    if (days.empty())
+        throw std::length_error(
+            "The contact layer '" + name + "': set_schedule() needs at least "
+            "one day."
+        );
+
+    set_schedule(std::function< bool(int) >([days = std::move(days)](int d) {
+        const size_t k = static_cast< size_t >(std::max(d - 1, 0));
+        return static_cast< bool >(days[k % days.size()]);
+    }));
+
+}
+
+inline void ContactLayer::set_schedule(std::function< bool(int day) > on)
+{
+
+    if (in_run)
+        throw std::logic_error(
+            "The contact layer '" + name + "': its schedule is set between "
+            "runs (close() and reopen() act during a run)."
+        );
+
+    if (!on)
+        throw std::invalid_argument(
+            "The contact layer '" + name + "': set_schedule() got an empty "
+            "function (clear_schedule() removes the schedule)."
+        );
+
+    schedule = std::move(on);
+
+}
+
+inline void ContactLayer::clear_schedule()
+{
+
+    if (in_run)
+        throw std::logic_error(
+            "The contact layer '" + name + "': its schedule is set between "
+            "runs."
+        );
+
+    schedule = nullptr;
+
 }
 
 inline bool ContactLayer::excludes(epiworld_fast_uint state) const
@@ -8350,15 +8475,17 @@ inline void ContactLayer::reset_participation(const Model & m)
 inline void ContactLayer::apply_closure(int today)
 {
 
-    if (closed_next == closed)
+    // Tomorrow: closed by close(), or off the schedule
+    const bool off = closed_next || !is_scheduled(today + 1);
+    if (off == closed)
         return;
 
-    if (closed_next)
+    if (off)
         closed_spans.push_back({today + 1, INT_MAX});
     else
         closed_spans.back().second = today;
 
-    closed = closed_next;
+    closed = off;
 
 }
 
@@ -10374,6 +10501,30 @@ std::shared_ptr< Mixing > mixing(std::string name);
  * calibration can reuse one model). `set_groups()` sets the baseline grouping
  * and can only be called between runs.
  *
+ * ### Persistence: the usual group, or another of the same pool
+ *
+ * In a within-group layer, the grouping is each agent's *usual* group (its
+ * household, its 7:40 train). `set_pools()` gathers the groups into pools (a
+ * route, a station) and `set_persistence(q)` makes each agent attend its
+ * usual group on a given day with probability `q`, and otherwise another
+ * group of the same pool, drawn uniformly, that day only:
+ * - `q = 1`: fixed cohorts (the default; no draws);
+ * - `0 < q < 1`: familiar strangers (mostly the same train, sometimes another);
+ * - `q = 0`: another group of the pool every day.
+ *
+ * `q` is one for every agent, or one per agent (strict and irregular
+ * commuters). With one `q`, a day costs a draw per agent that switches, not
+ * per agent. An agent alone in its pool's only group always stays.
+ * `set_assignment(f)` is the general form: `f(agent, usual, model)` gives
+ * each agent's group every day (or `NO_GROUP`, out of the layer that day),
+ * e.g., from data; it is called for every agent, every day. A layer has a
+ * persistence or an assignment, not both.
+ *
+ * The groups of tomorrow are drawn at the end of the day, with the other
+ * moves; like them, they notify the model's queue and enter the history.
+ * `set_group()` during a run moves the agent's usual group. Pools,
+ * persistence and assignments are settings, made between runs.
+ *
  * ### History (traced within-group layers)
  *
  * A within-group layer with tracing on (`enable_tracing()`) keeps, for the
@@ -10424,6 +10575,31 @@ private:
 
     /// Moves made during a step (agent, group), applied by `update()`
     std::vector< std::pair< size_t, size_t > > moves;
+
+    // Persistence (see set_persistence() and set_assignment())
+    std::vector< size_t > pool_of;          ///< Pool of each group (empty: none)
+    std::vector< double > persistence;      ///< `q`: one, or one per agent (empty: 1)
+    /// Group of an agent tomorrow, given its usual group (empty: none)
+    std::function< size_t(size_t, size_t, Model &) > assignment;
+    std::vector< std::vector< size_t > > pool_groups; ///< Groups of each pool (ascending), this run
+    std::vector< size_t > pool_index; ///< Pool of each group, as an index of `pool_groups`
+    std::vector< size_t > usual;    ///< Usual group of each agent, this run
+    std::vector< size_t > movable;  ///< Agents that can attend another group (ascending)
+    bool movable_stale = true;
+    std::vector< size_t > away;      ///< Agents in another group than their usual one
+    std::vector< char > away_next;   ///< Per agent, drawn away for tomorrow (scratch)
+    std::vector< size_t > away_ids;  ///< Those drawn away for tomorrow (scratch)
+
+    /// Whether the groups are drawn every step (persistence or an assignment)
+    bool daily_groups() const
+    {
+        return static_cast< bool >(assignment) || !persistence.empty();
+    }
+
+    void reset_persistence(Model & model);
+    void rebuild_movable();
+    /// Appends to `moves` where each agent goes tomorrow (see update()).
+    void draw_groups(Model & model);
 
     // History of the run (traced within-group layers, see groupmates_of())
 
@@ -10524,7 +10700,8 @@ public:
      */
     void set_groups(Assign a, size_t n_groups_);
 
-    /// Group of an agent (`NO_GROUP` if it is not in the layer).
+    /// Group of an agent today (`NO_GROUP` if it is not in the layer). After
+    /// a run, the group of the day after its last, which its last step drew.
     size_t get_group(size_t agent_id) const
     {
         check_agent(agent_id);
@@ -10540,6 +10717,7 @@ public:
      * @details Like every change made during a step, it is in force for the
      * contacts of the next step: the move waits for the end of the step, when
      * the pools are rebuilt (until then, `get_group()` gives the old group).
+     * With a persistence or an assignment, it moves the agent's usual group.
      */
     void set_group(size_t agent_id, size_t group);
 
@@ -10604,6 +10782,46 @@ public:
         check_group(g);
         return members[g];
     }
+
+    /**
+     * @name Persistence: a usual group, or another of the same pool
+     * @brief Within-group layers only (see the class description).
+     */
+    ///@{
+    /**
+     * @brief Gathers the groups into pools (a route, a station), between runs.
+     * @param pools The pool of each group (any labels; groups with the same
+     * label are in the same pool).
+     */
+    void set_pools(std::vector< size_t > pools);
+    const std::vector< size_t > & get_pools() const { return pool_of; }
+
+    /**
+     * @brief The probability `q` that an agent attends its usual group on a
+     * given day (between runs).
+     * @param q One for every agent, or one per agent; `1` keeps every agent
+     * in its usual group (no draws).
+     */
+    void set_persistence(std::vector< double > q);
+    void set_persistence(double q) { set_persistence(std::vector< double >{q}); }
+    const std::vector< double > & get_persistence() const { return persistence; }
+    void clear_persistence(); ///< Everyone stays in its usual group (the default)
+
+    /**
+     * @brief The group of each agent each day, from a function (between runs):
+     * the general form of persistence, for data-driven schedules.
+     * @param f Called at the end of every day for every agent, as `f(agent,
+     * usual, model)`, with `usual` its usual group (`NO_GROUP` if it has none);
+     * it returns the agent's group tomorrow, or `NO_GROUP` (out of the layer
+     * that day: a remote-work day).
+     */
+    void set_assignment(std::function< size_t(size_t agent, size_t usual, Model & model) > f);
+    bool has_assignment() const { return static_cast< bool >(assignment); }
+    void clear_assignment();
+
+    /// The usual group of an agent this run (`get_group()` gives today's).
+    size_t get_usual_group(size_t agent_id) const;
+    ///@}
 
     /// A groupmate of an agent over a window of days (see `groupmates_of()`).
     struct Groupmate {
@@ -10688,6 +10906,8 @@ inline void Mixing::set_groups(Assign a, size_t n_groups_)
         throw std::invalid_argument(
             "Mixing layer '" + this->get_name() + "': empty grouping."
         );
+
+    usual.clear();
 
     // A label is a group, or none
     const std::string lname = this->get_name();
@@ -10781,8 +11001,287 @@ inline void Mixing::set_group(size_t agent_id, size_t group)
         );
 
     groups_baseline[agent_id] = group;
+    if (!usual.empty())
+        usual[agent_id] = group;
     move(agent_id, group, false);
     clear_history();
+
+}
+
+inline void Mixing::set_pools(std::vector< size_t > pools)
+{
+    if (this->in_a_run())
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': its pools are set "
+            "between runs."
+        );
+
+    pool_of = std::move(pools);
+}
+
+inline void Mixing::set_persistence(std::vector< double > q)
+{
+
+    if (this->in_a_run())
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': its persistence is set "
+            "between runs."
+        );
+
+    if (q.empty())
+        throw std::length_error(
+            "Mixing layer '" + this->get_name() + "': set_persistence() needs "
+            "at least one probability (clear_persistence() removes it)."
+        );
+
+    for (double x : q)
+        if (!((x >= 0.0) && (x <= 1.0)))
+            throw std::range_error(
+                "Mixing layer '" + this->get_name() + "': persistence "
+                "probabilities must be in [0, 1] (" + std::to_string(x) + ")."
+            );
+
+    persistence = std::move(q);
+
+}
+
+inline void Mixing::clear_persistence()
+{
+    if (this->in_a_run())
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': its persistence is set "
+            "between runs."
+        );
+
+    persistence.clear();
+}
+
+inline void Mixing::set_assignment(
+    std::function< size_t(size_t agent, size_t usual, Model & model) > f
+)
+{
+
+    if (this->in_a_run())
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': its assignment is set "
+            "between runs."
+        );
+
+    if (!f)
+        throw std::invalid_argument(
+            "Mixing layer '" + this->get_name() + "': set_assignment() got an "
+            "empty function (clear_assignment() removes it)."
+        );
+
+    assignment = std::move(f);
+
+}
+
+inline void Mixing::clear_assignment()
+{
+    if (this->in_a_run())
+        throw std::logic_error(
+            "Mixing layer '" + this->get_name() + "': its assignment is set "
+            "between runs."
+        );
+
+    assignment = nullptr;
+}
+
+inline size_t Mixing::get_usual_group(size_t agent_id) const
+{
+    check_agent(agent_id);
+    // The last run's usual groups (none without persistence: today's)
+    return usual.empty() ? groups[agent_id] : usual[agent_id];
+}
+
+inline void Mixing::reset_persistence(Model & model)
+{
+
+    usual.clear();
+    movable.clear();
+    away.clear();
+    away_ids.clear();
+    pool_groups.clear();
+    if (!daily_groups())
+        return;
+
+    const std::string lname = "Mixing layer '" + this->get_name() + "': ";
+    if (!within_groups())
+        throw std::logic_error(
+            lname + "persistence and assignments are for layers that mix "
+            "within groups (set_contact_prob())."
+        );
+
+    if (assignment && !persistence.empty())
+        throw std::logic_error(
+            lname + "it has both a persistence and an assignment; the "
+            "assignment decides every group, so clear one of them."
+        );
+
+    const size_t n = model.size();
+    if (!persistence.empty())
+    {
+
+        if ((persistence.size() != 1u) && (persistence.size() != n))
+            throw std::length_error(
+                lname + std::to_string(persistence.size()) + " persistence "
+                "probabilities, but the model has " + std::to_string(n) +
+                " agents (give one, or one per agent)."
+            );
+
+        if (pool_of.size() != n_groups)
+            throw std::length_error(
+                lname + "persistence draws another group of the same pool, "
+                "so set_pools() needs one pool per group (" +
+                std::to_string(n_groups) + " groups, " +
+                std::to_string(pool_of.size()) + " pools given)."
+            );
+
+        // The groups of each pool, by label
+        std::vector< size_t > labels = pool_of;
+        std::sort(labels.begin(), labels.end());
+        labels.erase(std::unique(labels.begin(), labels.end()), labels.end());
+        pool_groups.assign(labels.size(), {});
+        for (size_t g = 0u; g < n_groups; ++g)
+        {
+            const size_t k = static_cast< size_t >(
+                std::lower_bound(labels.begin(), labels.end(), pool_of[g]) -
+                labels.begin()
+            );
+            pool_groups[k].push_back(g);
+        }
+
+        // From group to pool
+        pool_index.assign(n_groups, 0u);
+        for (size_t k = 0u; k < pool_groups.size(); ++k)
+            for (size_t g : pool_groups[k])
+                pool_index[g] = k;
+
+        away_next.assign(n, 0);
+
+    }
+
+    usual = groups;
+    movable_stale = true;
+
+}
+
+inline void Mixing::rebuild_movable()
+{
+
+    // Agents with a usual group in a pool of two or more groups, and a
+    // persistence below 1
+    movable.clear();
+    const bool per_agent = persistence.size() > 1u;
+    for (size_t i = 0u; i < usual.size(); ++i)
+    {
+        const size_t g = usual[i];
+        if ((g == NO_GROUP) || (pool_groups[pool_index[g]].size() < 2u))
+            continue;
+
+        if ((per_agent ? persistence[i] : persistence[0u]) >= 1.0)
+            continue;
+
+        movable.push_back(i);
+    }
+
+    movable_stale = false;
+
+}
+
+inline void Mixing::draw_groups(Model & model)
+{
+
+    // The moves of the day change usual groups
+    for (const auto & [agent_id, group] : moves)
+        if (usual[agent_id] != group)
+        {
+            usual[agent_id] = group;
+            movable_stale = true;
+        }
+
+    if (assignment)
+    {
+        for (size_t i = 0u; i < usual.size(); ++i)
+        {
+            const size_t g = assignment(i, usual[i], model);
+            if ((g != NO_GROUP) && (g >= n_groups))
+                throw std::range_error(
+                    "Mixing layer '" + this->get_name() + "': the assignment "
+                    "gave agent " + std::to_string(i) + " the group " +
+                    std::to_string(g) + ", out of range (" +
+                    std::to_string(n_groups) + " groups)."
+                );
+
+            moves.emplace_back(i, g);
+        }
+        return;
+    }
+
+    if (movable_stale)
+        rebuild_movable();
+
+    // Who attends another group tomorrow: each movable agent with
+    // probability 1 - q. With one q, the gaps between them are geometric, so
+    // only those who move cost a draw.
+    away_ids.clear();
+    auto go_away = [&](size_t i) {
+        const auto & pg = pool_groups[pool_index[usual[i]]];
+        // Another group of the pool, uniformly
+        size_t k = std::min(
+            static_cast< size_t >(model.runif() * static_cast< double >(pg.size() - 1u)),
+            pg.size() - 2u
+        );
+        if (pg[k] >= usual[i])
+            ++k;
+        // The groups of a pool are ascending, so pg[k] skips the usual group
+        moves.emplace_back(i, pg[k]);
+        away_next[i] = 1;
+        away_ids.push_back(i);
+    };
+
+    if (persistence.size() == 1u)
+    {
+        const double q = persistence[0u];
+        if (q <= 0.0)
+        {
+            for (size_t i : movable)
+                go_away(i);
+        }
+        else if (!movable.empty())
+        {
+            const double log_q = std::log(q);
+            size_t pos = 0u;
+            while (true)
+            {
+                const double u = model.runif();
+                const double skip = std::floor(std::log(1.0 - u) / log_q);
+                if (skip >= static_cast< double >(movable.size() - pos))
+                    break;
+
+                pos += static_cast< size_t >(skip);
+                go_away(movable[pos++]);
+                if (pos >= movable.size())
+                    break;
+            }
+        }
+    }
+    else
+    {
+        for (size_t i : movable)
+            if (model.runif() >= persistence[i])
+                go_away(i);
+    }
+
+    // Back to the usual group, for those away today and not tomorrow
+    for (size_t i : away)
+        if (!away_next[i])
+            moves.emplace_back(i, usual[i]);
+
+    for (size_t i : away_ids)
+        away_next[i] = 0;
+    away.swap(away_ids);
 
 }
 
@@ -11009,6 +11508,7 @@ inline void Mixing::reset(Model & model)
 
     rebuild_members();
     moves.clear();
+    reset_persistence(model);
 
     clear_history();
     history = within_groups() && this->is_tracing();
@@ -11031,6 +11531,11 @@ inline void Mixing::reset(Model & model)
 
 inline void Mixing::update(Model & model)
 {
+
+    // Where each agent goes tomorrow, after the moves of the day (which
+    // change usual groups)
+    if (daily_groups())
+        draw_groups(model);
 
     // Moves made during the step; the history keeps each agent's net change
     // (several moves of one agent in a step are one, or none if it is back)
@@ -17437,6 +17942,7 @@ inline Model::Model(const Model & model) :
     param_values(model.param_values),
     param_index(model.param_index),
     param_layout_id(model.param_layout_id),
+    param_cycles(model.param_cycles),
     ndays(model.ndays),
     pb(model.pb),
     state_fun(model.state_fun),
@@ -17544,6 +18050,7 @@ inline Model::Model(Model && model) :
     param_values(std::move(model.param_values)),
     param_index(std::move(model.param_index)),
     param_layout_id(model.param_layout_id),
+    param_cycles(std::move(model.param_cycles)),
     // Others
     ndays(model.ndays),
     pb(std::move(model.pb)),
@@ -17624,6 +18131,7 @@ inline Model & Model::operator=(const Model & m)
     param_values    = m.param_values;
     param_index     = m.param_index;
     param_layout_id = m.param_layout_id;
+    param_cycles    = m.param_cycles;
     ndays      = m.ndays;
     pb         = m.pb;
 
@@ -18098,7 +18606,9 @@ inline void Model::next() {
 
     #endif
 
-    // The layers see what changed during the step before the next one samples
+    // Tomorrow's parameters, then the layers see what changed during the step
+    // before the next one samples
+    apply_param_cycles(today() + 1);
     update_layers();
 
     db.record();
@@ -18184,8 +18694,9 @@ inline Model & Model::run(
 
     }
 
-    // The last reaches the end...
+    // The last reaches the end... (the parameters too: the last day's values)
     this->current_date--;
+    apply_param_cycles(today());
 
     chrono_end();
 
@@ -18607,6 +19118,9 @@ inline void Model::reset() {
 
     // Restablishing people
     pb = Progress(ndays, 80);
+
+    // The cycles start over (day 1's values)
+    apply_param_cycles(1);
 
     for (auto & p : population)
         p.reset();
@@ -19200,6 +19714,48 @@ inline void Model::set_param_at(ParamId id, epiworld_double value)
     param_values[id.idx] = value;
 }
 
+inline void Model::set_param_cycle(
+    std::string_view pname, std::vector< epiworld_double > values
+)
+{
+    if (is_running())
+        throw std::logic_error(
+            "set_param_cycle(\"" + std::string(pname) + "\"): a cycle is set "
+            "between runs."
+        );
+
+    if (values.empty())
+        throw std::length_error(
+            "set_param_cycle(\"" + std::string(pname) + "\"): the cycle has "
+            "no values."
+        );
+
+    param_cycles[get_param_id(pname).idx] = std::move(values);
+}
+
+inline void Model::clear_param_cycle(std::string_view pname)
+{
+    if (is_running())
+        throw std::logic_error(
+            "clear_param_cycle(\"" + std::string(pname) + "\"): a cycle is "
+            "cleared between runs."
+        );
+
+    param_cycles.erase(get_param_id(pname).idx);
+}
+
+inline bool Model::has_param_cycle(std::string_view pname) const
+{
+    return param_cycles.count(get_param_id(pname).idx) > 0u;
+}
+
+inline void Model::apply_param_cycles(int day)
+{
+    const size_t d = static_cast< size_t >(std::max(day - 1, 0));
+    for (const auto & [idx, values] : param_cycles)
+        param_values[idx] = values[d % values.size()];
+}
+
 #define DURCAST(tunit,txtunit) {\
         elapsed       = std::chrono::duration_cast<std::chrono:: tunit>(\
             time_end - time_start).count(); \
@@ -19768,6 +20324,23 @@ inline bool Model::operator==(const Model & other) const
         // By name, so the order parameters were added in does not matter
         params() != other.params(),
         "Model:: parameters don't match"
+    )
+
+    // The cycles, by name too
+    auto cycles_by_name = [](const Model & m) {
+        std::map< std::string, std::vector< epiworld_double > > res;
+        for (const auto & p : m.param_index)
+        {
+            const auto c = m.param_cycles.find(p.second);
+            if (c != m.param_cycles.end())
+                res.emplace(p.first, c->second);
+        }
+        return res;
+    };
+
+    EPI_DEBUG_FAIL_AT_TRUE(
+        cycles_by_name(*this) != cycles_by_name(other),
+        "Model:: parameter cycles don't match"
     )
 
     EPI_DEBUG_FAIL_AT_TRUE(

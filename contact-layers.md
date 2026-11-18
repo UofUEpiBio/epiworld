@@ -1312,7 +1312,58 @@ the layer queue. An example model: the Phase 3 model plus a transit layer
 (morning and evening trips, route pools, `q < 1`, weekdays only). Tests: no
 transit-layer transmission on inactive steps; with `q = 1` every transit
 transmission is between members of the same usual group, with `q = 0`
-transmissions also cross groups in a pool.
+transmissions also cross groups in a pool. As built:
+
+- **Schedules, on every layer** (`ContactLayer::set_schedule()`): a cycle of
+  days (`{true x 5, false x 2}`: weekdays, day 1 a Monday) or a function of
+  the day; `clear_schedule()`, `is_scheduled(day)`. A day off the schedule is
+  a day closed: the same flag, set at the end of the day before
+  (`apply_closure()`), so the samplers that honor closures (pull, push,
+  `ModelSIRLogit`, `ModelDiffNet`, the measles sampler) honor schedules with
+  no change, and the days off are not days shared in `groupmates_of()`.
+  `is_closed()` says whether the layer has contacts today, for either
+  reason. A schedule is a setting (between runs; during a run, an error),
+  `close()` the one-off intervention of a global event. A per-agent schedule
+  (a remote-work day) is an assignment (below) in a mixing layer, or a
+  status the layer excludes (4a).
+- **Persistence, in within-group mixing layers** (`layer::Mixing`): the
+  grouping is each agent's usual group; `set_pools()` gathers groups into
+  pools, and `set_persistence(q)` (one `q`, or one per agent) sends an agent
+  to another group of its pool, uniformly, with probability `1 - q`, that day
+  only. With one `q` the switchers are found with geometric gaps, so a day
+  costs a draw per switcher; with one per agent, a draw per agent with
+  `q < 1`. `set_assignment(f)` is the general form: `f(agent, usual, model)`
+  gives every agent's group every day (`NO_GROUP`: out of the layer that
+  day). A layer has one or the other (an error otherwise). The groups of
+  tomorrow are drawn at the end of the day and applied as moves, so they
+  notify the queue and enter the history (`set_group()` during a run moves
+  the usual group). No draws without persistence: identical results.
+- **Parameters that follow a cycle** (`Model::set_param_cycle(pname,
+  values)`, added at the user's request, 2026-11-18): on day `d` the
+  parameter is `values[(d - 1) % size]`, set when the day is prepared (in
+  `next()`, after the global events of the day before) and at `reset()`.
+  This is the calendar the NH-close decisions deferred, kept small: a weekly
+  contact rate (`set_contact_rate()`) or weight (`set_weight()`), e.g. more
+  public contacts on weekends (FRED's +50%), with no new mechanism in the
+  layers. A global event that sets the parameter gives the same run (the
+  test checks it); a one-off profile (a ramp) stays a global event. Within-
+  group `q` is not tied to a parameter: a weekend change there is intensity
+  (the weight). The docs warn about double counting (rates from weekly-
+  averaged data already include the weekends; a weekday-only layer's
+  weekday rate is `7/5` of the weekly mean).
+- The example is `examples/24-transit` (work and two transit layers on
+  weekdays, 25 routes of 8 trips, `q = 0.8`; a public contact rate of 4 on
+  weekdays and 6 on weekends).
+- Tests (end-to-end): `57a-layer-schedule` (weekdays and a function: no
+  contacts logged and no transmission off the schedule, the home layer goes
+  on; a closure on top of the schedule; a setting across runs; a weekly
+  contact rate and a three-day weight cycle, with each day's value and the
+  same run as global events; errors) and
+  `57b-layer-persistence` (`q = 1`: every transit transmission within a usual
+  trip, the same run as without persistence; `q = 0`: transmissions cross
+  trips but never routes; `q = 0.7`: 30% away a day; `q` per agent; an
+  assignment out of the layer on odd days; the queue on and off give the
+  same run; errors).
 
 **4d -- an ERGM-style rewirer (example)**: tie dissolution plus
 Metropolis-Hastings toggles on given coefficients; estimation stays in R's
@@ -1834,7 +1885,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-16).
 | NH-5: several diseases per model, one infection per agent (`several-diseases.md`, before Phase 4) | plan: #371 merged; NH-5a (one track per disease, still one disease; identical histories, about +2% instructions): #372; the database in parts (`DataRegistry`, `DiseaseRecord`) and its implementation in four files, identical results: #373 merged (it renamed the `tool_info` column to `reg.tool_name` by mistake; fixed, with the columns of every output table now tested: #374 merged); NH-5b-1 (the outputs by disease: a `disease` argument and column everywhere, the accessors by margin; identical numbers): #375 merged; benchmark rerun at #373: UofUEpiBio/epiworld-benchmark#38 merged (no regression); rerun at #376 (with #375): stage `nh-5b-1`, branch `port-nh-5b1-outputs`, to be rerun on a quiet machine (the first run shared it with other work; callgrind: +45 instructions in 1.12 billion, SEIR at 100,000 agents); NH-5b-2 (several diseases in the engine: one engine state per agent, a record per disease, `strain()`, targets by disease, `.of()`, "Removed (other disease)"; identical with one disease): #377 merged; benchmark rerun at #376: UofUEpiBio/epiworld-benchmark#39 (no regression); NH-5b-3 (transitions by strain, `get_hist_virus_transitions()`; the SEIR quarantine exemption by disease; the natural-history docs page): #378 merged; benchmark rerun at #377: UofUEpiBio/epiworld-benchmark#40 (scenario_04, GeoPops, 0.97 to 1.08: the one-disease stage update no longer inlined); its fix (`nh_step_stage<One>()`, the reaction check inline) with `DataBase::get_virus_name(id)` and `get_virus_disease(id)` (the wrappers label variant ids with them; mutations are not among the model's viruses): #379 merged; benchmark rerun at #379 (stage `nh-5b-3`): UofUEpiBio/epiworld-benchmark#41 merged (scenario_04 back to 0.96; no ratio grew by more than 10%) | re-vendored to #376 by #234 (merged); NH-5c (the ports of NH-5b-1 to 5b-3, vendoring #379): #235 merged | re-vendored to #376 with #46 (merged); NH-5c: #47 merged | NH-5c (the `disease` column; no targets bound): #32 merged | NH-5c (the `disease` column): #74 merged |
 | C++ extensions in the wrappers (user-written C++ on a model built in R or Python: `as_model()`, checked by the epiworld major version) | -- | #233 merged (`cpp_source_epiworld()`, `<epiworldR/extension.h>`) | #46 merged (`cpp_source()`, `get_include()`, `<epiworldpy/extension.hpp>`) | -- | -- |
 | MSVC: `M_PI` (not standard) in the lognormal draw broke the Windows wheels since #363 | #376 merged | #234 merged (re-vendor) | with #46 (merged) | with NH-5c | with NH-5c |
-| Phase 4 (split into 4a-4d, Section 6) | 4a (exclusion by status per layer, closing a layer, the order of interventions; identical results for every registered model): #380 merged; benchmark rerun at #380 (stage `4a`): branch `port-phase-4a`; 4b (tools that target layers, `add_layer_target()`; identical results): this PR (branch `phase-4b-tool-layers`) | 4a, 4b: after 4b | 4a, 4b: after 4b | 4a, 4b: after 4b | 4a, 4b: after 4b |
+| Phase 4 (split into 4a-4d, Section 6) | 4a (exclusion by status per layer, closing a layer, the order of interventions; identical results for every registered model): #380 merged; benchmark rerun at #380 (stage `4a`): UofUEpiBio/epiworld-benchmark#42 merged; 4b (tools that target layers, `add_layer_target()`; identical results): #381 merged; benchmark rerun at #381 (stage `4b`; two ratios grew by more than 10%, profiled: +0.1% instructions, noise): UofUEpiBio/epiworld-benchmark#43; 4c (schedules, persistence, parameter cycles, the transit example; identical results): this PR (branch `phase-4c-schedules`) | 4a, 4b: #236 | 4a, 4b: #48 | 4a, 4b: #33 (re-vendor only) | 4a, 4b: #75 (re-vendor; the measles models refuse exclusions and layer targets until Phase 7) |
 | Phases 5, 6 | not started | | | | |
 | Phase 7 (measles as presets: the generic sampler, one contact-tracing intervention; the final step before 1.0.0) | not started | | | | |
 
@@ -1865,9 +1916,10 @@ regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 benchmark rerun (no regression). A two-disease benchmark scenario would need
 every engine, so the cost of several diseases stays measured with callgrind
 (#377). The epiworldRShiny port is merged. Phase 4 is split into 4a-4d;
-4a (participation) is merged, and this PR is 4b (tools that target layers).
-The wrappers port 4a and 4b together, then a benchmark rerun; then 4c, 4d,
-Phases 5 and 6; Phase 7 (measles as presets) is the final step before the
+4a (participation) and 4b (tools that target layers) are merged, with their
+benchmark reruns and their wrapper ports (open: epiworldR#236, epiworldpy#48,
+epiworldjs#33, measles#75); this PR is 4c (schedules and persistence). Then
+the wrapper ports of 4c, 4d (the ERGM-style rewirer example), Phases 5 and 6; Phase 7 (measles as presets) is the final step before the
 1.0.0 release. The diagrams' pictures (`docs/assets/img`) are rendered
 with `make -C include/measles all` and `make -C include/epiworld/models all`
 (mermaid.ink); they still show the labeled diagrams from before #370.
