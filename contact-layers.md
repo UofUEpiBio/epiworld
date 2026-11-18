@@ -17,7 +17,7 @@ of moves and absences (D9, D11). Revised 2026-10-28: epiworld-benchmark
 tracks the work with a 1.0.0 engine, rerun at every merged phase (Sections 6,
 8, 11.7). Appendix A (2026-10-30) records the idea of quarantine, isolation
 and tracing as layer-targeted interventions; reconciled with Phase 7 on
-2026-11-17, it lists what Phase 7 settled and the three questions still open.
+2026-11-17, when its last three questions were settled too.
 **Goal:** let a single model draw transmission from several contact sources at
 once -- e.g., mixing within households, a workplace network, and mixing in
 public spaces -- each with its own structure, weight, and participation rules.
@@ -1237,8 +1237,8 @@ identical to `ModelSEIRQuarantine` on the same layer.
   and the community keep them), and isolation excludes from every layer but
   the ones it keeps. The status records who is quarantined, so the history
   needs nothing new.
-- The order of interventions in a step (Appendix A, question 2): one rule,
-  settled here.
+- The order of interventions in a step (Appendix A, question 2): the order
+  in which they were added, at one fixed point of the step.
 - An example model: the Phase 3 model plus a transit layer (morning and evening
   trips, route pools, `q < 1`, weekdays only). Another: an ERGM-style rewirer
   (tie dissolution plus Metropolis-Hastings toggles on given coefficients;
@@ -1773,9 +1773,11 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-16).
 | Phase 7 (measles as presets: the generic sampler, one contact-tracing intervention; the final step before 1.0.0) | not started | | | | |
 
 epiworldRShiny (Section 6): the one port (to epiworldR and measles 1.0.0:
-layers, the registry, several diseases) is in progress on its new
-`v1-layers` branch (created 2026-11-17 from `main`); the `*CONN` apps stay,
-as the base model plus a random-mixing layer.
+layers, the registry, several diseases) is epiworldRShiny#60, merged into its
+new `v1-layers` branch (created 2026-11-17 from `main`), with #59 (the
+measles parameter table) included. The `*CONN` apps stay, as the base model
+plus a random-mixing layer. Later phases update it with the measles port
+(Phase 7).
 
 epiworld-benchmark (Section 8, 11.7): `v1-layers` branch; the catch-up (the
 `epiworld-v1` engine, stage 3d-1) is UofUEpiBio/epiworld-benchmark#31. Stage
@@ -1796,10 +1798,9 @@ regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 **Next** (as of the date above): NH-5 is done, with its ports and a
 benchmark rerun (no regression). A two-disease benchmark scenario would need
 every engine, so the cost of several diseases stays measured with callgrind
-(#377). Then the epiworldRShiny port, and Phases 4 to 6; Phase 7 (measles as
-presets) is the final step before the 1.0.0 release. Appendix A's open
-questions are settled with Phase 4 (the order of interventions) and Phase 7
-(detection, names). The diagrams' pictures (`docs/assets/img`) are rendered
+(#377). The epiworldRShiny port is merged. Then Phases 4 to 6; Phase 7 (measles as
+presets) is the final step before the 1.0.0 release. Appendix A is settled
+(2026-11-17). The diagrams' pictures (`docs/assets/img`) are rendered
 with `make -C include/measles all` and `make -C include/epiworld/models all`
 (mermaid.ink); they still show the labeled diagrams from before #370.
 
@@ -1830,8 +1831,8 @@ Raised on 2026-10-30, while 3d-1b (#341) was open. **Phase 7 (settled
 2026-11-16) adopted the idea**: one `ModelMeasles` on any layers, one
 contact-tracing intervention in the core instead of four copies of the loop,
 and `ModelSEIRQuarantine` becoming `ModelSEIR` with that intervention. This
-appendix keeps the idea's motivation, says how each of its questions was
-answered, and lists the three still open.
+appendix keeps the idea's motivation and says how each of its questions was
+answered (the last three on 2026-11-17).
 
 ### The idea
 
@@ -1854,17 +1855,16 @@ school, then needs no new model class.
    intervention needs no history of its own. What the 2026-10-30 note called
    a per-layer flag is Phase 4's exclusion keyed by status, per layer (added
    to Phase 4's list).
-2. **Order of interventions: open, settled in Phase 4**, which adds
-   layer-targeted tools and isolation and so first runs several actions in
-   one step. Proposed rule: the order in which they were added, at one fixed
-   point of the step (after the transmission and stage updates, before the
-   records), so results do not depend on anything else.
-3. **Where detection lives: open, settled in Phase 7.** Proposed: in the
-   tracing intervention (detection probability and delay as its options), so
-   a model without interventions has no detection parameters and the
-   parameter belongs to the policy that uses it. The cost: the measles
-   presets pass detection to the intervention, and their parameter tables
-   change.
+2. **Order of interventions: the order in which they were added**, at one
+   fixed point of the step (after the transmission and stage updates, before
+   the records), so results do not depend on anything else (settled
+   2026-11-17; implemented in Phase 4, which adds layer-targeted tools and
+   isolation and so first runs several actions in one step).
+3. **Detection lives in the tracing intervention** (settled 2026-11-17):
+   detection probability and delay are its options, so a model without
+   interventions has no detection parameters and the parameter belongs to the
+   policy that uses it. The cost, paid in Phase 7: the measles presets pass
+   detection to the intervention, and their parameter tables change.
 4. **Results change: answered.** Phase 7 changes the measles results with
    the combination rule (Phase 6), and the expected values are updated once
    for both. The checks are statistical, with realistic parameters (the
@@ -1872,7 +1872,8 @@ school, then needs no new model class.
 5. **Timing: answered.** Phase 7 is last, after Phases 4 and 6, and in
    1.0.0. The removed models become defunct stubs naming `ModelMeasles` (or
    `ModelSEIR`) plus the intervention.
-6. **Names: open, settled in Phase 7** with the wrappers' naming (Section 6).
-   Proposed: `ModelMeasles` for the disease; the intervention named by what
-   it does (contact tracing, with quarantine and isolation as its actions),
-   taking the layers it traces and the layers it excludes from.
+6. **Names** (settled 2026-11-17): `ModelMeasles` for the disease; the
+   intervention named by what it does (contact tracing, with quarantine and
+   isolation as its actions), taking the layers it traces and the layers it
+   excludes from. The exact spelling in each wrapper follows Section 6's
+   naming when Phase 7 binds it.
