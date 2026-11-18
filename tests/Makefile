@@ -145,7 +145,9 @@ $(NAME)_SOURCES := \
 	55a-layer-exclude-status.cpp \
 	55b-layer-close.cpp \
 	55c-layer-exclude-rate.cpp \
-	56a-tool-layer-targets.cpp
+	56a-tool-layer-targets.cpp \
+	57a-layer-schedule.cpp \
+	57b-layer-persistence.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
 # covered and would inflate the figure.

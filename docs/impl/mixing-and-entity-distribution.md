@@ -54,6 +54,36 @@ Each member meets each other member of its group independently with probability 
 
 Both forms draw contacts the same way: for each group, a binomial number of *distinct* infectious members (the same as meeting each one independently with a probability `p` per pair). Within groups, `p = q[g]`; with a matrix, `p = min(1, c(g, h) / others(h))`, where `others(h)` counts the available agents of `h` other than the agent itself, so a matrix keeps its contacts per day when agents become unavailable. A diagonal matrix with `c(g, g) = q * others(g)` therefore gives the same run as `q`.
 
+### Persistence: the usual group, or another of the same pool
+
+In a within-group layer the grouping is each agent's *usual* group (its 7:40 train). Gather the groups into pools (a route, a station) and give the probability `q` that an agent attends its usual group on a given day; otherwise it attends another group of the same pool, drawn uniformly, that day only:
+
+```cpp
+auto transit = layer::mixing("transit");
+transit->set_groups(assign::labels(trip), n_trips);   // the usual trips
+transit->set_contact_prob(0.02);
+transit->set_pools(route_of_trip);   // one pool label per group
+transit->set_persistence(0.8);       // or one q per agent
+transit->set_schedule({true, true, true, true, true, false, false});
+model.add_layer(transit);
+```
+
+`q = 1` keeps fixed cohorts (households, strict commuters), `0 < q < 1` gives familiar strangers, `q = 0` another group of the pool every day. With one `q`, a day costs a random draw per agent that switches (the gaps between switchers are geometric), not per agent. For data-driven memberships, `set_assignment(f)` gives each agent's group every day, as `f(agent, usual, model)` (or `NO_GROUP`: out of the layer that day, e.g., a remote-work day); a layer has a persistence or an assignment, not both. Tomorrow's groups are drawn at the end of the day and applied as moves, so they notify the queue and enter the history; `get_usual_group()` gives the usual group and `get_group()` today's.
+
+### Schedules
+
+Any layer can sample contacts on some days only: `set_schedule(days)` takes a cycle (above: weekdays, with day 1 a Monday) or a function of the day. A day off the schedule is a day without contacts, as a closure (`close()`) is: it logs none, transmits nothing, and is not a day shared in `groupmates_of()`. The schedule is a routine setting, made between runs; closing a layer is the one-off intervention a global event makes during a run. `is_closed()` says whether the layer has contacts today, for either reason. See `examples/24-transit`.
+
+### Weekends: parameters that follow a cycle
+
+A schedule turns a layer on or off. To change how much a layer mixes on some days, make its contact rate (`set_contact_rate(param)`, the number of contacts) or its weight (`set_weight(param)`, how much each contact counts) a model parameter, and give the parameter a cycle: `model.set_param_cycle("Public contact rate", {4, 4, 4, 4, 4, 6, 6})` is 4 on weekdays and 6 on weekends. On day `d` the parameter is `values[(d - 1) % size]`; it is set when the day is prepared, where a global event that sets it would act, so the two give the same run. A cycle is a setting, made between runs.
+
+Some guidance:
+
+- **Don't count the weekends twice.** Contact rates from surveys are often averages over the week (socialmixr weights weekdays by 5/7 and weekends by 2/7). Such a rate already includes the weekends: on a weekday-only layer, the weekday rate is `7/5` of the weekly mean, and a cycle should keep the weekly mean it is built around.
+- **More people or longer contacts.** Weekends bring more people in community settings (the contact rate) and longer hours with the same people at home (the weight). A household where everyone meets everyone cannot gain contacts, only intensity; a network layer can only lose ties (a weight above 1 is the only way up).
+- **When it matters.** With an infectious period of about a week or more, growth depends mostly on each layer's weekly mean; the cycle shapes the daily incidence. It matters more for short infectious periods, interventions tied to days of the week, and comparisons with daily data.
+
 ## See Also
 
 - [Core Simulation Models](core-simulation-models.md) — the models, and how to give them a mixing layer.
