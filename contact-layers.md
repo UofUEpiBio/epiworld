@@ -15,7 +15,9 @@ contact probability per pair (`q = 1`: cliques, no ties stored); one sampler
 drawing distinct contacts for both forms; tracing within groups by a history
 of moves and absences (D9, D11). Revised 2026-10-28: epiworld-benchmark
 tracks the work with a 1.0.0 engine, rerun at every merged phase (Sections 6,
-8, 11.7).
+8, 11.7). Appendix A (2026-10-30) records the idea of quarantine, isolation
+and tracing as layer-targeted interventions; reconciled with Phase 7 on
+2026-11-17, when its last three questions were settled too.
 **Goal:** let a single model draw transmission from several contact sources at
 once -- e.g., mixing within households, a workplace network, and mixing in
 public spaces -- each with its own structure, weight, and participation rules.
@@ -1229,6 +1231,14 @@ identical to `ModelSEIRQuarantine` on the same layer.
 - Schedules (D10), persistence (D8), membership changes notified to the layer
   queue.
 - Bubbles: exclusion from other layers (the bubble layer itself is Phase 3).
+- Exclusion keyed by status, per layer (added 2026-11-17, for Phase 7's
+  tracing intervention, Appendix A): a layer can exclude the agents in given
+  statuses (e.g., the school layer excludes "Quarantined", while households
+  and the community keep them), and isolation excludes from every layer but
+  the ones it keeps. The status records who is quarantined, so the history
+  needs nothing new.
+- The order of interventions in a step (Appendix A, question 2): the order
+  in which they were added, at one fixed point of the step.
 - An example model: the Phase 3 model plus a transit layer (morning and evening
   trips, route pools, `q < 1`, weekdays only). Another: an ERGM-style rewirer
   (tie dissolution plus Metropolis-Hastings toggles on given coefficients;
@@ -1756,13 +1766,18 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-16).
 | Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 merged (replaces #358-#360, closed); NH-1 and NH-2: #363 merged; NH-3 (branch `nh-3-docs`: docs and diagrams drawn from the declarations): #366 merged; the benchmark runners and rerun: UofUEpiBio/epiworld-benchmark#35 (simulation time regressed in three rows, profiled to the reset); the reset fix (branch `reset-no-realloc`: placements in reused buffers, natural-history records made as agents move): #367 merged; its rerun (UofUEpiBio/epiworld-benchmark#36) fixed 1,000,000 agents, and left scenario_00 at 100,000 and GeoPops about 15% above 3d-3b, in the daily step; the step's cost (branch `nh-step-cost`: `par_at()` inlined, the stage of a cell without a division, the status part apart): #368 merged; its rerun (UofUEpiBio/epiworld-benchmark#37): no ratio grew by more than 10% (scenario_00 at 100,000 stays at 1.13; on denser and layered synthetic networks the remaining cost is per infected agent, not per contact or layer); found by the epiworldR port: an agent given a tool or virus the model does not hold crashed (since V-1 only the model's copy has an id), now an error: #369 merged; the benchmark reruns UofUEpiBio/epiworld-benchmark#35, #36 and #37 merged; the decisions that close the plan (16-21: `rule()` and the calendar deferred, the measles quarantine exemption by tool name, diagrams without transition labels): NH-close (this PR); next, NH-5 (several diseases per model, one infection per agent; the database per disease; accessors by margin), plan first | #231 merged (NH-4: natural history, placement, variants by id, plain classes, the registry; vendors fe2385a0) | #44 merged (NH-4; vendors fe2385a0) | #30 merged (NH-4; vendors fe2385a0) | #72 merged (NH-4; vendors fe2385a0; keeps `epiworldR (>= 1.0.0)`: see the release item in Phase 6) |
 | Variants by id (V-1) and no `TSeq` template (V-2) (after #363, before NH-3) | V-1: #364 merged; V-2: #365 merged | with NH-4 (#231 merged) | with NH-4 (#44 merged) | with NH-4 (#30 merged) | with NH-4 (#72 merged) |
 | NH-close (decisions 16-21, the measles quarantine exemption by tool name, diagrams without labels) | #370 merged | #232 merged | #45 merged | #31 merged (re-vendor only) | #73 merged (binds `set_quarantine_exempt_tools()`) |
-| NH-5: several diseases per model, one infection per agent (`several-diseases.md`, before Phase 4) | plan: #371 merged; NH-5a (one track per disease, still one disease; identical histories, about +2% instructions): #372; the database in parts (`DataRegistry`, `DiseaseRecord`) and its implementation in four files, identical results: #373 merged (it renamed the `tool_info` column to `reg.tool_name` by mistake; fixed, with the columns of every output table now tested: #374 merged); NH-5b-1 (the outputs by disease: a `disease` argument and column everywhere, the accessors by margin; identical numbers): #375 merged; benchmark rerun at #373: UofUEpiBio/epiworld-benchmark#38 merged (no regression); rerun at #376 (with #375): stage `nh-5b-1`, branch `port-nh-5b1-outputs`, to be rerun on a quiet machine (the first run shared it with other work; callgrind: +45 instructions in 1.12 billion, SEIR at 100,000 agents); NH-5b-2 (several diseases in the engine: one engine state per agent, a record per disease, `strain()`, targets by disease, `.of()`, "Removed (other disease)"; identical with one disease): #377 merged; benchmark rerun at #376: UofUEpiBio/epiworld-benchmark#39 (no regression); NH-5b-3 (transitions by strain, `get_hist_virus_transitions()`; the SEIR quarantine exemption by disease; the natural-history docs page): #378 merged; benchmark rerun at #377: UofUEpiBio/epiworld-benchmark#40 (scenario_04, GeoPops, 0.97 to 1.08: the one-disease stage update no longer inlined); its fix (`nh_step_stage<One>()`, the reaction check inline; branch `nh-5-inline-one`): this PR, then a rerun; the same PR adds `DataBase::get_virus_name(id)` and `get_virus_disease(id)`, which the wrappers need to label the variant ids of the outputs (mutations are not among the model's viruses) | re-vendored to #376 by #234 (merged); NH-5c (the ports of NH-5b-1 to 5b-3): #235 (vendors e74850ce) | re-vendored to #376 with #46 (merged); NH-5c | NH-5c | NH-5c |
+| NH-5: several diseases per model, one infection per agent (`several-diseases.md`, before Phase 4) | plan: #371 merged; NH-5a (one track per disease, still one disease; identical histories, about +2% instructions): #372; the database in parts (`DataRegistry`, `DiseaseRecord`) and its implementation in four files, identical results: #373 merged (it renamed the `tool_info` column to `reg.tool_name` by mistake; fixed, with the columns of every output table now tested: #374 merged); NH-5b-1 (the outputs by disease: a `disease` argument and column everywhere, the accessors by margin; identical numbers): #375 merged; benchmark rerun at #373: UofUEpiBio/epiworld-benchmark#38 merged (no regression); rerun at #376 (with #375): stage `nh-5b-1`, branch `port-nh-5b1-outputs`, to be rerun on a quiet machine (the first run shared it with other work; callgrind: +45 instructions in 1.12 billion, SEIR at 100,000 agents); NH-5b-2 (several diseases in the engine: one engine state per agent, a record per disease, `strain()`, targets by disease, `.of()`, "Removed (other disease)"; identical with one disease): #377 merged; benchmark rerun at #376: UofUEpiBio/epiworld-benchmark#39 (no regression); NH-5b-3 (transitions by strain, `get_hist_virus_transitions()`; the SEIR quarantine exemption by disease; the natural-history docs page): #378 merged; benchmark rerun at #377: UofUEpiBio/epiworld-benchmark#40 (scenario_04, GeoPops, 0.97 to 1.08: the one-disease stage update no longer inlined); its fix (`nh_step_stage<One>()`, the reaction check inline) with `DataBase::get_virus_name(id)` and `get_virus_disease(id)` (the wrappers label variant ids with them; mutations are not among the model's viruses): #379 merged; benchmark rerun at #379 (stage `nh-5b-3`): UofUEpiBio/epiworld-benchmark#41 merged (scenario_04 back to 0.96; no ratio grew by more than 10%) | re-vendored to #376 by #234 (merged); NH-5c (the ports of NH-5b-1 to 5b-3, vendoring #379): #235 merged | re-vendored to #376 with #46 (merged); NH-5c: #47 merged | NH-5c (the `disease` column; no targets bound): #32 merged | NH-5c (the `disease` column): #74 merged |
 | C++ extensions in the wrappers (user-written C++ on a model built in R or Python: `as_model()`, checked by the epiworld major version) | -- | #233 merged (`cpp_source_epiworld()`, `<epiworldR/extension.h>`) | #46 merged (`cpp_source()`, `get_include()`, `<epiworldpy/extension.hpp>`) | -- | -- |
 | MSVC: `M_PI` (not standard) in the lognormal draw broke the Windows wheels since #363 | #376 merged | #234 merged (re-vendor) | with #46 (merged) | with NH-5c | with NH-5c |
 | Phases 4, 5, 6 | not started | | | | |
 | Phase 7 (measles as presets: the generic sampler, one contact-tracing intervention; the final step before 1.0.0) | not started | | | | |
 
-epiworldRShiny (Section 6): not started; one port after the registry.
+epiworldRShiny (Section 6): the one port (to epiworldR and measles 1.0.0:
+layers, the registry, several diseases) is epiworldRShiny#60, merged into its
+new `v1-layers` branch (created 2026-11-17 from `main`), with #59 (the
+measles parameter table) included. The `*CONN` apps stay, as the base model
+plus a random-mixing layer. Later phases update it with the measles port
+(Phase 7).
 
 epiworld-benchmark (Section 8, 11.7): `v1-layers` branch; the catch-up (the
 `epiworld-v1` engine, stage 3d-1) is UofUEpiBio/epiworld-benchmark#31. Stage
@@ -1780,14 +1795,12 @@ Stages 3d-3a (#33) and 3d-3b (#34, pin 07ed7a0d) are merged with no
 regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 0.91 because the 0.x run happened to be faster (the 1.0 run was faster too).
 
-**Next** (as of the date above): this PR gives one disease its inlinable
-stage step again (scenario_04's regression at NH-5b-2), and adds the
-variants' names and diseases by id for the wrappers; the benchmark reruns
-at it. A two-disease scenario would need every engine of the benchmark, so
-the cost of several diseases stays measured with callgrind (#377). Then
-NH-5c (the wrapper ports of NH-5a, 5b-1 and 5b-2: the `disease`
-argument and column, targets by disease, `strain()`), the epiworldRShiny
-port, and Phases 4 to 6; Phase 7 (measles as presets) is the final step before the 1.0.0 release. The diagrams' pictures (`docs/assets/img`) are rendered
+**Next** (as of the date above): NH-5 is done, with its ports and a
+benchmark rerun (no regression). A two-disease benchmark scenario would need
+every engine, so the cost of several diseases stays measured with callgrind
+(#377). The epiworldRShiny port is merged. Then Phases 4 to 6; Phase 7 (measles as
+presets) is the final step before the 1.0.0 release. Appendix A is settled
+(2026-11-17). The diagrams' pictures (`docs/assets/img`) are rendered
 with `make -C include/measles all` and `make -C include/epiworld/models all`
 (mermaid.ink); they still show the labeled diagrams from before #370.
 
@@ -1809,3 +1822,58 @@ with `make -C include/measles all` and `make -C include/epiworld/models all`
 - **`main` -> `v1-layers`** merges, as in the wrappers. A conflict under
   `results/` takes `main`'s side, then `make collect`; the next rerun
   replaces the two C++ engines' records.
+
+---
+
+## Appendix A. Quarantine and isolation as layer-targeted interventions (reconciled with Phase 7, 2026-11-17)
+
+Raised on 2026-10-30, while 3d-1b (#341) was open. **Phase 7 (settled
+2026-11-16) adopted the idea**: one `ModelMeasles` on any layers, one
+contact-tracing intervention in the core instead of four copies of the loop,
+and `ModelSEIRQuarantine` becoming `ModelSEIR` with that intervention. This
+appendix keeps the idea's motivation and says how each of its questions was
+answered (the last three on 2026-11-17).
+
+### The idea
+
+With layers, a model only needs to describe the disease. The contact
+structure is the layers the user adds, and the public-health response is a
+set of interventions that target layers by name. For measles: isolation of
+detected cases; contact quarantine traced and applied on chosen layers (with
+`layers = "school"`, school contacts are traced and the quarantined stay out
+of school only, while households and community mixing keep running); and
+PEP, which already works this way (`InterventionMeaslesPEP`). A model with
+schools, households and a community contact matrix, with quarantine only at
+school, then needs no new model class.
+
+### The questions, answered
+
+1. **Quarantine as states or as a flag: neither, a status.** Since NH-4 and
+   NH-close, quarantine and isolation are statuses (Free, Quarantined,
+   Isolated, Hospitalized), orthogonal to the disease's stages: they no longer
+   multiply the disease's states, and the status history counts them, so an
+   intervention needs no history of its own. What the 2026-10-30 note called
+   a per-layer flag is Phase 4's exclusion keyed by status, per layer (added
+   to Phase 4's list).
+2. **Order of interventions: the order in which they were added**, at one
+   fixed point of the step (after the transmission and stage updates, before
+   the records), so results do not depend on anything else (settled
+   2026-11-17; implemented in Phase 4, which adds layer-targeted tools and
+   isolation and so first runs several actions in one step).
+3. **Detection lives in the tracing intervention** (settled 2026-11-17):
+   detection probability and delay are its options, so a model without
+   interventions has no detection parameters and the parameter belongs to the
+   policy that uses it. The cost, paid in Phase 7: the measles presets pass
+   detection to the intervention, and their parameter tables change.
+4. **Results change: answered.** Phase 7 changes the measles results with
+   the combination rule (Phase 6), and the expected values are updated once
+   for both. The checks are statistical, with realistic parameters (the
+   measles package is used for policy work).
+5. **Timing: answered.** Phase 7 is last, after Phases 4 and 6, and in
+   1.0.0. The removed models become defunct stubs naming `ModelMeasles` (or
+   `ModelSEIR`) plus the intervention.
+6. **Names** (settled 2026-11-17): `ModelMeasles` for the disease; the
+   intervention named by what it does (contact tracing, with quarantine and
+   isolation as its actions), taking the layers it traces and the layers it
+   excludes from. The exact spelling in each wrapper follows Section 6's
+   naming when Phase 7 binds it.
