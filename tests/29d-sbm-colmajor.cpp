@@ -50,7 +50,7 @@ EPIWORLD_TEST_CASE("SBM column-major", "[sbm-colmajor]") {
     {
         std::vector< double > degree_sum(n_blocks, 0.0);
 
-        epimodels::ModelSIR<> model(
+        epimodels::ModelSIR model(
             "a virus", std::accumulate(block_sizes.begin(), block_sizes.end(), size_t(0)), 0.01, 0.5, 0.3
         );
         model.verbose_off();

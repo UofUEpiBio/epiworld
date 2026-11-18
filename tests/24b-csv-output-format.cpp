@@ -8,12 +8,13 @@ using namespace epiworld;
  * This test verifies that all CSV outputs have proper quoting for string fields,
  * which is necessary for correct parsing by data.table::fread in R.
  * 
- * All string fields (virus names, tool names, state labels) should be quoted.
+ * All string fields (virus names, tool names, statuses and stages) should be
+ * quoted.
  */
 EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
 
     // Create a model with both virus and tools
-    epimodels::ModelSEIR<> model(
+    epimodels::ModelSEIR model(
         "test virus", 100, 0.1, 0.5, 3.0, 7.0
     );
     add_random_mixing(model, 5.0);
@@ -41,7 +42,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
     std::cout << "\nCSV Format Validation Test:" << std::endl;
     std::cout << "============================" << std::endl;
 
-    // Test 1: virus_hist - should have quotes around virus name AND state
+    // Test 1: virus_hist - should have quotes around the disease and virus name, status and stage
     {
         std::ifstream file(fn.directory + "/csv_test_virus_hist.csv");
         std::string header, line;
@@ -52,14 +53,14 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
         std::cout << "   Header: " << header << std::endl;
         std::cout << "   Sample: " << line << std::endl;
         
-        // Count quotes - should have exactly 4 (opening and closing for virus and state)
+        // Count quotes - should have exactly 8 (disease, virus, status and stage)
         int quote_count = std::count(line.begin(), line.end(), '"');
-        std::cout << "   Quote count: " << quote_count << " (expected: 4)" << std::endl;
+        std::cout << "   Quote count: " << quote_count << " (expected: 8)" << std::endl;
         
-        REQUIRE(quote_count == 4);
+        REQUIRE(quote_count == 8);
     }
 
-    // Test 2: virus_info - should have quotes around virus name
+    // Test 2: virus_info - should have quotes around the disease and virus name
     {
         std::ifstream file(fn.directory + "/csv_test_virus_info.csv");
         std::string header, line;
@@ -70,14 +71,14 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
         std::cout << "   Header: " << header << std::endl;
         std::cout << "   Sample: " << line << std::endl;
         
-        // Should have quotes around virus name (exactly 2 quotes for virus name)
+        // Quotes around the disease and the virus name (4)
         int quote_count = std::count(line.begin(), line.end(), '"');
-        std::cout << "   Quote count: " << quote_count << " (expected: 2)" << std::endl;
+        std::cout << "   Quote count: " << quote_count << " (expected: 4)" << std::endl;
         
-        REQUIRE(quote_count == 2);
+        REQUIRE(quote_count == 4);
     }
 
-    // Test 3: tool_hist - should have quotes around state
+    // Test 3: tool_hist - should have quotes around the disease and status and stage
     {
         std::ifstream file(fn.directory + "/csv_test_tool_hist.csv");
         if (file.good()) {
@@ -88,18 +89,18 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
                 std::cout << "   Header: " << header << std::endl;
                 std::cout << "   Sample: " << line << std::endl;
                 
-                // Should have quotes around state (2 quotes)
+                // Should have quotes around status and stage (4 quotes)
                 int quote_count = std::count(line.begin(), line.end(), '"');
-                std::cout << "   Quote count: " << quote_count << " (expected: 2)" << std::endl;
+                std::cout << "   Quote count: " << quote_count << " (expected: 6)" << std::endl;
                 
-                REQUIRE(quote_count == 2);
+                REQUIRE(quote_count == 6);
             } else {
                 std::cout << "\n3. tool_hist: No data (model has no tools)" << std::endl;
             }
         }
     }
 
-    // Test 4: total_hist - should have quotes around state
+    // Test 4: total_hist - should have quotes around the disease and status and stage
     {
         std::ifstream file(fn.directory + "/csv_test_total_hist.csv");
         std::string header, line;
@@ -110,14 +111,14 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
         std::cout << "   Header: " << header << std::endl;
         std::cout << "   Sample: " << line << std::endl;
         
-        // Should have quotes around state (2 quotes)
+        // Should have quotes around status and stage (4 quotes)
         int quote_count = std::count(line.begin(), line.end(), '"');
-        std::cout << "   Quote count: " << quote_count << " (expected: 2)" << std::endl;
+        std::cout << "   Quote count: " << quote_count << " (expected: 6)" << std::endl;
         
-        REQUIRE(quote_count == 2);
+        REQUIRE(quote_count == 6);
     }
 
-    // Test 5: transmission - should have quotes around the virus and layer names
+    // Test 5: transmission - should have quotes around the disease and the virus and layer names
     {
         std::ifstream file(fn.directory + "/csv_test_transmission.csv");
         std::string header, line;
@@ -129,15 +130,15 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
             
             // Should have quotes around the virus and layer names (4 quotes)
             int quote_count = std::count(line.begin(), line.end(), '"');
-            std::cout << "   Quote count: " << quote_count << " (expected: 4)" << std::endl;
+            std::cout << "   Quote count: " << quote_count << " (expected: 6)" << std::endl;
             
-            REQUIRE(quote_count == 4);
+            REQUIRE(quote_count == 6);
         } else {
             std::cout << "\n5. transmission: No transmissions recorded" << std::endl;
         }
     }
 
-    // Test 6: transition - should have quotes around both from and to states
+    // Test 6: transition - should have quotes around the disease and the statuses and stages (from and to)
     {
         std::ifstream file(fn.directory + "/csv_test_transition.csv");
         std::string header, line;
@@ -149,15 +150,15 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
             
             // Should have quotes around from and to states (4 quotes)
             int quote_count = std::count(line.begin(), line.end(), '"');
-            std::cout << "   Quote count: " << quote_count << " (expected: 4)" << std::endl;
+            std::cout << "   Quote count: " << quote_count << " (expected: 10)" << std::endl;
             
-            REQUIRE(quote_count == 4);
+            REQUIRE(quote_count == 10);
         } else {
             std::cout << "\n6. transition: No transitions recorded" << std::endl;
         }
     }
 
-    // Test 7: reproductive_number - should have quotes around virus name
+    // Test 7: reproductive_number - should have quotes around the disease and virus name
     {
         std::ifstream file(fn.directory + "/csv_test_reproductive.csv");
         std::string header, line;
@@ -169,15 +170,15 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
             
             // Should have quotes around virus name (2 quotes)
             int quote_count = std::count(line.begin(), line.end(), '"');
-            std::cout << "   Quote count: " << quote_count << " (expected: 2)" << std::endl;
+            std::cout << "   Quote count: " << quote_count << " (expected: 4)" << std::endl;
             
-            REQUIRE(quote_count == 2);
+            REQUIRE(quote_count == 4);
         } else {
             std::cout << "\n7. reproductive_number: No data" << std::endl;
         }
     }
 
-    // Test 8: generation_time - no string fields, just numeric IDs
+    // Test 8: generation_time - the disease is its only string field
     {
         std::ifstream file(fn.directory + "/csv_test_generation.csv");
         std::string header, line;
@@ -186,7 +187,7 @@ EPIWORLD_TEST_CASE("CSV output format validation", "[csv][output]") {
             std::cout << "\n8. generation_time format:" << std::endl;
             std::cout << "   Header: " << header << std::endl;
             std::cout << "   Sample: " << line << std::endl;
-            std::cout << "   (No string fields - numeric IDs only)" << std::endl;
+            std::cout << "   (Only the disease is a string)" << std::endl;
         } else {
             std::cout << "\n8. generation_time: No data" << std::endl;
         }

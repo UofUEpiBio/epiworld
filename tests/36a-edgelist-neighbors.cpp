@@ -4,8 +4,9 @@
 
 using namespace epiworld;
 
-// A network layer builds each agent's neighbors from a graph in one pass (a
-// counting sort of the edge ends, see #274). The order of an agent's neighbors
+// A graph (AdjList) holds each vertex's neighbors as compressed rows, built in
+// one pass (a counting sort of the edge ends, see #274 and #339), and a network
+// layer loads them as they are. The order of an agent's neighbors
 // decides which transmitter roulette() picks, so the contract is exact:
 //
 // - undirected: i's neighbors are the distinct j with (i, j) or (j, i) in the
@@ -17,7 +18,7 @@ using namespace epiworld;
 // list, plus the errors an invalid list raises.
 
 // Neighbor ids of agent i, in the layer's order.
-static std::vector< size_t > nbrs(Model<> & model, size_t i)
+static std::vector< size_t > nbrs(Model & model, size_t i)
 {
     std::vector< size_t > res;
     for (auto * p : tests_net(model).neighbors_view(i))
@@ -68,21 +69,28 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
     for (bool directed : {false, true})
     {
 
-        epimodels::ModelSIR<> model("a virus", static_cast< int >(n), 0.1, 0.5, 0.3);
+        AdjList graph(source, target, static_cast< int >(n), directed);
+
+        epimodels::ModelSIR model("a virus", static_cast< int >(n), 0.1, 0.5, 0.3);
         model.verbose_off();
-        model.add_layer(layer::network(
-            "network", AdjList(source, target, static_cast< int >(n), directed)
-        ));
+        model.add_layer(layer::network("network", graph));
 
         REQUIRE(tests_net(model).is_directed() == directed);
         REQUIRE(model.size() == n);
 
+        // The graph holds the same rows as the layer, and counts the edges
+        // as given
         auto rows = expected_rows(source, target, n, directed);
         for (size_t i = 0u; i < n; ++i)
         {
             REQUIRE(nbrs(model, i) == rows[i]);
             REQUIRE(tests_net(model).get_degree(i) == rows[i].size());
+
+            auto row = graph(i);
+            REQUIRE(std::vector< size_t >(row.begin(), row.end()) == rows[i]);
         }
+        REQUIRE(graph.ecount() == source.size());
+        REQUIRE_THROWS_AS(graph(n), std::range_error);
 
         if (!directed)
         {
@@ -160,7 +168,7 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
 
     for (bool directed : {false, true})
     {
-        Model<> model(nbig);
+        Model model(nbig);
         model.add_layer(layer::network(
             "network", AdjList(bs, bt, nbig, directed)
         ));
@@ -190,14 +198,18 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
         std::length_error
     );
 
-    Model<> model(3);
-    model.add_state("Susceptible");
+    Model model(3);
+    model.add_param(0.5, "Transmission probability");
+    model.add_param(0.1, "Recovery rate");
+    model.add_virus(sir_virus("v"));
     model.add_layer(layer::network(
         "network", AdjList({0, 1}, {1, 2}, 3, false)
     ));
 
-    Model<> wrong_size(4);
-    wrong_size.add_state("Susceptible");
+    Model wrong_size(4);
+    wrong_size.add_param(0.5, "Transmission probability");
+    wrong_size.add_param(0.1, "Recovery rate");
+    wrong_size.add_virus(sir_virus("v"));
     wrong_size.add_layer(layer::network(
         "network", AdjList({0, 1}, {1, 2}, 3, false)
     ));
@@ -208,7 +220,7 @@ EPIWORLD_TEST_CASE("Edge list - neighbors are exact", "[edgelist]") {
     REQUIRE(nbrs(model, 1u) == std::vector< size_t >({0u, 2u}));
 
     // An empty list gives isolates.
-    Model<> empty(4);
+    Model empty(4);
     empty.add_layer(layer::network(
         "network", AdjList(std::vector< int >{}, std::vector< int >{}, 4, false)
     ));

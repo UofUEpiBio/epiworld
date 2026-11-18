@@ -16,7 +16,7 @@ int main(int argc, char * argv[]) {
     }
 
     omp_set_num_threads(nthreads);
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "a virus", // Name of the virus
         n_agents,
         0.01,      // Initial prevalence
@@ -28,7 +28,7 @@ int main(int argc, char * argv[]) {
         "network", rgraph_smallworld(n_agents, 4, .01, false, model)
     ));
 
-    auto sav = make_save_run<>(std::string("%03lu-episim.txt"));
+    auto sav = make_save_run(std::string("%03lu-episim.txt"));
     model.run_multiple(100, nsims, 222, sav, true, true, nthreads);
 
     model.print();

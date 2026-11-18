@@ -17,10 +17,10 @@ namespace {
 
 struct Outcome {
     std::vector< int > date, source, target, virus, exposure, layer, hist;
-    std::vector< epiworld_fast_uint > states;
+    std::vector< int > states;
 };
 
-Outcome outcome_of(Model<> & model)
+Outcome outcome_of(Model & model)
 {
     Outcome o;
     model.get_db().get_transmissions(
@@ -29,9 +29,9 @@ Outcome outcome_of(Model<> & model)
 
     std::vector< int > date;
     std::vector< std::string > state;
-    model.get_db().get_hist_total(&date, &state, &o.hist);
+    model.get_db().get_hist_total(&date, nullptr, &state, &o.hist);
 
-    o.states = model.get_agents_states();
+    o.states = model.get_agents_stages();
     return o;
 }
 
@@ -49,7 +49,7 @@ void require_same(const Outcome & a, const Outcome & b)
 
 // Every transmission (seeds have source -1) went from an agent to one that
 // lists it among its neighbors. Returns how many there were.
-size_t require_along_ties(Model<> & model, const Outcome & o)
+size_t require_along_ties(Model & model, const Outcome & o)
 {
     size_t n = 0u;
     for (size_t k = 0u; k < o.source.size(); ++k)
@@ -84,14 +84,12 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     }
 
     auto run_path = [&](bool directed, size_t seed_agent, bool queuing) {
-        epimodels::ModelSIR<> model("a virus", n, 0.0, 1.0, 0.0);
+        epimodels::ModelSIR model("a virus", n, 0.0, 1.0, 0.0);
         model.verbose_off();
         model.add_layer(layer::network(
             "network", AdjList(source, target, n, directed)
         ));
-        model.get_virus(0u).set_distribution(
-            distribute_virus_to_set<>({seed_agent})
-        );
+        model.assign_virus(0u, assign::agents({seed_agent}));
         if (!queuing)
             model.queuing_off();
         model.run(2 * n, 42);
@@ -99,7 +97,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     };
 
     const epiworld_fast_uint infected = 1u; // Susceptible, Infected, Recovered
-    std::vector< epiworld_fast_uint > everyone(n, infected);
+    std::vector< int > everyone(n, infected);
 
     for (bool queuing : {true, false})
     {
@@ -123,7 +121,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
 
         // Seeded at the start: agent 0 is exposed to 1, but nobody to 0.
         Outcome down = run_path(true, 0u, queuing);
-        std::vector< epiworld_fast_uint > only_0(n, 0u);
+        std::vector< int > only_0(n, 0u);
         only_0[0u] = infected;
         REQUIRE(down.states == only_0);
         REQUIRE(down.source == std::vector< int >({-1}));
@@ -137,7 +135,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     // The same network and seeds, with queuing on and off and each transmission
     // mode requested: all runs must match, and they all pull.
     auto run_random = [](bool queuing, const char * mode) {
-        epimodels::ModelSEIR<> model("a virus", 1500u, 0.01, 0.5, 3.0, 0.2);
+        epimodels::ModelSEIR model("a virus", 1500u, 0.01, 0.5, 3.0, 0.2);
         model.verbose_off();
         model.seed(2026);
         model.add_layer(layer::network(
@@ -174,7 +172,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
     for (bool queuing : {true, false})
     {
 
-        epimodels::ModelSIR<> model("a virus", n, 0.0, 1.0, 0.0);
+        epimodels::ModelSIR model("a virus", n, 0.0, 1.0, 0.0);
         model.verbose_off();
         model.add_layer(layer::network(
             "network", AdjList(source, target, n, true)
@@ -182,9 +180,8 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
 
         size_t offered = 0u;
         auto & v = model.get_virus(0u);
-        v.set_distribution(distribute_virus_to_set<>({static_cast<size_t>(n - 1)}));
-        v.set_queue(Queue<int>::NoOne, Queue<int>::NoOne, Queue<int>::NoOne);
-        v.set_mutation([&offered](Agent<> *, Virus<> &, Model<> *) -> bool {
+        model.assign_virus(0u, assign::agents({static_cast<size_t>(n - 1)}));
+        v.set_mutation([&offered](Agent *, Virus &, Model *) -> bool {
             ++offered;
             return false;
         });
@@ -195,7 +192,7 @@ EPIWORLD_TEST_CASE("Directed networks - infection follows the ties", "[directed]
         model.run(15, 42);
 
         INFO("queuing " << (queuing ? "on" : "off"));
-        REQUIRE(model.get_agents_states() == everyone);
+        REQUIRE(model.get_agents_stages() == everyone);
         REQUIRE(offered == 54u + 6u * 10u);
 
     }

@@ -12,8 +12,8 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple]") {
 
     // Create a simple SIR model
-    epimodels::ModelSIR<> model(
-        "test virus", 1000, 10.0, 0.9, 0.3
+    epimodels::ModelSIR model(
+        "test virus", 1000, 0.01, 0.9, 0.3
     );
 
     model.seed(1231);
@@ -29,7 +29,7 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
     // Create a saver function that writes virus history
     auto fn = epi_temp_file("24c-virus-hist-multiple-sims", "run_multiple_test-%i");
     const char* test_prefix = fn.full_path.c_str();
-    auto saver = make_save_run<>(
+    auto saver = make_save_run(
         test_prefix,
         false,  // total_hist
         false,  // virus_info
@@ -75,16 +75,12 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
         // Read data lines
         while (std::getline(file, line)) {
             line_count++;
-            // Extract date (first column after thread column in debug mode)
-            std::istringstream iss(line);
-            
-            #ifdef EPI_DEBUG
-            int thread_id, date;
-            iss >> thread_id >> date;
-            #else
+            // The date comes after the disease, which is quoted and may
+            // have spaces (and after the thread column in debug mode)
+            const size_t close = line.find('"', line.find('"') + 1u);
+            std::istringstream iss(line.substr(close + 1u));
             int date;
             iss >> date;
-            #endif
             
             dates_in_file.insert(date);
         }
@@ -105,10 +101,11 @@ EPIWORLD_TEST_CASE("Virus history with run_multiple", "[virus_hist][run_multiple
 
     // Also check that the model's current database only has the LAST simulation's data
     std::vector<int> virus_date, virus_id, virus_counts;
-    std::vector<std::string> virus_state;
+    std::vector<std::string> virus_state, virus_status;
     model.get_db().get_hist_virus(
         virus_date,
         virus_id,
+        virus_status,
         virus_state,
         virus_counts
     );

@@ -1,3 +1,4 @@
+#include <map>
 #include "tests.hpp"
 
 using namespace epiworld;
@@ -22,13 +23,12 @@ static std::vector< std::string > split_csv_line(const std::string & line)
 
 EPIWORLD_TEST_CASE("SaverMemory matches the saved files", "[saver-memory]") {
 
-    epimodels::ModelSEIR<> model("a virus", 500, 0.1, 0.3, 4.0, 0.2);
+    epimodels::ModelSEIR model("a virus", 500, 0.1, 0.3, 4.0, 0.2);
     add_random_mixing(model, 3.0);
 
-    Tool<> tool("a tool");
+    Tool tool("a tool");
     tool.set_susceptibility_reduction(.5);
-    tool.set_distribution(distribute_tool_randomly<>(0.3, false));
-    model.add_tool(tool);
+    model.add_tool(tool, assign::count(0.3));
     model.verbose_off();
 
     const auto & whats = run_output_names();
@@ -41,7 +41,7 @@ EPIWORLD_TEST_CASE("SaverMemory matches the saved files", "[saver-memory]") {
     auto fn = epi_temp_file("40a-saver-memory-files", "%03lu");
     model.run_multiple(
         30, nsims, 123,
-        make_save_run<>(
+        make_save_run(
             fn.full_path, true, true, true, true, true, true, true, true,
             true, true, true, true
         ),
@@ -111,6 +111,36 @@ EPIWORLD_TEST_CASE("SaverMemory matches the saved files", "[saver-memory]") {
 
         }
 
+    }
+
+    // The columns of each table (after sim_id): what the wrappers read. Every
+    // table but the tools' starts with the disease of the row
+    const std::map< std::string, std::vector< std::string > > columns = {
+        {"virus_info", {"disease", "virus_id", "virus", "date_recorded", "parent"}},
+        {"virus_hist", {"disease", "date", "virus_id", "virus", "status", "stage", "n"}},
+        {"tool_info", {"id", "tool_name", "date_recorded"}},
+        {"tool_hist", {"disease", "date", "id", "status", "stage", "n"}},
+        {"total_hist", {"disease", "date", "nviruses", "status", "stage", "counts"}},
+        {"transmission", {"disease", "date", "virus_id", "virus", "source_exposure_date",
+            "source", "target", "layer_id", "layer"}},
+        {"transition", {"disease", "date", "from_status", "from_stage", "to_status",
+            "to_stage", "counts"}},
+        {"reproductive", {"disease", "virus_id", "virus", "source", "source_exposure_date",
+            "rt"}},
+        {"generation", {"disease", "virus", "source", "source_exposure_date", "gentime"}},
+        {"active_cases", {"disease", "date", "virus_id", "virus", "active_cases"}},
+        {"outbreak_size", {"disease", "date", "virus_id", "virus", "outbreak_size"}},
+        {"hospitalizations", {"disease", "date", "virus_id", "tool_id", "count", "weight"}}
+    };
+    REQUIRE(columns.size() == whats.size());
+    for (const auto & what : whats)
+    {
+        INFO("output " << what);
+        const auto & names = results.at(what).colnames;
+        REQUIRE(
+            std::vector< std::string >(names.begin() + 1, names.end()) ==
+            columns.at(what)
+        );
     }
 
     // Something was actually compared

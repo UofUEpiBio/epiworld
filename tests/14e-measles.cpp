@@ -7,7 +7,7 @@ EPIWORLD_TEST_CASE("Vaccine efficacy on measles school", "[ModelMeaslesSchoolVax
     
     // Queuing doesn't matter and get results that are meaningful
     int n_seeds = 1;
-    measles::ModelMeaslesSchool<> model_0(
+    measles::ModelMeaslesSchool model_0(
         500,    // Number of agents
         n_seeds, // Number of initial cases
         20.0,     // Contact rate
@@ -27,17 +27,12 @@ EPIWORLD_TEST_CASE("Vaccine efficacy on measles school", "[ModelMeaslesSchoolVax
     );
 
     // Setting the distribution function of the initial cases
-    model_0.get_virus(0).set_distribution(
-        [&n_seeds](Virus<> & v, Model<> * m) -> void {
-        for (int i = 0; i < n_seeds; ++i)
-            m->get_agents()[i].set_virus(*m, v);
-        return;
-    });
+    model_0.assign_virus(0, assign::agents(first_agents(n_seeds)));
 
     size_t nsims = 500;
     std::vector< double > outbreak_sizes(nsims, 0.0);
     
-    auto saver = [&outbreak_sizes](size_t n, Model<> * model) {
+    auto saver = [&outbreak_sizes](size_t n, Model * model) {
 
         // Extracting the outbreak size
         std::vector< int > date, virus, outbreak;

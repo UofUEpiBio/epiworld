@@ -15,8 +15,9 @@ contact probability per pair (`q = 1`: cliques, no ties stored); one sampler
 drawing distinct contacts for both forms; tracing within groups by a history
 of moves and absences (D9, D11). Revised 2026-10-28: epiworld-benchmark
 tracks the work with a 1.0.0 engine, rerun at every merged phase (Sections 6,
-8, 11.7). Appendix A (2026-10-30) records a design still in discussion:
-quarantine, isolation and tracing as layer-targeted interventions.
+8, 11.7). Appendix A (2026-10-30) records the idea of quarantine, isolation
+and tracing as layer-targeted interventions; reconciled with Phase 7 on
+2026-11-17, it lists what Phase 7 settled and the three questions still open.
 **Goal:** let a single model draw transmission from several contact sources at
 once -- e.g., mixing within households, a workplace network, and mixing in
 public spaces -- each with its own structure, weight, and participation rules.
@@ -226,13 +227,15 @@ turnover is high relative to contacts.
     `agents_smallworld()`, `agents_from_edgelist()` and `agents_from_adjlist()`
     are removed. A different size is a new model.
 20. **Networks come from generators.** A `layer::Network` holds a generator, a
-    function that receives the model and returns a graph (`AdjList` until a
-    flat edge list replaces it), and calls it at every reset, so every run and
+    function that receives the model and returns a graph (an `AdjList`:
+    each vertex's ties as compressed rows, built from an edge list by a
+    counting sort, #339), and calls it at every reset, so every run and
     replicate draws a new network from its own seed. Generators live outside
     the layer (`graph::smallworld(k, p)`, wrappers of the `rgraph_*`
     functions), so adding one is writing a function. A fixed network is built
     from a graph instead (`layer::network(name, adjlist)`), read from a file or
-    drawn once; it is restored at reset if dirty. Rewiring follows the same pattern: the layer holds a
+    drawn once; it is restored at reset if dirty, from a copy taken before
+    its first edit (a network never edited is held once). Rewiring follows the same pattern: the layer holds a
     rewiring function called at the end of each step (degree-preserving
     rewiring is the first; an ERGM-style rewirer can be another), reading its
     rate from a model parameter (point 17).
@@ -546,6 +549,20 @@ generative model (e.g., a co-rider network from smart-card records), use a
 `Network` layer whose ties are each active with probability `a` per step -- the
 OpenABM workplace approach, which is one more multiplier on `p` (thinning).
 
+**Schools at city scale (settled 2026-11-02).** A city model with schools and
+age mixing (the measles use case) is three layers: households (within groups,
+`q` near 1), schools (within groups, **one group per school**), and the
+community (a contact matrix across a few age groups, times "Contact rate").
+Age mixing stays small however large the city. A matrix across the classrooms
+of a whole city does not scale (`G x G` entries, a row walked per agent), so
+school-level groups are the default: enrollment by school is the data usually
+at hand, and sampling costs only the agent's own school. Per-school
+probabilities `q[g] = c / (n_g - 1)` give about `c` school contacts a day
+whatever the enrollment. Structure inside schools, when there is data for it,
+is a second within-group layer of grades or classrooms (higher `q`) next to the
+school layer (low `q`), accepting that classmates also meet, rarely, in the
+school layer; one matrix layer per school only suits a handful of schools.
+
 **Same-step exposures.** A step is a day: an agent's bus, workplace, and
 household exposures on one day combine as simultaneous. That is fine with an
 incubation period and is the same assumption as for all layers; finer time
@@ -695,7 +712,7 @@ in the release notes.
 All work goes on the long-lived integration branch **`v1-layers`**, one PR per
 phase into it. `master` stays releasable (0.x fixes keep landing there and are
 merged into `v1-layers` regularly). `v1-layers` merges into `master` and is
-released as 1.0.0 when Phase 6 is done. Version bumps: none per phase on
+released as 1.0.0 when Phase 7 is done. Version bumps: none per phase on
 `v1-layers`; the first commit there sets the development version to 1.0.0.
 
 **Wrappers follow the core, one merged phase at a time.** epiworldR,
@@ -916,6 +933,18 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
     `layer::Mixing` is gone: a mixing layer needs `set_groups()`. Moves
     between runs on a drawn grouping throw (they would be lost).
     `groupmates_of()` windows start on day 1.
+  - **3d-1b. Networks built without maps** (#339, as built; a fix the
+    benchmark rule of Section 8 called for, not a phase). `AdjList` holds
+    compressed rows (sorted, without repeats) instead of a `std::map` per
+    vertex, so a layer loads an edge list with one counting sort; its
+    constructor is unchanged (the wrappers only re-vendor), `get_dat()` goes
+    and `operator()(i)` returns a row. A fixed layer copies its graph for
+    reset only before the first edit. `rgraph_smallworld()` rewires on
+    sorted rows, and both rewirings pick egos by bisection
+    (`pick_cumulative()`) instead of a scan of every agent per attempt.
+    The same draws throughout: old and new code agree on histories,
+    transmissions and edge lists (fixed, generated, rewired, edited, and
+    `run_multiple()`) and on small-world graphs up to 100,000 agents.
   - **3d-2. Measles models read their groups from a layer** and keep their
     own samplers (with replacement, the rash pool at rate `r`); their
     contacts go to the layer's log, and the PEP intervention reads the layer
@@ -938,7 +967,49 @@ Phase 3 is built as four PRs into `v1-layers`, in this order:
       consolidation, after Phase 4 (see there).
   - **3d-3. Entities removed** (class, agent memberships, the entity tool,
     virus and sampling helpers), with the model's own contact tracer;
-    `Bubbles` complete ties on a within-group layer; the example model.
+    `Bubbles` complete ties on a within-group layer; the example model. In
+    two PRs (settled 2026-10-30):
+    - **3d-3a** (as built): `Entity` and its distribution functions,
+      `Agent`'s memberships, the entity events (`AddEntity`,
+      `RemoveEntity`; `Event` and `_add_event()` lose the entity
+      argument), `AgentsSample` from an entity or from an agent's entities
+      (sampling from the model stays), `distribute_tool_to_entities()` and
+      `distribute_virus_to_entities()` (replaced by the `_to_groups()`
+      versions of 3d-2), and the model's contact tracer
+      (`contact_tracing_on()`, `get_contact_tracing()`,
+      `make_contact_tracing_post_sampling()`; a layer keeps its own log).
+      Draw for draw identical for everything that remains.
+    - **3d-3b** (as built): `Bubbles` with `BubbleTies::Complete` moves
+      agents in a within-group `Mixing` layer, the household layer, instead
+      of adding clique ties to a network. Settled 2026-11-02:
+      - `Bubbles::make_layer()` builds the layer (named in `set_ties()`):
+        one group per household (`household_id`), `q = 1`. The user adds it
+        (`model.add_layer(bubbles.make_layer())`), as every layer.
+      - The bubble layer *is* the household layer, so a model has no second
+        household layer (which would double household contacts): outside
+        the policy window households meet in full; while it is in force each
+        agent is in its bubble's group (a bubble never splits a household);
+        when it lifts, agents go back to the group they had at reset. Unlike
+        the clique ties, households now meet before and after the window.
+      - Layers add up: bubblemates also tied in a network layer meet in both.
+      - How often bubblemates meet (settled the same day): contact
+        probabilities per pair (D9: numbers, not model parameters).
+        `make_layer(q_household)` sets the households'; `set_ties(Complete,
+        layer, q_bubble)` the one Bubbles gives a bubble that merged
+        households while the policy is in force (a household on its own
+        keeps its own), through `set_contact_prob()`, restored when it
+        lifts. One probability per group, so in a merged bubble housemates
+        meet at `q_bubble` too; the finer split (subgroups with their own
+        rate) waits for a study that needs it. No `layer::Mixing` changes.
+      - Moves are the layer's edits (end of step; a reset restores the
+        households; a traced layer records them), so the tie books go: no
+        `HeldTies`, no hand-over between policies, no
+        `get_created_ties()`/`restore_network()`. Two `Complete` policies
+        need two layers (sharing one throws), and `Complete` runs within
+        `Model::run()`. The grouping reads network layers only, so it is the
+        same draw for draw under either `BubbleTies`.
+      The example model is `examples/23-layers` (households, a work network,
+      public spaces with an age contact matrix).
 
 The list below is the whole of Phase 3.
 
@@ -1160,6 +1231,14 @@ identical to `ModelSEIRQuarantine` on the same layer.
 - Schedules (D10), persistence (D8), membership changes notified to the layer
   queue.
 - Bubbles: exclusion from other layers (the bubble layer itself is Phase 3).
+- Exclusion keyed by status, per layer (added 2026-11-17, for Phase 7's
+  tracing intervention, Appendix A): a layer can exclude the agents in given
+  statuses (e.g., the school layer excludes "Quarantined", while households
+  and the community keep them), and isolation excludes from every layer but
+  the ones it keeps. The status records who is quarantined, so the history
+  needs nothing new.
+- The order of interventions in a step (Appendix A, question 2): one rule,
+  settled here.
 - An example model: the Phase 3 model plus a transit layer (morning and evening
   trips, route pools, `q < 1`, weekdays only). Another: an ERGM-style rewirer
   (tie dissolution plus Metropolis-Hastings toggles on given coefficients;
@@ -1174,21 +1253,9 @@ identical to `ModelSEIRQuarantine` on the same layer.
   - when part of a group is excluded, a matrix layer's contact rate stays
     constant and a within-group layer's probability per pair does.
 
-### Measles consolidation -- after Phase 4 (settled 2026-10-28)
+### Measles consolidation
 
-The measles models keep their own samplers in 3d-2 because the generic one
-has no reduced contact rate for an infectious state. Once Phase 4's
-participation gives Rash agents a fraction `r` of their contacts (and the
-isolated none), `ModelMeaslesMixing` and `ModelMeaslesSchool` become one
-`ModelMeasles` on the generic sampler, on any layers: a mixing layer for
-mixing, a network for a network model, both for both; the school model is
-`ModelMeasles` with a one-group mixing layer and a contact rate. "Rash
-reduction contact rate" becomes the layer's participation of Rash. The
-risk-quarantine model keeps its own policy on the same layers. Contacts are
-then distinct (D9), so results change and the checks are statistical (R0,
-transition rates), as for the consolidated SEIR models. Going further --
-quarantine, isolation and tracing as interventions that target layers, so the
-risk-quarantine model goes too -- is in discussion (Appendix A).
+Moved to Phase 7, the plan's final step before the 1.0.0 release (2026-11-16).
 
 ### Phase 5 -- push for mixing layers
 
@@ -1205,19 +1272,152 @@ risk-quarantine model goes too -- is in discussion (Appendix A).
   generic constructor); epiworldjs drops its own `cpp/registry.hpp`.
 - Then epiworldRShiny is ported, once (see Section 6): its apps build every
   model with layers and the registry's constructor.
+- **As built** (settled 2026-11-03):
+  - The registry is a core component (`registry-bones.hpp`,
+    `registry-meat.hpp`): `ParamInfo`, `ModelArgs`, `ModelInfo`
+    and `ModelRegistry`, a value rather than global state. Each
+    registered model defines its entry next to its constructor, as a static
+    `model_info()`, and each library registers its models in its umbrella
+    header, next to their includes: `epimodels::register_models(registry)`
+    in `models.hpp`, `measles::register_models(registry)` in `measles.hpp`
+    (the core does not include `include/measles`). A registry starts empty;
+    every model then has the same API: `list_models()`, `get_model_info(id)`
+    and `make_model(id, values, virus_name)`.
+  - `make_model()` builds the model only. It has no layers, which the user adds
+    as for a model built directly; epiworldjs keeps its population presets
+    (random mixing, a contact matrix, a network) on top of the registry.
+  - Each `ParamInfo` carries both names: `arg`, the argument every wrapper
+    takes (`transmission_prob`, epiworldR's names), and `name`, the model
+    parameter it sets (`"Transmission probability"`; empty for `n` and the
+    prevalence). It also has the default, hard limits (checked before
+    building), whether the value is whole, and a description. Values are
+    numbers only: with entities gone and contact matrices on the layers, no
+    registered model takes anything else.
+  - A virus a user adds to a registered model is a strain of the model's own:
+    a copy of `get_virus(0)` with its own name and, if need be, its own
+    parameters (`Virus::use_param()`), so it has the same stages (V-1 dropped
+    the sequence it also needed). A model still carries
+    any number of viruses: this replaces epiworldR's per-model `add_virus.*`
+    methods. (#356 gave each entry its `InfectionStates`, the init, post and
+    removed states of the old API; #363 removed them with that API: see
+    `natural-history.md`.)
+  - Registered: SIS, SIR, SEIR, SISD, SIRD, SEIRD, SEIRQuarantine, SURV, and
+    the three measles models. `ModelSIRLogit` and `ModelDiffNet` take data
+    arrays and keep their own bindings.
+  - The defaults follow the wrappers' examples (epiworldjs' registry and the
+    measles R package). JS slider steps are not in the core.
+  - Measles' natural history lives in the model, not the virus, so a second
+    virus in a measles model inherits its timing: #355, independent of the
+    registry.
 
-### Phase 6 -- independent exposures, 1.0.0, bindings, docs
+### Variants by id, no sequence template -- after NH-2, before NH-3 (added 2026-11-06)
+
+Genetic sequences were meant for mutating viruses, but nothing uses them as
+sequences: every model, test, example and wrapper uses the default
+`TSeq = int`, and the tests that mutate (41, 42b, 52b) or tell viruses apart
+(42c) use the sequence as a counter. They cost a template parameter on every
+class (66 headers), a hasher, `default_sequence()`, and a guess that broke a
+test in #363: `add_virus()` treats a virus whose sequence is on record as
+that variant, so a copy of the model's virus silently merges with it. Two
+PRs, in this order:
+
+- **V-1: variants by id** (changes behavior and the API).
+  - A variant gets an id when it is created, by `add_virus()` (always a new
+    variant) or by a mutation, and records its parent's id. The lineages
+    and the tools' lineage targets (42b, 42c) work on those ids.
+  - A mutation function says whether the virus mutated and may change its
+    parameters (`use_param()`); the engine gives the new variant its id and
+    parent.
+  - Removed: `set_sequence()`, `get_sequence()`, the hasher, the
+    `default_sequence()` specializations, the merge by sequence, and the
+    sequence columns of the outputs. A strain of a model's virus is a copy
+    with its own name (the registry's recipe loses its `set_sequence()`).
+- **V-2: no `TSeq` template.** `Model<TSeq>`, `Virus<TSeq>`, `Agent<TSeq>`
+  and the rest become plain classes (`Model<>` becomes `Model`). Mechanical,
+  but it touches every header and every wrapper, so it goes in alone, when
+  no other code PR is open on `v1-layers`.
+
+**When.** Right after #363 (NH-1 and NH-2) merges, before NH-3 (docs, model
+diagrams, the benchmark runners) and NH-4 (the wrapper ports). The docs are
+then written once against the final types, and each wrapper ports the
+natural history, the variants and the plain classes in one pass (Section
+11.5). Both PRs come before Phase 4.
+
+### Phase 6 -- independent exposures, docs
 
 - Switch the combination rule to independent exposures (D1) in one commit that
   updates the expected results; add the analytic P(infection) test.
-- Merge `v1-layers` into `master`; release 1.0.0.
-- Wrappers: the port of Phase 6 updates expected values for the new rule; then
-  each wrapper's `v1-layers` merges into its `main` and is released after
-  epiworld 1.0.0 (measles after epiworldR is on CRAN, then epiworldRShiny
-  after measles).
+- Wrappers: the port of Phase 6 updates expected values for the new rule.
 - Docs: new `docs/impl/contact-layers.md`; update
   `mixing-and-entity-distribution.md`, `queueing-system.md`,
   `transmission-sampling.md`; migration guide.
+
+### Phase 7 -- measles as presets (the final step before 1.0.0; settled 2026-11-16)
+
+With the natural history and several diseases, the measles disease is about
+90 lines of declarations (`measles_build()`). What remains measles-specific
+code is mostly engine work the core can do, plus what only measles has.
+Phase 7 moves the first into the core, so that the measles library keeps only
+its knowledge: the disease's declaration, PEP, and validated parameters.
+
+- **The generic sampler replaces `SamplerMixing`** (the consolidation settled
+  on 2026-10-28). The measles models keep their own sampler only because the
+  generic one had no reduced contact rate for an infectious stage. With the
+  stage contact weights (`set_contact()`, NH-2) and Phase 4's participation,
+  "Rash reduction contact rate" becomes the weight of Rash (1 minus the
+  parameter), and the isolated get none, as now. Then:
+  - `ModelMeaslesMixing` and `ModelMeaslesSchool` become one `ModelMeasles`
+    on any layers: a mixing layer for mixing, a network for a network model,
+    both for both. The school model is `ModelMeasles` with a one-group mixing
+    layer and a contact rate.
+  - `samplermixing.hpp` (about 400 lines) and `measles_mixing_layer()`'s
+    one-layer restriction go.
+  - Contacts are then distinct (D9), so results change. The checks are
+    statistical (R0, transition rates, final size), as for the consolidated
+    SEIR models; the hazard-vs-roulette comparison of 2026-10-20 found the
+    measles final size unchanged by the infection rule.
+- **One contact-tracing intervention in the core.** The quarantine process
+  is written four times (`ModelSEIRQuarantine`, `ModelMeaslesMixing`,
+  `ModelMeaslesMixingRiskQuarantine`, `ModelMeaslesSchool`): from each
+  detected agent, its logged contacts within a window, found with a
+  probability, skipping the exempt (by tool name) and the unwilling, then
+  quarantined (or isolated if already symptomatic). It becomes one core
+  intervention on the layers' tracing logs (3c-1), with the window, the
+  success probability, the exemptions, the willingness and the stage that
+  isolates instead as options. The risk model's levels (the quarantine period
+  by risk) and the school's whole-group quarantine are options or small
+  policies on top of it, not copies of the loop. `ModelSEIRQuarantine`
+  becomes `ModelSEIR` with that intervention.
+- **What measles keeps:** the disease's declaration and its links to the
+  statuses (a function any model can call, so measles can be added to a
+  model with other diseases), `InterventionMeaslesPEP` (the MMR and IG
+  windows, the IG half-life, the exposure dating and cohort of #253), the
+  registered presets, and, in the R package, the parameter table with
+  sources, the Short Creek data, calibration and the vignettes.
+- **When.** Last, and in 1.0.0: it needs Phase 4's participation, and it
+  changes the measles results, so it follows the combination rule (Phase 6).
+  The measles expected values are then updated once for both changes, and the
+  release waits for it. The migration guide covers the removed models.
+- Tests (end-to-end):
+  - `ModelMeasles` on a mixing layer against today's `ModelMeaslesMixing`:
+    final size, R0 and the stage durations agree statistically; the same
+    model on a network and on both layers runs.
+  - The tracing intervention reproduces each removed loop's behavior on the
+    same layer (who is quarantined, by day), given the same draws where the
+    order allows, statistically otherwise.
+  - Measles plus a second disease in one model, with PEP.
+
+### Release 1.0.0 -- after Phase 7
+
+- Merge `v1-layers` into `master`; release 1.0.0.
+- Each wrapper's `v1-layers` merges into its `main` and is released after
+  epiworld 1.0.0 (measles after epiworldR is on CRAN, then epiworldRShiny
+  after measles).
+- **measles needs the released epiworldR 1.0.0, with NH-4.** Its
+  `DESCRIPTION` requires `epiworldR (>= 1.0.0)`, which the development
+  version `1.0.0-0` on `v1-layers` does not satisfy, and is not bumped on
+  `v1-layers` (measles#72). Do not publish measles until epiworldR 1.0.0,
+  with the NH-4 port (epiworldR#231), is on CRAN.
 
 ---
 
@@ -1236,6 +1436,14 @@ risk-quarantine model goes too -- is in discussion (Appendix A).
 - Phase 0: rule overhead on real models.
 - Phase 2: no regression for pull/push on network models; `reset()` cost per
   replicate with the dirty flag vs the full agent backup.
+- Any change to how a network layer is built: build time and peak memory at
+  1,000,000 agents, from an edge list and from a generator (Phase 2 measured
+  the steps but not the build, which #339 found 5-9 times slower than 0.x).
+  Measured for 3d-1b (2026-10-29, devcontainer, g++ -O2, CPU time, medians
+  of 5 interleaved runs; mean degree 10): from an edge list, 1.65 s and
+  823 MiB peak before, 0.16 s and 198 MiB after, at 1,000,000 agents (0.18
+  vs 0.009 s at 100,000); `graph::smallworld()`, which runs at every reset,
+  0.96 vs 0.044 s at 100,000 agents and 75.8 vs 0.46 s at 1,000,000.
 - Phase 3: overhead of a single-layer model through the multi-layer path vs the
   Phase 2 path (to decide whether a fast path must stay).
 - Phase 3b: cost per step of a within-group layer of 100k households
@@ -1294,11 +1502,14 @@ exercise the network layer, the queue, and the single-layer path that every
 | Stage | Rerun at | Runner change | What to look for |
 |---|---|---|---|
 | Catch-up | Phase 3d-1 (through #336) | the `epiworld-v1` runners, written once | a network layer against the in-`Agent` network: build time, memory of the ties, time per step |
+| 3d-1b (#339) | its merge | none | build time and peak memory back to the 0.x level; the 1,000,000-agent simulation times rechecked |
 | 3d-2, 3d-3 | each merge | none expected | no change: the scenarios use no entities, so a change is a cost on the shared path |
 | Registry (#312) | its merge | none, unless building a model by hand changes (the runners add their own states) | build time |
+| NH-1, NH-2 (#363); V-1, V-2 | NH-3 (the runners are rewritten then) | the runners declare the SEIRH as a natural history and use the plain classes (`Model`, not `Model<>`) | time per step of the cell table and the calendar; V-2 should change nothing |
 | Phase 4 | each merge | if participation replaces `set_infectious_states()` | cost per step of the participation checks |
 | Phase 5 | its merge | none | no change (push for mixing layers; the scenarios have none) |
 | Phase 6 | its merge | none | the combination rule changes the draws: attack rates are checked against the other engines, and `epiworld-v1` gets calibration factors only if it leaves the agreement the others meet; time per step of independent exposures (Phase 0: about 4 ns per contact) |
+| Phase 7 | its merge | none (the scenarios have no measles model or tracing) | no change; measles has its own statistical checks |
 | `master` -> `v1-layers` | a merge that touches the run loop, the queue, or networks | none | as the merged PR describes |
 | 1.0.0 | after epiworld, epiworldR and epiworldpy 1.0.0 are tagged | the swap (below) | the published comparison with the other engines |
 
@@ -1518,16 +1729,20 @@ that on `v1-layers` this plan is the source of truth.
 | Consolidation | The removed models (`ModelSIRMixing`, `ModelSEIRMixing`, the four `*CONN`, the two SEIR quarantine models) become defunct stubs naming the replacement (the plain model + `add_layer()`; `ModelSEIRQuarantine`); the parameter that sets a mixing layer's contact level; tests and the vignettes that use them (epiworldR: getting-started, advanced-modeling, mixing, run-multiple, implementation) rewritten. epiworldjs: registry entries. measles: unaffected. |
 | 3d-1 | `grouping::random()` and the generator form of `set_groups()` (epiworldR `grouping_random()`, epiworldpy `grouping.random()`). |
 | 3d-2 | The measles mixing models lose `contact_matrix`: the user adds the mixing layer (`add_layer(model, layer_mixing("mixing", groups, contact_matrix = cm))`); bind `distribute_tool_to_groups()` / `distribute_virus_to_groups()` (vaccination by school, the measles vignettes); measles R package: constructors, tests and vignettes rewritten for the layer; epiworldjs: the measles presets add the layer instead of entities. |
+| 3d-3b | `Bubbles`: bind `make_layer(q_household)` and the bubble contact probability (`set_ties()` / the constructor) (epiworldR, as built in #229: `bubbles(ties = "complete", layer, household_contact_prob, bubble_contact_prob)` builds the layer with `make_layer()` and adds it itself; the docs say which flavor and ties match which policy); `ties = "complete"` names the household layer, not a network layer; `get_created_ties()` / `restore_network()` (if bound) become defunct. |
 | 3d | Membership builders (replacing the entity distribution functions). Entities removed: R `src/entities.cpp`, the entity R functions and their tests (`test-entity_tools.R`, `test-distribute-to-set.R`); Python `entity.cpp`; JS registry entries -- all defunct stubs pointing to the layer-membership builders. Mixing layers take memberships instead of entities. measles package: its models move to layers, so its constructors, tests and vignettes are rewritten. |
-| Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()`; epiworldjs drops `cpp/registry.hpp`; measles registers its models. |
+| Registry (#312) | Per-model bindings replaced by `make_model()` / `list_models()` (plus `get_model_info()`), with the named constructors kept as thin shims taking `ParamInfo::arg` names; `add_virus()` adds a strain of the model's virus (epiworldR's `add_virus.*` methods go; see NH-4); epiworldjs builds from the core registry and keeps only its population presets and slider steps; measles calls `measles::register_models()`. |
+| Variants, no `TSeq` (V-1, V-2; with NH-4) | Ported together with the natural history (NH-4): the sequence bindings go (defunct stubs), variants are reported by id and parent, and `Model<>` becomes `Model` in the bindings. |
 | 4 | Exclusion / `isolate(agent, keep)`, layer-targeted tools, schedules, persistence. |
 | 5 | Re-vendor only, unless a push/pull setting becomes public. |
 | epiworldRShiny (once, after the registry) | Its apps (`inst/models/shiny_*.R`) build every model through the registry and layers: networks from `agents_smallworld()` become a `layer_network()`, the `*CONN` apps a base model with a random-mixing layer (or dropped, since the base apps then cover them), renamed arguments (`transmission_prob`, `latent_period`); the measles app follows the measles port. |
-| 6 | Expected values for the new combination rule; vignettes and migration guide; release in order (epiworld 1.0.0, then epiworldR, epiworldpy, epiworldjs, then measles after epiworldR is on CRAN, then epiworldRShiny). |
+| 6 | Expected values for the new combination rule; vignettes and migration guide. |
+| 7 | `ModelMeaslesMixing` and `ModelMeaslesSchool` become defunct stubs naming `ModelMeasles` plus a layer; `ModelSEIRQuarantine` one naming `ModelSEIR` plus the tracing intervention; bind the intervention; measles: constructors, tests and vignettes rewritten (expected values statistical); epiworldjs and epiworldRShiny: the measles presets and app follow. |
+| Release 1.0.0 (after 7) | Release in order: epiworld 1.0.0, then epiworldR, epiworldpy, epiworldjs, then measles after epiworldR is on CRAN, then epiworldRShiny. |
 
 ### 11.6 Status
 
-Updated by every epiworld PR into `v1-layers` (last: 2026-10-29).
+Updated by every epiworld PR into `v1-layers` (last: 2026-11-16).
 
 | Step | epiworld | epiworldR | epiworldpy | epiworldjs | measles |
 |---|---|---|---|---|---|
@@ -1538,16 +1753,29 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-10-29).
 | Phase 3b | #323 merged (plan: #322; checked accessors: #324 merged) | #218 merged | #35 merged | #19 merged (re-vendor only: no layer objects in JS) | #66 merged (re-vendor only) |
 | Phase 3c-1 (layer logs) | #325 merged (+ #329 merged: `ContactTracing::get_n_agents()`) | #220 merged | #36 merged | #20 merged (re-vendor only) | #67 (re-vendor only, with the consolidation) |
 | `master` -> `v1-layers` | #328 merged (#327, the `ModelSEIR` recovery fix) | | | | |
-| `rgraph_bernoulli()` with `p = 0` (fix applied to both branches: #342 on `master`) | #343 | re-vendor only | re-vendor only | re-vendor only | re-vendor only |
+| `rgraph_bernoulli()` with `p = 0` (fix applied to both branches: #342 on `master`) | #343 merged | re-vendor only | re-vendor only | re-vendor only | re-vendor only |
 | Model consolidation | #331 merged (plan: #326; wording: #332) | #222 merged | #37 merged | #21 merged | #67 (re-vendor only) |
 | Phase 3c-2 (group history) | #333 merged | #223 merged | #38 merged | #22 merged (re-vendor only) | #67 (re-vendor only) |
-| Phase 3d-1 (groupings) | #335 merged (+ #336 merged: whole-number counts) | #224 merged, #225 | #39 merged, #40 | #23 merged, #24 (re-vendor only) | #67 (re-vendor only) |
-| Phase 3d-2 (measles on layers) | #340 (+ `master`: the queue fix, #338) | | | | |
-| Phase 3d-3 | not started | | | | |
-| Registry (#312) | not started | | | | |
+| Phase 3d-1 (groupings) | #335 merged (+ #336 merged: whole-number counts) | #224, #225 merged | #39, #40 merged | #23 merged, #24 (superseded by #25: close) | #67 merged (re-vendor only) |
+| 3d-1b (networks without maps, #339) | #341 merged | #227 merged | #42 merged | #27 merged | #70 merged |
+| Phase 3d-2 (measles on layers) | #340 merged (+ `master`: the queue fix, #338; #345 merged: log capacity, group counts) | #226 merged | #41 merged (re-vendor only) | #25 merged | #68 merged |
+| Phase 3d-3a (entities and the model tracer removed) | #349 merged | #228 merged (with #351) | with 3d-3b (#43 merged) | with 3d-3b (#29 merged) | with 3d-3b (#71 merged) |
+| `master` -> `v1-layers` (measles stage durations, #348; seeding resets the distributions, #350) | #351 merged (squashed: the merge base is still c340f876) | re-vendor (`main` -> `v1-layers`), #228 merged | #43 merged (`main` -> `v1-layers`: epiworldpy#34) | #29 merged (`main` -> `v1-layers`: epiworldjs#26, #28) | #71 merged (`main` -> `v1-layers`: measles#69) |
+| Phase 3d-3b (Bubbles on a layer, example model) | #353 merged (+ #354: which flavor and ties match which policy) | #229 merged (+ #230: the peer row is an approximation) | #43 merged (with 3d-3a, #351; first `Bubbles` binding: `epiworldpy.Bubbles`, `make_layer()`, `add_globalevent()`) | #29 merged (with 3d-3a, #351; re-vendor only) | #71 merged (with 3d-3a, #351 and measles#69; re-vendor only) |
+| Registry (#312) | #356 merged (its `InfectionStates` removed by #363: a user's virus is a strain of the model's) | with NH-4 (#231 merged) | with NH-4 (#44 merged) | with NH-4 (#30 merged) | with NH-4 (#72 merged) |
+| Natural history (status × stage; `natural-history.md`, before Phase 4) | plan: #361 merged (replaces #358-#360, closed); NH-1 and NH-2: #363 merged; NH-3 (branch `nh-3-docs`: docs and diagrams drawn from the declarations): #366 merged; the benchmark runners and rerun: UofUEpiBio/epiworld-benchmark#35 (simulation time regressed in three rows, profiled to the reset); the reset fix (branch `reset-no-realloc`: placements in reused buffers, natural-history records made as agents move): #367 merged; its rerun (UofUEpiBio/epiworld-benchmark#36) fixed 1,000,000 agents, and left scenario_00 at 100,000 and GeoPops about 15% above 3d-3b, in the daily step; the step's cost (branch `nh-step-cost`: `par_at()` inlined, the stage of a cell without a division, the status part apart): #368 merged; its rerun (UofUEpiBio/epiworld-benchmark#37): no ratio grew by more than 10% (scenario_00 at 100,000 stays at 1.13; on denser and layered synthetic networks the remaining cost is per infected agent, not per contact or layer); found by the epiworldR port: an agent given a tool or virus the model does not hold crashed (since V-1 only the model's copy has an id), now an error: #369 merged; the benchmark reruns UofUEpiBio/epiworld-benchmark#35, #36 and #37 merged; the decisions that close the plan (16-21: `rule()` and the calendar deferred, the measles quarantine exemption by tool name, diagrams without transition labels): NH-close (this PR); next, NH-5 (several diseases per model, one infection per agent; the database per disease; accessors by margin), plan first | #231 merged (NH-4: natural history, placement, variants by id, plain classes, the registry; vendors fe2385a0) | #44 merged (NH-4; vendors fe2385a0) | #30 merged (NH-4; vendors fe2385a0) | #72 merged (NH-4; vendors fe2385a0; keeps `epiworldR (>= 1.0.0)`: see the release item in Phase 6) |
+| Variants by id (V-1) and no `TSeq` template (V-2) (after #363, before NH-3) | V-1: #364 merged; V-2: #365 merged | with NH-4 (#231 merged) | with NH-4 (#44 merged) | with NH-4 (#30 merged) | with NH-4 (#72 merged) |
+| NH-close (decisions 16-21, the measles quarantine exemption by tool name, diagrams without labels) | #370 merged | #232 merged | #45 merged | #31 merged (re-vendor only) | #73 merged (binds `set_quarantine_exempt_tools()`) |
+| NH-5: several diseases per model, one infection per agent (`several-diseases.md`, before Phase 4) | plan: #371 merged; NH-5a (one track per disease, still one disease; identical histories, about +2% instructions): #372; the database in parts (`DataRegistry`, `DiseaseRecord`) and its implementation in four files, identical results: #373 merged (it renamed the `tool_info` column to `reg.tool_name` by mistake; fixed, with the columns of every output table now tested: #374 merged); NH-5b-1 (the outputs by disease: a `disease` argument and column everywhere, the accessors by margin; identical numbers): #375 merged; benchmark rerun at #373: UofUEpiBio/epiworld-benchmark#38 merged (no regression); rerun at #376 (with #375): stage `nh-5b-1`, branch `port-nh-5b1-outputs`, to be rerun on a quiet machine (the first run shared it with other work; callgrind: +45 instructions in 1.12 billion, SEIR at 100,000 agents); NH-5b-2 (several diseases in the engine: one engine state per agent, a record per disease, `strain()`, targets by disease, `.of()`, "Removed (other disease)"; identical with one disease): #377 merged; benchmark rerun at #376: UofUEpiBio/epiworld-benchmark#39 (no regression); NH-5b-3 (transitions by strain, `get_hist_virus_transitions()`; the SEIR quarantine exemption by disease; the natural-history docs page): #378 merged; benchmark rerun at #377: UofUEpiBio/epiworld-benchmark#40 (scenario_04, GeoPops, 0.97 to 1.08: the one-disease stage update no longer inlined); its fix (`nh_step_stage<One>()`, the reaction check inline) with `DataBase::get_virus_name(id)` and `get_virus_disease(id)` (the wrappers label variant ids with them; mutations are not among the model's viruses): #379 merged; benchmark rerun at #379 (stage `nh-5b-3`): UofUEpiBio/epiworld-benchmark#41 merged (scenario_04 back to 0.96; no ratio grew by more than 10%) | re-vendored to #376 by #234 (merged); NH-5c (the ports of NH-5b-1 to 5b-3, vendoring #379): #235 merged | re-vendored to #376 with #46 (merged); NH-5c: #47 merged | NH-5c (the `disease` column; no targets bound): #32 merged | NH-5c (the `disease` column): #74 merged |
+| C++ extensions in the wrappers (user-written C++ on a model built in R or Python: `as_model()`, checked by the epiworld major version) | -- | #233 merged (`cpp_source_epiworld()`, `<epiworldR/extension.h>`) | #46 merged (`cpp_source()`, `get_include()`, `<epiworldpy/extension.hpp>`) | -- | -- |
+| MSVC: `M_PI` (not standard) in the lognormal draw broke the Windows wheels since #363 | #376 merged | #234 merged (re-vendor) | with #46 (merged) | with NH-5c | with NH-5c |
 | Phases 4, 5, 6 | not started | | | | |
+| Phase 7 (measles as presets: the generic sampler, one contact-tracing intervention; the final step before 1.0.0) | not started | | | | |
 
-epiworldRShiny (Section 6): not started; one port after the registry.
+epiworldRShiny (Section 6): the one port (to epiworldR and measles 1.0.0:
+layers, the registry, several diseases) is in progress on its new
+`v1-layers` branch (created 2026-11-17 from `main`); the `*CONN` apps stay,
+as the base model plus a random-mixing layer.
 
 epiworld-benchmark (Section 8, 11.7): `v1-layers` branch; the catch-up (the
 `epiworld-v1` engine, stage 3d-1) is UofUEpiBio/epiworld-benchmark#31. Stage
@@ -1555,12 +1783,25 @@ epiworld-benchmark (Section 8, 11.7): `v1-layers` branch; the catch-up (the
 165,865 agents, but building a network layer from an `AdjList` takes 5-9
 times the 0.x build time and up to 2.6 times the peak memory (the freed
 `std::map`s stay resident); 1,000,000 agents is noisy and rechecked next
-stage. Under the 10% rule, this is looked at before 3d-2 merges (a
-`layer::network()` taking the edge list directly is one option).
+stage. Under the 10% rule, this was to be fixed before 3d-2 merged; 3d-2
+merged first, and 3d-1b (#341) builds networks without maps. Stage 3d-1b
+(UofUEpiBio/epiworld-benchmark#32, merged) has the build at 0.71-0.90 times
+0.x's and peak memory at 0.78-0.99; the simulation ratio rose above 10% up to
+165,865 agents, profiled as page faults moved from the build into the run
+(the 3d-1 build left freed memory the run reused), not a cost per step.
+Stages 3d-3a (#33) and 3d-3b (#34, pin 07ed7a0d) are merged with no
+regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
+0.91 because the 0.x run happened to be faster (the 1.0 run was faster too).
 
-**Next** (as of the date above): the network-build regression above, before
-#340 (3d-2) merges; then the 3d-2 ports (the measles models take their layer
-from the user; epiworldjs's measles presets add it), then 3d-3.
+**Next** (as of the date above): NH-5 is done, with its ports and a
+benchmark rerun (no regression). A two-disease benchmark scenario would need
+every engine, so the cost of several diseases stays measured with callgrind
+(#377). Then the epiworldRShiny port, and Phases 4 to 6; Phase 7 (measles as
+presets) is the final step before the 1.0.0 release. Appendix A's open
+questions are settled with Phase 4 (the order of interventions) and Phase 7
+(detection, names). The diagrams' pictures (`docs/assets/img`) are rendered
+with `make -C include/measles all` and `make -C include/epiworld/models all`
+(mermaid.ink); they still show the labeled diagrams from before #370.
 
 ### 11.7 A benchmark rerun
 
@@ -1583,76 +1824,55 @@ from the user; epiworldjs's measles presets add it), then 3d-3.
 
 ---
 
-## Appendix A. In discussion: quarantine and isolation as layer-targeted interventions
+## Appendix A. Quarantine and isolation as layer-targeted interventions (reconciled with Phase 7, 2026-11-17)
 
-> **Not settled.** Raised on 2026-10-30, while 3d-1b (#341) was open and
-> before 3d-3. Nothing here is a decision yet: it is recorded so the
-> discussion can resume. The settled plan stays as written in Section 6
-> (measles consolidation: the risk-quarantine model keeps its own policy)
-> until this appendix is resolved and moved into the body.
+Raised on 2026-10-30, while 3d-1b (#341) was open. **Phase 7 (settled
+2026-11-16) adopted the idea**: one `ModelMeasles` on any layers, one
+contact-tracing intervention in the core instead of four copies of the loop,
+and `ModelSEIRQuarantine` becoming `ModelSEIR` with that intervention. This
+appendix keeps the idea's motivation, says how each of its questions was
+answered, and lists the three still open.
 
 ### The idea
 
 With layers, a model only needs to describe the disease. The contact
 structure is the layers the user adds, and the public-health response is a
-set of interventions that target layers by name. For measles, that means one
-`ModelMeasles` (the disease: Exposed, Prodromal, Rash, Hospitalized,
-Recovered) instead of `ModelMeaslesMixing`, `ModelMeaslesSchool` and
-`ModelMeaslesMixingRiskQuarantine`, plus:
+set of interventions that target layers by name. For measles: isolation of
+detected cases; contact quarantine traced and applied on chosen layers (with
+`layers = "school"`, school contacts are traced and the quarantined stay out
+of school only, while households and community mixing keep running); and
+PEP, which already works this way (`InterventionMeaslesPEP`). A model with
+schools, households and a community contact matrix, with quarantine only at
+school, then needs no new model class.
 
-- **isolation** of detected cases;
-- **contact quarantine**, traced and applied on chosen layers: with
-  `layers = "school"`, it traces school contacts and keeps the quarantined out
-  of the school only, while the household layer and a population-wide contact
-  matrix keep running. The risk-based policy becomes an option of this
-  intervention ("high risk" = the case's groupmates on the school layer, i.e.
-  tracing by membership);
-- **PEP**, which already works this way: a separate intervention reading every
-  traced layer (`interventionmeaslespep`).
+### The questions, answered
 
-A user can then build, for example, a model with schools (a within-group
-mixing layer), households (cliques) and a community contact matrix, with
-quarantine only at school. Today that needs a new model class. The same move
-turns `ModelSEIRQuarantine` into `ModelSEIR` plus the quarantine
-intervention, which shrinks the model list in every wrapper and in the
-registry. It extends the "shared tracing policy" of Section 4 and the
-per-layer actions of D2: school-and-community tracing in one model is the
-"first real second user" Section 4 waits for.
-
-### Open questions
-
-1. **Quarantine as states or as a flag.** Today quarantine multiplies the
-   disease states (Quarantined Susceptible, Quarantined Exposed, Isolated,
-   Isolated Recovered, ...). Epidemiologically, quarantine is a status
-   orthogonal to the disease. As an intervention it would be a per-agent,
-   per-layer exclusion with a timer (Phase 4's participation, D2), and the
-   disease keeps a small state set. The cost: quarantined counts leave the
-   state history, so the intervention needs its own history (counts by day
-   and layer), and every measles output, vignette and calibration that reports
-   "Quarantined ..." changes. Leaning: flags, since interventions that each add
-   states to a model do not compose.
-2. **Order of interventions.** With several in one step (isolation,
-   quarantine at school, PEP in the community), their order changes the draws
-   and the outcomes. The core needs one rule: e.g., the order in which they
-   were added, run at a fixed point of the step.
-3. **Where detection lives.** Detection ("detected at rash onset with
-   probability p", days undetected) could stay in the disease model, with the
-   response in the intervention. Or it could move into the isolation
-   intervention, so a model without interventions has no detection
-   parameters. The tracing window and success rate belong to the quarantine
-   intervention either way.
-4. **Results change.** Distinct contacts (D9) and a different order of draws
-   mean statistical checks, as for the SEIR consolidation (Section 6). The
-   measles package is used for policy work (e.g., the Short Creek vignette),
-   so the comparison uses realistic parameters, not the test suite's.
-5. **Timing.** It needs Phase 4's exclusion and layer-targeted tools. Proposed
-   order: Phase 4, then a step "tracing, quarantine and isolation as
-   interventions" covering both SEIR and measles, then `ModelMeasles`. The
-   registry lands before Phase 4, so it would briefly register models that go
-   away; their registry entries should stay thin. The removed models become
-   defunct stubs naming `ModelMeasles` (or `ModelSEIR`) plus the
-   interventions.
-6. **Naming.** `ModelMeasles` for the disease; the interventions named by what
-   they do (`isolation`, `quarantine`, `pep`), each taking the layers it acts
-   on. To settle with the wrappers' naming (Section 6, the R prefixed
-   functions).
+1. **Quarantine as states or as a flag: neither, a status.** Since NH-4 and
+   NH-close, quarantine and isolation are statuses (Free, Quarantined,
+   Isolated, Hospitalized), orthogonal to the disease's stages: they no longer
+   multiply the disease's states, and the status history counts them, so an
+   intervention needs no history of its own. What the 2026-10-30 note called
+   a per-layer flag is Phase 4's exclusion keyed by status, per layer (added
+   to Phase 4's list).
+2. **Order of interventions: open, settled in Phase 4**, which adds
+   layer-targeted tools and isolation and so first runs several actions in
+   one step. Proposed rule: the order in which they were added, at one fixed
+   point of the step (after the transmission and stage updates, before the
+   records), so results do not depend on anything else.
+3. **Where detection lives: open, settled in Phase 7.** Proposed: in the
+   tracing intervention (detection probability and delay as its options), so
+   a model without interventions has no detection parameters and the
+   parameter belongs to the policy that uses it. The cost: the measles
+   presets pass detection to the intervention, and their parameter tables
+   change.
+4. **Results change: answered.** Phase 7 changes the measles results with
+   the combination rule (Phase 6), and the expected values are updated once
+   for both. The checks are statistical, with realistic parameters (the
+   measles package is used for policy work).
+5. **Timing: answered.** Phase 7 is last, after Phases 4 and 6, and in
+   1.0.0. The removed models become defunct stubs naming `ModelMeasles` (or
+   `ModelSEIR`) plus the intervention.
+6. **Names: open, settled in Phase 7** with the wrappers' naming (Section 6).
+   Proposed: `ModelMeasles` for the disease; the intervention named by what
+   it does (contact tracing, with quarantine and isolation as its actions),
+   taking the layers it traces and the layers it excludes from.

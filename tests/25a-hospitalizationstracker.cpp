@@ -11,7 +11,7 @@ EPIWORLD_TEST_CASE(
     // Create a MeaslesSchool model with known hospitalization rate
     int n_seeds = 5;
     int simulation_days = 30;
-    measles::ModelMeaslesSchool<> model(
+    measles::ModelMeaslesSchool model(
         200,    // Number of agents
         n_seeds, // Number of initial cases
         5.0,     // Contact rate

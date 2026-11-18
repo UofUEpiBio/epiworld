@@ -10,26 +10,24 @@ int main()
     constexpr int initial_cases = n_agents / 200;
 
     // Creating a model
-    epiworld::Model<int> model(n_agents);
+    epiworld::Model model(n_agents);
 
-    // Declaring the three states in the model
-    model.add_state("Susceptible", epiworld::default_update_susceptible<int>);
-    auto exposed_state = model.add_state("Exposed", epiworld::default_update_exposed<int>);
-    auto recovered_state = model.add_state("Recovered");
-    auto removed_state = model.add_state("Removed");
+    // The virus and its natural history: infected agents recover or die
+    // (competing daily rates); the recovered are immune (Recovered has no
+    // infection)
+    epiworld::Virus virus("covid 19");
+    virus.add_stage("Susceptible");
+    virus.add_stage("Infected", stage::infectious);
+    virus.add_stage("Recovered");
+    virus.add_stage("Removed");
+    virus.set_contact(3, 0.0);
+    virus.infection(0, 1, 0.5);
+    virus.rate(1, 2, 0.5).effect(Effect::recovery);
+    virus.rate(1, 3, 0.01).effect(Effect::death);
+    model.add_virus(virus, assign::count(initial_cases));
 
-    // Adding the tool and virus
-    epiworld::Virus<int> virus("covid 19");
-    virus.set_distribution(
-        distribute_virus_randomly<int>(initial_cases, false));
-
-    virus.set_post_immunity(1.0);
-    virus.set_state(exposed_state, recovered_state, removed_state);
-    virus.set_prob_death(.01);
-    model.add_virus(virus);
-
-    epiworld::Tool<int> tool("vaccine", .5, true);
-    model.add_tool(tool);
+    epiworld::Tool tool("vaccine");
+    model.add_tool(tool, assign::share(.5));
 
     // Generating a random pop
     model.add_layer(layer::network(

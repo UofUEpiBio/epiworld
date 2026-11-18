@@ -18,7 +18,7 @@ EPIWORLD_TEST_CASE(
     double n_agents = 2000.0;
     size_t n_agents_sz = static_cast<size_t>(n_agents);
     
-    measles::ModelMeaslesMixing<> model_0(
+    measles::ModelMeaslesMixing model_0(
         n_agents_sz, // Number of agents
         n_seeds / n_agents, // Initial prevalence
         0.1,         // Transmission rate
@@ -43,16 +43,11 @@ EPIWORLD_TEST_CASE(
     model_0.set_param("Quarantine period", -1.0);
     model_0.set_param("Isolation period", -1.0);
 
-    // Adding a single entity (population group)
+    // Adding a single group
     add_group_mixing(model_0, contact_matrix, blocks({0u, n_agents_sz}));
 
     // Setting the distribution function of the initial cases
-    model_0.get_virus(0).set_distribution(
-        [&n_seeds](Virus<> & v, Model<> * m) -> void {
-        for (int i = 0; i < n_seeds; ++i)
-            m->get_agents()[i].set_virus(*m, v);
-        return;
-    });
+    model_0.assign_virus(0, assign::agents(first_agents(n_seeds)));
 
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims * n_seeds, -1.0);

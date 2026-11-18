@@ -23,7 +23,7 @@ void count_deliveries(TModel & model, Delivered & d)
     d.per_agent.assign(model.size(), 0u);
 
     model.set_post_sampling(
-        [&d](Agent<> * p, const SampledContactsView & c, Model<> *) -> void {
+        [&d](Agent * p, const SampledContactsView & c, Model *) -> void {
 
             d.per_agent[p->get_id()] += c.size();
 
@@ -43,7 +43,7 @@ size_t quarantined_ever(TModel & model)
 
     std::vector< std::string > states;
     std::vector< int > counts;
-    model.get_db().get_hist_total(nullptr, &states, &counts);
+    model.get_db().get_hist_total(nullptr, &states, nullptr, &counts);
 
     size_t n = 0u;
     for (size_t i = 0u; i < states.size(); ++i)
@@ -66,7 +66,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - mixing and tracing", "[post-samplin
             2.0, 20.0
         };
 
-        epimodels::ModelSEIRQuarantine<> model(
+        epimodels::ModelSEIRQuarantine model(
             "Flu", 2000, 0.01, 0.6, 2.0, 0.25,
             0.1, 5, 2, 4, 0.9, 1.0, 10, 1.0, 4
         );
@@ -79,7 +79,6 @@ EPIWORLD_TEST_CASE("Post-sampling callback - mixing and tracing", "[post-samplin
         model.run(40, 1231);
 
         // Every contact delivered is in the mixing layer's log, once
-        REQUIRE_FALSE(model.is_contact_tracing_on());
         auto & ct = model.get_layer("mixing").get_tracing();
         size_t total = 0u;
         for (size_t i = 0u; i < model.size(); ++i)
@@ -103,18 +102,13 @@ EPIWORLD_TEST_CASE("Post-sampling callback - mixing and tracing", "[post-samplin
     {
 
         const size_t n = 2000u;
-        measles::ModelMeaslesMixing<> model(
+        measles::ModelMeaslesMixing model(
             n, 10.0 / n, 0.2, 0.9, 0.3, 7.0, 4.0, 5.0,
             0.2, 7.0, 3.0, 21, .8, .8, 4, 0.0, 1.0, 4u
         );
 
         add_group_mixing(model, {2.0}, blocks({0u, n}));
-        model.get_virus(0).set_distribution(
-            [](Virus<> & v, Model<> * m) -> void {
-                for (int i = 0; i < 10; ++i)
-                    m->get_agents()[i].set_virus(*m, v);
-            }
-        );
+        model.assign_virus(0, assign::agents(first_agents(10)));
 
         Delivered d;
         count_deliveries(model, d);

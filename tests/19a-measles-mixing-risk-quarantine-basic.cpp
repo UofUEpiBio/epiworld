@@ -1,11 +1,12 @@
 #define N_THREADS 4
 
 #include "tests.hpp"
+#include "measles-stages.hpp"
 #include "../include/measles/measles.hpp"
 
 using namespace epiworld;
 
-using MSQ = measles::ModelMeaslesMixingRiskQuarantine<>;
+using MSQ = measles::ModelMeaslesMixingRiskQuarantine;
 
 EPIWORLD_TEST_CASE(
     "Measles model with risk-based quarantine",
@@ -22,7 +23,7 @@ EPIWORLD_TEST_CASE(
     // Simple contact matrix (single group, all mixing)
     std::vector<double> contact_matrix = {c_rate};
     
-    measles::ModelMeaslesMixingRiskQuarantine<> model(
+    measles::ModelMeaslesMixingRiskQuarantine model(
         n,           // Number of agents
         0.005,       // Initial prevalence
         p_infect,    // Transmission rate
@@ -54,9 +55,7 @@ EPIWORLD_TEST_CASE(
 
     // Virus will be distributed to 5 random agents, in each
     // replicate of the model
-    model.get_virus(0).set_distribution(
-        distribute_virus_randomly<>(5, false)
-    );
+    model.assign_virus(0, assign::count(5));
     
     std::vector< std::vector< epiworld_double > > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims * 5, -1.0);
@@ -66,7 +65,9 @@ EPIWORLD_TEST_CASE(
     auto saver = tests_create_saver(transitions, R0s, 5, nullptr, &outbreak_sizes, &hospitalizations);
 
     // Run simulation
-    model.run_multiple(100, nsims, 123, saver, true, true, N_THREADS);
+    // Long enough for the outbreaks to end, so the share of cases hospitalized
+    // is not cut short
+    model.run_multiple(200, nsims, 123, saver, true, true, N_THREADS);
     model.print();
 
     auto tmat = tests_calculate_avg_transitions(transitions, model);
@@ -88,7 +89,16 @@ EPIWORLD_TEST_CASE(
     }
     obs_hosp_probability /= static_cast<epiworld_double>(nsims);
 
+    // The engine's states are the (stage, status) pairs, state = stage * 4 +
+    // status. Without quarantine and isolation, agents are free, except the
+    // severe ones, who are hospitalized
     #define mat(i, j) tmat[(j)*model.get_n_states() + (i)]
+    constexpr int NS = 4;
+    constexpr int L_FREE   = MSQ::LATENT * NS + MSQ::FREE;
+    constexpr int P_FREE   = MSQ::PRODROMAL * NS + MSQ::FREE;
+    constexpr int R_FREE   = MSQ::RASH * NS + MSQ::FREE;
+    constexpr int SEV_HOSP = MSQ::SEVERE * NS + MSQ::HOSPITALIZED;
+    constexpr int REC_FREE = MSQ::RECOVERED * NS + MSQ::FREE;
     std::cout << "Average R0 from index cases: " <<
         avg_R0 <<  " vs expected " << R0 << std::endl;
 
@@ -96,67 +106,70 @@ EPIWORLD_TEST_CASE(
 
     // From Exposed
     std::cout << "Transition from Exposed to Prodromal: " <<
-        mat(MSQ::LATENT, MSQ::PRODROMAL) << " (expected: " <<
+        mat(L_FREE, P_FREE) << " (expected: " <<
         1.0/model("Incubation period") << ")" << std::endl;
 
     // From Prodromal
     std::cout << "Transition from Prodromal to Rash: " <<
-        mat(MSQ::PRODROMAL, MSQ::RASH) << " (expected: " <<
+        mat(P_FREE, R_FREE) << " (expected: " <<
         1.0/model("Prodromal period") << ")" << std::endl;
 
     // From Rash
     std::cout << "Transition from Rash to Recovery: " <<
-        mat(MSQ::RASH, MSQ::RECOVERED) << " (expected: " <<
+        mat(R_FREE, REC_FREE) << " (expected: " <<
         1.0/model("Rash period") << ")" <<
         std::endl;
 
     std::cout << "Transition from Rash to Hospitalized: " <<
-        mat(MSQ::RASH, MSQ::HOSPITALIZED) << " (expected: " <<
+        mat(R_FREE, SEV_HOSP) << " (expected: " <<
         model("Hospitalization rate") << ")" << std::endl;
 
     // From hospitalized
     std::cout << "Transition from Hospitalized to Recovery: " <<
-        mat(MSQ::HOSPITALIZED, MSQ::RECOVERED) << " (expected: " <<
+        mat(SEV_HOSP, REC_FREE) << " (expected: " <<
         1.0/model("Hospitalization period") << ")" << std::endl;
 
     // Hospitalization probability
-    double p_recovered = 1.0/model("Rash period");
+    // Exits from Rash with the drawn rash period (see measles-stages.hpp)
+    auto rash = measles_rash_exits(
+        model("Rash period"),
+        model("Rash period sd"),
+        model("Hospitalization rate"),
+        0.0 // Isolation is off, so agents with rash are never detected
+    );
+    double p_recovered = rash.recovery_rate;
     std::cout << "Hospitalization probability: " <<
-        model("Hospitalization rate")/(
-            model("Hospitalization rate") + p_recovered
-        ) << " (observed ~" << obs_hosp_probability << ")" << std::endl;
+        rash.p_hospitalized << " (observed ~" << obs_hosp_probability << ")" << std::endl;
 
     // Validating some transitions -------------------------------
     REQUIRE_FALSE(
-        moreless(mat(MSQ::LATENT, MSQ::PRODROMAL), 1.0/model("Incubation period"), 0.1)
+        moreless(mat(L_FREE, P_FREE), 1.0/model("Incubation period"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(MSQ::PRODROMAL, MSQ::RASH), 1.0/model("Prodromal period"), 0.1)
+        moreless(mat(P_FREE, R_FREE), 1.0/model("Prodromal period"), 0.1)
     );
 
     REQUIRE_FALSE(
         moreless(
-            mat(MSQ::RASH, MSQ::RECOVERED),
-            1.0/model("Rash period"),
+            mat(R_FREE, REC_FREE),
+            p_recovered,
             0.1
         )
     );
 
     REQUIRE_FALSE(
-        moreless(mat(MSQ::RASH, MSQ::HOSPITALIZED), model("Hospitalization rate"), 0.1)
+        moreless(mat(R_FREE, SEV_HOSP), model("Hospitalization rate"), 0.1)
     );
 
     REQUIRE_FALSE(
-        moreless(mat(MSQ::HOSPITALIZED, MSQ::RECOVERED), 1.0/model("Hospitalization period"), 0.1)
+        moreless(mat(SEV_HOSP, REC_FREE), 1.0/model("Hospitalization period"), 0.1)
     );
 
     // Hospitalization probability
     REQUIRE_FALSE(
         moreless(
-            model("Hospitalization rate")/(
-                model("Hospitalization rate") + p_recovered
-            ),
+            rash.p_hospitalized,
             obs_hosp_probability,
             0.1
         )

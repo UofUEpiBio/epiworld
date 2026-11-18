@@ -16,18 +16,14 @@ struct Batch {
     bool state_ok; // Nobody had changed state yet
 };
 
-epimodels::ModelSIR<> make_ring()
+epimodels::ModelSIR make_ring()
 {
 
-    epimodels::ModelSIR<> model("Virus", 8, 0.0, 1.0, 0.0);
+    epimodels::ModelSIR model("Virus", 8, 0.0, 1.0, 0.0);
 
-    Virus<> v = model.get_virus(0);
+    Virus v = model.get_virus(0);
     model.rm_virus(0);
-    v.set_distribution([](Virus<> & virus, Model<> * m) -> void {
-        m->get_agents()[2].set_virus(*m, virus);
-        m->get_agents()[6].set_virus(*m, virus);
-    });
-    model.add_virus(v);
+    model.add_virus(v, assign::agents({2u, 6u}));
 
     std::vector< int > source, target;
     for (int i = 0; i < 8; ++i)
@@ -55,7 +51,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
     std::vector< std::string > log;
 
     model.set_post_sampling(
-        [&](Agent<> * p, const SampledContactsView & contacts, Model<> * m) -> void {
+        [&](Agent * p, const SampledContactsView & contacts, Model * m) -> void {
 
             Batch b;
             b.day = m->today();
@@ -66,9 +62,9 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
 
             // The state the sampling saw: the contacted agents are still
             // susceptible, since the events were not applied yet.
-            b.state_ok = (p->get_state() == 1u);
+            b.state_ok = (m->get_stage(*p) == 1);
             for (auto c : b.contacts)
-                b.state_ok = b.state_ok && (m->get_agent(c).get_state() == 0u);
+                b.state_ok = b.state_ok && (m->get_stage(m->get_agent(c)) == 0);
 
             batches.push_back(b);
             log.push_back("cb" + std::to_string(m->today()));
@@ -77,7 +73,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
     );
 
     model.add_globalevent(
-        [&](Model<> * m) -> void { log.push_back("ge" + std::to_string(m->today())); },
+        [&](Model * m) -> void { log.push_back("ge" + std::to_string(m->today())); },
         "log"
     );
 
@@ -126,7 +122,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
         auto self_clearing = make_ring();
         size_t calls = 0u;
         self_clearing.set_post_sampling(
-            [&calls](Agent<> *, const SampledContactsView &, Model<> * m) -> void {
+            [&calls](Agent *, const SampledContactsView &, Model * m) -> void {
                 calls++;
                 m->clear_post_sampling();
             }
@@ -140,10 +136,10 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
         auto replacing = make_ring();
         size_t calls_a = 0u, calls_b = 0u;
         replacing.set_post_sampling(
-            [&](Agent<> *, const SampledContactsView &, Model<> * m) -> void {
+            [&](Agent *, const SampledContactsView &, Model * m) -> void {
                 calls_a++;
                 m->set_post_sampling(
-                    [&calls_b](Agent<> *, const SampledContactsView &, Model<> *) -> void {
+                    [&calls_b](Agent *, const SampledContactsView &, Model *) -> void {
                         calls_b++;
                     }
                 );
@@ -162,7 +158,7 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
 
     auto run = [](bool hook) -> std::vector< int > {
 
-        epimodels::ModelSEIR<> model("Virus", 2000, 0.02, 0.4, 3.0, 0.2);
+        epimodels::ModelSEIR model("Virus", 2000, 0.02, 0.4, 3.0, 0.2);
         model.add_layer(layer::network(
             "network", rgraph_smallworld(2000, 6, 0.1, false, model)
         ));
@@ -171,13 +167,13 @@ EPIWORLD_TEST_CASE("Post-sampling callback - network pull", "[post-sampling-pull
 
         if (hook)
             model.set_post_sampling(
-                [](Agent<> *, const SampledContactsView &, Model<> *) -> void {}
+                [](Agent *, const SampledContactsView &, Model *) -> void {}
             );
 
         model.run(40, 331);
 
         std::vector< int > h;
-        model.get_db().get_hist_total(nullptr, nullptr, &h);
+        model.get_db().get_hist_total(nullptr, nullptr, nullptr, &h);
         return h;
 
     };

@@ -205,6 +205,15 @@ readme.o: readme.cpp $(ROOT_BUILD_DIR)/epiworld.hpp
 	$(V)g++ -std=c++20 -O3 $< -o $@ && ./readme.o
 
 # ====================================================================
+# Model diagrams, drawn from the declarations (include/*/<model>.mmd)
+.PHONY: diagrams
+diagrams:
+	$(SAY) "CXX" script/draw-diagrams.cpp
+	$(V)mkdir -p $(ROOT_BUILD_DIR)
+	$(V)g++ -std=c++17 -O1 script/draw-diagrams.cpp -o $(ROOT_BUILD_DIR)/draw-diagrams
+	$(V)$(ROOT_BUILD_DIR)/draw-diagrams
+
+# ====================================================================
 # Docs
 .PHONY: docs docs-examples setup-preview preview serve
 

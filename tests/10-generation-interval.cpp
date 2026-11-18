@@ -21,7 +21,7 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
     static const double p_c = contact_rate/static_cast<double>(S);
 
     // Creating model engine
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "a virus", S, p_r, p_i, p_r
     );
     add_random_mixing(model, contact_rate);

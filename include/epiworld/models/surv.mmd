@@ -1,0 +1,30 @@
+%% Drawn from the model's declarations by `make diagrams`; do not edit.
+flowchart LR
+    subgraph stages["Stages: Disease"]
+        direction LR
+        s0["Susceptible"]
+        s1["Latent"]:::carrier
+        s2["Symptomatic"]:::infectious
+        s3["Symptomatic isolated"]:::carrier
+        s4["Asymptomatic"]:::infectious
+        s5["Asymptomatic isolated"]:::carrier
+        s6["Recovered"]
+        s7["Removed"]:::away
+        s0 --> s1
+        s1 --> s2
+        s1 --> s4
+        s2 --> s6
+        s3 --> s6
+        s4 --> s6
+        s5 --> s6
+        s2 --> s7
+        s3 --> s7
+        s4 --> s7
+        s5 --> s7
+        s1 --> s3
+        s2 --> s3
+        s4 --> s5
+    end
+    classDef infectious fill:#f8d7da,stroke:#b02a37
+    classDef carrier fill:#fff3cd,stroke:#997404
+    classDef away fill:#e2e3e5,stroke:#6c757d

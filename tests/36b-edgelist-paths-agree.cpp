@@ -12,13 +12,13 @@ struct Run {
     std::vector< int > hist, tdate, tsource, ttarget, s, t;
 };
 
-static Run run_model(Model<> & model)
+static Run run_model(Model & model)
 {
     model.run(50, 1231);
 
     Run r;
     std::vector< int > date, virus, sexp, sexp_layer;
-    model.get_db().get_hist_total(&date, nullptr, &r.hist);
+    model.get_db().get_hist_total(&date, nullptr, nullptr, &r.hist);
     model.get_db().get_transmissions(
         r.tdate, r.tsource, r.ttarget, virus, sexp, sexp_layer
     );
@@ -27,9 +27,9 @@ static Run run_model(Model<> & model)
     return r;
 }
 
-static epimodels::ModelSIR<> make_model(int n)
+static epimodels::ModelSIR make_model(int n)
 {
-    epimodels::ModelSIR<> model("a virus", n, 0.02, 0.4, 0.2);
+    epimodels::ModelSIR model("a virus", n, 0.02, 0.4, 0.2);
     model.verbose_off();
     return model;
 }

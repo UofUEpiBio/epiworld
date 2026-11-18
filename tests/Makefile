@@ -18,11 +18,10 @@ $(NAME)_SOURCES := \
 	05d-mixing.cpp \
 	06-mixing.cpp \
 	06b-mixing.cpp \
-	07-entitifuns.cpp \
 	09-distribute-tools-and-viruses.cpp \
-	09b-distribute-randomly-to-set.cpp \
-	09c-distribute-to-set-scaling.cpp \
-	09d-distribute-uniform.cpp \
+	09b-assign-in-groups.cpp \
+	09c-assign-scaling.cpp \
+	09d-assign-uniform.cpp \
 	10-generation-interval.cpp \
 	11-random-numbers.cpp \
 	12-diagrams.cpp \
@@ -36,8 +35,9 @@ $(NAME)_SOURCES := \
 	14g-measles-pep.cpp \
 	14i-measles-pep-timeline.cpp \
 	14j-measles-pep-groups.cpp \
+	14k-measles-stages.cpp \
+	14l-measles-stages-laws.cpp \
 	15-edgelist-after-run-multiple.cpp \
-	16-multiple-events.cpp \
 	17a-mixing-quarantine.cpp \
 	17b-mixing-quarantine.cpp \
 	17c-mixing-quarantine.cpp \
@@ -51,6 +51,8 @@ $(NAME)_SOURCES := \
 	18g-measles-mixing-isolated.cpp \
 	18h-measles-mixing-layer.cpp \
 	18i-measles-mixing-small-log.cpp \
+	18j-measles-mixing-contact-cap.cpp \
+	18k-measles-mixing-quarantine-exempt.cpp \
 	19a-measles-mixing-risk-quarantine-basic.cpp \
 	19b-measles-mixing-risk-quarantine-transitions.cpp \
 	19c-measles-mixing-risk-quarantine-durations.cpp \
@@ -61,14 +63,11 @@ $(NAME)_SOURCES := \
 	20c-rewire-degseq-queue.cpp \
 	22a-globalevents.cpp \
 	22b-globalevents.cpp \
-	23a-distribute-tool-virus-to-entities.cpp \
-	23b-distribute-tool-virus-to-entities.cpp \
 	24a-virus-hist-single-run.cpp \
 	24b-csv-output-format.cpp \
 	24c-virus-hist-multiple-sims.cpp \
 	25a-hospitalizationstracker.cpp \
 	25b-hospitalizationstracker-validation.cpp \
-	26-entity-add-rm.cpp \
 	27-shortcreek.cpp \
 	28a-epiassert.cpp \
 	29a-sbm.cpp \
@@ -81,7 +80,6 @@ $(NAME)_SOURCES := \
 	29h-sbm-exchangeability.cpp \
 	29i-sbm-large-blocks.cpp \
 	29a-state-update-transition.cpp \
-	30a-contact-tracing.cpp \
 	30b-contact-tracing.cpp \
 	30c-layer-tracing.cpp \
 	31a-seir-network-quarantine.cpp \
@@ -91,10 +89,8 @@ $(NAME)_SOURCES := \
 	32d-bubbles-rewiring.cpp \
 	32e-bubbles-setup-per-run.cpp \
 	32f-bubbles-parallel.cpp \
-	32g-bubbles-ties-complete.cpp \
-	32h-bubbles-ties-withdrawn.cpp \
-	32i-bubbles-ties-interactions.cpp \
-	32j-bubbles-ties-run-zero.cpp \
+	32g-bubbles-household-layer.cpp \
+	32h-bubbles-household-layer-rules.cpp \
 	33a-edges-add-rm.cpp \
 	33b-edges-queue.cpp \
 	34a-transmission-push-pull.cpp \
@@ -135,7 +131,17 @@ $(NAME)_SOURCES := \
 	48b-mixing-group-history.cpp \
 	49a-mixing-models.cpp \
 	49b-contact-rate-param.cpp \
-	49c-seir-quarantine-layers.cpp
+	49c-seir-quarantine-layers.cpp \
+	50a-rng-seed-reset.cpp \
+	51a-model-registry.cpp \
+	51b-model-registry-errors.cpp \
+	52a-natural-history.cpp \
+	52b-natural-history-queue.cpp \
+	52c-natural-history-models.cpp \
+	53a-outputs-by-disease.cpp \
+	54a-two-diseases.cpp \
+	54b-second-disease-unseeded.cpp \
+	54c-two-diseases-rules.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
 # covered and would inflate the figure.

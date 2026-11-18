@@ -8,7 +8,7 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
     auto fn_1 = epi_temp_file("01c-sir-1", "%li");
 
     // Adding multi-file write
-    auto sav_0 = epiworld::make_save_run<>(
+    auto sav_0 = epiworld::make_save_run(
         fn_0.full_path.c_str(), // std::string fmt,
         true,  // bool total_hist,
         false, // bool variant_info,
@@ -22,7 +22,7 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
         true   // bool outbreak_size
     );
 
-    auto sav_1 = epiworld::make_save_run<>(
+    auto sav_1 = epiworld::make_save_run(
         fn_1.full_path.c_str(), // std::string fmt,
         true,  // bool total_hist,
         false, // bool variant_info,
@@ -38,7 +38,7 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
 
 
     // Queuing doesn't matter and get results that are meaningful
-    epimodels::ModelSIR<> model_0(
+    epimodels::ModelSIR model_0(
         "a virus", 10000, 0.01, .9, .3
         );
     
@@ -52,7 +52,7 @@ EPIWORLD_TEST_CASE("SIR parallel", "[SIR parallel]") {
 
     model_0.run_multiple(100, 4, 1231, sav_0, true, true, 1);
 
-    epimodels::ModelSIR<> model_1(
+    epimodels::ModelSIR model_1(
         "a virus", 10000, 0.01, .9, .3
         );
 

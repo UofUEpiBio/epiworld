@@ -24,7 +24,7 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
 
     // Create a saver function to collect transmission data from each experiment
     auto saver = [&total_transmissions_before, &total_transmissions_after, intervention_day](
-        size_t, Model<>* m) -> void {
+        size_t, Model* m) -> void {
         
         // Get transmission data
         std::vector<int> trans_date, trans_source, trans_target, trans_virus, trans_source_exposure, trans_source_exposure_layer;
@@ -48,7 +48,7 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
     };
 
     // Create a single SIR model
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "virus", 1000, 0.05, 0.7, 0.15  // Parameters tuned for observable spread
     );
 
@@ -59,7 +59,7 @@ EPIWORLD_TEST_CASE("GlobalEvents - Parameter modification", "[globalevents][para
 
     // Add a global event that sets transmission rate to 0 on the intervention day
     model.add_globalevent(
-        [](Model<>* m) -> void {
+        [](Model* m) -> void {
             m->set_param("Transmission probability", 0.0);
         },
         "Stop transmission",

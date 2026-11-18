@@ -20,7 +20,7 @@ EPIWORLD_TEST_CASE("Bubbles - household partition structure", "[bubbles]") {
     size_t n = 300u, hh_size = 3u, group = 2u;
     auto hh = make_households(n, hh_size);
 
-    epimodels::ModelSEIR<> model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
+    epimodels::ModelSEIR model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
     model.seed(11);
     model.add_layer(layer::network(
         "network", rgraph_smallworld(n, 6, 0.05, false, model)
@@ -28,12 +28,12 @@ EPIWORLD_TEST_CASE("Bubbles - household partition structure", "[bubbles]") {
 
     // Adding the intervention is all there is to it: it sets itself up (the
     // partition included) on the first day of the run.
-    Bubbles<> bubbles(hh, BubbleFlavor::Household, group, 0.0, 0, -1, 0);
+    Bubbles bubbles(hh, BubbleFlavor::Household, group, 0.0, 0, -1, 0);
     model.add_globalevent(bubbles);
     model.verbose_off();
     model.run(5);
 
-    const auto & bid = Bubbles<>::get_from(model)->get_bubble_id();
+    const auto & bid = Bubbles::get_from(model)->get_bubble_id();
     REQUIRE(bid.size() == n);
 
     // Agents in the same household share a bubble.

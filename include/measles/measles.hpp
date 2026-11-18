@@ -3,7 +3,7 @@
 
 /* Versioning */
 #define MEASLES_VERSION_MAJOR 0
-#define MEASLES_VERSION_MINOR 4
+#define MEASLES_VERSION_MINOR 5
 #define MEASLES_VERSION_PATCH 0
 
 #define MEASLES_VERSION_PRERELEASE ""
@@ -38,6 +38,22 @@ namespace measles {
     #include "measlesschool.hpp"
     #include "measlesmixing.hpp"
     #include "measlesmixingriskquarantine.hpp"
+
+    /**
+     * @brief Adds the measles models to a model registry.
+     *
+     * @details Each model's entry is its `model_info()`, with the defaults of
+     * the measles R package. They name their own virus ("Measles").
+     */
+    inline epiworld::ModelRegistry & register_models(
+        epiworld::ModelRegistry & registry
+    )
+    {
+        return registry
+            .add(ModelMeaslesMixing::model_info())
+            .add(ModelMeaslesMixingRiskQuarantine::model_info())
+            .add(ModelMeaslesSchool::model_info());
+    }
 }
 
 #endif

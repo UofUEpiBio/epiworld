@@ -34,7 +34,7 @@ EPIWORLD_TEST_CASE("Rewire degseq - mid-run rewiring keeps the queue honest", "[
 
         Run r;
 
-        epimodels::ModelSIR<> model("v", 2000, 0.01, 0.3, 0.2);
+        epimodels::ModelSIR model("v", 2000, 0.01, 0.3, 0.2);
         model.verbose_off();
         model.add_layer(layer::network(
             "network", rgraph_smallworld(2000, 6, 0.05, false, model)
@@ -47,7 +47,7 @@ EPIWORLD_TEST_CASE("Rewire degseq - mid-run rewiring keeps the queue honest", "[
             model.queuing_off();
 
         // Draws no random numbers, so it leaves the run as it was
-        model.add_globalevent([&r](Model<> * m) -> void {
+        model.add_globalevent([&r](Model * m) -> void {
             if (m->get_last_transmission_mode() == TransmissionMode::push)
                 ++r.n_push;
             else
@@ -58,7 +58,7 @@ EPIWORLD_TEST_CASE("Rewire degseq - mid-run rewiring keeps the queue honest", "[
 
         model.run(60, 123);
 
-        model.get_db().get_hist_total(&r.hist_date, &r.hist_state, &r.hist_counts);
+        model.get_db().get_hist_total(&r.hist_date, nullptr, &r.hist_state, &r.hist_counts);
         model.get_db().get_transmissions(
             r.date, r.source, r.target, r.virus, r.source_exposure_date, r.layer
         );

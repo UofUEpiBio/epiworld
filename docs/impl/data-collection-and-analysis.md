@@ -1,37 +1,52 @@
 ## Overview
 The `DataBase` class is responsible for collecting, organizing, and exporting statistical data generated during simulations. This data encompasses a wide range of information, including the state of agents, the history of viruses and tools, and the transmission network. The `DataBase` class is tightly integrated with the `Model` class, which provides the context for the simulation, such as the agents, their states, and the interactions between them.
 
-We track data at multiple levels of granularity. At the agent level, it records the state of each individual and their transitions over time. At the population level, it aggregates this information to provide a snapshot of the overall state distribution. Additionally, it maintains a history of virus and tool events, such as the introduction of new variants or the application of interventions. The transmission network is also recorded, capturing the source, target, and timing of each transmission event. This comprehensive data collection allows for detailed analysis of the simulation's behavior.
+We track data at multiple levels of granularity. An agent's state is a pair: its stage (in the virus's natural history) and its status (free, quarantined, ...; "Free" in a model without statuses). The counts are kept per pair, so a total by stage or by status is a sum over the rows, and every declared transition is counted by name. Additionally, it maintains a history of virus and tool events, such as the introduction of new variants or the application of interventions. The transmission network is also recorded, capturing the source, target, and timing of each transmission event. This comprehensive data collection allows for detailed analysis of the simulation's behavior.
 
 ## Recording During Simulations
 We automatically record data at each step of the simulation. This includes the current state of all agents, the distribution of states for each virus and tool, and the overall state distribution. For example, the `record` method is called at the end of each simulation step to update the internal data structures with the latest information. This ensures that the data remains consistent with the simulation's progression.
 
-In addition to automatic recording, the `DataBase` class provides methods for manually recording specific events. For instance, the `record_virus` method is used to register a new virus, while the `record_tool` method is used to register a new tool. These methods update the relevant data structures with information about the virus or tool, such as its name, sequence, and origin date. Similarly, the `record_transmission` method is used to record a transmission event, capturing the source, target, and timing of the event.
+Viruses and tools get ids in order: the viruses added to the model (`add_virus()`), then the variants their mutations make during a run (each a child of the variant it changed); the tools in the order they were added. Each transmission is recorded with its source, target, date, virus and layer.
+
+The counts can be read during or after a run:
 
 ```cpp
-#include "epiworld/database-bones.hpp"
-#include "epiworld/model-bones.hpp"
+const auto & db = model.get_db();
 
-int main() {
-    Model<int> model(100); // Create a model with 100 agents
-    DataBase<int> db(model); // Initialize the database
+// How many agents are in a stage (any status), or in a status (any stage)
+int infected = db.get_today_total_stage("Infected");
+int isolated = db.get_today_total_status("Isolated");
 
-    Virus<int> virus("ExampleVirus");
-    db.record_virus(virus); // Record a new virus
+// The daily counts of each (status, stage) pair
+std::vector< int > date, counts;
+std::vector< std::string > status, stage;
+db.get_hist_total(&date, &status, &stage, &counts);
 
-    db.record_transmission(1, 2, 0, 5); // Record a transmission event
+// The daily count of each declared transition, by name
+std::vector< int > tdate, tcounts;
+std::vector< std::string > transition;
+db.get_hist_transitions(tdate, transition, tcounts);
 
-    db.record(); // Record the current state of the simulation
-    return 0;
-}
+// The same, by strain (the stage transitions an agent with the virus takes)
+std::vector< int > vid;
+db.get_hist_virus_transitions(tdate, vid, transition, tcounts);
 ```
+
+Every function that returns rows ends with two optional arguments: the disease (`Model::disease_id()`; `all_diseases`, the default, asks for every disease, one after the other) and a vector to fill with the disease of each row. Each disease's counts are by its stage and the status, and add up to the population; a virus's history is in its disease, a tool's in the diseases it targets. The statuses' transitions are counted once: with several diseases, `get_hist_transitions()` lists them after the first disease's, with the disease `""`, when every disease is asked for. What is shaped by one disease's stages (a pair or stage transition matrix, the agents' stages, a total by stage whose name two diseases share) needs the disease when the model has several.
+
+```cpp
+std::vector< std::string > disease;
+db.get_hist_total(&date, &status, &stage, &counts, all_diseases, &disease);
+```
+
+A stage and a status may share a name: each of `get_today_total_stage()` and `get_today_total_status()` looks only among its own, and throws if the name is not one of them.
 
 ## Exporting Data
 
-The `write_data` method allows for exporting simulation results to external files. This method allows users to specify multiple output files, each corresponding to a specific type of data. For example, one file may contain information about viruses, while another contains the transmission network. The data is written in a tabular format, making it easy to import into statistical software or spreadsheet applications for further analysis.
+The `write_data` method (of the model, or of its database) allows for exporting simulation results to external files. This method allows users to specify multiple output files, each corresponding to a specific type of data. For example, one file may contain information about viruses, while another contains the transmission network. The data is written in a tabular format, making it easy to import into statistical software or spreadsheet applications for further analysis.
 
 ```cpp
-db.write_data(
+model.write_data(
     "virus_info.csv",
     "virus_hist.csv",
     "tool_info.csv",
@@ -47,21 +62,36 @@ db.write_data(
 ```
 
 Each file contains a specific subset of the simulation data:
-- `virus_info.csv`: Information about viruses, including their names, sequences, and origin dates.
-- `virus_hist.csv`: A history of virus-related events, such as the introduction of new variants.
-- `tool_info.csv`: Information about tools, including their names and sequences.
-- `tool_hist.csv`: A history of tool-related events.
-- `total_hist.csv`: The overall state distribution over time.
+- `virus_info.csv`: Information about viruses, including their ids, names, origin dates, and parents.
+- `virus_hist.csv`: The daily counts of each virus, by status and stage.
+- `tool_info.csv`: Information about tools, including their ids, names, and origin dates.
+- `tool_hist.csv`: The daily counts of each tool, by status and stage.
+- `total_hist.csv`: The daily counts of each (status, stage) pair.
 - `transmission.csv`: The transmission network, including the source, target, and timing of each event.
-- `transition.csv`: The transition matrix, showing the counts or probabilities of transitions between states.
+- `transition.csv`: The daily transition matrix, from each (status, stage) pair to each other.
 - `reproductive_number.csv`: The reproductive number for each case.
 - `generation_time.csv`: The generation time, which is the time between the infection of the source and the infection of the target.
+
+Every file and table but the tools' (`tool_info`) starts with a `disease` column, the disease of each row.
+
+The same tables are available in memory: `db.get_run_outputs({"total_hist", "transmission"})` returns them (see `run_output_names()` for the names), and `SaverMemory` keeps them for every replicate of `run_multiple()`.
 
 ## Basic Analysis
 The `DataBase` class includes methods for performing basic analysis on the simulation data. These methods allow users to calculate metrics such as transition probabilities, reproductive numbers, and generation times. For example, the `get_transition_probability` method calculates the probability of transitioning from one state to another, while the `get_reproductive_number` method computes the reproductive number for each case.
 
+Transition matrices come over a margin: the (status, stage) pair the engine records, or the stage or the status alone, each the pair's counts summed over the other (so a change of status within a stage counts as staying, in the stage matrix):
+
 ```cpp
-std::vector<epiworld_double> transition_probs = db.get_transition_probability(true, true);
+TransitionMatrix tm = db.get_transition_probability(Margin::stage); // probabilities
+tm.print();
+epiworld_double p = tm(0, 1); // from stage 0 to stage 1 (labels: tm.stage)
+
+// Each agent's stage and status
+std::vector< int > stages = model.get_agents_stages();
+std::vector< int > statuses = model.get_agents_statuses();
+```
+
+```cpp
 MapVec_type<int, int> reproductive_numbers = db.get_reproductive_number();
 
 std::vector<int> agent_id, virus_id, time, gentime;

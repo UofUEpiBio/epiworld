@@ -14,26 +14,26 @@ EPIWORLD_TEST_CASE("SEIR recovery follows the virus and tools", "[seir-recovery]
 
     for (const bool with_tool : {false, true}) {
 
-        epimodels::ModelSEIR<> model("virus", n, 0.05, 0.0, 1.0, 0.0);
+        epimodels::ModelSEIR model("virus", n, 0.05, 0.0, 1.0, 0.0);
         model.add_layer(layer::network(
             "network", rgraph_smallworld(n, 10, 0.1, false, model)
         ));
 
         if (with_tool)
         {
-            Tool<> cure("cure", 1.0, true);
+            Tool cure("cure");
             cure.set_recovery_enhancer(1.0);
-            model.add_tool(cure);
+            model.add_tool(cure, assign::share(1.0));
         }
 
         model.verbose_off();
         model.run(10, 2201);
 
         const auto & db = model.get_db();
-        CHECK(db.get_today_total("Susceptible") == n - n_seeds);
-        CHECK(db.get_today_total("Exposed") == 0);
-        CHECK(db.get_today_total("Infected") == (with_tool ? 0 : n_seeds));
-        CHECK(db.get_today_total("Removed") == (with_tool ? n_seeds : 0));
+        CHECK(db.get_today_total_stage("Susceptible") == n - n_seeds);
+        CHECK(db.get_today_total_stage("Exposed") == 0);
+        CHECK(db.get_today_total_stage("Infected") == (with_tool ? 0 : n_seeds));
+        CHECK(db.get_today_total_stage("Removed") == (with_tool ? n_seeds : 0));
 
     }
 

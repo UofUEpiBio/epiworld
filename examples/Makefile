@@ -9,7 +9,6 @@ PACKAGES := \
 	05-user-data \
 	07-surveillance \
 	10-likelihood-free-mcmc \
-	11-entities \
 	13-genint \
 	14-community-hosp \
 	15-seird-transitions \
@@ -19,7 +18,8 @@ PACKAGES := \
 	19-poisson-approximation-binomial \
 	20-transmission-benchmark \
 	21-parameter-lookup-benchmark \
-	22-post-sampling-benchmark
+	22-post-sampling-benchmark \
+	23-layers
 	
 # Only with OpenMP
 ifneq ($(filter 1 yes true,$(WITH_OPENMP)),)

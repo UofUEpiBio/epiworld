@@ -1,4 +1,5 @@
 #include "tests.hpp"
+#include "measles-stages.hpp"
 #include "../include/measles/measles.hpp"
 
 using namespace epiworld;
@@ -7,7 +8,7 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
     
     // Queuing doesn't matter and get results that are meaningful
     int n_seeds = 5;
-    measles::ModelMeaslesSchool<> model_0(
+    measles::ModelMeaslesSchool model_0(
         1000,    // Number of agents
         n_seeds, // Number of initial cases
         2.0,     // Contact rate
@@ -27,12 +28,7 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
     );
 
     // Setting the distribution function of the initial cases
-    model_0.get_virus(0).set_distribution(
-        [&n_seeds](Virus<> & v, Model<> * m) -> void {
-        for (int i = 0; i < n_seeds; ++i)
-            m->get_agents()[i].set_virus(*m, v);
-        return;
-    });
+    model_0.assign_virus(0, assign::agents(first_agents(n_seeds)));
 
     size_t nsims = 1000;
     std::vector< std::vector<epiworld_double> > transitions(nsims);
@@ -80,60 +76,72 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
     obs_hosp_probability /= static_cast<epiworld_double>(nsims);
 
     // Checking especific values in the transitions
+    // The engine's states are the (stage, status) pairs: state = stage * 4 +
+    // status (stages S, L, P, Rash, Severe, Recovered; statuses Free,
+    // Quarantined, Isolated, Hospitalized)
     #define mat(i, j) avg_transitions[j*n_states + i]
-    double p_recovered = 1.0/model_0("Rash period");
+    // Exits from Rash with the drawn rash period (see measles-stages.hpp)
+    auto rash = measles_rash_exits(
+        model_0("Rash period"),
+        model_0("Rash period sd"),
+        model_0("Hospitalization rate"),
+        1.0/model_0("Days undetected")
+    );
     double R0_theo = model_0("Contact rate") * model_0("Transmission rate") *
         model_0("Prodromal period");
     // Transition to prodromal
     REQUIRE_FALSE(moreless(
-        mat(1, 2) + mat(1, 8), 1.0/model_0("Incubation period"), 0.05)
+        mat(4, 8) + mat(4, 9), 1.0/model_0("Incubation period"), 0.05)
     );
 
     // Transition to rash
     REQUIRE_FALSE(
-        moreless(mat(2, 3) + mat(2, 4), 1.0/model_0("Prodromal period"), 0.05)
+        moreless(mat(8, 12) + mat(8, 14), 1.0/model_0("Prodromal period"), 0.05)
     );
 
     // Transition to isolated
     REQUIRE_FALSE(
         moreless(
-            mat(3, 4),
-            (1.0/model_0("Days undetected")) * (1.0 - p_recovered - model_0("Hospitalization rate")), 0.05
+            mat(12, 14),
+            (1.0/model_0("Days undetected")) * (1.0 - mat(12, 20) - mat(12, 19)), 0.05
         )
     );
 
-    // Transition from Quarantine Exposed to Quarantined Prodromal
-    REQUIRE_FALSE(
-        moreless(mat(6, 8), 1.0/model_0("Incubation period"), 0.05)
-    );
+    // Quarantined Exposed -> Quarantined Prodromal: agents enter quarantine
+    // part-way through their latent period, so its rate is not
+    // 1/incubation; 14k-measles-stages.cpp tests that quarantine keeps the
+    // latent period.
 
     // From quarantine prodromal to isolated (rash cases are dected immediately)
     REQUIRE_FALSE(
-        moreless(mat(8, 4), 1.0/model_0("Prodromal period"), 0.05)
+        moreless(mat(9, 14), 1.0/model_0("Prodromal period"), 0.05)
     );
 
     // Transition to hospitalized
     REQUIRE_FALSE(
-        moreless(mat(3, 10), model_0("Hospitalization rate"),
+        moreless(mat(12, 19), model_0("Hospitalization rate"),
         0.05)
     );
     REQUIRE_FALSE(
-        moreless(0.0 + mat(4, 10), model_0("Hospitalization rate"), 0.05)
+        moreless(0.0 + mat(14, 19), model_0("Hospitalization rate"), 0.05)
     );
 
     // Transition to recovered
-    REQUIRE_FALSE(moreless(mat(3, 11), p_recovered, 0.05));
-    REQUIRE_FALSE(moreless(mat(4, 5) + mat(4, 11), p_recovered, 0.05));
+    // Agents move between Rash and Isolated (and back when isolation
+    // ends), so the recovery rate of either state depends on the isolation
+    // policy. 14k and 14l test the rash period; the share hospitalized is
+    // checked below.
+    // Agents enter Isolated part-way through their rash period, so its
+    // recovery rate has no simple form; 14k-measles-stages.cpp tests that
+    // isolation keeps the rash period.
 
     // Transition from hospitalized to recovered
-    REQUIRE_FALSE(moreless(mat(10, 11), 1.0/model_0("Hospitalization period"), 0.05));
+    REQUIRE_FALSE(moreless(mat(19, 20), 1.0/model_0("Hospitalization period"), 0.05));
 
     // Hospitalization probability
     REQUIRE_FALSE(
         moreless(
-            model_0("Hospitalization rate")/(
-                model_0("Hospitalization rate") + p_recovered
-            ),
+            rash.p_hospitalized,
             obs_hosp_probability,
             0.05
         )
@@ -145,45 +153,43 @@ EPIWORLD_TEST_CASE("Measles model (quarantine)", "[ModelMeaslesSchoolOn]") {
 
     // Transition to prodromal
     std::cout << "Transition to prodromal: "
-              << mat(1, 2) + mat(1, 8) << " (expected ~" << 1.0/model_0("Incubation period") << ")" << std::endl;
+              << mat(4, 8) + mat(4, 9) << " (expected ~" << 1.0/model_0("Incubation period") << ")" << std::endl;
 
     // Transition to rash
     std::cout << "Transition to rash: "
-              << mat(2, 3) + mat(2, 4) << " (expected ~" << 1.0/model_0("Prodromal period") << ")" << std::endl;
+              << mat(8, 12) + mat(8, 14) << " (expected ~" << 1.0/model_0("Prodromal period") << ")" << std::endl;
 
     // Transition to isolated
     std::cout << "Transition to isolated: "
-              << mat(3, 4) << " (expected ~" << (1.0/model_0("Days undetected")) * (1.0 - p_recovered - model_0("Hospitalization rate")) << ")" << std::endl;
+              << mat(12, 14) << " (expected ~" << (1.0/model_0("Days undetected")) * (1.0 - mat(12, 20) - mat(12, 19)) << ")" << std::endl;
 
     // Transition from Quarantine Exposed to Quarantined Prodromal
     std::cout << "Transition from Q. Exposed to Q. Prodromal: "
-              << mat(6, 8) << " (expected ~" << 1.0/model_0("Incubation period") << ")" << std::endl;
+              << mat(5, 9) << " (expected ~" << 1.0/model_0("Incubation period") << ")" << std::endl;
 
     // From quarantine prodromal to isolated (rash cases are dected immediately)
     std::cout << "Transition from Q. Prodromal to isolated: "
-              << mat(8, 4) << " (expected ~" << 1.0/model_0("Prodromal period") << ")" << std::endl;
+              << mat(9, 14) << " (expected ~" << 1.0/model_0("Prodromal period") << ")" << std::endl;
 
     // Transition to hospitalized
     std::cout << "Transition to hospitalized (prodromal): "
-              << mat(3, 10) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
+              << mat(12, 19) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
     std::cout << "Transition to hospitalized (rash): "
-              << 0.0 + mat(4, 10) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
+              << 0.0 + mat(14, 19) << " (expected ~" << model_0("Hospitalization rate") << ")" << std::endl;
 
     // Transition to recovered    
     std::cout << "Transition to recovered (prodromal): "
-              << mat(3, 11) << " (expected ~" << p_recovered << ")" << std::endl;
+              << mat(12, 20) << std::endl;
     std::cout << "Transition to recovered (rash): "
-              << mat(4, 5) + mat(4, 11) << " (expected ~" << p_recovered << ")" << std::endl;
+              << mat(14, 22) + mat(14, 20) << std::endl;
 
     // Transition from hospitalized to recovered
     std::cout << "Transition from hospitalized to recovered: "
-              << mat(10, 11) << " (expected ~" << 1.0/model_0("Hospitalization period") << ")" << std::endl;
+              << mat(19, 20) << " (expected ~" << 1.0/model_0("Hospitalization period") << ")" << std::endl;
 
     // Hospitalization probability
     std::cout << "Hospitalization probability: "
-              << model_0("Hospitalization rate")/(
-                  model_0("Hospitalization rate") + p_recovered
-              ) << " (observed ~" << obs_hosp_probability << ")" << std::endl;
+              << rash.p_hospitalized << " (observed ~" << obs_hosp_probability << ")" << std::endl;
 
     #undef mat
 

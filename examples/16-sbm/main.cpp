@@ -5,7 +5,7 @@ using namespace epiworld;
 int main() {
 
     // Creating an SIR model
-    epimodels::ModelSIR<> model(
+    epimodels::ModelSIR model(
         "a virus", // Name of the virus
         5000,      // Number of agents (the block sizes below add up to it)
         0.01,      // Initial prevalence

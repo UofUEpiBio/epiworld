@@ -12,7 +12,7 @@ EPIWORLD_TEST_CASE(
 ) {
 
     size_t n = 1000;
-    measles::ModelMeaslesMixing<> model(
+    measles::ModelMeaslesMixing model(
         n,           // Number of agents
         0.05,        // Initial prevalence (50 cases)
         0.0,         // Transmission rate: only the initial cases
@@ -37,8 +37,8 @@ EPIWORLD_TEST_CASE(
     for (int seed = 1; seed <= 10; ++seed)
     {
         model.run(150, seed);
-        REQUIRE(model.get_db().get_today_total("Isolated Recovered") == 0);
-        REQUIRE(model.get_db().get_today_total("Recovered") == 50);
+        REQUIRE(model.get_db().get_today_total_status("Isolated") == 0);
+        REQUIRE(model.get_db().get_today_total_stage("Recovered") == 50);
     }
 
 }

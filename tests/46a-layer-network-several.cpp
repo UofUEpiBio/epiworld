@@ -10,16 +10,16 @@ using namespace epiworld;
 namespace {
 
 // Final number of agents ever infected, one entry per replicate
-std::vector< double > attack(Model<> & model, const std::string & mode)
+std::vector< double > attack(Model & model, const std::string & mode)
 {
 
     std::vector< double > out;
     model.set_transmission_mode(mode);
     model.run_multiple(
         60, 300, 2026,
-        [&out](size_t, Model<> * m) -> void {
+        [&out](size_t, Model * m) -> void {
             std::vector< int > counts;
-            m->get_db().get_today_total(nullptr, &counts);
+            m->get_db().get_today_total(nullptr, nullptr, &counts);
             out.push_back(static_cast< double >(counts[1] + counts[2]));
         },
         true, false, 1
@@ -46,7 +46,7 @@ EPIWORLD_TEST_CASE("Network layers - several in one model", "[layer-network]") {
     const size_t n = 1000u;
 
     // The ties, drawn once
-    epimodels::ModelSIR<> draw("flu", n, 0.0, 0.0, 0.0);
+    epimodels::ModelSIR draw("flu", n, 0.0, 0.0, 0.0);
     draw.seed(46);
     std::vector< int > source, target;
     layer::network("all", rgraph_smallworld(n, 6, 0.1, false, draw))
@@ -54,7 +54,7 @@ EPIWORLD_TEST_CASE("Network layers - several in one model", "[layer-network]") {
 
     auto make = [&](size_t n_layers) {
 
-        auto model = std::make_unique< epimodels::ModelSIR<> >(
+        auto model = std::make_unique< epimodels::ModelSIR >(
             "flu", n, 0.01, 0.1, 0.2
         );
         model->verbose_off();
@@ -81,7 +81,7 @@ EPIWORLD_TEST_CASE("Network layers - several in one model", "[layer-network]") {
     // -- one network plus an empty one: the same run, draw for draw --------
     for (std::string mode : {"pull", "push"})
     {
-        epimodels::ModelSIR<> single("flu", n, 0.01, 0.1, 0.2);
+        epimodels::ModelSIR single("flu", n, 0.01, 0.1, 0.2);
         single.verbose_off();
         single.add_layer(layer::network(
             "a", AdjList(source, target, static_cast< int >(n), false)
@@ -94,8 +94,8 @@ EPIWORLD_TEST_CASE("Network layers - several in one model", "[layer-network]") {
         with_empty->run(60, 123);
 
         std::vector< int > h1, h2;
-        single.get_db().get_hist_total(nullptr, nullptr, &h1);
-        with_empty->get_db().get_hist_total(nullptr, nullptr, &h2);
+        single.get_db().get_hist_total(nullptr, nullptr, nullptr, &h1);
+        with_empty->get_db().get_hist_total(nullptr, nullptr, nullptr, &h2);
         REQUIRE(h1 == h2);
 
         std::vector< int > d, src, tgt, v, se, se_layer;

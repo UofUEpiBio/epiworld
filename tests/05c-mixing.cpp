@@ -17,7 +17,7 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
     int n_agents = 2000;
     size_t nsims = 400;
    
-    epimodels::ModelSIR<> model_1(
+    epimodels::ModelSIR model_1(
         "Flu", // std::string vname,
         n_agents, // epiworld_fast_uint n,
         static_cast<double>(n_infected)/n_agents,  // epiworld_double prevalence,
@@ -32,17 +32,14 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
     // Creating three groups
 
 
-    model_1.get_virus(0).set_distribution(
-        distribute_virus_randomly(n_infected, false)
-        // dist_virus
-    );
+    model_1.assign_virus(0, assign::count(n_infected));
 
     std::vector< std::vector<epiworld_double> > transitions(nsims);
     std::vector< epiworld_double > R0s(nsims, -1.0);
-    auto saver = [&transitions, &R0s](size_t n, Model<>* m) -> void{
+    auto saver = [&transitions, &R0s](size_t n, Model* m) -> void{
 
         // Saving the transition probabilities
-        transitions[n] = m->get_db().get_transition_probability(false, false);
+        transitions[n] = m->get_db().get_transition_probability(Margin::pair, all_diseases, false).values;
 
         // Recording the R0 from the index case
         auto rts = m->get_db().get_reproductive_number();      
@@ -71,7 +68,7 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
         }
     }
     // Normalizing the average
-    auto states = model_1.get_states();
+    auto states = tests_state_labels(model_1);
     size_t n_states = states.size();
     for (size_t i = 0; i < n_states; ++i)
     {
@@ -137,17 +134,17 @@ EPIWORLD_TEST_CASE("SIRMixing R0", "[SIR-mixing R0]") {
     calc_r0(R0_obs1, R0_exp1, R0s, compute_avg_row_sum());
 
     scale_contact_matrix(1.5);
-    model_1.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
+    model_1.get_layer_as< layer::Mixing >("mixing").set_contact_matrix(contact_matrix);
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
     calc_r0(R0_obs2, R0_exp2, R0s, compute_avg_row_sum());
 
     scale_contact_matrix(1.5);
-    model_1.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
+    model_1.get_layer_as< layer::Mixing >("mixing").set_contact_matrix(contact_matrix);
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
     calc_r0(R0_obs3, R0_exp3, R0s, compute_avg_row_sum());
 
     scale_contact_matrix(1.5);
-    model_1.get_layer_as< layer::Mixing<> >("mixing").set_contact_matrix(contact_matrix);
+    model_1.get_layer_as< layer::Mixing >("mixing").set_contact_matrix(contact_matrix);
     model_1.run_multiple(100, nsims, 1231, saver, true, true, 2);
     calc_r0(R0_obs4, R0_exp4, R0s, compute_avg_row_sum());
     

@@ -42,7 +42,7 @@ EPIWORLD_TEST_CASE(
     int n_agents = 801;
     size_t nsims = 200;
 
-    measles::ModelMeaslesMixingRiskQuarantine<> model(
+    measles::ModelMeaslesMixingRiskQuarantine model(
         n_agents,
         2.0 / n_agents,    // prevalence: 2 infected agents
         0.01,              // transmission_rate (low to keep outbreaks small)
@@ -72,12 +72,7 @@ EPIWORLD_TEST_CASE(
     // Override the virus distribution to place exactly 2 infected agents:
     // Agent 0 in group 0 (high contact rate) and agent 1 in group 1
     // (low contact rate)
-    model.get_virus(0).set_distribution(
-        [](Virus<> & v, Model<> * m) -> void {
-            m->get_agents()[0].set_virus(*m, v);  // group 0
-            m->get_agents()[1].set_virus(*m, v);  // group 1
-        }
-    );
+    model.assign_virus(0, assign::agents({0u, 1u}));
 
     // Track reproductive numbers for agent 0 (group 0) and agent 1
     // (group 1) across simulations
@@ -85,7 +80,7 @@ EPIWORLD_TEST_CASE(
     std::vector<double> R0_low(nsims, 0.0);
 
     auto saver = [&R0_high, &R0_low](
-        size_t n, Model<> * m
+        size_t n, Model * m
     ) -> void {
 
         auto rts = m->get_db().get_reproductive_number();

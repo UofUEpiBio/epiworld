@@ -1,12 +1,11 @@
 #ifndef EPIWORLD_AGENT_EVENTS_MEAT_HPP
 #define EPIWORLD_AGENT_EVENTS_MEAT_HPP
 
-template<typename TSeq>
-inline void Model<TSeq>::_event_add_virus(Event<TSeq> & a)
+inline void Model::_event_add_virus(Event & a)
 {
 
-    Agent<TSeq> *  p = a.agent;
-    VirusPtr<TSeq> & v = a.virus;
+    Agent *  p = a.agent;
+    VirusPtr & v = a.virus;
     
     db.record_transmission(
         v->get_agent() ? v->get_agent()->get_id() : -1,
@@ -37,24 +36,19 @@ inline void Model<TSeq>::_event_add_virus(Event<TSeq> & a)
     }
 
     // Lastly, we increase the daily count of the virus
-    #ifdef EPI_DEBUG
-    db.today_virus.at(p->virus->get_id()).at(
-        a.new_state != -99 ? a.new_state : p->state
-    )++;
-    #else
-    db.today_virus[p->virus->get_id()][
-        a.new_state != -99 ? a.new_state : p->state
-    ]++;
-    #endif
+    db.count_virus(
+        p->virus->get_id(),
+        static_cast< epiworld_fast_uint >(a.new_state != -99 ? a.new_state : p->state),
+        1
+    );
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::_event_add_tool(Event<TSeq> & a)
+inline void Model::_event_add_tool(Event & a)
 {
 
-    Agent<TSeq> * p = a.agent;
-    ToolPtr<TSeq> & t = a.tool;
+    Agent * p = a.agent;
+    ToolPtr & t = a.tool;
     
     // Update tool accounting
     p->tools.emplace_back(std::move(t));
@@ -79,22 +73,20 @@ inline void Model<TSeq>::_event_add_tool(Event<TSeq> & a)
             );
     }
 
-    db.today_tool[p->tools[tool_pos]->get_id()][
-        a.new_state != -99 ? a.new_state : p->state
-    ]++;
+    db.count_tool(
+        p->tools[tool_pos]->get_id(),
+        static_cast< epiworld_fast_uint >(a.new_state != -99 ? a.new_state : p->state),
+        1
+    );
 
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::_event_rm_virus(Event<TSeq> & a)
+inline void Model::_event_rm_virus(Event & a)
 {
 
-    Agent<TSeq> * p    = a.agent;
-    VirusPtr<TSeq> & v = a.virus;
-
-    // Calling the virus action over the removed virus
-    v->post_recovery(this);
+    Agent * p    = a.agent;
+    VirusPtr & v = a.virus;
 
     p->virus = nullptr;
 
@@ -117,23 +109,18 @@ inline void Model<TSeq>::_event_rm_virus(Event<TSeq> & a)
     // The counter of the removed virus must be decremented from the
     // agent's current state (pre-transition), not state_prev.
     // state_prev may refer to an earlier same-day state.
-    #ifdef EPI_DEBUG
-    db.today_virus.at(v->get_id()).at(p->state)--;
-    #else
-    db.today_virus[v->get_id()][p->state]--;
-    #endif
+    db.count_virus(v->get_id(), p->state, -1);
 
     
     return;
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
+inline void Model::_event_rm_tool(Event & a)
 {
 
-    Agent<TSeq> * p = a.agent;
-    ToolPtr<TSeq> & t = a.tool;
+    Agent * p = a.agent;
+    ToolPtr & t = a.tool;
     bool removed = false;
 
     if (t)
@@ -142,7 +129,7 @@ inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
         auto new_end = std::remove_if(
             p->tools.begin(),
             p->tools.end(),
-            [&t](const ToolPtr<TSeq> & tool_ptr) -> bool
+            [&t](const ToolPtr & tool_ptr) -> bool
             {
                 return tool_ptr && (tool_ptr->get_id() == t->get_id());
             }
@@ -176,11 +163,7 @@ inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
     // the agent changed state earlier in the day.
     if (removed)
     {
-        #ifdef EPI_DEBUG
-        db.today_tool.at(t->get_id()).at(p->state)--;
-        #else
-        db.today_tool[t->get_id()][p->state]--;
-        #endif
+        db.count_tool(t->get_id(), p->state, -1);
 
         t->agent = nullptr;
         t->pos_in_agent = -99;
@@ -190,11 +173,10 @@ inline void Model<TSeq>::_event_rm_tool(Event<TSeq> & a)
 
 }
 
-template<typename TSeq>
-inline void Model<TSeq>::_event_change_state(Event<TSeq> & a)
+inline void Model::_event_change_state(Event & a)
 {
 
-    Agent<TSeq> * p = a.agent;
+    Agent * p = a.agent;
 
     if ((a.new_state != -99) && (static_cast<int>(p->state) != a.new_state))
     {
@@ -215,70 +197,6 @@ inline void Model<TSeq>::_event_change_state(Event<TSeq> & a)
             );
 
     }
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::_event_add_entity(Event<TSeq> & a)
-{
-
-    Agent<TSeq> *  p = a.agent;
-    Entity<TSeq> * e = a.entity;
-
-    // Checking the agent and the entity are not linked
-    if ((p->get_n_entities() > 0) && (e->size() > 0))
-    {
-
-        if (p->get_n_entities() > e->size()) // Slower search through the agent
-        {
-            for (size_t agent_id : e->get_agents())
-                if(static_cast<int>(agent_id) == p->get_id())
-                    throw std::logic_error("An entity cannot be reassigned to an agent.");
-        }
-        else                                 // Slower search through the entity
-        {
-            for (size_t entity_id : p->get_entities())
-                if(static_cast<int>(entity_id) == e->get_id())
-                    throw std::logic_error("An entity cannot be reassigned to an agent.");
-        }
-
-        // It means that agent and entity were not associated.
-    }
-
-    // Adding the to agent and the entity
-    p->entities.push_back(static_cast<size_t>(e->get_id()));
-    e->agents.push_back(static_cast<size_t>(p->get_id()));
-
-}
-
-template<typename TSeq>
-inline void Model<TSeq>::_event_rm_entity(Event<TSeq> & a)
-{
-
-    Agent<TSeq> &  p = *a.agent;
-    Entity<TSeq> & e = *a.entity;
-
-    // Remove entity from agent's entity list
-    p.entities.erase(
-        std::remove(
-            p.entities.begin(),
-            p.entities.end(),
-            static_cast<size_t>(e.get_id())
-        ),
-        p.entities.end()
-    );
-
-    // Remove agent from entity's agent list
-    e.agents.erase(
-        std::remove(
-            e.agents.begin(),
-            e.agents.end(),
-            static_cast<size_t>(p.get_id())
-        ),
-        e.agents.end()
-    );
-
-    return;
 
 }
 

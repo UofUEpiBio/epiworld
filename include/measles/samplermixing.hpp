@@ -12,12 +12,11 @@ using namespace epiworld;
  * its contact rate) but would ignore any other layer, so a model with none or
  * with more throws instead.
  */
-template<typename TSeq>
-inline layer::Mixing<TSeq> & measles_mixing_layer(Model<TSeq> & model)
+inline layer::Mixing & measles_mixing_layer(Model & model)
 {
 
     auto * mix = (model.get_n_layers() == 1u) ?
-        dynamic_cast< layer::Mixing<TSeq> * >(&model.get_layer(0u)) : nullptr;
+        dynamic_cast< layer::Mixing * >(&model.get_layer(0u)) : nullptr;
 
     if ((mix == nullptr) || mix->within_groups())
         throw std::logic_error(
@@ -35,27 +34,27 @@ inline layer::Mixing<TSeq> & measles_mixing_layer(Model<TSeq> & model)
  * @brief Reusable contact sampler for mixing models with two infectious stages.
  *
  * The sampler keeps the per-group infectious-agent accounting and contact
- * sampling buffer used by ModelMeaslesMixing; the groups and the contact
+ * sampling buffer used by the measles models; the groups and the contact
  * matrix (times its contact rate) are those of the model's mixing layer (see
- * `measles_mixing_layer()`), and the contacts go to its log. The primary
- * infectious state is sampled at full weight; the reduced infectious state is
- * sampled with a relative contact rate computed as 1 minus a model parameter
- * such as "Rash reduction contact rate".
+ * `measles_mixing_layer()`), and the contacts go to its log. Only agents
+ * with the free status are in the contacts. Free agents in the primary
+ * infectious stage are sampled at full weight; those in the reduced
+ * infectious stage, with a relative contact rate computed as 1 minus a model
+ * parameter such as "Rash reduction contact rate".
  *
- * @tparam TSeq Type for genetic sequences (default: EPI_DEFAULT_TSEQ)
  * @ingroup disease_specific
  */
-template<typename TSeq = EPI_DEFAULT_TSEQ>
 class SamplerMixing
 {
 private:
 
-    int primary_infectious_state = -1;
-    int reduced_infectious_state = -1;
+    int primary_infectious_stage = -1;
+    int reduced_infectious_stage = -1;
     ParamRef reduced_contact_reduction_param{""};
-    std::vector< int > contact_states;
+    std::vector< int > contact_stages;
+    int free_status = 0;
 
-    layer::Mixing<TSeq> * mixing = nullptr; ///< The model's layer (update())
+    layer::Mixing * mixing = nullptr; ///< The model's layer (update())
     double contact_rate = 1.0;              ///< Its contact rate (update())
 
     std::vector< size_t > primary_infectious;
@@ -68,8 +67,8 @@ private:
     std::vector< double > adjusted_contact_rate;
     std::vector< size_t > sampled_agents;
 
-    double get_reduced_contact_rate(Model<TSeq> & model) const;
-    bool is_available_for_contact(int state, bool include_reduced) const;
+    double get_reduced_contact_rate(Model & model) const;
+    bool is_available_for_contact(int stage, bool include_reduced) const;
 
     #ifdef EPI_DEBUG
     std::vector< int > sampled_sizes;
@@ -83,19 +82,21 @@ public:
     SamplerMixing() = default;
 
     /**
-     * @brief Configures state indices and contact-selection settings.
+     * @brief Configures the stages and contact-selection settings.
      *
-     * @param primary_infectious_state_ State index for fully infectious agents.
-     * @param reduced_infectious_state_ State index for reduced-infectious agents.
+     * @param primary_infectious_stage_ Stage of the fully infectious agents.
+     * @param reduced_infectious_stage_ Stage of the reduced-infectious agents.
      * @param reduced_contact_reduction_param_ Model parameter name controlling
-     * reduced infectious contact reduction.
-     * @param contact_states_ Explicit states eligible for contact.
+     * reduced infectious contact reduction ("" for no contacts).
+     * @param contact_stages_ Stages of the free agents available for contact.
+     * @param free_status_ The status of the agents in the contacts.
      */
     void configure(
-        int primary_infectious_state_,
-        int reduced_infectious_state_,
+        int primary_infectious_stage_,
+        int reduced_infectious_stage_,
         std::string reduced_contact_reduction_param_,
-        std::vector< int > contact_states_
+        std::vector< int > contact_stages_,
+        int free_status_
     );
 
     /**
@@ -103,7 +104,7 @@ public:
      *
      * @param model Model containing current agents and its mixing layer.
      */
-    void reset(Model<TSeq> & model);
+    void reset(Model & model);
 
     /**
      * @brief Updates infectious pools and per-group sampling weights (and
@@ -111,7 +112,7 @@ public:
      *
      * @param model Model containing current agents and its mixing layer.
      */
-    void update(Model<TSeq> & model);
+    void update(Model & model);
 
     /**
      * @brief Samples infectious contacts into the internal sampled-agent
@@ -122,7 +123,7 @@ public:
      *
      * @return Number of sampled contacts written to the internal buffer.
      */
-    size_t sample(Agent<TSeq> * agent, Model<TSeq> & model);
+    size_t sample(Agent * agent, Model & model);
 
     /**
      * @brief Returns the internal sampled-agent buffer.
@@ -154,25 +155,25 @@ public:
 
 };
 
-template<typename TSeq>
-inline void SamplerMixing<TSeq>::configure(
-    int primary_infectious_state_,
-    int reduced_infectious_state_,
+inline void SamplerMixing::configure(
+    int primary_infectious_stage_,
+    int reduced_infectious_stage_,
     std::string reduced_contact_reduction_param_,
-    std::vector< int > contact_states_
+    std::vector< int > contact_stages_,
+    int free_status_
 )
 {
-    primary_infectious_state = primary_infectious_state_;
-    reduced_infectious_state = reduced_infectious_state_;
+    primary_infectious_stage = primary_infectious_stage_;
+    reduced_infectious_stage = reduced_infectious_stage_;
     reduced_contact_reduction_param = ParamRef(
         std::move(reduced_contact_reduction_param_)
     );
-    contact_states = contact_states_;
+    contact_stages = std::move(contact_stages_);
+    free_status = free_status_;
 }
 
-template<typename TSeq>
-inline double SamplerMixing<TSeq>::get_reduced_contact_rate(
-    Model<TSeq> & model
+inline double SamplerMixing::get_reduced_contact_rate(
+    Model & model
 ) const
 {
     if (reduced_contact_reduction_param.name().empty())
@@ -181,26 +182,22 @@ inline double SamplerMixing<TSeq>::get_reduced_contact_rate(
     return 1.0 - reduced_contact_reduction_param(model);
 }
 
-template<typename TSeq>
-inline bool SamplerMixing<TSeq>::is_available_for_contact(
-    int state,
+inline bool SamplerMixing::is_available_for_contact(
+    int stage,
     bool include_reduced
 ) const
 {
-    if (include_reduced && (state == reduced_infectious_state))
-    {
+    if (include_reduced && (stage == reduced_infectious_stage))
         return true;
-    }
 
-    for (auto contact_state: contact_states)
-        if (state == contact_state)
+    for (auto contact_stage: contact_stages)
+        if (stage == contact_stage)
             return true;
 
     return false;
 }
 
-template<typename TSeq>
-inline void SamplerMixing<TSeq>::reset(Model<TSeq> & model)
+inline void SamplerMixing::reset(Model & model)
 {
     sampled_agents.resize(model.size());
     primary_infectious.assign(model.size(), 0u);
@@ -209,14 +206,13 @@ inline void SamplerMixing<TSeq>::reset(Model<TSeq> & model)
     update(model);
 }
 
-template<typename TSeq>
-inline void SamplerMixing<TSeq>::update(Model<TSeq> & model)
+inline void SamplerMixing::update(Model & model)
 {
     mixing = &measles_mixing_layer(model);
     contact_rate = mixing->get_contact_rate(model);
 
     const size_t ngroups = mixing->get_n_groups();
-    constexpr size_t none = layer::Mixing<TSeq>::NO_GROUP;
+    constexpr size_t none = layer::Mixing::NO_GROUP;
 
     n_primary_infectious_per_group.assign(ngroups, 0u);
     n_reduced_infectious_per_group.assign(ngroups, 0u);
@@ -235,25 +231,25 @@ inline void SamplerMixing<TSeq>::update(Model<TSeq> & model)
     for (const auto & a : model.get_agents())
     {
         const size_t g = mixing->get_group(a.get_id());
-        if (g == none)
+        if ((g == none) || (model.get_status(a) != free_status))
             continue;
 
-        int state = static_cast<int>(a.get_state());
+        const int stage = model.get_stage(a, 0);
 
-        if (state == primary_infectious_state)
+        if (stage == primary_infectious_stage)
         {
             primary_infectious[
                 group_start[g] + n_primary_infectious_per_group[g]++
             ] = a.get_id();
         }
-        else if (include_reduced && (state == reduced_infectious_state))
+        else if (include_reduced && (stage == reduced_infectious_stage))
         {
             reduced_infectious[
                 group_start[g] + n_reduced_infectious_per_group[g]++
             ] = a.get_id();
         }
 
-        if (is_available_for_contact(state, include_reduced))
+        if (is_available_for_contact(stage, include_reduced))
             adjusted_contact_rate[g] += 1.0;
     }
 
@@ -269,15 +265,14 @@ inline void SamplerMixing<TSeq>::update(Model<TSeq> & model)
     }
 }
 
-template<typename TSeq>
-inline size_t SamplerMixing<TSeq>::sample(
-    Agent<TSeq> * agent,
-    Model<TSeq> & model
+inline size_t SamplerMixing::sample(
+    Agent * agent,
+    Model & model
 )
 {
     // An agent in no group meets nobody
     const size_t agent_group_id = mixing->get_group(agent->get_id());
-    if (agent_group_id == layer::Mixing<TSeq>::NO_GROUP)
+    if (agent_group_id == layer::Mixing::NO_GROUP)
         return 0u;
 
     const size_t ngroups = mixing->get_n_groups();
@@ -291,10 +286,16 @@ inline size_t SamplerMixing<TSeq>::sample(
     size_t samp_id = 0u;
     for (size_t g = 0; g < ngroups; ++g)
     {
-        // Contacts per day of the agent's group with group g (column-major)
-        double base_rate =
+        // The probability of contacting each infectious agent of group g:
+        // the contacts per day with g (column-major) over the agents of g
+        // available for contact. It is capped at 1, since the contacts can
+        // outnumber the available agents (e.g., when most of a small group
+        // is quarantined).
+        double base_rate = std::min(
+            1.0,
             adjusted_contact_rate[g] * contact_rate *
-            contact_matrix[g * ngroups + agent_group_id];
+            contact_matrix[g * ngroups + agent_group_id]
+        );
 
         // --- Primary infectious pool (e.g. prodromal) ---
         if (n_primary_infectious_per_group[g] > 0u)
@@ -314,9 +315,9 @@ inline size_t SamplerMixing<TSeq>::sample(
                 auto & a = model.get_agents().at(
                     primary_infectious.at(group_start[g] + which)
                 );
-                if (static_cast<int>(a.get_state()) != primary_infectious_state)
+                if (model.get_stage(a, 0) != primary_infectious_stage)
                     throw std::logic_error(
-                        "The sampled agent is not in the primary infectious state."
+                        "The sampled agent is not in the primary infectious stage."
                     );
                 #else
                 auto & a = model.get_agent(
@@ -352,9 +353,9 @@ inline size_t SamplerMixing<TSeq>::sample(
                 auto & a = model.get_agents().at(
                     reduced_infectious.at(group_start[g] + which)
                 );
-                if (static_cast<int>(a.get_state()) != reduced_infectious_state)
+                if (model.get_stage(a, 0) != reduced_infectious_stage)
                     throw std::logic_error(
-                        "The sampled agent is not in the reduced infectious state."
+                        "The sampled agent is not in the reduced infectious stage."
                     );
                 #else
                 auto & a = model.get_agent(

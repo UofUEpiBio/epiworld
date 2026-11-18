@@ -5,7 +5,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("SIR", "[SIR]") {
 
     // Queuing doesn't matter and get results that are meaningful
-    epimodels::ModelSIR<> model_0(
+    epimodels::ModelSIR model_0(
         "a virus", 10000, 0.01, .9, .3
         );
 
@@ -19,7 +19,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
         verbose_off().
         run(100);
 
-    epimodels::ModelSIR<> model_1(
+    epimodels::ModelSIR model_1(
         "a virus", 10000, 0.01, .9, .3
         );
 
@@ -35,7 +35,7 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
         run(100);
 
     // Now, with parameters
-    epimodels::ModelSIR<> model_2(
+    epimodels::ModelSIR model_2(
         "a virus", 10000, 0.01, .0, .0
         );
 
@@ -52,26 +52,26 @@ EPIWORLD_TEST_CASE("SIR", "[SIR]") {
         run(100);
 
     std::vector< int > h_0, h_1, h_2;
-    model_0.get_db().get_hist_total(nullptr, nullptr, &h_0);
-    model_1.get_db().get_hist_total(nullptr, nullptr, &h_1);
-    model_2.get_db().get_hist_total(nullptr, nullptr, &h_2);
+    model_0.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_0);
+    model_1.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_1);
+    model_2.get_db().get_hist_total(nullptr, nullptr, nullptr, &h_2);
 
     // Getting transition matrix
-    auto tmat_0 = model_0.get_db().get_transition_probability(false);
+    auto tmat_0 = model_0.get_db().get_transition_probability().values;
     int out_of_range_0 = 0;
 
     for (auto & v: tmat_0)
         if ((v < 0.0) || (v > 1.0))
             out_of_range_0++;
     
-    auto tmat_1 = model_1.get_db().get_transition_probability(false);
+    auto tmat_1 = model_1.get_db().get_transition_probability().values;
     int out_of_range_1 = 0;
 
     for (auto & v: tmat_1)
         if ((v < 0.0) || (v > 1.0))
             out_of_range_1++;
 
-    auto tmat_2 = model_2.get_db().get_transition_probability(false);
+    auto tmat_2 = model_2.get_db().get_transition_probability().values;
     int out_of_range_2 = 0;
 
     for (auto & v: tmat_2)

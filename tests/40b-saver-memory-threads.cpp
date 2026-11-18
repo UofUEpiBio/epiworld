@@ -6,13 +6,12 @@ EPIWORLD_TEST_CASE("SaverMemory does not depend on the number of threads", "[sav
 
     auto run = [](int nthreads) {
 
-        epimodels::ModelSEIR<> model("a virus", 500, 0.1, 0.3, 4.0, 0.2);
+        epimodels::ModelSEIR model("a virus", 500, 0.1, 0.3, 4.0, 0.2);
         add_random_mixing(model, 3.0);
 
-        Tool<> tool("a tool");
+        Tool tool("a tool");
         tool.set_susceptibility_reduction(.5);
-        tool.set_distribution(distribute_tool_randomly<>(0.3, false));
-        model.add_tool(tool);
+        model.add_tool(tool, assign::count(0.3));
         model.verbose_off();
 
         // Passed by value: copies must share the results

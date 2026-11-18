@@ -85,12 +85,12 @@ which is the odds form above. The order in which carriers are visited does not m
 
 ## Equivalence for the whole model
 
-Each step of an `epiworld` simulation is synchronous. Every update function reads the model as it was at the start of the step and only *schedules* changes, and the changes are applied together at the end (`events_run()`). Given the state $X_t$ of the model, each agent's outcome is drawn with its own random numbers, independently of the other agents':
+Each step of an `epiworld` simulation is synchronous. Every agent's update reads the model as it was at the start of the step and only *schedules* changes, and the changes are applied together at the end (`events_run()`). Given the state $X_t$ of the model, each agent's outcome is drawn with its own random numbers, independently of the other agents':
 
 - Pulling uses one uniform per susceptible agent with an infectious neighbor.
 - Pushing uses the reservoir draws and one uniform per touched agent, and none of these are shared between agents.
 
-Both give every susceptible agent the same outcome distribution (previous section), independently across agents, and leave every other state's update function unchanged. So the one-step transition kernel $P(X_{t+1} \mid X_t)$ is **identical** under both.
+Both give every susceptible agent the same outcome distribution (previous section), independently across agents, and leave the update of every other stage unchanged. So the one-step transition kernel $P(X_{t+1} \mid X_t)$ is **identical** under both.
 
 Under `"auto"`, the mode for step $t$ is a deterministic function of $X_t$ (the rule below). A chain that picks, at each step, one of two identical kernels based on its current state still has that same kernel. So the epidemic has the same law under `"push"`, `"pull"`, and `"auto"`.
 
@@ -100,7 +100,7 @@ What does change is the **stream of random numbers**. The draws happen in a diff
 
 A pull visits every susceptible agent it updates and scans all its ties. A push visits every agent that can transmit and scans all its ties. With queuing on, only queued susceptibles pull, but they include every neighbor of anyone carrying a virus, including latent or hospitalized agents that may not transmit.
 
-Scanning a tie is not the whole cost. Each visited agent also pays a fixed price: dispatching its update function (or loading the carrier), setting up its scratch space, and so on. At the mean degrees of contact networks (4 to 10) that price is comparable to scanning the agent's ties, so it matters which side visits more agents. A network with hubs, or households next to a workplace layer, tilts the balance: carriers are drawn towards the hubs, so a few carriers own many ties, while the susceptibles are numerous and have few.
+Scanning a tie is not the whole cost. Each visited agent also pays a fixed price: dispatching its update (or loading the carrier), setting up its scratch space, and so on. At the mean degrees of contact networks (4 to 10) that price is comparable to scanning the agent's ties, so it matters which side visits more agents. A network with hubs, or households next to a workplace layer, tilts the balance: carriers are drawn towards the hubs, so a few carriers own many ties, while the susceptibles are numerous and have few.
 
 The model keeps, per state, the number of members, the number carrying a virus, and the sum of both groups' degrees, updated as agents change state. From them, `"auto"` estimates the cost of each step in units of ties,
 
@@ -125,14 +125,13 @@ The rule deliberately ignores the queue. The decision, and therefore the random 
 
 ## Scope
 
-Pushing applies to states whose update function is `default_update_susceptible` (which is what epiworldR's `update_fun_susceptible()` uses). This covers `ModelSIR`, `ModelSIS`, `ModelSISD`, `ModelSIRD`, `ModelSEIR`, `ModelSEIRD` and `ModelSEIRQuarantine` on networks, and custom models built on this function. A push mirrors the pull exactly:
+Pushing applies to the agents in a stage whose only drawn exit is a default infection (an `infection()` without a custom sampler, and no rate or duration), in a status with no drawn exit, and not out of the layers. This covers the susceptible stage of `ModelSIR`, `ModelSIS`, `ModelSISD`, `ModelSIRD`, `ModelSEIR`, `ModelSEIRD` and `ModelSEIRQuarantine` on networks, and of custom models declared the same way. A push mirrors the pull exactly:
 
-- **Sources.** Every neighbor carrying a virus in one of the model's infectious states (`Model::set_infectious_states()`; by default, every state) is a source, as in the pull: e.g., exposed agents in `ModelSEIR` do not transmit.
+- **Sources.** Every neighbor carrying a virus in an infectious stage (`stage::infectious`) and in the layers is a source, as in the pull: e.g., exposed agents in `ModelSEIR` (a carrier stage) do not transmit.
 - **Probabilities.** $p_{kj}$ is computed with the same expression, the same tool mixers, and the same virus functions, for exactly the same (target, source) pairs.
 - **Queue.** With queuing on, a susceptible agent is only updated if it is queued, as when pulling.
-- **Errors.** An agent in a susceptible state that carries a virus raises the same error as the pull.
 
-Everything else keeps pulling: states with custom update functions (e.g., `ModelSIRLogit`, `ModelSURV`, `ModelDiffNet`), models with a mixing layer, and the measles models, which sample contacts differently. Directed networks (built with `directed = true`) also always pull, and so does building without RTTI (recognizing the functions uses `std::function::target()`). Pushing relies on every tie being stored at both ends, which is how `epiworld` stores an undirected tie. A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `j` can infect `i`, but not the reverse.
+Everything else keeps pulling: stages with a custom sampler (e.g., `ModelDiffNet`) or with another drawn exit, statuses with a drawn exit (e.g., the detection rate of the measles models), and models with a mixing layer. Directed networks (built with `directed = true`) also always pull. Pushing relies on every tie being stored at both ends, which is how `epiworld` stores an undirected tie. A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `j` can infect `i`, but not the reverse.
 
 Both directions draw from the odds: `roulette()` normalizes by $1 + R_j$, as above, rather than by the product of the $(1 - p)$ terms, which underflows to 0 with many high-probability contacts (before epiworld 1.0.0 the pull then fell back to the last contact). Pulling has no limit on the number of contacts carrying a virus either: its scratch arrays grow as needed (before 1.0.0, 1024). The one numerical difference left is precision: pulling sums the odds in `epiworld_double` (a `float` by default), pushing in `double`.
 

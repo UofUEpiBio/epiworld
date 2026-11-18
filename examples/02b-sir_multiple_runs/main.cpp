@@ -7,7 +7,7 @@ int main() {
     int total_replicates = 100;
     int pop_size         = 5000;
 
-    epimodels::ModelSIR<> sir(
+    epimodels::ModelSIR sir(
         "a virus", // Name of the virus
         pop_size,
         0.01,      // Initial prevalence
@@ -25,13 +25,13 @@ int main() {
     std::vector< std::string > labels;
 
     auto record =
-        [&results,&labels](size_t iternum, epiworld::Model<> * m)
+        [&results,&labels](size_t iternum, epiworld::Model * m)
         {
 
             if (iternum == 0u)
-                m->get_db().get_today_total(nullptr, &results[iternum]);
+                m->get_db().get_today_total(nullptr, nullptr, &results[iternum]);
             else
-                m->get_db().get_today_total(&labels, &results[iternum]);
+                m->get_db().get_today_total(nullptr, &labels, &results[iternum]);
 
             return;
 

@@ -1,52 +1,34 @@
-flowchart TB
-
-    %% Disease progression states
-    subgraph Main[Disease Progression]
-        direction TB
-        S[Susceptible]
-        E[Exposed]
-        In[Infected]
-        H[Hospitalized]
-        R[Recovered]
+%% Drawn from the model's declarations by `make diagrams`; do not edit.
+flowchart LR
+    subgraph stages["Stages: Disease"]
+        direction LR
+        s0["Susceptible"]
+        s1["Exposed"]:::carrier
+        s2["Infected"]:::infectious
+        s3["Severe"]:::carrier
+        s4["Recovered"]
+        s0 --> s1
+        s1 --> s2
+        s2 --> s4
+        s2 --> s3
+        s3 --> s4
     end
-
-    S --> E
-    E --> In
-    In --> H
-    H --> R
-    In --> R
-
-    %% Quarantine states
-    Qs[Quarantined<br>Susceptible]
-    Qe[Quarantined<br>Exposed]
-    I[Isolated]
-    Ir[Isolated<br>Recovered]
-
-    %% Infected to
-    In <==> I
-    In --> Ir
-    In --> H
-
-    %% Detected agents go to hospital as detected
-    Dh[Detected<br>Hospitalized]
-    In --> Dh
-    Dh --> R
-
-    %% Isolated to
-    I --> R
-    I --> Ir
-    I --> H
-    I --> Dh
-
-    %% Susceptible quarantined
-    S <==> Qs
-
-    %% Exposed
-    E <==> Qe
-
-    Qe --> I
-    Qe --> In
-
-    %% Isolated recovered
-    Ir --> R
-    
+    subgraph statuses["Statuses"]
+        direction LR
+        q0["Free"]
+        q1["Quarantined"]:::away
+        q2["Isolated"]:::away
+        q3["Hospitalized"]:::away
+        q0 --> q1
+        q1 --> q0
+        q0 --> q2
+        q1 --> q2
+        q2 --> q0
+        q0 --> q3
+        q1 --> q3
+        q2 --> q3
+        q3 --> q0
+    end
+    classDef infectious fill:#f8d7da,stroke:#b02a37
+    classDef carrier fill:#fff3cd,stroke:#997404
+    classDef away fill:#e2e3e5,stroke:#6c757d

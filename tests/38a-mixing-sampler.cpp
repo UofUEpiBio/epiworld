@@ -7,7 +7,7 @@ using namespace epiworld;
 // column-major, entry (i, j) = contacts of group i with group j.
 namespace {
 
-class SamplerModel : public Model<>
+class SamplerModel : public Model
 {
 public:
 
@@ -16,29 +16,24 @@ public:
 
         // Three groups of n / 3
         auto layer = layer::mixing("mixing");
-        layer->set_groups(blocks({0u, n / 3u, 2u * n / 3u, n}), 3u);
+        layer->set_groups(assign::labels(blocks({0u, n / 3u, 2u * n / 3u, n})), 3u);
         layer->set_contact_matrix(cm);
         add_layer(std::move(layer));
 
-        UpdateFun<> susceptible = [](Agent<> * p, Model<> * m) -> void
-        {
-
-            auto & mixing = m->get_layer_as< layer::Mixing<> >(0u);
-            std::vector< size_t > contacts;
-            mixing.sample(p->get_id(), *m, nullptr, contacts);
-
-            // Any sampled contact is infectious: it transmits for sure
-            if (!contacts.empty())
-                p->set_virus(*m, *m->get_agent(contacts[0]).get_virus(), 1);
-
-        };
-
-        add_state("Susceptible", susceptible);
-        add_state("Infected");
-
-        Virus<> v("Virus", 0.0, true);
-        v.set_state(1, 1, 1);
-        v.set_prob_infecting(1.0);
+        // Any sampled contact is infectious: it transmits for sure
+        Virus v("Virus");
+        v.add_stage("Susceptible");
+        v.add_stage("Infected", stage::infectious);
+        v.infection(0, 1, 1.0).sampler(
+            [](Agent & p, Model & m) -> Virus * {
+                auto & mixing = m.get_layer_as< layer::Mixing >(0u);
+                std::vector< size_t > contacts;
+                mixing.sample(p.get_id(), m, nullptr, contacts);
+                if (contacts.empty())
+                    return nullptr;
+                return m.get_agent(contacts[0]).get_virus().get();
+            }
+        );
         add_virus(v);
 
         queuing_off();
@@ -46,7 +41,7 @@ public:
 
     }
 
-    std::unique_ptr< Model<> > clone_ptr() override
+    std::unique_ptr< Model > clone_ptr() override
     {
         return std::make_unique< SamplerModel >(*this);
     }
@@ -67,19 +62,15 @@ EPIWORLD_TEST_CASE("Mixing sampler: group-specific transmission", "[mixing-sampl
 
     SamplerModel model(300, cm);
 
-    Virus<> v = model.get_virus(0);
-    model.rm_virus(0);
-    v.set_distribution(dist_virus<>(0));
-    v.set_state(1, 1, 1);
-    model.add_virus(v);
+    model.assign_virus(0, dist_virus(0));
 
     model.run(30, 331);
 
     size_t inf[3] = {0u, 0u, 0u};
     for (auto & a : model.get_agents())
     {
-        if (a.get_state() == 1u)
-            inf[model.get_layer_as< layer::Mixing<> >(0u).get_group(a.get_id())]++;
+        if (model.get_stage(a) == 1)
+            inf[model.get_layer_as< layer::Mixing >(0u).get_group(a.get_id())]++;
     }
 
     // Infection travels 0 -> 0 and 0 -> 1, never into group 2
@@ -88,7 +79,7 @@ EPIWORLD_TEST_CASE("Mixing sampler: group-specific transmission", "[mixing-sampl
     REQUIRE(inf[2] == 0u);
 
     // The infectious agent is its own pool member but is never sampled
-    REQUIRE(model.get_layer_as< layer::Mixing<> >(0u).get_n_infectious(2u) == 0u);
-    REQUIRE(model.get_layer_as< layer::Mixing<> >(0u).get_n_infectious(0u) == inf[0]);
+    REQUIRE(model.get_layer_as< layer::Mixing >(0u).get_n_infectious(2u) == 0u);
+    REQUIRE(model.get_layer_as< layer::Mixing >(0u).get_n_infectious(0u) == inf[0]);
 
 }

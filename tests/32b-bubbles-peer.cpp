@@ -37,13 +37,13 @@ EPIWORLD_TEST_CASE("Bubbles - peer partition respects households", "[bubbles]") 
     // Partition produced by the peer rule under a given cap on the number of
     // households a bubble may hold.
     auto partition_with_cap = [&](size_t cap) -> std::vector<int> {
-        epimodels::ModelSEIR<> model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
+        epimodels::ModelSEIR model("flu", n, 0.05, 0.1, 4.5, 1.0/8.0);
         model.seed(7);
         model.add_layer(layer::network(
             "network", rgraph_smallworld(n, 8, 0.15, false, model)
         ));
 
-        Bubbles<> bubbles(
+        Bubbles bubbles(
             hh, BubbleFlavor::Peer, 1u, 0.0, 0, -1, 0, "Social bubble", cap
         );
         model.add_globalevent(bubbles);
@@ -61,7 +61,7 @@ EPIWORLD_TEST_CASE("Bubbles - peer partition respects households", "[bubbles]") 
             }
         }
 
-        return Bubbles<>::get_from(model)->get_bubble_id();
+        return Bubbles::get_from(model)->get_bubble_id();
     };
 
     std::vector<int> bid = partition_with_cap(2u);

@@ -6,7 +6,7 @@
 using namespace epiworld;
 
 struct TestResults {
-    measles::ModelMeaslesMixingRiskQuarantine<> model;
+    measles::ModelMeaslesMixingRiskQuarantine model;
     std::vector<epiworld_double> transitions;
     std::vector<epiworld_double> R0s;
     std::vector< std::vector< int > > final_distribution;
@@ -34,7 +34,7 @@ inline TestResults test_model_builder_20d(
     for (auto & value : contact_matrix)
         value *= c_rate;
 
-    measles::ModelMeaslesMixingRiskQuarantine<> model(
+    measles::ModelMeaslesMixingRiskQuarantine model(
         n,              // Number of agents
         0.1,            // Initial prevalence
         p_infect,       // Transmission rate
@@ -60,9 +60,7 @@ inline TestResults test_model_builder_20d(
     add_group_mixing(model, contact_matrix, blocks({0u, n/3, 2*n/3, n}));
 
     // Moving the virus to the first agent
-    model.get_virus(0).set_distribution(
-        distribute_virus_to_set<>({0u})
-    );
+    model.assign_virus(0, assign::agents({0u}));
 
     std::vector<std::vector<epiworld_double>> transitions(nsims);
     std::vector<epiworld_double> R0s(nsims, -1.0);
@@ -83,10 +81,8 @@ inline TestResults test_model_builder_20d(
         model("Quarantine period low") << " -> ";
     std::vector< double > final_sizes = test_compute_final_sizes(
         final_distribution,
-        {
-            measles::ModelMeaslesMixingRiskQuarantine<>::SUSCEPTIBLE,
-            measles::ModelMeaslesMixingRiskQuarantine<>::QUARANTINED_SUSCEPTIBLE
-        },
+        // Susceptible, in any of the four statuses (state = stage * 4 + status)
+        {0u, 1u, 2u, 3u},
         nsims,
         true
     );

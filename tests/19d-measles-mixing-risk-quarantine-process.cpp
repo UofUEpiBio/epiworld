@@ -6,9 +6,9 @@ using namespace epiworld;
 
 inline std::vector< double > counts_risk;
 
-EPI_NEW_GLOBALFUN(count_risk, int)
+EPI_NEW_GLOBALFUN(count_risk)
 {
-    auto * model = dynamic_cast< measles::ModelMeaslesMixingRiskQuarantine<> * >(m);
+    auto * model = dynamic_cast< measles::ModelMeaslesMixingRiskQuarantine * >(m);
 
     auto q_risk_today = model->get_quarantine_risk_level();
 
@@ -52,7 +52,7 @@ EPIWORLD_TEST_CASE(
     for (auto & value : contact_matrix)
         value *= c_rate;
     
-    measles::ModelMeaslesMixingRiskQuarantine<> model(
+    measles::ModelMeaslesMixingRiskQuarantine model(
         n,           // Number of agents
         0.1 ,        // Initial prevalence
         p_infect,    // Transmission rate
@@ -75,7 +75,7 @@ EPIWORLD_TEST_CASE(
         4u           // Contact tracing days prior
     );
 
-    // Adding a single entity
+    // Adding a single group
     add_group_mixing(
         model, contact_matrix,
         ranges(n, {{0u, 1u}, {1u, 2*n/3 - 1}, {2*n/3, n}})
@@ -85,9 +85,7 @@ EPIWORLD_TEST_CASE(
     model.add_globalevent(count_risk, "Count risk levels");
 
     // Moving the virus to the first agent
-    model.get_virus(0).set_distribution(
-        distribute_virus_to_set<>({0u})
-    );
+    model.assign_virus(0, assign::agents({0u}));
 
     model.verbose_off();
 

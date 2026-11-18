@@ -10,7 +10,7 @@ using namespace epiworld;
 EPIWORLD_TEST_CASE("SEIR quarantine traces every layer", "[seir-quarantine]") {
 
     const size_t n = 40u;
-    using Model_ = epimodels::ModelSEIRQuarantine<>;
+    using Model_ = epimodels::ModelSEIRQuarantine;
 
     Model_ model(
         "v", n, 0.0,
@@ -27,7 +27,7 @@ EPIWORLD_TEST_CASE("SEIR quarantine traces every layer", "[seir-quarantine]") {
         1.0,  // contact_tracing_prob
         4u    // contact_tracing_window
     );
-    model.get_virus(0).set_distribution(distribute_virus_to_set<>({0u}));
+    model.assign_virus(0, assign::agents({0u}));
 
     std::vector< int > source, target;
     for (size_t i = 0u; i < n; ++i)
@@ -43,8 +43,8 @@ EPIWORLD_TEST_CASE("SEIR quarantine traces every layer", "[seir-quarantine]") {
     for (size_t i = 0u; i < n; ++i)
         households[i] = i / 4u;
 
-    auto hh = layer::mixing<>("households");
-    hh->set_groups(households, n / 4u);
+    auto hh = layer::mixing("households");
+    hh->set_groups(assign::labels(households), n / 4u);
     hh->set_contact_prob(1.0);
     model.add_layer(hh);
 
@@ -57,10 +57,13 @@ EPIWORLD_TEST_CASE("SEIR quarantine traces every layer", "[seir-quarantine]") {
 
     std::vector< size_t > quarantined;
     for (const auto & a : model.get_agents())
-        if (a.get_state() == Model_::QUARANTINED_SUSCEPTIBLE)
+        if (
+            (model.get_status(a) == Model_::QUARANTINED) &&
+            (model.get_stage(a) == Model_::SUSCEPTIBLE)
+        )
             quarantined.push_back(static_cast< size_t >(a.get_id()));
 
-    REQUIRE(model.get_agent(0).get_state() == static_cast< unsigned int >(Model_::ISOLATED));
+    REQUIRE(model.get_status(model.get_agent(0)) == Model_::ISOLATED);
     REQUIRE_THAT(quarantined, Catch::Equals(std::vector< size_t >{1, 2, 3, 39}));
 
 }

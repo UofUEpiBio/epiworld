@@ -3,8 +3,7 @@
 
 using namespace epiworld;
 
-template<typename TSeq = EPI_DEFAULT_TSEQ>
-class InterventionMeaslesPEP final : public GlobalEvent<TSeq> {
+class InterventionMeaslesPEP final : public GlobalEvent {
 
 private:
 
@@ -32,10 +31,15 @@ private:
     std::vector< bool > _willing_to_receive_mmr;
     std::vector< bool > _willing_to_receive_ig;
 
-    // Target states to which the intervention applies
-    std::vector< int > _target_states;
-    std::vector< int > _states_if_pep_effective;
-    std::vector< int > _states_if_pep_ineffective;
+    // The stages and statuses to which the intervention applies
+    std::vector< int > _target_stages;
+    std::vector< int > _target_statuses;
+
+    // The model's transitions "PEP cleared" and "PEP release" (if any)
+    int _tr_cleared = 0;
+    int _tr_release = 0;
+    bool _has_cleared = false;
+    bool _has_release = false;
 
     // Group (e.g. classroom) each agent belongs to. Either empty, meaning
     // the whole population is treated as a single exposed group, or one
@@ -66,13 +70,11 @@ private:
      * PEP.
      * @param model A pointer to the model.
      */
-    void _setup(Model<TSeq> * model);
+    void _setup(Model * model);
 
     // List of agents that will receive PEP
     // This is used to avoid iterating over the agents twice.
     std::vector< size_t > _to_receive_pep;
-    std::vector< int > _next_if_effective;
-    std::vector< int > _next_if_ineffective;
 
 public:
 
@@ -82,15 +84,16 @@ public:
      * and 1.
      * @param par_pep_willingness The willingness of the agents to receive
      * PEP. Must be between 0 and 1.
-     * @param target_states The states to which the intervention applies. For
-     * example, if the intervention applies to agents in quarantine, then this
-     * should include the states that correspond to quarantine.
-     * @param quarantine_states_for_pep The states to which the agents will be
-     * moved if they receive PEP. Must be the same length as `quarantine_states`.
-     * For example, if agents in state 2 are quarantined and will move to state
-     * 5 if they receive PEP, then `quarantine_states` should include 2 and
-     * `quarantine_states_for_pep` should include 5 at the corresponding
-     * position.
+     * @param target_stages The stages of the agents offered PEP (e.g.,
+     * susceptible, latent and prodromal).
+     * @param target_statuses The statuses of the agents offered PEP (e.g.,
+     * quarantined); empty for any status.
+     *
+     * An agent dosed with PEP while carrying the virus clears it if the PEP
+     * works (its susceptibility reduction, drawn once), through the model's
+     * transition "PEP cleared"; then it is released through the model's
+     * transition "PEP release" (e.g., from quarantine to free), if the model
+     * has them and the agent is in their source.
      * @param agent_groups Optional group (e.g. classroom) membership, one
      * entry per agent, indexed by agent id. When a case is identified, PEP
      * is offered only within the group(s) the identified case(s) belong to.
@@ -109,9 +112,8 @@ public:
         epiworld_double ig_willingness,
         epiworld_double mmr_window,
         epiworld_double ig_window,
-        std::vector< int > target_states,
-        std::vector< int > states_if_pep_effective,
-        std::vector< int > states_if_pep_ineffective,
+        std::vector< int > target_stages,
+        std::vector< int > target_statuses,
         std::vector< int > agent_groups = {}
     );
 
@@ -122,18 +124,15 @@ public:
      * iterates through the agents and gives PEP to those who are willing and
      * applicable.
      *
-     * Agents who receive PEP may then be moved to a different state if
-     * the PEP is effective.
+     * Agents who receive PEP may then clear the virus, and be released.
      *
      * If groups were specified, only agents in the same group as an
      * identified case are considered, and each group is timed from its own
      * exposure.
      */
-    void operator()(Model<TSeq> * model, int day) override;
+    void operator()(Model * model, int day) override;
 
-    std::unique_ptr< GlobalEvent<TSeq> > clone_ptr() const override;
-
-    static bool agent_recovers(Agent<TSeq> & p, Model<TSeq> & m, int next_state);
+    std::unique_ptr< GlobalEvent > clone_ptr() const override;
 
 };
 
