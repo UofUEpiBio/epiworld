@@ -75,6 +75,7 @@ class Model {
     friend class Queue;
     friend class layer::Network;
     friend class layer::Mixing;
+    friend class ContactLayer;
 
 protected:
 

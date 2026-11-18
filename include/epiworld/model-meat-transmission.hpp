@@ -180,16 +180,22 @@ inline Virus * Model::sample_virus(Agent * agent)
         );
 
     const size_t id = static_cast< size_t >(agent->get_id());
-    const std::vector< bool > * exclude =
-        state_not_infectious.empty() ? nullptr : &state_not_infectious;
+    const epiworld_fast_uint state = agent_state[id];
 
     size_t n_contacts = 0u;
     size_t n_exposures = 0u;
     for (const auto & layer : layers)
     {
 
+        // A closed layer, or one whose statuses leave the agent out, has no
+        // contacts for it (the states out of every layer are the layers' to
+        // handle, as before)
+        const std::vector< char > * out = layer->own_exclusions();
+        if (layer->is_closed() || ((out != nullptr) && (*out)[state]))
+            continue;
+
         layer_contacts.clear();
-        const size_t n = layer->sample(id, *this, exclude, layer_contacts);
+        const size_t n = layer->sample(id, *this, layer->silent(), layer_contacts);
         if (n == 0u)
             continue;
 
@@ -397,12 +403,17 @@ inline void Model::transmission_push_impl()
             for (auto * net : network_layers)
             {
 
+                // A closed layer, or one the carrier is out of, reaches no one
+                if (net->is_closed() || net->excludes(agent_state[j_id]))
+                    continue;
+
                 // Layer rules, as add_exposures() applies them in a pull
                 const bool weighted = net->has_weight();
                 const epiworld_double weight = weighted ?
                     net->get_weight(*this) : 1.0;
                 const bool admitted = net->admits(*v);
                 const int layer_id = static_cast< int >(net->get_id());
+                const std::vector< char > * net_out = net->own_exclusions();
 
                 for (size_t i_id : net->ties[j_id])
                 {
@@ -411,7 +422,7 @@ inline void Model::transmission_push_impl()
                     // of the states rules them out without loading the agent.
                     const size_t t = agent_state[i_id];
 
-                    if (!push_pushable[t])
+                    if (!push_pushable[t] || ((net_out != nullptr) && (*net_out)[t]))
                         continue;
 
                     Agent & i = population[i_id];

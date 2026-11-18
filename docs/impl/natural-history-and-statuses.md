@@ -143,7 +143,7 @@ model.set_statuses(st);
 - **`.when({stages})`** restricts a status transition to agents in those stages at the start of the day. For an `after()`, the deadline is taken only while the agent is in one of those stages: an agent whose isolation ends while it is not in them stays isolated until it is.
 - **`.since(stage)`** counts a status's duration from a stage's entry, as above.
 - **`.of(disease)`** names the disease of the stages in `.when()` and `.since()`. It is required when the model has several diseases; with one, it can be left out.
-- A status with contact weight 0 takes its agents out of every layer, for every disease.
+- A status with contact weight 0 takes its agents out of every layer, for every disease; `ContactLayer::exclude_status()` takes them out of one layer only.
 - An agent removed by a disease (dead) takes no status transitions.
 
 The status transitions are counted once, in `get_hist_transitions()`; with several diseases, they come after the first disease's transitions, with the disease `""`, when every disease is asked for.

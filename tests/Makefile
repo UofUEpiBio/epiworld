@@ -141,7 +141,10 @@ $(NAME)_SOURCES := \
 	53a-outputs-by-disease.cpp \
 	54a-two-diseases.cpp \
 	54b-second-disease-unseeded.cpp \
-	54c-two-diseases-rules.cpp
+	54c-two-diseases-rules.cpp \
+	55a-layer-exclude-status.cpp \
+	55b-layer-close.cpp \
+	55c-layer-exclude-rate.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
 # covered and would inflate the figure.

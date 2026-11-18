@@ -6399,6 +6399,7 @@ class Model {
     friend class Queue;
     friend class layer::Network;
     friend class layer::Mixing;
+    friend class ContactLayer;
 
 protected:
 
@@ -7878,6 +7879,26 @@ public:
  * dirty layer and clears the flag. An edit made between runs becomes the new
  * baseline.
  *
+ * ### Who takes part: excluded statuses, closing
+ *
+ * An agent in a status or stage of contact weight 0 (`set_contact()`) is out
+ * of every layer. `exclude_status()` takes the agents in a status out of this
+ * layer only: e.g., the school layer excludes "Quarantined", while the
+ * household layer keeps them. An agent out of a layer neither samples it nor is
+ * sampled through it, in both directions, and a mixing layer counts only the
+ * agents present (its contact rate stays constant; within groups, the
+ * probability per pair does). Who is out is the status, so the status history
+ * already counts them. Excluded statuses are a setting, made between runs.
+ *
+ * `close()` takes the whole layer out (a school closure) until `reopen()`:
+ * it samples no contacts, so it logs none and transmits nothing, and the
+ * days it was closed are not days shared in `layer::Mixing::groupmates_of()`.
+ * Like any edit, closing during a run takes effect at the end of the step
+ * (the layer is closed from the next day on) and lasts that run only; closing
+ * between runs makes the layer closed in every run. A weight of 0
+ * (`set_weight()`) is different: the contacts still happen (and are logged),
+ * but transmit nothing.
+ *
  * ### Contact tracing
  *
  * `enable_tracing()` makes the layer keep a log of its contacts (a
@@ -7912,6 +7933,22 @@ private:
             trace_log.reset(n, trace_max);
     }
 
+    std::vector< std::string > excluded_statuses; ///< See exclude_status()
+    std::vector< char > state_out;      ///< [state] Out of this layer by its statuses; empty: none
+    std::vector< bool > state_silent;   ///< [state] Transmits nothing here; empty: the model's
+
+    bool closed_base = false; ///< Closed in every run (closed between runs)
+    bool closed = false;      ///< Closed today
+    bool closed_next = false; ///< Closed from tomorrow (applied at the step's end)
+    /// The spans of days closed this run, `[first, last]` (`INT_MAX`: still)
+    std::vector< std::pair< int, int > > closed_spans;
+
+    /// The masks of the run and the baseline closure (the model calls it at reset).
+    void reset_participation(const Model & model);
+
+    /// Applies today's `close()` / `reopen()` (the model calls it at the step's end).
+    void apply_closure(int today);
+
 protected:
 
     /// The model the layer belongs to (set by the model), or `nullptr`.
@@ -7939,7 +7976,11 @@ public:
     ContactLayer(const ContactLayer & other) :
         name(other.name), dirty(other.dirty), weight_ref(other.weight_ref),
         targets_(other.targets_), trace_max(other.trace_max),
-        trace_log(other.trace_log) {}
+        trace_log(other.trace_log),
+        excluded_statuses(other.excluded_statuses), state_out(other.state_out),
+        state_silent(other.state_silent), closed_base(other.closed_base),
+        closed(other.closed), closed_next(other.closed_next),
+        closed_spans(other.closed_spans) {}
 
     ContactLayer & operator=(const ContactLayer &) = delete;
 
@@ -8001,6 +8042,38 @@ public:
     }
     ///@}
 
+    /**
+     * @name Who takes part
+     * @brief Statuses out of this layer, and closing it (see the class
+     * description).
+     */
+    ///@{
+    /// Agents in `status` (a name in the model's statuses) are out of the layer.
+    void exclude_status(std::string status);
+    const std::vector< std::string > & get_excluded_statuses() const
+    {
+        return excluded_statuses;
+    }
+
+    void close();  ///< Closed from the next day (or every run, between runs)
+    void reopen(); ///< Open from the next day (or every run, between runs)
+    bool is_closed() const { return closed; } ///< Closed today
+
+    /// Whether an agent in engine state `state` is out of the layer.
+    bool excludes(epiworld_fast_uint state) const;
+
+    /// The states out of this layer by its excluded statuses (`nullptr`: none;
+    /// `excludes()` adds the states out of every layer).
+    const std::vector< char > * own_exclusions() const
+    {
+        return state_out.empty() ? nullptr : &state_out;
+    }
+
+    /// Calls `f(first, last)` for each span of days in `[a, b]` the layer was open.
+    template< typename F >
+    void open_days(int a, int b, F f) const;
+    ///@}
+
     /// Whether the virus spreads through the layer.
     bool admits(const Virus & v) const
     {
@@ -8015,7 +8088,8 @@ public:
      * carry a virus (repeats allowed), and reports them to the model's
      * post-sampling callback, if there is one.
      * @details This is the layer's part of a pull. Contacts in a state flagged
-     * in `exclude` (if not null) are skipped. Whether the contacts are able to
+     * in `exclude` (if not null) are skipped: the model passes the layer's
+     * `silent()` mask (states that transmit nothing here). Whether the contacts are able to
      * infect (their viruses, the weight) is up to the model.
      * @return The number of contacts appended.
      */
@@ -8025,6 +8099,10 @@ public:
         const std::vector< bool > * exclude,
         std::vector< size_t > & out
     ) = 0;
+
+    /// States that transmit nothing through the layer (not infectious, or
+    /// out of it), or `nullptr` if every state transmits.
+    const std::vector< bool > * silent() const;
 
     /// Rebuild what depends on the state of the population (end of each step).
     virtual void update(Model & model) = 0;
@@ -8085,6 +8163,175 @@ inline ContactTracing & ContactLayer::get_tracing()
 ////////////////////////////////////////////////////////////////////////////////
 
  End of -./include/epiworld/contactlayer-bones.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ Start of -./include/epiworld/contactlayer-meat.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_CONTACTLAYER_MEAT_HPP
+#define EPIWORLD_CONTACTLAYER_MEAT_HPP
+
+/**
+ * @file contactlayer-meat.hpp
+ * @brief Who takes part in a contact layer: its excluded statuses and its
+ * closures (see `ContactLayer`).
+ */
+
+inline void ContactLayer::exclude_status(std::string status)
+{
+
+    if (in_run)
+        throw std::logic_error(
+            "The contact layer '" + name + "': the statuses it excludes are "
+            "set between runs (close() and reopen() act during a run)."
+        );
+
+    if (
+        std::find(excluded_statuses.begin(), excluded_statuses.end(), status) ==
+        excluded_statuses.end()
+    )
+        excluded_statuses.push_back(std::move(status));
+
+}
+
+inline void ContactLayer::close()
+{
+    closed_next = true;
+    if (!in_run)
+        closed_base = closed = true;
+}
+
+inline void ContactLayer::reopen()
+{
+    closed_next = false;
+    if (!in_run)
+        closed_base = closed = false;
+}
+
+inline bool ContactLayer::excludes(epiworld_fast_uint state) const
+{
+    return (!model->state_excluded.empty() && model->state_excluded[state]) ||
+        (!state_out.empty() && state_out[state]);
+}
+
+inline const std::vector< bool > * ContactLayer::silent() const
+{
+    if (!state_silent.empty())
+        return &state_silent;
+
+    return model->state_not_infectious.empty() ?
+        nullptr : &model->state_not_infectious;
+}
+
+inline void ContactLayer::reset_participation(const Model & m)
+{
+
+    closed = closed_next = closed_base;
+    closed_spans.clear();
+    if (closed_base)
+        closed_spans.push_back({0, INT_MAX});
+
+    state_out.clear();
+    state_silent.clear();
+    if (excluded_statuses.empty())
+        return;
+
+    // The statuses this layer excludes, by id
+    const std::vector< std::string > names = (m.get_statuses() != nullptr) ?
+        m.get_statuses()->get_stages() : std::vector< std::string >{"Free"};
+
+    std::vector< char > status_out(names.size(), 0);
+    for (const auto & s : excluded_statuses)
+    {
+        auto it = std::find(names.begin(), names.end(), s);
+        if (it == names.end())
+        {
+            std::string have;
+            for (const auto & n : names)
+                have += (have.empty() ? "\"" : ", \"") + n + "\"";
+
+            throw std::invalid_argument(
+                "The contact layer '" + name + "' excludes the status \"" + s +
+                "\", which the model does not have (its statuses: " + have +
+                ")."
+            );
+        }
+        status_out[static_cast< size_t >(it - names.begin())] = 1;
+    }
+
+    // The engine states in those statuses
+    const size_t ns = static_cast< size_t >(m.nstates);
+    state_out.assign(ns, 0);
+    for (size_t c = 0u; c < ns; ++c)
+        if (status_out[static_cast< size_t >(m.nh_status_of(static_cast< unsigned int >(c)))])
+            state_out[c] = 1;
+
+    // What transmits nothing here: the model's (which includes the states
+    // out of every layer), plus those out of this one
+    state_silent = m.state_not_infectious;
+    state_silent.resize(ns, false);
+    for (size_t c = 0u; c < ns; ++c)
+        state_silent[c] = state_silent[c] || (state_out[c] != 0);
+
+}
+
+inline void ContactLayer::apply_closure(int today)
+{
+
+    if (closed_next == closed)
+        return;
+
+    if (closed_next)
+        closed_spans.push_back({today + 1, INT_MAX});
+    else
+        closed_spans.back().second = today;
+
+    closed = closed_next;
+
+}
+
+template< typename F >
+inline void ContactLayer::open_days(int a, int b, F f) const
+{
+
+    // The closed spans are in order and do not overlap
+    int from = a;
+    for (const auto & span : closed_spans)
+    {
+        if (span.second < from)
+            continue;
+
+        if (span.first > b)
+            break;
+
+        if (span.first > from)
+            f(from, span.first - 1);
+
+        if (span.second >= b)
+            return;
+
+        from = span.second + 1;
+    }
+
+    if (from <= b)
+        f(from, b);
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/contactlayer-meat.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////*/
@@ -9999,8 +10246,10 @@ std::shared_ptr< Mixing > mixing(std::string name);
  * @details Created with `layer::mixing()`. Every agent of a group takes part
  * in the mixing (the contacts are spread over all of them), and the agents in
  * the model's infectious states transmit (`Model::set_infectious_states()`).
- * The quarantine model takes its isolated agents out of the mixing altogether
- * (see `Model::set_excluded_states()`).
+ * Agents in a status or stage of contact weight 0 are out of every layer, and
+ * those in a status the layer excludes (`exclude_status()`) out of this one:
+ * they are not in the mixing, and the contact rate is spread over the agents
+ * present (see `ContactLayer`).
  *
  * ### Groups
  *
@@ -10751,7 +11000,8 @@ inline void Mixing::update(Model & model)
         rebuild_layout();
 
     const size_t ns = static_cast< size_t >(model.nstates);
-    const auto & not_infectious = model.state_not_infectious;
+    // States that transmit nothing here (not infectious, or out of the layer)
+    const std::vector< bool > * silent_states = this->silent();
 
     std::fill(counts.begin(), counts.end(), 0u);
 
@@ -10761,7 +11011,7 @@ inline void Mixing::update(Model & model)
     for (size_t s = 0u; s < ns; ++s)
     {
         if ((model.state_carriers[s] == 0u) ||
-            (!not_infectious.empty() && not_infectious[s]))
+            ((silent_states != nullptr) && (*silent_states)[s]))
             continue;
 
         for (size_t id : model.state_index_members(s))
@@ -10791,7 +11041,7 @@ inline void Mixing::update(Model & model)
         pool[offsets[g] + counts[g]++] = id;
     }
 
-    // In the mixing = group size - agents in excluded states
+    // In the mixing = group size - agents out of the layer
     for (size_t g = 0u; g < n_groups; ++g)
         n_available[g] = group_size[g];
 
@@ -10801,7 +11051,7 @@ inline void Mixing::update(Model & model)
         size_t k = 0u;
         for (size_t id : absent_ids)
         {
-            if (model.state_excluded[model.agent_state[id]])
+            if (this->excludes(model.agent_state[id]))
                 absent_ids[k++] = id;
             else
             {
@@ -10814,7 +11064,7 @@ inline void Mixing::update(Model & model)
 
     for (size_t s = 0u; s < ns; ++s)
     {
-        if (!model.state_excluded[s])
+        if (!this->excludes(static_cast< epiworld_fast_uint >(s)))
             continue;
 
         for (size_t id : model.state_index_members(s))
@@ -10922,9 +11172,11 @@ inline void Mixing::groupmates_of(
     d1 = std::max(d1, 1);
     d2 = std::min(d2, this->model->today());
 
-    // One entry per shared span, merged per groupmate below
+    // One entry per shared span, merged per groupmate below; the days the
+    // layer was closed are not shared
     out.clear();
-    spells(agent_id, d1, d2, [&](size_t g, int a, int b) {
+    this->open_days(d1, d2, [&](int open_from, int open_to) {
+    spells(agent_id, open_from, open_to, [&](size_t g, int a, int b) {
 
         auto shared = [&](size_t other) {
             spells(other, a, b, [&](size_t h, int first, int last) {
@@ -10947,6 +11199,7 @@ inline void Mixing::groupmates_of(
             )
                 shared(d->agent);
 
+    });
     });
 
     std::sort(out.begin(), out.end(), [](const auto & x, const auto & y) {
@@ -11117,7 +11370,7 @@ inline size_t Mixing::sample(
                 agent, model, out
             );
     }
-    else if (!model.state_excluded[model.agent_state[agent]])
+    else if (!this->excludes(model.agent_state[agent]))
     {
 
         // The day's draws of the agent's group (see update())
@@ -18298,6 +18551,7 @@ inline void Model::reset() {
     // them.
     for (auto & layer : layers)
     {
+        layer->reset_participation(*this);
         layer->reset(*this);
         layer->reset_tracing(population.size());
     }
@@ -19154,7 +19408,10 @@ inline void Model::set_running(bool value)
 inline void Model::update_layers()
 {
     for (auto & layer : layers)
+    {
+        layer->apply_closure(today());
         layer->update(*this);
+    }
 }
 
 inline void Model::layers_attach()
@@ -21576,16 +21833,22 @@ inline Virus * Model::sample_virus(Agent * agent)
         );
 
     const size_t id = static_cast< size_t >(agent->get_id());
-    const std::vector< bool > * exclude =
-        state_not_infectious.empty() ? nullptr : &state_not_infectious;
+    const epiworld_fast_uint state = agent_state[id];
 
     size_t n_contacts = 0u;
     size_t n_exposures = 0u;
     for (const auto & layer : layers)
     {
 
+        // A closed layer, or one whose statuses leave the agent out, has no
+        // contacts for it (the states out of every layer are the layers' to
+        // handle, as before)
+        const std::vector< char > * out = layer->own_exclusions();
+        if (layer->is_closed() || ((out != nullptr) && (*out)[state]))
+            continue;
+
         layer_contacts.clear();
-        const size_t n = layer->sample(id, *this, exclude, layer_contacts);
+        const size_t n = layer->sample(id, *this, layer->silent(), layer_contacts);
         if (n == 0u)
             continue;
 
@@ -21793,12 +22056,17 @@ inline void Model::transmission_push_impl()
             for (auto * net : network_layers)
             {
 
+                // A closed layer, or one the carrier is out of, reaches no one
+                if (net->is_closed() || net->excludes(agent_state[j_id]))
+                    continue;
+
                 // Layer rules, as add_exposures() applies them in a pull
                 const bool weighted = net->has_weight();
                 const epiworld_double weight = weighted ?
                     net->get_weight(*this) : 1.0;
                 const bool admitted = net->admits(*v);
                 const int layer_id = static_cast< int >(net->get_id());
+                const std::vector< char > * net_out = net->own_exclusions();
 
                 for (size_t i_id : net->ties[j_id])
                 {
@@ -21807,7 +22075,7 @@ inline void Model::transmission_push_impl()
                     // of the states rules them out without loading the agent.
                     const size_t t = agent_state[i_id];
 
-                    if (!push_pushable[t])
+                    if (!push_pushable[t] || ((net_out != nullptr) && (*net_out)[t]))
                         continue;
 
                     Agent & i = population[i_id];

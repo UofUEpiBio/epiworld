@@ -10,7 +10,8 @@ using namespace epiworld;
  * @details The measles models keep their own samplers (with replacement, see
  * `SamplerMixing`), which read the layer's groups and contact matrix (times
  * its contact rate) but would ignore any other layer, so a model with none or
- * with more throws instead.
+ * with more throws instead, as does a layer with excluded statuses (the
+ * sampler does not read them). A closed layer gives no contacts.
  */
 inline layer::Mixing & measles_mixing_layer(Model & model)
 {
@@ -24,6 +25,15 @@ inline layer::Mixing & measles_mixing_layer(Model & model)
             "mixing layer with a contact matrix (add it with "
             "add_layer(layer::mixing(...))) and cannot use other layers; it "
             "has " + std::to_string(model.get_n_layers()) + " layer(s)."
+        );
+
+    // Its sampler reads the measles statuses' contact weights only (until
+    // the measles models use the generic sampler, Phase 7)
+    if (!mix->get_excluded_statuses().empty())
+        throw std::logic_error(
+            model.get_name() + ": the measles models do not support statuses "
+            "excluded from their mixing layer (exclude_status()); their "
+            "statuses' contact weights say who is out."
         );
 
     return *mix;
@@ -270,9 +280,9 @@ inline size_t SamplerMixing::sample(
     Model & model
 )
 {
-    // An agent in no group meets nobody
+    // An agent in no group, or in a closed layer, meets nobody
     const size_t agent_group_id = mixing->get_group(agent->get_id());
-    if (agent_group_id == layer::Mixing::NO_GROUP)
+    if ((agent_group_id == layer::Mixing::NO_GROUP) || mixing->is_closed())
         return 0u;
 
     const size_t ngroups = mixing->get_n_groups();
