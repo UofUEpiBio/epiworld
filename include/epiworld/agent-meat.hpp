@@ -287,17 +287,19 @@ inline void Agent::rm_virus(
 
 inline epiworld_double Agent::get_susceptibility_reduction(
     VirusPtr & v,
-    Model & model
+    Model & model,
+    int layer
 ) {
 
-    return model.susceptibility_reduction_mixer(this, v);
+    return model.susceptibility_reduction_mixer(this, v, layer);
 }
 
 inline epiworld_double Agent::get_transmission_reduction(
     VirusPtr & v,
-    Model & model
+    Model & model,
+    int layer
 ) {
-    return model.transmission_reduction_mixer(this, v);
+    return model.transmission_reduction_mixer(this, v, layer);
 }
 
 inline epiworld_double Agent::get_recovery_enhancer(

@@ -44,6 +44,11 @@ inline bool ContactLayer::excludes(epiworld_fast_uint state) const
         (!state_out.empty() && state_out[state]);
 }
 
+inline bool ContactLayer::excludes_agent(size_t agent_id) const
+{
+    return excludes(model->agent_state[agent_id]);
+}
+
 inline const std::vector< bool > * ContactLayer::silent() const
 {
     if (!state_silent.empty())
