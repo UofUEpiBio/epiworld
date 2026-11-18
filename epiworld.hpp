@@ -5021,7 +5021,8 @@ struct DiseaseTargets {
  */
 struct LayerTargets {
     std::vector< std::string > names; ///< Empty: every layer
-    uint64_t mask = ~uint64_t(0);     ///< Bit `l`: layer `l`
+    uint64_t mask = ~uint64_t(0);     ///< Bit `l`: layer `l` (once resolved)
+    bool resolved = false;            ///< Whether `mask` matches `names`
 
     void add(std::string layer);
 
@@ -5029,14 +5030,9 @@ struct LayerTargets {
     void resolve(Model & model, const std::string & owner);
 
     /// Whether it acts through layer `layer` (-1: not through a layer, where
-    /// only a tool without layer targets acts).
-    bool has(int layer) const
-    {
-        if (names.empty())
-            return true;
-
-        return (layer >= 0) && (layer < 64) && (((mask >> layer) & 1u) != 0u);
-    }
+    /// only a tool without layer targets acts). With names, `resolve()` must
+    /// have run since they last changed (`Tool::acts_in()` checks).
+    bool has(int layer) const;
 
     bool operator==(const LayerTargets & o) const { return names == o.names; }
 };
@@ -5157,7 +5153,9 @@ public:
     const std::vector< std::string > & get_layer_targets() const { return layers_.names; }
     void clear_layer_targets() { layers_ = LayerTargets(); }
     /// Whether its contact effects act through layer `layer` (-1: no layer).
-    bool acts_in(int layer) const { return layers_.has(layer); }
+    /// With layer targets, an error until they are resolved: when the run
+    /// starts, or when the tool is added to a running model.
+    bool acts_in(int layer) const;
     ///@}
 
     void set_name(std::string name);
@@ -17980,6 +17978,8 @@ inline void Model::add_tool(const Tool & t, Assign a)
         cloned->targets_.resolve(*this, "The tool \"" + cloned->get_name() + "\"", true);
     if (running)
         cloned->layers_.resolve(*this, "The tool \"" + cloned->get_name() + "\"");
+    else
+        cloned->layers_.resolved = false; // A copy may carry another model's mask
     db.record_tool(*cloned);
     tools.push_back(std::shared_ptr<Tool>(std::move(cloned)));
     tool_assign.push_back(std::move(a));
@@ -20783,16 +20783,30 @@ inline void Tool::add_target(std::string disease)
 
 inline void LayerTargets::add(std::string layer)
 {
-    if (std::find(names.begin(), names.end(), layer) == names.end())
-        names.push_back(std::move(layer));
+    if (std::find(names.begin(), names.end(), layer) != names.end())
+        return;
+
+    names.push_back(std::move(layer));
+    resolved = false;
+}
+
+inline bool LayerTargets::has(int layer) const
+{
+    if (names.empty())
+        return true;
+
+    return (layer >= 0) && (layer < 64) && (((mask >> layer) & 1u) != 0u);
 }
 
 inline void LayerTargets::resolve(Model & model, const std::string & owner)
 {
 
+    // Unresolved until the loop ends (an unknown layer leaves it so)
+    resolved = false;
     if (names.empty())
     {
         mask = ~uint64_t(0);
+        resolved = true;
         return;
     }
 
@@ -20826,6 +20840,20 @@ inline void LayerTargets::resolve(Model & model, const std::string & owner)
         mask |= uint64_t(1) << id;
     }
 
+    resolved = true;
+
+}
+
+inline bool Tool::acts_in(int layer) const
+{
+    if (!layers_.resolved && !layers_.names.empty())
+        throw std::logic_error(
+            "The tool \"" + get_name() + "\" has layer targets that are not "
+            "resolved yet: they are resolved when the run starts, or when the "
+            "tool is added to a running model (change them before then)."
+        );
+
+    return layers_.has(layer);
 }
 
 inline void Tool::add_layer_target(std::string layer)
@@ -21301,6 +21329,13 @@ inline void Agent::add_tool(
         );
 
     ToolPtr tool_ptr = std::shared_ptr<Tool>(tool.clone_ptr());
+
+    // The model's copy is resolved at reset, or when added during a run; one
+    // added between a reset and a manual day loop is resolved here
+    if (!tool_ptr->layers_.resolved)
+        tool_ptr->layers_.resolve(
+            model, "The tool \"" + tool_ptr->get_name() + "\""
+        );
 
     model._add_event(
         this, nullptr, tool_ptr, state_new, queue, EventAction::AddTool

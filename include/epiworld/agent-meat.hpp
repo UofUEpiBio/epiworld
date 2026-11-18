@@ -140,6 +140,13 @@ inline void Agent::add_tool(
 
     ToolPtr tool_ptr = std::shared_ptr<Tool>(tool.clone_ptr());
 
+    // The model's copy is resolved at reset, or when added during a run; one
+    // added between a reset and a manual day loop is resolved here
+    if (!tool_ptr->layers_.resolved)
+        tool_ptr->layers_.resolve(
+            model, "The tool \"" + tool_ptr->get_name() + "\""
+        );
+
     model._add_event(
         this, nullptr, tool_ptr, state_new, queue, EventAction::AddTool
         );

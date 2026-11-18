@@ -1281,6 +1281,8 @@ inline void Model::add_tool(const Tool & t, Assign a)
         cloned->targets_.resolve(*this, "The tool \"" + cloned->get_name() + "\"", true);
     if (running)
         cloned->layers_.resolve(*this, "The tool \"" + cloned->get_name() + "\"");
+    else
+        cloned->layers_.resolved = false; // A copy may carry another model's mask
     db.record_tool(*cloned);
     tools.push_back(std::shared_ptr<Tool>(std::move(cloned)));
     tool_assign.push_back(std::move(a));

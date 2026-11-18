@@ -8,7 +8,9 @@ using namespace epiworld;
 // The same mask without layer targets stops every transmission. The effect
 // is 1 through the work layer and 0 through home or outside any layer (an
 // infection given by code sees only tools without layer targets). A layer
-// the model does not have is an error when the run starts.
+// the model does not have is an error when the run starts, and asking where
+// a tool acts before its targets are resolved (or after they change) is an
+// error too.
 
 namespace {
 
@@ -101,6 +103,27 @@ EPIWORLD_TEST_CASE("Tools that target layers", "[layer-participation]") {
             Catch::Matchers::Contains("targets the layer \"school\"")
         );
     }
+
+    // Targets changed after the run resolved them: an error until the next
+    // run resolves them again
+    {
+        auto model = build(true, "pull");
+        model->run(2, 1);
+        REQUIRE_FALSE(model->get_tool(0).acts_in(0));
+        model->get_tool(0).add_layer_target("home");
+        REQUIRE_THROWS_WITH(
+            model->get_tool(0).acts_in(0),
+            Catch::Matchers::Contains("not resolved yet")
+        );
+        model->run(2, 1);
+        REQUIRE(model->get_tool(0).acts_in(0));
+        REQUIRE(model->get_tool(0).acts_in(1));
+    }
+
+    // Never resolved
+    Tool u("U");
+    u.add_layer_target("work");
+    REQUIRE_THROWS_WITH(u.acts_in(1), Catch::Matchers::Contains("not resolved yet"));
 
     // Setters and getters
     Tool t("T");

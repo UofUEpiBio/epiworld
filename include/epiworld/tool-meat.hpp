@@ -327,16 +327,30 @@ inline void Tool::add_target(std::string disease)
 
 inline void LayerTargets::add(std::string layer)
 {
-    if (std::find(names.begin(), names.end(), layer) == names.end())
-        names.push_back(std::move(layer));
+    if (std::find(names.begin(), names.end(), layer) != names.end())
+        return;
+
+    names.push_back(std::move(layer));
+    resolved = false;
+}
+
+inline bool LayerTargets::has(int layer) const
+{
+    if (names.empty())
+        return true;
+
+    return (layer >= 0) && (layer < 64) && (((mask >> layer) & 1u) != 0u);
 }
 
 inline void LayerTargets::resolve(Model & model, const std::string & owner)
 {
 
+    // Unresolved until the loop ends (an unknown layer leaves it so)
+    resolved = false;
     if (names.empty())
     {
         mask = ~uint64_t(0);
+        resolved = true;
         return;
     }
 
@@ -370,6 +384,20 @@ inline void LayerTargets::resolve(Model & model, const std::string & owner)
         mask |= uint64_t(1) << id;
     }
 
+    resolved = true;
+
+}
+
+inline bool Tool::acts_in(int layer) const
+{
+    if (!layers_.resolved && !layers_.names.empty())
+        throw std::logic_error(
+            "The tool \"" + get_name() + "\" has layer targets that are not "
+            "resolved yet: they are resolved when the run starts, or when the "
+            "tool is added to a running model (change them before then)."
+        );
+
+    return layers_.has(layer);
 }
 
 inline void Tool::add_layer_target(std::string layer)

@@ -38,7 +38,8 @@ struct DiseaseTargets {
  */
 struct LayerTargets {
     std::vector< std::string > names; ///< Empty: every layer
-    uint64_t mask = ~uint64_t(0);     ///< Bit `l`: layer `l`
+    uint64_t mask = ~uint64_t(0);     ///< Bit `l`: layer `l` (once resolved)
+    bool resolved = false;            ///< Whether `mask` matches `names`
 
     void add(std::string layer);
 
@@ -46,14 +47,9 @@ struct LayerTargets {
     void resolve(Model & model, const std::string & owner);
 
     /// Whether it acts through layer `layer` (-1: not through a layer, where
-    /// only a tool without layer targets acts).
-    bool has(int layer) const
-    {
-        if (names.empty())
-            return true;
-
-        return (layer >= 0) && (layer < 64) && (((mask >> layer) & 1u) != 0u);
-    }
+    /// only a tool without layer targets acts). With names, `resolve()` must
+    /// have run since they last changed (`Tool::acts_in()` checks).
+    bool has(int layer) const;
 
     bool operator==(const LayerTargets & o) const { return names == o.names; }
 };
@@ -174,7 +170,9 @@ public:
     const std::vector< std::string > & get_layer_targets() const { return layers_.names; }
     void clear_layer_targets() { layers_ = LayerTargets(); }
     /// Whether its contact effects act through layer `layer` (-1: no layer).
-    bool acts_in(int layer) const { return layers_.has(layer); }
+    /// With layer targets, an error until they are resolved: when the run
+    /// starts, or when the tool is added to a running model.
+    bool acts_in(int layer) const;
     ///@}
 
     void set_name(std::string name);
