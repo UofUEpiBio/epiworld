@@ -1917,6 +1917,7 @@ inline void Model::reset() {
     // them.
     for (auto & layer : layers)
     {
+        layer->reset_participation(*this);
         layer->reset(*this);
         layer->reset_tracing(population.size());
     }
@@ -2405,7 +2406,10 @@ inline void Model::set_running(bool value)
 inline void Model::update_layers()
 {
     for (auto & layer : layers)
+    {
+        layer->apply_closure(today());
         layer->update(*this);
+    }
 }
 
 inline void Model::layers_attach()

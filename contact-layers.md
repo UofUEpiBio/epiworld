@@ -324,6 +324,12 @@ Wanted: an agent can be fully out of a layer (quarantine) or only partly out
   agents and 4 layers) unless stored sparsely (only agents off the default 1.0),
   and a second place to express what tools already express.
 
+**Revised 2026-11-17 (Phase 4a):** the exclusion is by status, per layer
+(`exclude_status()`), not a per-agent flag: since NH-4, quarantine and
+isolation are statuses, so the status says who is out, and the layers say
+which statuses they exclude. The layer-targeted tools of (a) stay, for
+partial participation (4b).
+
 Contact rate when agents leave (settled, point 14): a contact matrix's rate
 stays constant, so a mixing layer divides by the number of agents *present*,
 not the original count (within groups, the probability per pair stays
@@ -1225,33 +1231,62 @@ identical to `ModelSEIRQuarantine` on the same layer.
 
 ### Phase 4 -- participation, tools, schedules, persistence
 
-- Per-agent exclusion flags (end-of-step), layer-targeted tools (D2, D7),
-  `isolate(agent, keep = ...)` (which writes an absence to the within-group
-  history, D11), global event to scale/close a layer.
-- Schedules (D10), persistence (D8), membership changes notified to the layer
-  queue.
-- Bubbles: exclusion from other layers (the bubble layer itself is Phase 3).
-- Exclusion keyed by status, per layer (added 2026-11-17, for Phase 7's
-  tracing intervention, Appendix A): a layer can exclude the agents in given
-  statuses (e.g., the school layer excludes "Quarantined", while households
-  and the community keep them), and isolation excludes from every layer but
-  the ones it keeps. The status records who is quarantined, so the history
-  needs nothing new.
-- The order of interventions in a step (Appendix A, question 2): the order
-  in which they were added, at one fixed point of the step.
-- An example model: the Phase 3 model plus a transit layer (morning and evening
-  trips, route pools, `q < 1`, weekdays only). Another: an ERGM-style rewirer
-  (tie dissolution plus Metropolis-Hastings toggles on given coefficients;
-  estimation stays in R's `ergm`/`tergm`).
+Split on 2026-11-17 into four steps, each with its wrapper ports and a
+benchmark rerun. 4a and 4b are what Phase 7 needs.
+
+**4a -- participation** (exclusion by status per layer, closing a layer).
+
+- A layer excludes the agents in given statuses (`exclude_status()`), in both
+  directions: e.g., the school layer excludes "Quarantined", while households
+  and the community keep them (added 2026-11-17 for Phase 7's tracing
+  intervention, Appendix A). Who is out is the status, so the status history
+  already counts them. A status or stage of contact weight 0 stays out of
+  every layer.
+- **D2 revised (2026-11-17): no per-agent flag.** Since NH-4, quarantine and
+  isolation are statuses, so "out of these layers" is a status the layers
+  exclude, and `isolate(agent, keep = ...)` is a status transition plus the
+  layers that do not exclude it. One mechanism instead of two, and nothing to
+  store per agent and layer. Partial ("leaky") participation stays with
+  layer-targeted tools (4b).
+- A mixing layer counts only the agents present (its contact rate stays
+  constant; within groups, the probability per pair does), and records the
+  absences in its within-group history (D11) from the layer's own exclusions.
+- `close()` / `reopen()`: a closed layer samples no contacts (so it logs none
+  and transmits nothing), and its closed days are not days shared in
+  `groupmates_of()`. It takes effect at the end of the step, like any edit; a
+  closure made during a run lasts that run, one made between runs, every run.
+  A weight of 0 stays what it was: contacts happen but do not transmit.
+- The order of interventions (Appendix A, question 2): global events already
+  run at the end of the day in the order they were added, each one's changes
+  applied before the next; 4a documents and tests it.
 - Tests (end-to-end):
-  - deterministic -- with `p = 1`, an isolated infectious agent infects only
-    household members; a closed layer records no transmission;
-  - a tool targeting a layer reduces transmission in that layer only;
-  - schedules and persistence -- no transit-layer transmission on inactive
-    steps; with `q = 1` every transit transmission is between members of the
-    same usual group, with `q = 0` transmissions also cross groups in a pool;
-  - when part of a group is excluded, a matrix layer's contact rate stays
-    constant and a within-group layer's probability per pair does.
+  - the infected isolated on infection, the community excluding "Isolated":
+    every infection is in a household (a community network pulled and
+    pushed, and a mixing layer, with and without the queue); without the
+    exclusion the community transmits;
+  - a school closed by global events from day 6 to 15 logs and transmits
+    nothing then, its closed days are not shared, and same-day events apply
+    in the order added; closures between runs last every run;
+  - with half the population out of a mixing layer, the carriers met per
+    present agent match the contact rate times the carriers' share among those
+    present (not half of it).
+
+**4b -- tools that target layers** (D7: the 63-bit mask of disease targets).
+Bubbles exclude their members from other layers. Test: a tool targeting a
+layer reduces transmission in that layer only.
+
+**4c -- schedules and persistence.** Schedules (D10: routine ones in the
+layer, one-off closures as global events), persistence (D8: per-layer `q`, a
+per-agent override, an assignment function), membership changes notified to
+the layer queue. An example model: the Phase 3 model plus a transit layer
+(morning and evening trips, route pools, `q < 1`, weekdays only). Tests: no
+transit-layer transmission on inactive steps; with `q = 1` every transit
+transmission is between members of the same usual group, with `q = 0`
+transmissions also cross groups in a pool.
+
+**4d -- an ERGM-style rewirer (example)**: tie dissolution plus
+Metropolis-Hastings toggles on given coefficients; estimation stays in R's
+`ergm`/`tergm`. Only an example: it can move after 1.0.0 if time is short.
 
 ### Measles consolidation
 
@@ -1769,7 +1804,8 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-16).
 | NH-5: several diseases per model, one infection per agent (`several-diseases.md`, before Phase 4) | plan: #371 merged; NH-5a (one track per disease, still one disease; identical histories, about +2% instructions): #372; the database in parts (`DataRegistry`, `DiseaseRecord`) and its implementation in four files, identical results: #373 merged (it renamed the `tool_info` column to `reg.tool_name` by mistake; fixed, with the columns of every output table now tested: #374 merged); NH-5b-1 (the outputs by disease: a `disease` argument and column everywhere, the accessors by margin; identical numbers): #375 merged; benchmark rerun at #373: UofUEpiBio/epiworld-benchmark#38 merged (no regression); rerun at #376 (with #375): stage `nh-5b-1`, branch `port-nh-5b1-outputs`, to be rerun on a quiet machine (the first run shared it with other work; callgrind: +45 instructions in 1.12 billion, SEIR at 100,000 agents); NH-5b-2 (several diseases in the engine: one engine state per agent, a record per disease, `strain()`, targets by disease, `.of()`, "Removed (other disease)"; identical with one disease): #377 merged; benchmark rerun at #376: UofUEpiBio/epiworld-benchmark#39 (no regression); NH-5b-3 (transitions by strain, `get_hist_virus_transitions()`; the SEIR quarantine exemption by disease; the natural-history docs page): #378 merged; benchmark rerun at #377: UofUEpiBio/epiworld-benchmark#40 (scenario_04, GeoPops, 0.97 to 1.08: the one-disease stage update no longer inlined); its fix (`nh_step_stage<One>()`, the reaction check inline) with `DataBase::get_virus_name(id)` and `get_virus_disease(id)` (the wrappers label variant ids with them; mutations are not among the model's viruses): #379 merged; benchmark rerun at #379 (stage `nh-5b-3`): UofUEpiBio/epiworld-benchmark#41 merged (scenario_04 back to 0.96; no ratio grew by more than 10%) | re-vendored to #376 by #234 (merged); NH-5c (the ports of NH-5b-1 to 5b-3, vendoring #379): #235 merged | re-vendored to #376 with #46 (merged); NH-5c: #47 merged | NH-5c (the `disease` column; no targets bound): #32 merged | NH-5c (the `disease` column): #74 merged |
 | C++ extensions in the wrappers (user-written C++ on a model built in R or Python: `as_model()`, checked by the epiworld major version) | -- | #233 merged (`cpp_source_epiworld()`, `<epiworldR/extension.h>`) | #46 merged (`cpp_source()`, `get_include()`, `<epiworldpy/extension.hpp>`) | -- | -- |
 | MSVC: `M_PI` (not standard) in the lognormal draw broke the Windows wheels since #363 | #376 merged | #234 merged (re-vendor) | with #46 (merged) | with NH-5c | with NH-5c |
-| Phases 4, 5, 6 | not started | | | | |
+| Phase 4 (split into 4a-4d, Section 6) | 4a (exclusion by status per layer, closing a layer, the order of interventions; identical results for every registered model): this PR (branch `phase-4a-participation`) | | | | |
+| Phases 5, 6 | not started | | | | |
 | Phase 7 (measles as presets: the generic sampler, one contact-tracing intervention; the final step before 1.0.0) | not started | | | | |
 
 epiworldRShiny (Section 6): the one port (to epiworldR and measles 1.0.0:
@@ -1798,9 +1834,10 @@ regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 **Next** (as of the date above): NH-5 is done, with its ports and a
 benchmark rerun (no regression). A two-disease benchmark scenario would need
 every engine, so the cost of several diseases stays measured with callgrind
-(#377). The epiworldRShiny port is merged. Then Phases 4 to 6; Phase 7 (measles as
-presets) is the final step before the 1.0.0 release. Appendix A is settled
-(2026-11-17). The diagrams' pictures (`docs/assets/img`) are rendered
+(#377). The epiworldRShiny port is merged. Phase 4 is split into 4a-4d;
+this PR is 4a (participation). Then its ports and a benchmark rerun, 4b
+(tools that target layers), 4c, 4d, Phases 5 and 6; Phase 7 (measles as
+presets) is the final step before the 1.0.0 release. The diagrams' pictures (`docs/assets/img`) are rendered
 with `make -C include/measles all` and `make -C include/epiworld/models all`
 (mermaid.ink); they still show the labeled diagrams from before #370.
 

@@ -27,6 +27,9 @@ model.set_statuses(st);
 ```
 
 - **Contact weight.** A status (or a stage) with contact weight 0 takes its agents out of every layer: they are not met and do not transmit. In a mixing layer, their group's contacts go to the others.
+- **Out of some layers only.** `layer->exclude_status("Quarantined")` takes the agents in that status out of that layer only, in both directions: a school layer can exclude the quarantined while the household layer keeps them. A mixing layer counts only the agents present, so its contact rate stays constant (within groups, the probability per pair does), and the days an agent was out are not days shared in `groupmates_of()`. The excluded statuses are set between runs; the status history already counts who was out.
+- **Closing a layer.** `layer->close()` and `layer->reopen()`, e.g. from a global event, take the whole layer out (a school closure): from the next day on it samples no contacts, so it logs none and transmits nothing, and the closed days are not days shared in `groupmates_of()`. A closure made during a run lasts that run; one made between runs, every run. A layer weight of 0 is different: the contacts still happen (and are logged) but transmit nothing.
+- **Order.** Global events run at the end of the day, in the order they were added, and each one's changes apply before the next runs.
 - **`.when({stages})`** restricts a status transition to agents in those stages.
 - **`.since(stage)`** counts a duration from the day the agent entered that stage, in the same infection, instead of the day it entered the status.
 
