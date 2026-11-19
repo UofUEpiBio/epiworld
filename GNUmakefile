@@ -35,6 +35,10 @@ TESTS :=
 # Build profile: debug or release.
 BUILD_PROFILE ?= debug
 
+# Debug information of the debug profile. It roughly doubles the compile time
+# of the test suite; CI passes DEBUG_INFO=-g0 (the default stays -g3 locally).
+DEBUG_INFO ?= -g3
+
 # Enable OpenMP support.
 WITH_OPENMP   ?= 1
 
@@ -57,8 +61,8 @@ CXXFLAGS := -std=c++17
 LDFLAGS  :=
 
 ifeq ($(BUILD_PROFILE),debug)
-    CFLAGS += -g3 -O2 -DDEBUG -fdelete-null-pointer-checks -Wall -Wextra -march=native
-    CXXFLAGS += -g3 -O2 -DDEBUG -fdelete-null-pointer-checks -Wall -Wextra -march=native
+    CFLAGS += $(DEBUG_INFO) -O2 -DDEBUG -fdelete-null-pointer-checks -Wall -Wextra -march=native
+    CXXFLAGS += $(DEBUG_INFO) -O2 -DDEBUG -fdelete-null-pointer-checks -Wall -Wextra -march=native
 else ifeq ($(BUILD_PROFILE),release)
     CFLAGS += -O3 -Wno-unused-parameter -fdelete-null-pointer-checks -funroll-loops -march=native
     CXXFLAGS += -O3 -Wno-unused-parameter -fdelete-null-pointer-checks -funroll-loops -march=native

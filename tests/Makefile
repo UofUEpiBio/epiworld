@@ -9,7 +9,6 @@ $(NAME)_SOURCES := \
 	01b-sir.cpp \
 	01c-sir.cpp \
 	02-reproducible-sir.cpp \
-	02-reproducible-sirconn.cpp \
 	03-sis.cpp \
 	04-initial-dist.cpp \
 	05-mixing.cpp \
@@ -19,9 +18,7 @@ $(NAME)_SOURCES := \
 	06-mixing.cpp \
 	06b-mixing.cpp \
 	09-distribute-tools-and-viruses.cpp \
-	09b-assign-in-groups.cpp \
-	09c-assign-scaling.cpp \
-	09d-assign-uniform.cpp \
+	09b-assign.cpp \
 	10-generation-interval.cpp \
 	11-random-numbers.cpp \
 	12-diagrams.cpp \
@@ -59,40 +56,19 @@ $(NAME)_SOURCES := \
 	19d-measles-mixing-risk-quarantine-process.cpp \
 	19e-measles-mixing-risk-quarantine-hetero.cpp \
 	20a-rewire-degseq.cpp \
-	20b-rewire-degseq.cpp \
-	20c-rewire-degseq-queue.cpp \
 	22a-globalevents.cpp \
-	22b-globalevents.cpp \
-	24a-virus-hist-single-run.cpp \
-	24b-csv-output-format.cpp \
-	24c-virus-hist-multiple-sims.cpp \
+	24a-virus-hist.cpp \
 	25a-hospitalizationstracker.cpp \
 	25b-hospitalizationstracker-validation.cpp \
 	27-shortcreek.cpp \
 	28a-epiassert.cpp \
 	29a-sbm.cpp \
-	29b-sbm-within.cpp \
-	29c-sbm-between.cpp \
-	29d-sbm-colmajor.cpp \
-	29e-sbm-erdos-renyi.cpp \
-	29f-sbm-variance.cpp \
-	29g-sbm-balance.cpp \
-	29h-sbm-exchangeability.cpp \
-	29i-sbm-large-blocks.cpp \
 	29a-state-update-transition.cpp \
 	30b-contact-tracing.cpp \
 	30c-layer-tracing.cpp \
 	31a-seir-network-quarantine.cpp \
 	32a-bubbles.cpp \
-	32b-bubbles-peer.cpp \
-	32c-bubbles-transmission-factor.cpp \
-	32d-bubbles-rewiring.cpp \
-	32e-bubbles-setup-per-run.cpp \
-	32f-bubbles-parallel.cpp \
-	32g-bubbles-household-layer.cpp \
-	32h-bubbles-household-layer-rules.cpp \
-	33a-edges-add-rm.cpp \
-	33b-edges-queue.cpp \
+	33a-edges.cpp \
 	34a-transmission-push-pull.cpp \
 	34b-transmission-models.cpp \
 	34c-agents-in-state.cpp \
@@ -101,18 +77,14 @@ $(NAME)_SOURCES := \
 	35a-directed-network.cpp \
 	35b-directed-transmission.cpp \
 	35c-bernoulli-extreme-p.cpp \
-	36a-edgelist-neighbors.cpp \
-	36b-edgelist-paths-agree.cpp \
-	37a-parameter-lookup.cpp \
-	37b-param-id.cpp \
-	37c-param-ref.cpp \
+	36a-edgelist.cpp \
+	37a-parameters.cpp \
 	38a-mixing-sampler.cpp \
 	39a-post-sampling-pull.cpp \
 	39b-post-sampling-mixing.cpp \
 	39c-post-sampling-clone.cpp \
 	39d-post-sampling-push.cpp \
-	40a-saver-memory-files.cpp \
-	40b-saver-memory-threads.cpp \
+	40a-saver-memory.cpp \
 	41-agent-mutate-virus.cpp \
 	42a-tool-target.cpp \
 	42b-tool-target-mutation.cpp \
@@ -134,7 +106,6 @@ $(NAME)_SOURCES := \
 	49c-seir-quarantine-layers.cpp \
 	50a-rng-seed-reset.cpp \
 	51a-model-registry.cpp \
-	51b-model-registry-errors.cpp \
 	52a-natural-history.cpp \
 	52b-natural-history-queue.cpp \
 	52c-natural-history-models.cpp \

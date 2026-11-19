@@ -71,7 +71,7 @@ jobs:
             CORES=$(nproc)
           fi
       
-          VERBOSE=1 WITH_COVERAGE=0 make test -j"$CORES"
+          VERBOSE=1 WITH_COVERAGE=0 DEBUG_INFO=-g0 make test -j"$CORES"
           
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v6

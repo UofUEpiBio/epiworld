@@ -12,7 +12,26 @@ using namespace epiworld;
  * Note: Due to how the model initialize, global events start being called
  * from day 1 (not day 0). Day 0 is the initial state before any updates.
  */
-EPIWORLD_TEST_CASE("GlobalEvents - Event timing", "[globalevents][timing]") {
+
+/**
+ * @brief Test that GlobalEvent can modify model parameters
+ * 
+ * This test verifies that:
+ * 1. A GlobalEvent can change the transmission rate to 0 on day 20
+ * 2. After the intervention, transmission should stop completely
+ * 
+ * Note: We verify this by checking the transmission database, not just
+ * the infected counts, since infected individuals remain in that state
+ * until recovery.
+ */
+
+// GlobalEvents: timing and parameter modification
+//
+// One test case; each former test file is a block below, with the name it had.
+EPIWORLD_TEST_CASE("GlobalEvents: timing and parameter modification", "[globalevents][timing][parameters]") {
+
+    // ---- 22a-globalevents.cpp: GlobalEvents - Event timing
+    {
 
     // Create vectors to store the days when events are called
     std::vector<int> daily_event_days;
@@ -117,4 +136,70 @@ EPIWORLD_TEST_CASE("GlobalEvents - Event timing", "[globalevents][timing]") {
         vax_model.run(10, 123),
         Catch::Matchers::Contains("is not in the model")
     );
+    }
+
+    // ---- 22b-globalevents.cpp: GlobalEvents - Parameter modification
+    {
+
+    int nexperiments = 10;
+    int ndays = 40;
+    int intervention_day = 20;
+    
+    int total_transmissions_before = 0;
+    int total_transmissions_after = 0;
+
+    // Create a saver function to collect transmission data from each experiment
+    auto saver = [&total_transmissions_before, &total_transmissions_after, intervention_day](
+        size_t, Model* m) -> void {
+        
+        // Get transmission data
+        std::vector<int> trans_date, trans_source, trans_target, trans_virus, trans_source_exposure, trans_source_exposure_layer;
+        m->get_db().get_transmissions(
+            trans_date, trans_source, trans_target, trans_virus, trans_source_exposure, trans_source_exposure_layer
+        );
+        
+        // Count transmissions before and after intervention
+        // Transmissions on the intervention day are counted as "before" since
+        // the global event runs after update_state() on that day
+        for (int i : trans_date) {
+            if (i < intervention_day) {
+                total_transmissions_before++;
+            } else if (i > intervention_day) {
+                total_transmissions_after++;
+            } else if (i == intervention_day) {
+                // Explicitly exclude transmissions on intervention_day from both counts,
+                // as they may occur during the transition period (see comment above).
+            }
+        }
+    };
+
+    // Create a single SIR model
+    epimodels::ModelSIR model(
+        "virus", 1000, 0.05, 0.7, 0.15  // Parameters tuned for observable spread
+    );
+
+    model.add_layer(layer::network(
+        "network", rgraph_smallworld(1000, 8, 0.02, false, model)
+    ));
+    model.verbose_off();
+
+    // Add a global event that sets transmission rate to 0 on the intervention day
+    model.add_globalevent(
+        [](Model* m) -> void {
+            m->set_param("Transmission probability", 0.0);
+        },
+        "Stop transmission",
+        intervention_day
+    );
+
+    // Run multiple experiments with the saver function
+    model.run_multiple(ndays, nexperiments, 1000, saver, true, false, 1);
+
+    // We should have transmissions before the intervention
+    REQUIRE(total_transmissions_before > 0);
+    
+    // After setting transmission to 0, there should be NO transmissions
+    REQUIRE(total_transmissions_after == 0);
+    }
+
 }

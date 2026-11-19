@@ -1,5 +1,5 @@
-#include <map>
 #include "tests.hpp"
+#include <map>
 
 using namespace epiworld;
 
@@ -21,7 +21,13 @@ static std::vector< std::string > split_csv_line(const std::string & line)
     return tokens;
 }
 
-EPIWORLD_TEST_CASE("SaverMemory matches the saved files", "[saver-memory]") {
+// SaverMemory: saved files and number of threads
+//
+// One test case; each former test file is a block below, with the name it had.
+EPIWORLD_TEST_CASE("SaverMemory: saved files and number of threads", "[saver-memory]") {
+
+    // ---- 40a-saver-memory-files.cpp: SaverMemory matches the saved files
+    {
 
     epimodels::ModelSEIR model("a virus", 500, 0.1, 0.3, 4.0, 0.2);
     add_random_mixing(model, 3.0);
@@ -152,5 +158,48 @@ EPIWORLD_TEST_CASE("SaverMemory matches the saved files", "[saver-memory]") {
         model.get_db().get_run_outputs({"not_an_output"}),
         std::invalid_argument
     );
+    }
+
+    // ---- 40b-saver-memory-threads.cpp: SaverMemory does not depend on the number of threads
+    {
+
+    auto run = [](int nthreads) {
+
+        epimodels::ModelSEIR model("a virus", 500, 0.1, 0.3, 4.0, 0.2);
+        add_random_mixing(model, 3.0);
+
+        Tool tool("a tool");
+        tool.set_susceptibility_reduction(.5);
+        model.add_tool(tool, assign::count(0.3));
+        model.verbose_off();
+
+        // Passed by value: copies must share the results
+        SaverMemory saver(run_output_names());
+        model.run_multiple(30, 9, 123, saver, true, false, nthreads);
+
+        return saver.results();
+
+    };
+
+    auto res_1 = run(1);
+    auto res_4 = run(4);
+
+    REQUIRE(res_1.size() == run_output_names().size());
+    REQUIRE(res_1.size() == res_4.size());
+
+    for (const auto & what : run_output_names())
+    {
+        REQUIRE(res_1.at(what).colnames == res_4.at(what).colnames);
+        REQUIRE(res_1.at(what).columns == res_4.at(what).columns);
+    }
+
+    // All the simulations are there, in order
+    const auto & sim_id = std::get< std::vector< int > >(
+        res_1.at("total_hist").columns[0u]
+    );
+    REQUIRE(sim_id.front() == 0);
+    REQUIRE(sim_id.back() == 8);
+    REQUIRE(std::is_sorted(sim_id.begin(), sim_id.end()));
+    }
 
 }
