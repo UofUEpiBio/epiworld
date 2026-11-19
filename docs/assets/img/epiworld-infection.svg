@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img"
+     aria-label="Where an infection comes from in epiworld 1.0: a susceptible agent i pulls today's contacts from every contact layer; each contact j carrying a virus in an infectious stage gives a probability p_ij, the virus's infection probability reduced by i's and j's tools (a tool may act in some layers only); the layer's weight scales its odds, and a closed layer carries nothing; one draw over the summed odds picks no infection or a single infector, whose virus or strain infects i, and the layer is recorded."
+     font-family="Source Sans Pro, Helvetica Neue, Helvetica, Arial, sans-serif" fill="#1f2937">
+  <title>Where an infection comes from in epiworld 1.0</title>
+  <!-- Read from epiworld v1-layers (Phase 4): Model::nh_step_infection(),
+       Model::add_exposures_impl() and draw_exposure() in
+       model-meat-transmission.hpp; ContactLayer::admits(), exclude_status(),
+       apply_closure(); tools' layer-specific reductions. -->
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4b5563"/>
+    </marker>
+    <marker id="aht" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#00707a"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="520" fill="#ffffff"/>
+
+  <!-- A: the agent -->
+  <rect x="20" y="150" width="170" height="190" rx="10" fill="#ffffff" stroke="#6b7280" stroke-width="1.5"/>
+  <circle cx="105" cy="196" r="24" fill="#ffffff" stroke="#1f2937" stroke-width="2"/>
+  <text x="105" y="203" font-size="20" font-weight="700" text-anchor="middle" font-style="italic">i</text>
+  <g font-size="13" text-anchor="middle">
+    <text x="105" y="244" font-size="15" font-weight="700">Susceptible</text>
+    <text x="105" y="264">status: Free</text>
+    <text x="105" y="290" fill="#4b5563">its tools lower its</text>
+    <text x="105" y="308" fill="#4b5563">susceptibility, <tspan font-style="italic">s</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub">i</tspan></text>
+  </g>
+
+  <!-- A -> B: the contacts of the day, from every layer -->
+  <g stroke="#4b5563" stroke-width="1.5" fill="none" marker-end="url(#ah)">
+    <path d="M190,245 C215,245 215,110 238,110"/>
+    <line x1="190" y1="245" x2="238" y2="270"/>
+    <path d="M190,245 C215,245 215,430 238,430"/>
+  </g>
+  <text x="105" y="140" font-size="13" text-anchor="middle" fill="#4b5563">pulls today's contacts</text>
+
+  <!-- B: the layers -->
+  <g font-size="12">
+    <rect x="240" y="45" width="350" height="130" rx="8" fill="#f9fafb" stroke="#9ca3af"/>
+    <text x="256" y="70" font-size="15" font-weight="700">household</text>
+    <text x="345" y="70" fill="#4b5563">mixing within groups</text>
+
+    <rect x="240" y="205" width="350" height="130" rx="8" fill="#f9fafb" stroke="#9ca3af"/>
+    <text x="256" y="230" font-size="15" font-weight="700">work</text>
+    <text x="302" y="230" fill="#4b5563">network: the same ties every day</text>
+
+    <rect x="240" y="365" width="350" height="130" rx="8" fill="#f9fafb" stroke="#9ca3af"/>
+    <text x="256" y="390" font-size="15" font-weight="700">public</text>
+    <text x="312" y="390" fill="#4b5563">mixing across groups, at a contact rate</text>
+  </g>
+
+  <!-- contacts: I infectious, E carrier (not infectious), S/R no virus, Q out of the layers -->
+  <g font-size="12" font-weight="700" text-anchor="middle">
+    <!-- household -->
+    <circle cx="290" cy="120" r="15" fill="#f8d7da" stroke="#b02a37" stroke-width="1.5"/><text x="290" y="124">I</text>
+    <circle cx="350" cy="120" r="15" fill="#ffffff" stroke="#6b7280" stroke-width="1.5"/><text x="350" y="124">S</text>
+    <circle cx="410" cy="120" r="15" fill="#fff3cd" stroke="#997404" stroke-width="1.5"/><text x="410" y="124">E</text>
+    <!-- work -->
+    <circle cx="290" cy="280" r="15" fill="#ffffff" stroke="#6b7280" stroke-width="1.5"/><text x="290" y="284">S</text>
+    <circle cx="350" cy="280" r="15" fill="#f8d7da" stroke="#b02a37" stroke-width="1.5"/><text x="350" y="284">I</text>
+    <circle cx="410" cy="280" r="15" fill="#ffffff" stroke="#6b7280" stroke-width="1.5"/><text x="410" y="284">R</text>
+    <circle cx="470" cy="280" r="15" fill="#ffffff" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="3 3"/><text x="470" y="284" fill="#9ca3af">I</text>
+    <line x1="458" y1="292" x2="482" y2="268" stroke="#9ca3af" stroke-width="1.5"/>
+    <circle cx="530" cy="280" r="15" fill="#f8d7da" stroke="#b02a37" stroke-width="1.5"/><text x="530" y="284">I</text>
+    <!-- public -->
+    <circle cx="290" cy="440" r="15" fill="#ffffff" stroke="#6b7280" stroke-width="1.5"/><text x="290" y="444">S</text>
+    <circle cx="350" cy="440" r="15" fill="#f8d7da" stroke="#b02a37" stroke-width="1.5"/><text x="350" y="444">I</text>
+    <circle cx="410" cy="440" r="15" fill="#ffffff" stroke="#6b7280" stroke-width="1.5"/><text x="410" y="444">S</text>
+  </g>
+  <text x="470" y="314" font-size="11" text-anchor="middle" fill="#6b7280">isolated:</text>
+  <text x="470" y="327" font-size="11" text-anchor="middle" fill="#6b7280">out of the layers</text>
+
+  <!-- B -> C: only infectious contacts count (red) -->
+  <g stroke="#b02a37" stroke-width="1.5" fill="none" marker-end="url(#ah)">
+    <path d="M590,110 C615,110 615,235 638,235"/>
+    <line x1="590" y1="270" x2="638" y2="270"/>
+    <path d="M590,430 C615,430 615,305 638,305"/>
+  </g>
+
+  <!-- C: one contact's probability -->
+  <rect x="640" y="130" width="270" height="298" rx="10" fill="#ffffff" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="775" y="158" font-size="15" font-weight="700" text-anchor="middle">Each infectious contact <tspan font-style="italic">j</tspan></text>
+  <text x="775" y="196" font-size="17" text-anchor="middle"><tspan font-style="italic">p</tspan><tspan font-style="italic" font-size="12" baseline-shift="sub">ij</tspan> = (1 − <tspan font-style="italic">s</tspan><tspan font-style="italic" font-size="12" baseline-shift="sub">i</tspan>) · <tspan font-style="italic">p</tspan><tspan font-style="italic" font-size="12" baseline-shift="sub">v</tspan> · (1 − <tspan font-style="italic">t</tspan><tspan font-style="italic" font-size="12" baseline-shift="sub">j</tspan>)</text>
+  <g font-size="13" fill="#4b5563">
+    <text x="660" y="226"><tspan font-style="italic" fill="#1f2937">p</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub" fill="#1f2937">v</tspan>  the virus's infection</text>
+    <text x="682" y="243">probability (a parameter)</text>
+    <text x="660" y="264"><tspan font-style="italic" fill="#1f2937">s</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub" fill="#1f2937">i</tspan>, <tspan font-style="italic" fill="#1f2937">t</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub" fill="#1f2937">j</tspan>  reductions by the tools</text>
+    <text x="682" y="281">of <tspan font-style="italic">i</tspan> and of <tspan font-style="italic">j</tspan>; a tool may act</text>
+    <text x="682" y="298">in some layers only</text>
+  </g>
+  <line x1="660" y1="313" x2="890" y2="313" stroke="#e5e7eb"/>
+  <text x="775" y="339" font-size="15" text-anchor="middle">odds  <tspan font-style="italic">r</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">ij</tspan> = <tspan font-style="italic">w</tspan> · <tspan font-style="italic">p</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">ij</tspan> / (1 − <tspan font-style="italic">p</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">ij</tspan>)</text>
+  <g font-size="13" fill="#4b5563">
+    <text x="660" y="367"><tspan font-style="italic" fill="#1f2937">w</tspan>  the layer's weight (1 if unset);</text>
+    <text x="660" y="387">a layer carries only the diseases</text>
+    <text x="660" y="404">it targets, and none while closed</text>
+  </g>
+
+  <!-- C -> D -->
+  <line x1="910" y1="215" x2="948" y2="215" stroke="#00707a" stroke-width="2" marker-end="url(#aht)"/>
+
+  <!-- D: one draw -->
+  <rect x="950" y="130" width="230" height="170" rx="10" fill="#e0f0f1" stroke="#00707a" stroke-width="2"/>
+  <text x="1065" y="158" font-size="15" font-weight="700" text-anchor="middle" fill="#00707a">One draw, all layers</text>
+  <text x="1065" y="190" font-size="15" text-anchor="middle"><tspan font-style="italic">R</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">i</tspan> = Σ <tspan font-style="italic">r</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">ij</tspan></text>
+  <g font-size="14" text-anchor="middle">
+    <text x="1065" y="222">no infection:</text>
+    <text x="1065" y="240">1 / (1 + <tspan font-style="italic">R</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub">i</tspan>)</text>
+    <text x="1065" y="266">infected by <tspan font-style="italic">j</tspan>:</text>
+    <text x="1065" y="284"><tspan font-style="italic">r</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub">ij</tspan> / (1 + <tspan font-style="italic">R</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub">i</tspan>)</text>
+  </g>
+
+  <!-- D -> outcome -->
+  <line x1="1065" y1="300" x2="1065" y2="338" stroke="#00707a" stroke-width="2" marker-end="url(#aht)"/>
+  <text x="1075" y="324" font-size="12" fill="#00707a">infected</text>
+
+  <rect x="950" y="340" width="230" height="155" rx="10" fill="#ffffff" stroke="#6b7280" stroke-width="1.5"/>
+  <g font-size="13" text-anchor="middle">
+    <text x="1065" y="366"><tspan font-style="italic">j</tspan>'s virus (or strain)</text>
+    <text x="1065" y="383">infects <tspan font-style="italic">i</tspan>; a branch may</text>
+    <text x="1065" y="400">draw the stage it enters</text>
+    <text x="1065" y="426" fill="#4b5563">recorded: day, source,</text>
+    <text x="1065" y="443" fill="#4b5563">virus and <tspan font-weight="700" fill="#1f2937">layer</tspan></text>
+    <text x="1065" y="469" fill="#4b5563">applied with the day's</text>
+    <text x="1065" y="486" fill="#4b5563">other proposals</text>
+  </g>
+
+  <!-- Legend -->
+  <g font-size="12" fill="#4b5563">
+    <circle cx="34" cy="388" r="8" fill="#f8d7da" stroke="#b02a37"/><text x="48" y="392">infectious stage</text>
+    <circle cx="34" cy="412" r="8" fill="#fff3cd" stroke="#997404"/><text x="48" y="416">carrier, not infectious</text>
+    <circle cx="34" cy="436" r="8" fill="#ffffff" stroke="#6b7280"/><text x="48" y="440">no virus</text>
+    <circle cx="34" cy="460" r="8" fill="#ffffff" stroke="#9ca3af" stroke-dasharray="2 2"/><text x="48" y="464">contact 0, or a status</text>
+    <text x="48" y="479">the layer leaves out</text>
+  </g>
+</svg>
