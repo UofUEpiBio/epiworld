@@ -20,6 +20,17 @@
     #include "../vendor/catch2/catch.hpp"
 #endif
 
+/**
+ * Problem sizes (agents, days, replicates): `full` normally, `debug` under
+ * EPI_DEBUG, whose checks make runs much slower. Statistical checks must still
+ * hold at the debug size (or loosen their tolerance under EPI_DEBUG).
+ */
+#ifdef EPI_DEBUG
+    #define EPI_TEST_SIZE(full, debug) (debug)
+#else
+    #define EPI_TEST_SIZE(full, debug) (full)
+#endif
+
 
 
 /**

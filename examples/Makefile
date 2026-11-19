@@ -20,7 +20,8 @@ PACKAGES := \
 	21-parameter-lookup-benchmark \
 	22-post-sampling-benchmark \
 	23-layers \
-	24-transit
+	24-transit \
+	25-ergm-rewirer
 	
 # Only with OpenMP
 ifneq ($(filter 1 yes true,$(WITH_OPENMP)),)

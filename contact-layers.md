@@ -1368,6 +1368,24 @@ transmissions also cross groups in a pool. As built:
 **4d -- an ERGM-style rewirer (example)**: tie dissolution plus
 Metropolis-Hastings toggles on given coefficients; estimation stays in R's
 `ergm`/`tergm`. Only an example: it can move after 1.0.0 if time is short.
+As built (2026-11-19): `examples/25-ergm-rewirer`, a plain function
+`stergm(group, proposals)` returning a `layer::Network::Rewiring`, so no
+library code. Each day it runs a separable temporal ERGM step: formation is
+`proposals` Metropolis-Hastings toggles on the dyads not tied yesterday,
+under `edges`, `nodematch("group")` and `concurrent` evaluated on the
+formation network (a tie formed today can be toggled off again); dissolution
+ends each of yesterday's ties with probability `1 / D`. The coefficients and
+`D` are model parameters (`"Formation edges"`, `"Formation match"`,
+`"Formation concurrent"`, `"Tie duration"`). A first version used a
+`triangle` term, which did nothing visible: uniform dyad proposals in a sparse
+network almost never pick two agents with a shared partner (a TNT-style
+proposal would be needed), so the example uses `concurrent`, the classic
+STERGM term. The program runs an SIS infection on a static network and on the
+STERGM one: within-group ties rise from about 50% to 80% and concurrency
+falls from 19% to 10%. The same PR fixes `Model::run()` leaving
+`is_running()` set after a run that throws (GCC 13 at `-O2` dropped the
+`RunningGuard` destructor's store; now an explicit `try`/`catch`), with
+`tests/58a-run-after-error.cpp`.
 
 ### Measles consolidation
 
@@ -1885,7 +1903,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-16).
 | NH-5: several diseases per model, one infection per agent (`several-diseases.md`, before Phase 4) | plan: #371 merged; NH-5a (one track per disease, still one disease; identical histories, about +2% instructions): #372; the database in parts (`DataRegistry`, `DiseaseRecord`) and its implementation in four files, identical results: #373 merged (it renamed the `tool_info` column to `reg.tool_name` by mistake; fixed, with the columns of every output table now tested: #374 merged); NH-5b-1 (the outputs by disease: a `disease` argument and column everywhere, the accessors by margin; identical numbers): #375 merged; benchmark rerun at #373: UofUEpiBio/epiworld-benchmark#38 merged (no regression); rerun at #376 (with #375): stage `nh-5b-1`, branch `port-nh-5b1-outputs`, to be rerun on a quiet machine (the first run shared it with other work; callgrind: +45 instructions in 1.12 billion, SEIR at 100,000 agents); NH-5b-2 (several diseases in the engine: one engine state per agent, a record per disease, `strain()`, targets by disease, `.of()`, "Removed (other disease)"; identical with one disease): #377 merged; benchmark rerun at #376: UofUEpiBio/epiworld-benchmark#39 (no regression); NH-5b-3 (transitions by strain, `get_hist_virus_transitions()`; the SEIR quarantine exemption by disease; the natural-history docs page): #378 merged; benchmark rerun at #377: UofUEpiBio/epiworld-benchmark#40 (scenario_04, GeoPops, 0.97 to 1.08: the one-disease stage update no longer inlined); its fix (`nh_step_stage<One>()`, the reaction check inline) with `DataBase::get_virus_name(id)` and `get_virus_disease(id)` (the wrappers label variant ids with them; mutations are not among the model's viruses): #379 merged; benchmark rerun at #379 (stage `nh-5b-3`): UofUEpiBio/epiworld-benchmark#41 merged (scenario_04 back to 0.96; no ratio grew by more than 10%) | re-vendored to #376 by #234 (merged); NH-5c (the ports of NH-5b-1 to 5b-3, vendoring #379): #235 merged | re-vendored to #376 with #46 (merged); NH-5c: #47 merged | NH-5c (the `disease` column; no targets bound): #32 merged | NH-5c (the `disease` column): #74 merged |
 | C++ extensions in the wrappers (user-written C++ on a model built in R or Python: `as_model()`, checked by the epiworld major version) | -- | #233 merged (`cpp_source_epiworld()`, `<epiworldR/extension.h>`) | #46 merged (`cpp_source()`, `get_include()`, `<epiworldpy/extension.hpp>`) | -- | -- |
 | MSVC: `M_PI` (not standard) in the lognormal draw broke the Windows wheels since #363 | #376 merged | #234 merged (re-vendor) | with #46 (merged) | with NH-5c | with NH-5c |
-| Phase 4 (split into 4a-4d, Section 6) | 4a (exclusion by status per layer, closing a layer, the order of interventions; identical results for every registered model): #380 merged; benchmark rerun at #380 (stage `4a`): UofUEpiBio/epiworld-benchmark#42 merged; 4b (tools that target layers, `add_layer_target()`; identical results): #381 merged; benchmark rerun at #381 (stage `4b`; two ratios grew by more than 10%, profiled: +0.1% instructions, noise): UofUEpiBio/epiworld-benchmark#43; 4c (schedules, persistence, parameter cycles, the transit example; identical results): this PR (branch `phase-4c-schedules`) | 4a, 4b: #236 | 4a, 4b: #48 | 4a, 4b: #33 (re-vendor only) | 4a, 4b: #75 (re-vendor; the measles models refuse exclusions and layer targets until Phase 7) |
+| Phase 4 (split into 4a-4d, Section 6) | 4a (exclusion by status per layer, closing a layer, the order of interventions; identical results for every registered model): #380 merged; benchmark rerun at #380 (stage `4a`): UofUEpiBio/epiworld-benchmark#42 merged; 4b (tools that target layers, `add_layer_target()`; identical results): #381 merged; benchmark rerun at #381 (stage `4b`; two ratios grew by more than 10%, profiled: +0.1% instructions, noise): UofUEpiBio/epiworld-benchmark#43; 4c (schedules, persistence, parameter cycles, the transit example; identical results): #383 merged; benchmark rerun at #383 (stage `4c`, reports re-rendered): UofUEpiBio/epiworld-benchmark#44 merged; 4d (the STERGM rewirer example; the `is_running()` fix): this PR (branch `phase-4d-ergm`) | 4a, 4b: #236; 4c: #237 | 4a, 4b: #48; 4c: #49 | 4a, 4b: #33 (re-vendor only); 4c: #34 (re-vendor only) | 4a, 4b: #75 (re-vendor; the measles models refuse exclusions and layer targets until Phase 7); 4c: #76 (a schedule test on the measles mixing layer) |
 | Phases 5, 6 | not started | | | | |
 | Phase 7 (measles as presets: the generic sampler, one contact-tracing intervention; the final step before 1.0.0) | not started | | | | |
 
@@ -1916,10 +1934,11 @@ regression; at 3d-3b the 1,000,000-agent simulation ratio rose from 0.81 to
 benchmark rerun (no regression). A two-disease benchmark scenario would need
 every engine, so the cost of several diseases stays measured with callgrind
 (#377). The epiworldRShiny port is merged. Phase 4 is split into 4a-4d;
-4a (participation) and 4b (tools that target layers) are merged, with their
-benchmark reruns and their wrapper ports (open: epiworldR#236, epiworldpy#48,
-epiworldjs#33, measles#75); this PR is 4c (schedules and persistence). Then
-the wrapper ports of 4c, 4d (the ERGM-style rewirer example), Phases 5 and 6; Phase 7 (measles as presets) is the final step before the
+4a (participation), 4b (tools that target layers) and 4c (schedules,
+persistence, parameter cycles) are merged, with their benchmark reruns and
+their wrapper ports (4c ports open at this writing: epiworldpy#49,
+measles#76); this PR is 4d (the STERGM rewirer example, and the
+`is_running()` fix). Then Phases 5 and 6; Phase 7 (measles as presets) is the final step before the
 1.0.0 release. The diagrams' pictures (`docs/assets/img`) are rendered
 with `make -C include/measles all` and `make -C include/epiworld/models all`
 (mermaid.ink); they still show the labeled diagrams from before #370.
@@ -1934,9 +1953,16 @@ with `make -C include/measles all` and `make -C include/epiworld/models all`
   only if the stage changed the API they use (Section 8); `make
   container-check` and `make container-smoke`; then, with nothing else
   running, `STAGE=<stage> make container-v1-stage`, which reruns both C++
-  engines and appends the stage to the history. Commit the records, the
-  history and the table. The PR body quotes the stage's rows and says whether
-  any ratio grew by more than 10% from the previous stage.
+  engines and appends the stage to the history. Then re-render the reports
+  (`make container-report`: the README, `docs/` and the scenario reports,
+  whose figures compare epiworld-v1 with the other engines) and fix whatever
+  stops them (e.g., `code_regions.yml` anchors after a runner change). Commit
+  the records, the history, the table and the reports. The PR body quotes the
+  stage's rows and says whether any ratio grew by more than 10% from the
+  previous stage, and how the ratios compare with the last stage at parity
+  with 0.x (3d-3b), so that slow drift shows too (added 2026-11-19: the
+  reports had not been rendered since 3d-3a, and the small scenarios had
+  drifted from about 1.00 to 1.10-1.17 without any single stage passing 10%).
 - **A regression** is profiled in epiworld; its fix is an epiworld PR into
   `v1-layers`, followed by another rerun, before the next C++ phase merges.
 - **`main` -> `v1-layers`** merges, as in the wrappers. A conflict under
