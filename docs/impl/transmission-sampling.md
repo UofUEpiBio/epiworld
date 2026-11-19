@@ -131,9 +131,27 @@ Pushing applies to the agents in a stage whose only drawn exit is a default infe
 - **Probabilities.** $p_{kj}$ is computed with the same expression, the same tool mixers, and the same virus functions, for exactly the same (target, source) pairs.
 - **Queue.** With queuing on, a susceptible agent is only updated if it is queued, as when pulling.
 
-Everything else keeps pulling: stages with a custom sampler (e.g., `ModelDiffNet`) or with another drawn exit, statuses with a drawn exit (e.g., the detection rate of the measles models), and models with a mixing layer. Directed networks (built with `directed = true`) also always pull. Pushing relies on every tie being stored at both ends, which is how `epiworld` stores an undirected tie. A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `j` can infect `i`, but not the reverse.
+Everything else keeps pulling: stages with a custom sampler (e.g., `ModelDiffNet`, and the measles models' own mixing sampler) or with another drawn exit, and statuses with a drawn exit (e.g., the detection rate of the measles models). Directed networks (built with `directed = true`) also always pull. Pushing relies on every tie being stored at both ends, which is how `epiworld` stores an undirected tie. A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `j` can infect `i`, but not the reverse.
 
 Both directions draw from the odds: `roulette()` normalizes by $1 + R_j$, as above, rather than by the product of the $(1 - p)$ terms, which underflows to 0 with many high-probability contacts (before epiworld 1.0.0 the pull then fell back to the last contact). Pulling has no limit on the number of contacts carrying a virus either: its scratch arrays grow as needed (before 1.0.0, 1024). The one numerical difference left is precision: pulling sums the odds in `epiworld_double` (a `float` by default), pushing in `double`.
+
+## Mixing layers
+
+Since 1.0 (Phase 5), mixing layers are pushed too, and a step pushes or pulls every layer of the model. In a pull, an agent of group $h$ meets each agent of group $g$ in the mixing independently with probability
+
+$$\pi_{hg} = \min\left(1, \frac{r \, c_{hg}}{n_g - [g = h]}\right)$$
+
+with a contact matrix ($r$ the contact rate, $n_g$ the agents of $g$ in the mixing, minus the agent itself in its own group), and with probability $q_g$ within groups (only $h = g$). It draws a binomial number of the infectious agents of each group, without repeats, which is the same as meeting each one independently. A push draws the same pairs from the other side: a carrier of group $g$ meets a binomial number $\text{Bin}(|h|, \pi_{hg})$ of the members of each group $h$, drawn without repeats (`Mixing::sample_reverse()`), and adds its odds to those that are susceptible. Each susceptible's exposures are then independent with the same probabilities, so the odds argument above applies unchanged.
+
+The cost model adds, for each mixing layer, one binomial draw per visited agent per group it draws from (all the groups with a contact matrix, its own within groups), at `EPI_TRANSMISSION_DRAW_COST` ties each (default 4), on both sides. Measured on 100,000 agents (CPU time of 10 days at a fixed prevalence, best of three, interleaved):
+
+| Layer | push/pull at 0.1% | 2% | 10% | 20% | 35% | 50% | `"auto"` pushes up to |
+|---|---|---|---|---|---|---|---|
+| contact matrix, 1 group (rate 10) | 0.11 | 0.38 | 0.70 | 1.17 | 1.28 | 1.09 | 20% |
+| contact matrix, 4 groups | 0.07 | 0.31 | 0.81 | 1.00 | 1.17 | 0.99 | 20% |
+| households of 4, $q = 0.5$ | 0.97 | 0.81 | 0.83 | 0.91 | 1.10 | 1.35 | 20% |
+
+Pushing a contact matrix is up to 9-14 times cheaper early in an outbreak, where pulling draws from every group for every susceptible each day; the crossover is near 20% prevalence, where `"auto"` switches. Within groups, the queue already limits a pull to the households with a carrier, so the gain is smaller.
 
 ## Reproducibility
 

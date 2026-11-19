@@ -22,8 +22,11 @@ EPIWORLD_TEST_CASE("A model plus a mixing layer is the old mixing model", "[mixi
         model.add_layer(mixing);
     };
 
+    // The old mixing models pulled (since Phase 5, "auto" may push a mixing
+    // layer: same distribution, another random stream)
     auto history = [](Model & model) {
         model.verbose_off();
+        model.set_transmission_mode("pull");
         model.run(20, 1912);
         std::vector< int > counts;
         model.get_db().get_hist_total(nullptr, nullptr, nullptr, &counts);

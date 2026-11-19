@@ -2529,8 +2529,7 @@ inline void Model::layers_classify()
     group_layers.clear();
     for (const auto & layer : layers)
     {
-        const auto * net = layer->as_network();
-        pull_only = pull_only || (net == nullptr) || net->is_directed();
+        pull_only = pull_only || !layer->supports_push();
         queue_blind = queue_blind || !layer->supports_queue();
 
         auto * mix = layer->as_mixing();
