@@ -38,6 +38,8 @@ podman run --rm -v "$PWD":"$PWD" -w "$PWD" epiworld-dev make test WITH_OPENMP=0
 - Always use Catch2 expectations (`REQUIRE`, `REQUIRE_THAT`, `CHECK`, etc.) for test validation. Do not throw exceptions for test validation.
 - For fully deterministic tests, use `model.run()`. For stochastic tests that need multiple runs to verify statistical properties, use `model.run_multiple()`.
 - Prefer **end-to-end tests over unit tests**. Build a model, run it, and assert on what the public API exposes -- histories, transition matrices, edge lists, agent states. Reaching into internals couples the suite to implementation details and makes refactors expensive. When a change is internal (a data-structure rewrite, say), the test is that existing model-level results stay identical.
+- Size problems with `EPI_TEST_SIZE(full, debug)` (from `tests/tests.hpp`): agents, days and replicates are smaller under `EPI_DEBUG`, whose checks make runs much slower. Statistical checks must still hold at the debug size, or loosen their tolerance under `EPI_DEBUG`.
+- Run the full suite once per PR, right before opening it: `make test WITH_OPENMP=0 -j4 CXXFLAGS="-std=c++17 -O2"` (`-j4`: the machine is shared; the `CXXFLAGS` drop the default profile's `-g3`, which makes each test file compile in about 8 s instead of 14 s). While iterating, build and run only the new or changed test files, standalone (`g++ -std=c++17 -O2 -Iinclude -Itests tests/main.cpp tests/<file>.cpp`), and again with `-DEPI_DEBUG`: `make test` does not define it, and neither does CI.
 - When an API change removes or replaces a feature, quickly check which tests only covered that feature and can be deleted rather than ported. List the deleted tests, and why, in the PR.
 
 ## General Rules

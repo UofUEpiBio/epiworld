@@ -15,7 +15,7 @@ using namespace epiworld;
 
 namespace {
 
-constexpr size_t N = 3000u;
+constexpr size_t N = EPI_TEST_SIZE(3000u, 1500u);
 constexpr size_t TRIPS = 50u;
 constexpr size_t PER_ROUTE = 5u;
 constexpr int DAYS = 40;
