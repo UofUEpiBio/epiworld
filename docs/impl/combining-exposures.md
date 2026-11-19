@@ -1,9 +1,9 @@
 ## Overview
 
-When a susceptible agent has several infectious contacts in a step, `epiworld` needs one number, the probability that the agent becomes infected, and one answer to "by whom". How the contacts are *combined* decides both. This page explains the rule `epiworld` has used so far (the **roulette**, which conditions on at most one transmission), the rule that replaces it in version 1.0.0 (**independent exposures**, or hazard), and why the change is needed once a model has [contact layers](#why-layers-make-this-matter).
+When a susceptible agent has several infectious contacts in a step, `epiworld` needs one number, the probability that the agent becomes infected, and one answer to "by whom". How the contacts are *combined* decides both. This page explains the rule of the 0.x releases (the **roulette**, which conditions on at most one transmission), the rule that replaces it in version 1.0.0 (**independent exposures**, or hazard), and why the change is needed once a model has [contact layers](#why-layers-make-this-matter).
 
 !!! note "Status"
-    Through the 0.x releases, and during the layer refactor, `epiworld` uses the roulette described below. The switch to independent exposures is planned as its own step of the 1.0.0 release (Phase 6 of the contact-layers plan), so that the earlier steps can be checked against unchanged results. Until then this page describes the design, and [Push and Pull Transmission](transmission-sampling.md) describes what the code does.
+    Since 1.0.0, transmission combines exposures as independent. The switch came as its own step of the contact-layers refactor (Phase 6), so that the earlier steps could be checked against unchanged results. The roulette is still how one of several *state transitions* is drawn (see [Natural History](natural-history-and-statuses.md)); only transmission changed. [Push and Pull Transmission](transmission-sampling.md) describes how the draw is sampled.
 
 ## The two rules
 
@@ -67,7 +67,7 @@ For two contacts at $p = 0.5$ there are four equally likely outcomes: none, only
 With a single network, an agent rarely has many infectious contacts at once, and the roulette's saturation is mild. A model with [contact layers](https://github.com/UofUEpiBio/epiworld/pull/302) (a household, a workplace, public spaces) draws contacts from several independent sources and pools them. That has two consequences:
 
 - **Bias.** The more layers contribute infectious contacts, the more the roulette caps the risk. Household secondary attack rates come out too low, and adding a layer helps less than it should. Layers are independent sources of contact, so independent exposures is the model that matches them.
-- **Weights.** A layer weight meaning "how much time a contact in this layer represents" scales the hazard, $\lambda_k \to w \lambda_k$. A weight of 2 is twice the exposure, and weights above 1 are meaningful. Scaling odds has no comparable reading.
+- **Weights.** A layer weight meaning "how much time a contact in this layer represents" scales the hazard, $\lambda_k \to w \lambda_k$, so a contact of probability $p$ counts as $1 - (1 - p)^w$. A weight of 2 is twice the exposure, and weights above 1 are meaningful. Scaling odds (what the 0.x weight did) has no comparable reading.
 
 ## Cost
 
@@ -81,7 +81,7 @@ The hazard needs a `log1p` per infectious contact and one `exp` per agent with a
 
 ## Checking the implementation
 
-A star graph with one susceptible center and several infectious leaves has a closed-form answer for both rules. The check used for the design (10 leaves, two viruses with $p = 0.3$ and $p = 0.05$, 40,000 replicates) reproduced the analytic values in pull and push:
+A star graph with one susceptible center and several infectious leaves has a closed-form answer for both rules. The test suite checks the hazard rule this way in pull and push (`tests/34a-transmission-push-pull.cpp`: two viruses, tools on both ends, certain contacts, and two layers with a weight), and the weight alone on pairs (`tests/47a-layer-weights-targets.cpp`). The check used for the design (10 leaves, two viruses with $p = 0.3$ and $p = 0.05$, 40,000 replicates) reproduced the analytic values in pull and push:
 
 | | Roulette | Independent exposures |
 |---|---|---|
@@ -90,5 +90,5 @@ A star graph with one susceptible center and several infectious leaves has a clo
 
 ## See Also
 
-- [Push and Pull Transmission](transmission-sampling.md) — how the roulette is sampled from either end of a tie.
+- [Push and Pull Transmission](transmission-sampling.md) — how the draw is sampled from either end of a tie.
 - [Sampling Contacts](sampling-contacts.md) — the probability of infection and how tools adjust it.

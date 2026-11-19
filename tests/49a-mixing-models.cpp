@@ -3,9 +3,10 @@
 using namespace epiworld;
 
 // ModelSIR with a mixing layer is the model ModelSIRMixing was (removed in
-// 1.0.0): the same runs, draw for draw. The
-// histories below were recorded with those models (epiworld 1ab03e2, 1,000
-// agents in two groups, seed 1912) with libstdc++. The binomial and Poisson
+// 1.0.0). Until Phase 6 it gave the same runs, draw for draw, as that model
+// (recorded with epiworld 1ab03e2); since then exposures are independent
+// rather than combined by the roulette, so the history below was recorded
+// again at Phase 6 (1,000 agents in two groups, seed 1912) with libstdc++. The binomial and Poisson
 // draws come from the standard library, whose algorithms differ between
 // implementations, so elsewhere the test only checks the counts add up.
 EPIWORLD_TEST_CASE("A model plus a mixing layer is the old mixing model", "[mixing-models]") {
@@ -52,11 +53,11 @@ EPIWORLD_TEST_CASE("A model plus a mixing layer is the old mixing model", "[mixi
     epimodels::ModelSIR sir("v", n, 0.02, 0.1, 1.0 / 7.0);
     add_mixing(sir);
     const std::vector< int > sir_expected = {
-        980, 20, 0, 966, 32, 2, 946, 47, 7, 917, 66, 17, 889, 82, 29,
-        839, 122, 39, 772, 171, 57, 693, 231, 76, 614, 287, 99, 529,
-        323, 148, 453, 347, 200, 365, 383, 252, 308, 390, 302, 258, 377,
-        365, 216, 373, 411, 178, 367, 455, 140, 348, 512, 116, 330, 554,
-        103, 293, 604, 88, 272, 640, 76, 242, 682
+        980, 20, 0, 966, 32, 2, 945, 48, 7, 917, 72, 11, 875, 103, 22,
+        822, 142, 36, 755, 192, 53, 674, 247, 79, 580, 313, 107, 462, 388, 150,
+        368, 425, 207, 296, 437, 267, 236, 429, 335, 186, 422, 392, 150, 391, 459,
+        129, 351, 520, 105, 329, 566, 83, 297, 620, 72, 266, 662, 62, 238, 700,
+        59, 205, 736
     };
     check(history(sir), sir_expected, 3u);
 

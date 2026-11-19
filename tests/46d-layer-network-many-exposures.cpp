@@ -6,11 +6,11 @@ using namespace epiworld;
 // An agent's exposures add up across its network layers, with no ceiling: here
 // agent 0 is the hub of three star layers whose 1,000 leaves are all infected,
 // so it is exposed 3,000 times a day -- more than the 2,048 slots the sampler's
-// scratch arrays used to have. Under roulette its chance of infection in a day
-// is R / (1 + R), with R the sum of the odds p / (1 - p) of its contacts, and
-// every contact is equally likely to be the infector. With p = 0.5 the product
-// of (1 - p) underflows, which is what roulette used to normalize by: pulling
-// then always picked the last contact.
+// scratch arrays used to have. Its exposures are independent, so its chance of
+// infection in a day is 1 - (1 - p)^3000, and every contact is equally likely
+// to be the infector. With p = 0.5 that product underflows, which is what the
+// pull used to normalize by (epiworld 0.x): it then always picked the last
+// contact.
 EPIWORLD_TEST_CASE("Network layers - many exposures", "[layer-network]") {
 
     const size_t n = 1001u;
@@ -46,8 +46,7 @@ EPIWORLD_TEST_CASE("Network layers - many exposures", "[layer-network]") {
         // -- how often the hub is infected ---------------------------------
         {
             const double p = 0.0005;
-            const double odds = 3.0 * (n - 1u) * p / (1.0 - p);
-            const double expected = odds / (1.0 + odds);
+            const double expected = 1.0 - std::pow(1.0 - p, 3.0 * (n - 1u));
 
             auto model = make(p);
             model->set_transmission_mode(mode);

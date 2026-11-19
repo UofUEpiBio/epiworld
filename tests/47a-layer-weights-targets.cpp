@@ -3,9 +3,9 @@
 using namespace epiworld;
 
 // Several layers in one model draw one infection from all their contacts, and
-// each transmission records the layer it came through. A layer's weight scales
-// the odds of infection through it, a layer can be restricted to some
-// diseases, and a mixing layer works next to a network (the model then pulls).
+// each transmission records the layer it came through. A layer's weight
+// multiplies the hazard of infection through it, a layer can be restricted to some
+// diseases, and a mixing layer works next to a network.
 
 namespace {
 
@@ -45,12 +45,13 @@ Transmissions transmissions(Model & m)
 
 }
 
-EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weights]") {
+EPIWORLD_TEST_CASE("Layers - weights; virus targets and layer ids", "[layer-weights]") {
 
-    // -- weights scale the odds -----------------------------------------------
+    // -- weights multiply the hazard ------------------------------------------
     // Pairs (2k, 2k+1); the even agent carries the virus, and the odd one
     // meets it once on day 0 with probability p = 0.2 through the layer. A
-    // weight w turns that into w p / (1 - p + w p).
+    // weight w multiplies the hazard -log(1 - p), so the probability becomes
+    // 1 - (1 - p)^w (the odds rule before 1.0.0 gave w p / (1 - p + w p)).
     {
         const size_t pairs = 20000u;
         const size_t n = 2u * pairs;
@@ -66,7 +67,7 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
         }
         AdjList graph(source, target, static_cast< int >(n), false);
 
-        auto infected_odds = [&](const char * param, double w) -> double {
+        auto infected_share = [&](const char * param, double w) -> double {
 
             Model m = make_model(n);
             Virus v = make_virus("flu", p);
@@ -85,24 +86,24 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
         };
 
-        auto expect = [&](double w) -> double { return w * p / (1.0 - p + w * p); };
+        auto expect = [&](double w) -> double { return 1.0 - std::pow(1.0 - p, w); };
         auto se = [&](double q) -> double {
             return std::sqrt(q * (1.0 - q) / static_cast< double >(pairs));
         };
 
-        const double none = infected_odds(nullptr, 1.0);
+        const double none = infected_share(nullptr, 1.0);
         REQUIRE(std::abs(none - p) < 4.0 * se(p));
 
         for (double w : {0.5, 3.0})
         {
-            const double got = infected_odds("Weight", w);
+            const double got = infected_share("Weight", w);
             INFO("weight " << w);
             REQUIRE(std::abs(got - expect(w)) < 4.0 * se(expect(w)));
         }
 
         // Weight 0 switches the layer off; weight 1 changes nothing
-        REQUIRE(infected_odds("Weight", 0.0) == 0.0);
-        REQUIRE(infected_odds("Weight", 1.0) == none);
+        REQUIRE(infected_share("Weight", 0.0) == 0.0);
+        REQUIRE(infected_share("Weight", 1.0) == none);
     }
 
     // -- disease targets and layer ids ----------------------------------------
@@ -156,8 +157,8 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
     }
 
     // -- a mixing layer next to a network -------------------------------------
-    // Both layers transmit, with either transmission mode requested; the
-    // mixing layer needs the model to visit every agent, so it pulls.
+    // Both layers transmit, pushed or pulled (a mixing layer can push since
+    // Phase 5).
     {
         const size_t n = 3000u;
 
@@ -179,7 +180,9 @@ EPIWORLD_TEST_CASE("Layers - weights, virus targets and layer ids", "[layer-weig
 
             m.set_transmission_mode(mode);
             m.run(40, 9);
-            REQUIRE(m.get_last_transmission_mode() == TransmissionMode::pull);
+            REQUIRE(m.get_last_transmission_mode() == (
+                (mode == "push") ? TransmissionMode::push : TransmissionMode::pull
+            ));
 
             auto t = transmissions(m);
             size_t from[2] = {0u, 0u};
