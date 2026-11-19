@@ -109,7 +109,7 @@ static void rewire_some_ties(Model * m)
 // Edges: add/remove and queue
 //
 // One test case; each former test file is a block below, with the name it had.
-EPIWORLD_TEST_CASE("Edges: add/remove and queue", "[edges]") {
+EPIWORLD_TEST_CASE("Edges: add or remove and queue", "[edges]") {
 
     // ---- 33a-edges-add-rm.cpp: Edges - add and remove ties
     {

@@ -54,7 +54,7 @@ static void build_model(
 // Parameters: lookup by name, position and reference
 //
 // One test case; each former test file is a block below, with the name it had.
-EPIWORLD_TEST_CASE("Parameters: lookup by name, position and reference", "[parameters][ParamId][ParamRef]") {
+EPIWORLD_TEST_CASE("Parameters: lookup by name; position and reference", "[parameters][ParamId][ParamRef]") {
 
     // ---- 37a-parameter-lookup.cpp: Parameter lookup by name
     {
@@ -170,7 +170,12 @@ EPIWORLD_TEST_CASE("Parameters: lookup by name, position and reference", "[param
     order_2.add_param(0.1, "a");
     REQUIRE(order_1 == order_2);
     order_2.set_param("a", 0.3);
+    #ifndef EPI_DEBUG
+    // (With EPI_DEBUG, a mismatch throws, naming what differs)
     REQUIRE_FALSE(order_1 == order_2);
+    #else
+    REQUIRE_THROWS(order_1 == order_2);
+    #endif
 
     REQUIRE_THROWS_AS(model.par_at(ParamId{99u}), std::out_of_range);
     REQUIRE_THROWS_AS(model.set_param_at(ParamId{99u}, 1.0), std::out_of_range);
