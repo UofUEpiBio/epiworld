@@ -1397,6 +1397,38 @@ Moved to Phase 7, the plan's final step before the 1.0.0 release (2026-11-16).
   and cost model (revisit `EPI_TRANSMISSION_AGENT_COST` and kappa).
 - Benchmark: push vs pull for mixing layers early in an outbreak.
 
+As built (2026-11-19). Decided with the user: **one choice per step**, not
+per layer (a step pushes or pulls every layer; a mixed step would still visit
+every susceptible for the pulled layers and need the push reservoir merged
+into each pull draw, for little gain), and `"auto"` may push mixing layers, so
+models with mixing layers get a different random stream by default (the same
+distribution; `"pull"` reproduces the old one).
+
+- `ContactLayer::supports_push()` and `sample_reverse(source, model, out)`:
+  the agents `source` meets, each with the probability its own pull would
+  meet `source`. Undirected networks keep their direct push along the ties
+  (identical streams for models without mixing layers); `Mixing` implements
+  it: within groups, `Bin(|g|, q[g])` members of the carrier's group; with a
+  matrix, `Bin(|h|, min(1, rate * c(h, g) / others(g)))` members of each
+  group `h`, `others` as in `daily_build()`. Members are drawn by a partial
+  shuffle that is undone, so their order (which other draws depend on) is
+  kept.
+- `has_pull_only_layer()` is now "some layer cannot be pushed" (a directed
+  network or a layer type without `sample_reverse()`). The push loop walks
+  every layer in order; it filters by the queue only when the queue applies
+  (no matrix layer), as a pull does.
+- The cost model adds `EPI_TRANSMISSION_DRAW_COST` (4) ties per binomial
+  draw per visited agent (`n_groups` draws per mixing layer with a matrix,
+  1 within groups) on both sides. Measured (docs/impl/transmission-sampling.md,
+  "Mixing layers"): a push is 7-14x cheaper at 0.1% prevalence with a matrix,
+  the crossover is near 20%, and `"auto"` switches there; kappa and
+  `EPI_TRANSMISSION_AGENT_COST` unchanged.
+- Test: `59a-push-mixing` (day-one infections against `c * p` and
+  `(m - 1) * q * p`, pushed and pulled; an asymmetric matrix by group, which a
+  transposed index fails; the same mean final size pushed and pulled for a
+  network plus matrix plus households model; auto pushes early; a schedule
+  and tracing pushed).
+
 ### Model registry (#312) -- after Phase 3
 
 - Once entities are gone, model construction is final: land the registry
@@ -1903,8 +1935,9 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-16).
 | NH-5: several diseases per model, one infection per agent (`several-diseases.md`, before Phase 4) | plan: #371 merged; NH-5a (one track per disease, still one disease; identical histories, about +2% instructions): #372; the database in parts (`DataRegistry`, `DiseaseRecord`) and its implementation in four files, identical results: #373 merged (it renamed the `tool_info` column to `reg.tool_name` by mistake; fixed, with the columns of every output table now tested: #374 merged); NH-5b-1 (the outputs by disease: a `disease` argument and column everywhere, the accessors by margin; identical numbers): #375 merged; benchmark rerun at #373: UofUEpiBio/epiworld-benchmark#38 merged (no regression); rerun at #376 (with #375): stage `nh-5b-1`, branch `port-nh-5b1-outputs`, to be rerun on a quiet machine (the first run shared it with other work; callgrind: +45 instructions in 1.12 billion, SEIR at 100,000 agents); NH-5b-2 (several diseases in the engine: one engine state per agent, a record per disease, `strain()`, targets by disease, `.of()`, "Removed (other disease)"; identical with one disease): #377 merged; benchmark rerun at #376: UofUEpiBio/epiworld-benchmark#39 (no regression); NH-5b-3 (transitions by strain, `get_hist_virus_transitions()`; the SEIR quarantine exemption by disease; the natural-history docs page): #378 merged; benchmark rerun at #377: UofUEpiBio/epiworld-benchmark#40 (scenario_04, GeoPops, 0.97 to 1.08: the one-disease stage update no longer inlined); its fix (`nh_step_stage<One>()`, the reaction check inline) with `DataBase::get_virus_name(id)` and `get_virus_disease(id)` (the wrappers label variant ids with them; mutations are not among the model's viruses): #379 merged; benchmark rerun at #379 (stage `nh-5b-3`): UofUEpiBio/epiworld-benchmark#41 merged (scenario_04 back to 0.96; no ratio grew by more than 10%) | re-vendored to #376 by #234 (merged); NH-5c (the ports of NH-5b-1 to 5b-3, vendoring #379): #235 merged | re-vendored to #376 with #46 (merged); NH-5c: #47 merged | NH-5c (the `disease` column; no targets bound): #32 merged | NH-5c (the `disease` column): #74 merged |
 | C++ extensions in the wrappers (user-written C++ on a model built in R or Python: `as_model()`, checked by the epiworld major version) | -- | #233 merged (`cpp_source_epiworld()`, `<epiworldR/extension.h>`) | #46 merged (`cpp_source()`, `get_include()`, `<epiworldpy/extension.hpp>`) | -- | -- |
 | MSVC: `M_PI` (not standard) in the lognormal draw broke the Windows wheels since #363 | #376 merged | #234 merged (re-vendor) | with #46 (merged) | with NH-5c | with NH-5c |
-| Phase 4 (split into 4a-4d, Section 6) | 4a (exclusion by status per layer, closing a layer, the order of interventions; identical results for every registered model): #380 merged; benchmark rerun at #380 (stage `4a`): UofUEpiBio/epiworld-benchmark#42 merged; 4b (tools that target layers, `add_layer_target()`; identical results): #381 merged; benchmark rerun at #381 (stage `4b`; two ratios grew by more than 10%, profiled: +0.1% instructions, noise): UofUEpiBio/epiworld-benchmark#43; 4c (schedules, persistence, parameter cycles, the transit example; identical results): #383 merged; benchmark rerun at #383 (stage `4c`, reports re-rendered): UofUEpiBio/epiworld-benchmark#44 merged; 4d (the STERGM rewirer example; the `is_running()` fix): this PR (branch `phase-4d-ergm`) | 4a, 4b: #236; 4c: #237 | 4a, 4b: #48; 4c: #49 | 4a, 4b: #33 (re-vendor only); 4c: #34 (re-vendor only) | 4a, 4b: #75 (re-vendor; the measles models refuse exclusions and layer targets until Phase 7); 4c: #76 (a schedule test on the measles mixing layer) |
-| Phases 5, 6 | not started | | | | |
+| Phase 4 (split into 4a-4d, Section 6) | 4a (exclusion by status per layer, closing a layer, the order of interventions; identical results for every registered model): #380 merged; benchmark rerun at #380 (stage `4a`): UofUEpiBio/epiworld-benchmark#42 merged; 4b (tools that target layers, `add_layer_target()`; identical results): #381 merged; benchmark rerun at #381 (stage `4b`; two ratios grew by more than 10%, profiled: +0.1% instructions, noise): UofUEpiBio/epiworld-benchmark#43; 4c (schedules, persistence, parameter cycles, the transit example; identical results): #383 merged; benchmark rerun at #383 (stage `4c`, reports re-rendered): UofUEpiBio/epiworld-benchmark#44 merged; 4d (the STERGM rewirer example; the `is_running()` fix): #384 merged; benchmark rerun at #384 (stage `4d`): UofUEpiBio/epiworld-benchmark#45 | 4a, 4b: #236; 4c: #237 | 4a, 4b: #48; 4c: #49 | 4a, 4b: #33 (re-vendor only); 4c: #34 (re-vendor only) | 4a, 4b: #75 (re-vendor; the measles models refuse exclusions and layer targets until Phase 7); 4c: #76 (a schedule test on the measles mixing layer) |
+| Phase 5 (push for mixing layers; one push/pull choice per step) | this PR (branch `phase5-push-mixing`) | | | | |
+| Phase 6 | not started | | | | |
 | Phase 7 (measles as presets: the generic sampler, one contact-tracing intervention; the final step before 1.0.0) | not started | | | | |
 
 epiworldRShiny (Section 6): the one port (to epiworldR and measles 1.0.0:
@@ -1936,9 +1969,10 @@ every engine, so the cost of several diseases stays measured with callgrind
 (#377). The epiworldRShiny port is merged. Phase 4 is split into 4a-4d;
 4a (participation), 4b (tools that target layers) and 4c (schedules,
 persistence, parameter cycles) are merged, with their benchmark reruns and
-their wrapper ports (4c ports open at this writing: epiworldpy#49,
-measles#76); this PR is 4d (the STERGM rewirer example, and the
-`is_running()` fix). Then Phases 5 and 6; Phase 7 (measles as presets) is the final step before the
+their wrapper ports, and so is 4d (the STERGM rewirer example, and the
+`is_running()` fix). This PR is Phase 5 (push for mixing layers): results of
+models with mixing layers change in `"auto"` (same distribution), so the
+wrapper ports update tests that pin values. Then Phase 6; Phase 7 (measles as presets) is the final step before the
 1.0.0 release. The diagrams' pictures (`docs/assets/img`) are rendered
 with `make -C include/measles all` and `make -C include/epiworld/models all`
 (mermaid.ink); they still show the labeled diagrams from before #370.

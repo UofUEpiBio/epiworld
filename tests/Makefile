@@ -148,7 +148,8 @@ $(NAME)_SOURCES := \
 	56a-tool-layer-targets.cpp \
 	57a-layer-schedule.cpp \
 	57b-layer-persistence.cpp \
-	58a-run-after-error.cpp
+	58a-run-after-error.cpp \
+	59a-push-mixing.cpp
 
 # Coverage of the library only: the test sources themselves are always ~100%
 # covered and would inflate the figure.
