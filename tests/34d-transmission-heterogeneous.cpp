@@ -20,33 +20,27 @@ namespace {
 
 // The reference pull, as a custom infection sampler: walks every neighbor's
 // agent in the network layer (no carrier flags), skips the latent ones (stage
-// 1) and the ones without a virus, and draws at most one virus.
+// 1) and the ones without a virus, and draws at most one virus from the rest
+// (`Model::sample_virus()` with the contacts).
 Virus * plain_scan(Agent & p, Model & m)
 {
 
-    static const Value p_contact("Transmission probability");
-
-    size_t n = 0u;
+    static std::vector< size_t > contacts;
+    contacts.clear();
     for (auto * neighbor : tests_net(m).neighbors_view(p.get_id()))
     {
 
-        auto & v = neighbor->get_virus();
-        if ((m.get_stage(*neighbor) == 1) || (v == nullptr))
+        if ((m.get_stage(*neighbor) == 1) || (neighbor->get_virus() == nullptr))
             continue;
 
-        m.array_double_tmp[n] =
-            (1.0 - p.get_susceptibility_reduction(v, m)) *
-            p_contact.eval(p, v.get(), m) *
-            (1.0 - neighbor->get_transmission_reduction(v, m));
-        m.array_virus_tmp[n++] = &(*v);
+        contacts.push_back(static_cast< size_t >(neighbor->get_id()));
 
     }
 
-    if (n == 0u)
+    if (contacts.empty())
         return nullptr;
 
-    const int which = roulette(n, &m);
-    return (which >= 0) ? m.array_virus_tmp[which] : nullptr;
+    return m.sample_virus(&p, contacts.data(), contacts.size());
 
 }
 

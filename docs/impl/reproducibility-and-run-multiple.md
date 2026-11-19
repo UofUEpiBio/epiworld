@@ -25,8 +25,8 @@ In this example:
 - The model is initialized with 100 agents.
 - The simulation runs for 30 days, using a fixed seed (`42`) to ensure reproducibility.
 
-!!! note "Seeds and epiworld 0.16"
-    Since version 0.16, network models sample transmission by pushing infection odds from infectious agents whenever that is cheaper. The distribution of outcomes is unchanged, but the random number stream is not, so a given seed gives a different (equally likely) run than in earlier versions. Use `model.set_transmission_mode("pull")` to reproduce runs from epiworld 0.15 or earlier; see [Push and Pull Transmission](transmission-sampling.md).
+!!! note "Seeds across versions"
+    Since version 0.16, network models sample transmission by pushing infection hazards from infectious agents whenever that is cheaper. The distribution of outcomes is unchanged, but the random number stream is not, so a given seed gives a different (equally likely) run in push and in pull. Since 1.0.0, exposures are combined as independent (see [Combining Exposures](combining-exposures.md)), which changes the outcomes themselves: runs of epiworld 0.x cannot be reproduced. See [Push and Pull Transmission](transmission-sampling.md).
 
 ## Multiple Runs
 The `run_multiple` method extends the functionality of `run` by executing the model multiple times, each with a different random seed. This is useful for studying the variability of outcomes under the same configuration or for generating data for statistical analysis. The method supports parallel execution using OpenMP, allowing multiple simulations to run concurrently on different threads.

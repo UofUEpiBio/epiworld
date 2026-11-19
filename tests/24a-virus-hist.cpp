@@ -31,7 +31,7 @@ using namespace epiworld;
 // Virus history: single run, CSV format and multiple simulations
 //
 // One test case; each former test file is a block below, with the name it had.
-EPIWORLD_TEST_CASE("Virus history: single run, CSV format and multiple simulations", "[virus_hist][csv][output][run_multiple]") {
+EPIWORLD_TEST_CASE("Virus history: single run; CSV format and multiple simulations", "[virus_hist][csv][output][run_multiple]") {
 
     // ---- 24a-virus-hist-single-run.cpp: Virus history across multiple days
     {

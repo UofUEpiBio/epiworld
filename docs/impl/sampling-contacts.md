@@ -115,11 +115,13 @@ In the Measles and SEIR quarantine models, this means that the effective exposur
 
 ## Probability of Infection
 
-Generally, `epiworld` assumes that at each step of the simulation, susceptible agents can acquire the disease from at most one infectious agent. The probability of transmission from $i$ to $j$ is given by the following formula:
+At each step of the simulation, a susceptible agent $j$ is exposed independently to each of its infectious contacts $i$, and acquires the disease from at most one of them. It escapes infection with probability $\prod_i (1 - p_{ij})$, and if infected, the infector is $i$ with probability proportional to its hazard $\lambda_{ij} = -\log(1 - p_{ij})$:
 
 $$
-P(i\to j| \text{at most one}) = \frac{p_{ij} \times \prod_{k\neq i}\left(1 - p_{kj}\right)}{\prod_k\left(1 - p_{kj}\right) + \sum_k p_{kj} \times \prod_{l\neq k}\left(1 - p_{lj}\right)}
+P(i\to j) = \frac{\lambda_{ij}}{\sum_k \lambda_{kj}} \left(1 - \prod_k\left(1 - p_{kj}\right)\right)
 $$
+
+(Before 1.0.0, the draw was conditioned on at most one transmission, which lowers the probability of infection; see [Combining Exposures](combining-exposures.md).)
 
 The adjusted probabilities $p_{ij}$ are computed as a function of $i$, $j$, and the virus. The following section describes how these probabilities are computed. In network models this outcome can be sampled from either end of the ties -- by the susceptible agent or by its infectious neighbors -- with the same result; see [Push and Pull Transmission](transmission-sampling.md).
 
@@ -143,7 +145,7 @@ Therefore, for example, a vaccinated agent wearing a mask would have a factor of
 
 ## See Also
 
-- [Push and Pull Transmission](transmission-sampling.md) — the odds form of the probability of infection, and sampling it from the infectious agents.
+- [Push and Pull Transmission](transmission-sampling.md) — the hazard form of the probability of infection, and sampling it from the infectious agents.
 - [Mixing by Group](mixing-and-entity-distribution.md) — contact matrices and the groupings that define group interactions.
 - [Core Simulation Models](core-simulation-models.md) — the mixing and quarantine models that use this contact sampling approach.
 - [Virus and Tool Distribution Functions](virus-and-tool-distribution.md) — how virus transmission probabilities and tool adjustment factors are configured.

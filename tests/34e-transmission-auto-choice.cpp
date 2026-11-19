@@ -12,9 +12,12 @@ using namespace epiworld;
 // the modes used, never on timings:
 //
 // 1. The first steps push (few agents carry a virus).
-// 2. Around the peak, when a third of the population carries the virus, the
-//    rule still pushes: pulling every susceptible is dearer there.
-// 3. Since it only ever pushes, the run is exactly the run of "push".
+// 2. The rule pushes on almost every day: pulling every susceptible is dearer
+//    except, at most, right at the peak. (Where exactly the peak crosses over
+//    depends on the outbreak, so on the standard library's draws: with
+//    independent exposures, libc++ pulls on three days at the peak and
+//    libstdc++ on none.)
+// 3. A run that only ever pushes is exactly the run of "push".
 // 4. A tighter threshold (`kappa`) makes the rule pull sooner, and a looser one
 //    later, so the constant is doing what its documentation says.
 
@@ -76,21 +79,20 @@ EPIWORLD_TEST_CASE("Transmission - automatic choice", "[transmission]") {
     // 1. Push while few carry the virus
     REQUIRE(autom.trace.substr(0u, 10u) == std::string(10u, 'P'));
 
-    // 2. And through the peak
+    // 2. And on almost every day after
     INFO("modes by day: " << autom.trace);
-    REQUIRE(autom.n_pull() == 0);
+    REQUIRE(autom.n_pull() <= static_cast< int >(autom.trace.size()) / 10);
 
-    // 3. So it is the push run
-    REQUIRE(autom.counts == push.counts);
-    REQUIRE(autom.date == push.date);
-    REQUIRE(autom.target == push.target);
+    // 3. A loose threshold never pulls, so it is the push run
+    Modes loose = simulate("auto", 100.0);
+    REQUIRE(loose.n_pull() == 0);
+    REQUIRE(loose.counts == push.counts);
+    REQUIRE(loose.date == push.date);
+    REQUIRE(loose.target == push.target);
 
     // 4. The threshold moves the switch
     Modes tight = simulate("auto", 0.05);
     REQUIRE(tight.n_pull() > 0);
     REQUIRE(tight.n_pull() > autom.n_pull());
-
-    Modes loose = simulate("auto", 100.0);
-    REQUIRE(loose.n_pull() == 0);
 
 }

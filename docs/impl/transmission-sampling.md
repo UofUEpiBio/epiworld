@@ -2,8 +2,8 @@
 
 In a network model, a susceptible agent can acquire a virus from any neighbor that carries one. `epiworld` can sample that outcome in two ways:
 
-- **Pull**: each susceptible agent looks at its neighbors, collects the transmission probabilities of those carrying a virus, and draws *at most one* infector (`sample_virus_single()` and `roulette()`). This is how `epiworld` has always worked.
-- **Push**: each agent carrying a virus adds its *infection odds* to its susceptible neighbors; afterwards, every susceptible agent that received something makes a single draw.
+- **Pull**: each susceptible agent looks at its contacts, collects the transmission probabilities of those carrying a virus, and draws whether it is infected and, if so, by whom (`Model::sample_virus()`).
+- **Push**: each agent carrying a virus adds its *infection hazards* to its susceptible contacts; afterwards, every susceptible agent that received something makes a single draw.
 
 Both produce **exactly the same distribution** of who gets infected and by whom. They differ in cost. Pulling visits every tie of every (queued) susceptible agent, while pushing visits only the ties of agents carrying a virus. While an outbreak is small, pushing is much cheaper; near the peak of a large outbreak in a dense network, pulling can be.
 
@@ -12,80 +12,70 @@ By default (`"auto"`), the model picks the cheaper of the two at every step. Thi
 ```cpp
 model.set_transmission_mode("auto"); // default: cheaper of the two, each step
 model.set_transmission_mode("push");
-model.set_transmission_mode("pull"); // the random streams of epiworld <= 0.15
+model.set_transmission_mode("pull");
 ```
 
-## Pulling: at most one infector
+## Pulling: independent exposures
 
-Take a susceptible agent $j$ and let $K_j$ be its neighbors carrying a virus. As described in [Sampling Contacts](sampling-contacts.md#probability-of-infection), the probability that $k \in K_j$ transmits to $j$ is
+Take a susceptible agent $j$ and let $K_j$ be its contacts carrying a virus (in an infectious stage). As described in [Sampling Contacts](sampling-contacts.md#probability-of-infection), the probability that $k \in K_j$ transmits to $j$ is
 
 $$
 p_{kj} = \left(1 - \text{susceptibility reduction}_j\right) \times p_{v_k} \times \left(1 - \text{transmission reduction}_k\right),
 $$
 
-where $v_k$ is $k$'s virus and the reductions come from each agent's tools. `epiworld` assumes that $j$ acquires the disease from at most one neighbor per step. Conditioning on "none or exactly one" gives
-
-$$
-P(\text{none}) = \frac{\prod_{k}\left(1 - p_{kj}\right)}{Z_j},
-\qquad
-P(k) = \frac{p_{kj}\prod_{l \neq k}\left(1 - p_{lj}\right)}{Z_j},
-$$
-
-$$
-Z_j = \prod_{k}\left(1 - p_{kj}\right) + \sum_{k} p_{kj} \prod_{l \neq k}\left(1 - p_{lj}\right).
-$$
-
-`roulette()` computes these terms and makes one uniform draw to pick "none" or one $k$.
-
-![Where an infection comes from: a susceptible agent i pulls the day's contacts from every contact layer; each contact j in an infectious stage gives a probability p_ij, the virus's infection probability reduced by both agents' tools (a tool may act in some layers only); the layer's weight scales its odds, a layer carries only the diseases it targets and none while closed, and agents with contact 0 or in a status the layer leaves out are not sampled; one draw over the summed odds picks no infection or one infector, and the transmission records its layer.](../assets/img/epiworld-infection.svg)
-
-*The same draw with several contact layers (here the susceptible agent is $i$ and its contacts are $j$): every layer feeds one draw, not one chance per layer, and the transmission records the layer it came through (`get_transmissions()`).*
-
-## The odds form
-
-Divide the numerators and $Z_j$ by $\prod_{k}(1 - p_{kj})$. With the **odds** $r_{kj} = p_{kj} / (1 - p_{kj})$ and their sum $R_j = \sum_{k \in K_j} r_{kj}$:
+where $v_k$ is $k$'s virus and the reductions come from each agent's tools. The exposures are independent: $j$ escapes infection only if every one of them fails, and if it is infected, one infector is named, with probability proportional to its **hazard** $\lambda_{kj} = -\log(1 - p_{kj})$ (times the weight of the contact's layer, see [Contact layers](#contact-layers-and-weights)). With $\Lambda_j = \sum_{k \in K_j} \lambda_{kj}$:
 
 $$
 \boxed{
-P(\text{none}) = \frac{1}{1 + R_j},
+P(\text{none}) = \prod_{k}\left(1 - p_{kj}\right) = e^{-\Lambda_j},
 \qquad
-P(k) = \frac{r_{kj}}{1 + R_j}.
+P(k) = \frac{\lambda_{kj}}{\Lambda_j}\left(1 - e^{-\Lambda_j}\right).
 }
 $$
 
-So the outcome for $j$ depends on its neighbors only through the **sum of their odds**, and the infector is chosen with probability proportional to its odds. A sum can be accumulated from either end of a tie, which is what makes pushing possible.
+One uniform draw picks "none" or one $k$. So the outcome for $j$ depends on its contacts only through the **sum of their hazards**, and the infector is chosen with probability proportional to its hazard. A sum can be accumulated from either end of a tie, which is what makes pushing possible. [Combining Exposures](combining-exposures.md) compares this rule with the one of epiworld 0.x (the roulette, which conditioned on at most one transmission).
+
+![Where an infection comes from: a susceptible agent i pulls the day's contacts from every contact layer; each contact j in an infectious stage gives a probability p_ij, the virus's infection probability reduced by both agents' tools (a tool may act in some layers only); the layer's weight multiplies its hazard, a layer carries only the diseases it targets and none while closed, and agents with contact 0 or in a status the layer leaves out are not sampled; one draw over the summed hazards picks no infection or one infector, and the transmission records its layer.](../assets/img/epiworld-infection.svg)
+
+*The same draw with several contact layers (here the susceptible agent is $i$ and its contacts are $j$): every layer feeds one draw, not one chance per layer, and the transmission records the layer it came through (`get_transmissions()`).*
+
+*The same draw with several contact layers (here the susceptible agent is $i$ and its contacts are $j$): every layer feeds one draw, not one chance per layer, and the transmission records the layer it came through (`get_transmissions()`).*
+
+### Contact layers and weights
+
+The contacts of all the layers enter the same draw. A layer of weight $w$ (`ContactLayer::set_weight()`) multiplies the hazards of its contacts, $\lambda_{kj} \to w \lambda_{kj}$, so a contact of probability $p$ counts as $1 - (1 - p)^w$: a weight of 2 is two independent exposures, and 0 switches the layer off.
 
 ## Pushing
 
-For each agent $k$ carrying a virus, and each eligible susceptible neighbor $j$ (see [Scope](#scope)):
+For each agent $k$ carrying a virus, and each eligible susceptible contact $j$ (see [Scope](#scope)):
 
-1. Add $r_{kj}$ to $R_j$ (the first time $j$ is touched, record it in a list).
-2. Keep a **candidate infector** for $j$. The first contribution becomes the candidate; each later contribution replaces it with probability $r_{kj} / R_j$, where $R_j$ already includes $r_{kj}$.
+1. Add $\lambda_{kj}$ to $\Lambda_j$ (the first time $j$ is touched, record it in a list).
+2. Keep a **candidate infector** for $j$. The first contribution becomes the candidate; each later contribution replaces it with probability $\lambda_{kj} / \Lambda_j$, where $\Lambda_j$ already includes $\lambda_{kj}$.
 
 Then, for each touched $j$:
 
-3. With probability $1/(1 + R_j)$ nothing happens; otherwise $j$ acquires the candidate's virus.
+3. With probability $e^{-\Lambda_j}$ nothing happens; otherwise $j$ acquires the candidate's virus.
 
-**The candidate is drawn with probability proportional to the odds.** This is a sequential weighted reservoir sample. Suppose the contributions arrive as $r_1, \dots, r_m$ with partial sums $R^{(i)} = r_1 + \dots + r_i$, and assume that after $m - 1$ contributions $P(\text{cand} = k) = r_k / R^{(m-1)}$ (true for $m = 1$). Contribution $m$ becomes the candidate with probability $r_m / R^{(m)}$. Otherwise, with probability $R^{(m-1)} / R^{(m)}$, the current candidate stays, so for $k < m$
+**The candidate is drawn with probability proportional to the hazards.** This is a sequential weighted reservoir sample. Suppose the contributions arrive as $\lambda_1, \dots, \lambda_m$ with partial sums $\Lambda^{(i)} = \lambda_1 + \dots + \lambda_i$, and assume that after $m - 1$ contributions $P(\text{cand} = k) = \lambda_k / \Lambda^{(m-1)}$ (true for $m = 1$). Contribution $m$ becomes the candidate with probability $\lambda_m / \Lambda^{(m)}$. Otherwise, with probability $\Lambda^{(m-1)} / \Lambda^{(m)}$, the current candidate stays, so for $k < m$
 
 $$
-P(\text{cand} = k) = \frac{r_k}{R^{(m-1)}} \cdot \frac{R^{(m-1)}}{R^{(m)}} = \frac{r_k}{R^{(m)}}.
+P(\text{cand} = k) = \frac{\lambda_k}{\Lambda^{(m-1)}} \cdot \frac{\Lambda^{(m-1)}}{\Lambda^{(m)}} = \frac{\lambda_k}{\Lambda^{(m)}}.
 $$
 
 **Pushing reproduces the pull.** The last draw is independent of the reservoir, so
 
 $$
-P(\text{infected by } k) = \frac{R_j}{1 + R_j} \cdot \frac{r_{kj}}{R_j} = \frac{r_{kj}}{1 + R_j},
+P(\text{infected by } k) = \left(1 - e^{-\Lambda_j}\right) \frac{\lambda_{kj}}{\Lambda_j},
 \qquad
-P(\text{none}) = \frac{1}{1 + R_j},
+P(\text{none}) = e^{-\Lambda_j},
 $$
 
-which is the odds form above. The order in which carriers are visited does not matter.
+which is the pull's draw above. The order in which carriers are visited does not matter.
 
-**Certain transmissions.** If $p_{kj} = 1$, the odds are infinite. In the limit, infection is certain and the infector is drawn uniformly among the contacts with $p_{kj} = 1$ (the others have finite odds and vanishing weight). Pushing handles this case separately: it counts those contacts, keeps a uniform reservoir among them, and skips the final draw. `roulette()` does the same.
+**Certain transmissions.** If $p_{kj} = 1$, the hazard is infinite: infection is certain and the infector is drawn uniformly among the contacts with $p_{kj} = 1$ (the others have finite hazards and vanishing weight). Both directions handle this case separately: they count those contacts, draw uniformly among them, and skip the final draw.
 
-!!! note "Before 0.16"
-    `roulette()` tested `p > 1 - 1e-100`, which is `p > 1` in floating point. A probability of exactly 1 then gave $0/0$ and the *last* entry won, whether or not it was the certain one. This also affected state transitions (e.g., a death probability of 1 yielded recovery). Since 0.16, `p >= 1` is certain.
+!!! note "Before 1.0.0"
+    Through epiworld 0.x, both directions used the roulette: $P(\text{none}) = 1 / (1 + R_j)$ and $P(k) = r_{kj} / (1 + R_j)$, with the odds $r_{kj} = p_{kj} / (1 - p_{kj})$ and their sum $R_j$, and a layer's weight scaled the odds. That conditions on at most one transmission and lowers the probability of infection as contacts pile up (see [Combining Exposures](combining-exposures.md)). Before 0.16, `roulette()` also tested `p > 1 - 1e-100`, which is `p > 1` in floating point, so a probability of exactly 1 let the *last* entry win.
 
 ## Equivalence for the whole model
 
@@ -137,7 +127,7 @@ Pushing applies to the agents in a stage whose only drawn exit is a default infe
 
 Everything else keeps pulling: stages with a custom sampler (e.g., `ModelDiffNet`, and the measles models' own mixing sampler) or with another drawn exit, and statuses with a drawn exit (e.g., the detection rate of the measles models). Directed networks (built with `directed = true`) also always pull. Pushing relies on every tie being stored at both ends, which is how `epiworld` stores an undirected tie. A directed tie `i -> j` is kept by its source only: `j` is one of `i`'s neighbors, so `j` can infect `i`, but not the reverse.
 
-Both directions draw from the odds: `roulette()` normalizes by $1 + R_j$, as above, rather than by the product of the $(1 - p)$ terms, which underflows to 0 with many high-probability contacts (before epiworld 1.0.0 the pull then fell back to the last contact). Pulling has no limit on the number of contacts carrying a virus either: its scratch arrays grow as needed (before 1.0.0, 1024). The one numerical difference left is precision: pulling sums the odds in `epiworld_double` (a `float` by default), pushing in `double`.
+Both directions sum hazards, in `double`, so many high-probability contacts do not underflow (before 1.0.0 the product of the $(1 - p)$ terms could, and the pull then fell back to the last contact). Pulling has no limit on the number of contacts carrying a virus either: its scratch arrays grow as needed (before 1.0.0, 1024). The one numerical difference left is precision: pulling stores each hazard in `epiworld_double` (a `float` by default) before summing, pushing keeps it in `double`.
 
 ## Mixing layers
 
@@ -145,7 +135,7 @@ Since 1.0 (Phase 5), mixing layers are pushed too, and a step pushes or pulls ev
 
 $$\pi_{hg} = \min\left(1, \frac{r \, c_{hg}}{n_g - [g = h]}\right)$$
 
-with a contact matrix ($r$ the contact rate, $n_g$ the agents of $g$ in the mixing, minus the agent itself in its own group), and with probability $q_g$ within groups (only $h = g$). It draws a binomial number of the infectious agents of each group, without repeats, which is the same as meeting each one independently. A push draws the same pairs from the other side: a carrier of group $g$ meets a binomial number $\text{Bin}(|h|, \pi_{hg})$ of the members of each group $h$, drawn without repeats (`Mixing::sample_reverse()`), and adds its odds to those that are susceptible. Each susceptible's exposures are then independent with the same probabilities, so the odds argument above applies unchanged.
+with a contact matrix ($r$ the contact rate, $n_g$ the agents of $g$ in the mixing, minus the agent itself in its own group), and with probability $q_g$ within groups (only $h = g$). It draws a binomial number of the infectious agents of each group, without repeats, which is the same as meeting each one independently. A push draws the same pairs from the other side: a carrier of group $g$ meets a binomial number $\text{Bin}(|h|, \pi_{hg})$ of the members of each group $h$, drawn without repeats (`Mixing::sample_reverse()`), and adds its hazards to those that are susceptible. Each susceptible's exposures are then independent with the same probabilities, so the argument above applies unchanged.
 
 The cost model adds, for each mixing layer, one binomial draw per visited agent per group it draws from (all the groups with a contact matrix, its own within groups), at `EPI_TRANSMISSION_DRAW_COST` ties each (default 4), on both sides. Measured on 100,000 agents (CPU time of 10 days at a fixed prevalence, best of three, interleaved):
 
@@ -236,7 +226,7 @@ Timings on a laptop are noisy, so scenarios A–C were also counted exactly with
 ## See Also
 
 - [Sampling Contacts](sampling-contacts.md) — the probability of infection and how tools adjust it.
-- [Combining Exposures](combining-exposures.md) — why the roulette is replaced by independent exposures in 1.0.0.
+- [Combining Exposures](combining-exposures.md) — independent exposures, and why they replace the roulette of epiworld 0.x.
 - [Queueing System](queueing-system.md) — which agents are updated at each step.
 - [Reproducibility and `run_multiple`](reproducibility-and-run-multiple.md) — seeds and multiple runs.
 - [Performance Optimization](performance-optimization.md) — benchmarking the library.

@@ -1518,6 +1518,29 @@ natural history, the variants and the plain classes in one pass (Section
   `mixing-and-entity-distribution.md`, `queueing-system.md`,
   `transmission-sampling.md`; migration guide.
 
+As built, in two PRs:
+
+- **6a, the rule.** Transmission (`Model::sample_virus()`, pull and push)
+  sums hazards `-w log(1 - p)`, where `w` is the layer's weight; one draw
+  gives no infection with probability `exp(-H)`, and otherwise an infector
+  with probability proportional to its hazard. Certain contacts (`p >= 1`)
+  have an infinite hazard, and one of them is drawn uniformly.
+  `roulette()` stays for competing state transitions, and for the custom
+  samplers of `ModelDiffNet` and `ModelSIRLogit`. The measles models draw
+  through `sample_virus()`, so they switch too. Analytic tests:
+  - 34a: the star, now with two layers and a weight;
+  - 47a: weights, `1 - (1 - p)^w`;
+  - 46d: 3,000 exposures.
+
+  49a's history is recorded again. The same PR fixes Phase 5's push loop: it
+  is now one loop over a span of reached agents instead of a lambda that was
+  no longer inlined (scenario_00 at 10,000: +6% instructions at 5, +0.4% from
+  4d with the fix). It also rejects test names that Catch2 reads as test
+  specs, which had made the suite run "0 tests" for 47a and for four files
+  merged in #387.
+- **6b, the docs.** `docs/impl/contact-layers.md`, the remaining pages, and
+  the migration guide.
+
 ### Phase 7 -- measles as presets (the final step before 1.0.0; settled 2026-11-16)
 
 With the natural history and several diseases, the measles disease is about
@@ -1936,8 +1959,8 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-16).
 | C++ extensions in the wrappers (user-written C++ on a model built in R or Python: `as_model()`, checked by the epiworld major version) | -- | #233 merged (`cpp_source_epiworld()`, `<epiworldR/extension.h>`) | #46 merged (`cpp_source()`, `get_include()`, `<epiworldpy/extension.hpp>`) | -- | -- |
 | MSVC: `M_PI` (not standard) in the lognormal draw broke the Windows wheels since #363 | #376 merged | #234 merged (re-vendor) | with #46 (merged) | with NH-5c | with NH-5c |
 | Phase 4 (split into 4a-4d, Section 6) | 4a (exclusion by status per layer, closing a layer, the order of interventions; identical results for every registered model): #380 merged; benchmark rerun at #380 (stage `4a`): UofUEpiBio/epiworld-benchmark#42 merged; 4b (tools that target layers, `add_layer_target()`; identical results): #381 merged; benchmark rerun at #381 (stage `4b`; two ratios grew by more than 10%, profiled: +0.1% instructions, noise): UofUEpiBio/epiworld-benchmark#43; 4c (schedules, persistence, parameter cycles, the transit example; identical results): #383 merged; benchmark rerun at #383 (stage `4c`, reports re-rendered): UofUEpiBio/epiworld-benchmark#44 merged; 4d (the STERGM rewirer example; the `is_running()` fix): #384 merged; benchmark rerun at #384 (stage `4d`): UofUEpiBio/epiworld-benchmark#45 | 4a, 4b: #236; 4c: #237 | 4a, 4b: #48; 4c: #49 | 4a, 4b: #33 (re-vendor only); 4c: #34 (re-vendor only) | 4a, 4b: #75 (re-vendor; the measles models refuse exclusions and layer targets until Phase 7); 4c: #76 (a schedule test on the measles mixing layer) |
-| Phase 5 (push for mixing layers; one push/pull choice per step) | this PR (branch `phase5-push-mixing`) | | | | |
-| Phase 6 | not started | | | | |
+| Phase 5 (push for mixing layers; one push/pull choice per step) | #386 merged; benchmark rerun at #386 (stage `5`, reports re-rendered; scenario_00 at 10,000 +6% instructions: the push loop's lambda no longer inlined, fixed in 6a): UofUEpiBio/epiworld-benchmark#46 | #238 merged (with 4d) | #50 merged (with 4d) | #35 merged (with 4d) | #76 (with 4c and 4d; the measles models keep pulling) |
+| Phase 6 (split: 6a the combination rule, 6b the layer docs and the migration guide) | 6a (independent exposures for transmission, pull and push; the push loop over a span instead of a lambda; test names that Catch2 reads as test specs, which made the suite skip 47a and four tests merged by #387, are now rejected at compile time): this PR (branch `phase-6a`); 6b: not started | | | | |
 | Phase 7 (measles as presets: the generic sampler, one contact-tracing intervention; the final step before 1.0.0) | not started | | | | |
 
 epiworldRShiny (Section 6): the one port (to epiworldR and measles 1.0.0:

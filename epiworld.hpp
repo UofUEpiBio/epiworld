@@ -187,16 +187,15 @@ enum class EventAction : uint8_t {
  * (no custom sampler) can acquire a virus in two ways that give the same
  * distribution of outcomes:
  *
- * - `pull`: each susceptible agent scans its neighbors and draws its infector
- *   with `roulette()` (the approach of epiworld <= 0.15).
- * - `push`: each agent carrying a virus adds its infection odds to its
+ * - `pull`: each susceptible agent scans its contacts and draws its infector
+ *   (`Model::sample_virus()`).
+ * - `push`: each agent carrying a virus adds its infection hazards to its
  *   susceptible neighbors, and each of those then makes one draw. Its cost
  *   scales with the carriers' ties rather than with the susceptibles'.
  * - `automatic` (the default): picks whichever of the two is cheaper at each
  *   step.
  *
- * Only the stream of random numbers differs between the modes; `pull`
- * reproduces the streams of earlier versions. See
+ * Only the stream of random numbers differs between the modes. See
  * `Model::set_transmission_mode()`.
  */
 enum class TransmissionMode : uint8_t {
@@ -6616,6 +6615,13 @@ protected:
 
     /// One draw over the first `n_exposures` exposures.
     Virus * draw_exposure(size_t n_exposures);
+
+    /**
+     * @brief The hazard of an exposure of probability `p` through a layer of
+     * weight `weight`: `-weight * log(1 - p)` (infinite if `p >= 1`, 0 if
+     * `p <= 0`).
+     */
+    static epiworld_double exposure_hazard(epiworld_double p, epiworld_double weight);
     void layers_attach(); ///< Points the layers at this model, lists the networks
     void layers_classify(); ///< Sets `pull_only`, `queue_blind` and `group_layers`
     void layers_detach(); ///< Leaves the layers without a model (they may outlive it)
@@ -6728,7 +6734,7 @@ protected:
 
     struct PushTarget {
         size_t id;
-        double odds;                // Sum of p / (1 - p) over the contacts
+        double hazard;              // Sum of -log(1 - p) over the contacts
         unsigned int n_certain;     // Contacts with p >= 1
         Virus * candidate;    // Infector's virus drawn so far
         int layer;                  // Layer of the candidate's contact
@@ -7001,7 +7007,8 @@ public:
      * @name Scratch arrays for sampling exposures
      * @details Update functions store each exposure's probability in
      * `array_double_tmp` and its virus in `array_virus_tmp`, then draw with
-     * `roulette()`, which uses two doubles per exposure. An agent can have any
+     * `roulette()` (two doubles per exposure), or, for transmission, store
+     * hazards and draw with `draw_exposure()`. An agent can have any
      * number of exposures across its layers, so call `reserve_tmp()` before
      * storing them.
      */
@@ -7435,10 +7442,12 @@ public:
      * @details This is where contacts become an infection. Every contact that
      * carries a virus is an exposure with probability
      * `(1 - susceptibility reduction of agent) * probability of infecting *
-     * (1 - transmission reduction of the contact)`, and one draw
-     * (`roulette()`) picks at most one infector. A contact listed twice is
-     * two exposures.
-     * With a `layer`, the probabilities follow its weight and the viruses it
+     * (1 - transmission reduction of the contact)`. The exposures are
+     * independent: the agent escapes all of them with probability
+     * `prod(1 - p)`, and one draw picks at most one infector, each with
+     * probability proportional to its hazard `-log(1 - p)`. A contact listed
+     * twice is two exposures.
+     * With a `layer`, the hazards are multiplied by its weight, only the viruses it
      * admits (see `ContactLayer`), and the layer is recorded as the one of the
      * transmission.
      * @param agent Agent without a virus.
@@ -7485,7 +7494,7 @@ public:
      * @details Stages whose only drawn exit is a default infection (no
      * custom sampler) can be updated by pulling (each susceptible agent draws
      * its contacts from every layer: its ties, the agents it meets in a mixing
-     * layer) or by pushing (each agent with a virus adds its infection odds to
+     * layer) or by pushing (each agent with a virus adds its infection hazards to
      * the susceptible agents it reaches: its ties, and the agents a mixing
      * layer draws for it, each as likely as their pull would draw it; see
      * `ContactLayer::sample_reverse()`). Both give the same distribution of
@@ -7978,7 +7987,8 @@ public:
  * ### Weight and viruses
  *
  * `set_weight()` makes the layer's contacts count more or less than the others':
- * the odds of infection through the layer are multiplied by the weight (a
+ * the hazard of infection through the layer, `-log(1 - p)`, is multiplied by
+ * the weight, so a contact of probability `p` counts as `1 - (1 - p)^weight` (a
  * model parameter, read at every step; 1 if none is set; 0 turns the layer
  * off). `add_target()` restricts the layer to some diseases, by name, as tools
  * are restricted; by default every disease spreads through every layer.
@@ -19106,7 +19116,7 @@ inline Model & Model::run_multiple(
 inline void Model::update_state() {
 
     // Susceptible states using the default sampler can be updated by pushing
-    // infection odds from the carriers (see model-meat-transmission.hpp) --
+    // infection hazards from the carriers (see model-meat-transmission.hpp) --
     // same distribution, and cheaper while few agents carry a virus. Directed
     // networks always pull: a tie there is kept by its source only (see
     // layer::Network::is_directed()), so it is not visible from both ends.
@@ -22590,23 +22600,27 @@ inline bool Agent::operator==(const Agent & other) const
 /**
  * @file model-meat-transmission.hpp
  * @brief Transmission: from contacts to infections, and network transmission
- * by pushing infection odds.
+ * by pushing infection hazards.
  *
  * @details A susceptible agent `i` in a stage with a default infection
- * *pulls*: it scans its neighbors, collects the per-contact probabilities
- * `p_ij` of those carrying a virus (in an infectious stage), and `roulette()` draws "no infection" or a
- * single infector. That draw depends only on the odds `r_ij = p_ij / (1 - p_ij)`:
+ * *pulls*: it scans its contacts, collects the per-contact probabilities
+ * `p_ij` of those carrying a virus (in an infectious stage), and one draw
+ * (`draw_exposure()`) decides "no infection" or a single infector. The
+ * exposures are independent: each has the hazard `h_ij = -log(1 - p_ij)`
+ * (times its layer's weight), and with `H_i` the sum of the hazards
  *
- *     P(no infection) = 1 / (1 + R_i),   P(infected by j) = r_ij / (1 + R_i),
+ *     P(no infection) = exp(-H_i) = prod_j (1 - p_ij),
+ *     P(infected by j) = (h_ij / H_i) * (1 - exp(-H_i)).
  *
- * with `R_i` the sum of the odds. So the same outcome can be *pushed*: every
- * agent carrying a virus adds its odds to its susceptible neighbors, each of
- * which keeps a weighted reservoir sample of its infectors; then each touched
- * agent makes one draw. The cost follows the carriers' ties instead of the
- * susceptibles', which is much cheaper while an outbreak is small.
+ * The draw depends only on the sum of the hazards and on each one's share, so
+ * the same outcome can be *pushed*: every agent carrying a virus adds its
+ * hazards to its susceptible contacts, each of which keeps a weighted
+ * reservoir sample of its infectors; then each touched agent makes one draw.
+ * The cost follows the carriers' contacts instead of the susceptibles', which
+ * is much cheaper while an outbreak is small.
  *
- * Contacts with `p_ij >= 1` are certain: the infection happens and the
- * infector is drawn uniformly among them (the limit of the odds as `p -> 1`).
+ * Contacts with `p_ij >= 1` are certain (an infinite hazard): the infection
+ * happens and the infector is drawn uniformly among them.
  *
  * The docs page "Push and Pull Transmission" (docs/impl/transmission-sampling.md)
  * has the derivation.
@@ -22706,17 +22720,13 @@ inline size_t Model::add_exposures_impl(
         if (Several && (p_inf <= 0.0))
             continue;
 
-        epiworld_double p =
+        const epiworld_double p =
             (1.0 - agent->get_susceptibility_reduction(v, *this, layer_id)) *
             p_inf *
             (1.0 - contact.get_transmission_reduction(v, *this, layer_id))
             ;
 
-        // The weight scales the odds p / (1 - p); a certain exposure stays so
-        if (weighted && (p < 1.0))
-            p = weight * p / (1.0 - p + weight * p);
-
-        array_double_tmp[n_exposures] = p;
+        array_double_tmp[n_exposures] = exposure_hazard(p, weight);
         array_virus_tmp[n_exposures] = &(*v);
         array_layer_tmp[n_exposures++] = layer_id;
 
@@ -22724,6 +22734,16 @@ inline size_t Model::add_exposures_impl(
 
     return n_exposures;
 
+}
+
+inline epiworld_double Model::exposure_hazard(epiworld_double p, epiworld_double weight)
+{
+    // A certain exposure (p >= 1) is an infinite hazard; p <= 0 (or NaN) none
+    if (p >= 1.0)
+        return std::numeric_limits< epiworld_double >::infinity();
+    if (!(p > 0.0))
+        return 0.0;
+    return -weight * std::log1p(-p);
 }
 
 inline Virus * Model::draw_exposure(size_t n_exposures)
@@ -22734,10 +22754,55 @@ inline Virus * Model::draw_exposure(size_t n_exposures)
     if (n_exposures == 0u)
         return nullptr;
 
-    const int which = roulette(n_exposures, this);
+    // The hazards of the exposures and their sum; certain ones (infinite
+    // hazards) are counted in the second half of the scratch array, then one
+    // of them is drawn uniformly
+    const auto & h = array_double_tmp;
+    size_t n_certain = 0u;
+    double total = 0.0;
+    for (size_t k = 0u; k < n_exposures; ++k)
+    {
+        if (std::isinf(h[k]))
+            ++n_certain;
+        else
+            total += static_cast< double >(h[k]);
+    }
 
-    if (which < 0)
-        return nullptr;
+    const double r = runif();
+    size_t which = n_exposures;
+    if (n_certain > 0u)
+    {
+        // The (r * n_certain)-th certain exposure
+        size_t pick = std::min(
+            static_cast< size_t >(r * static_cast< double >(n_certain)),
+            n_certain - 1u
+        );
+        for (which = 0u; which < n_exposures; ++which)
+            if (std::isinf(h[which]) && (pick-- == 0u))
+                break;
+    }
+    else
+    {
+        // No infection with probability exp(-total); otherwise the infector
+        // is drawn with probability proportional to its hazard, reusing r
+        // (uniform on [p_none, 1) given an infection)
+        const double p_none = std::exp(-total);
+        if ((total <= 0.0) || (r < p_none))
+            return nullptr;
+
+        double target = (r - p_none) / (1.0 - p_none) * total;
+        for (which = 0u; which < (n_exposures - 1u); ++which)
+        {
+            target -= static_cast< double >(h[which]);
+            if ((target < 0.0) && (h[which] > 0.0))
+                break;
+        }
+
+        // Rounding can leave the walk at the last entry; take the last one
+        // with a hazard
+        while (!(h[which] > 0.0))
+            --which;
+    }
 
     sampled_layer = array_layer_tmp[which];
     return array_virus_tmp[which];
@@ -22961,7 +23026,7 @@ inline void Model::transmission_push_impl()
     // (a contact matrix): then it visits everyone, and so does the push
     const bool queue_filter = use_queuing && !has_queue_blind_layer();
 
-    // Phase 1: every carrier that can transmit adds its odds to the eligible
+    // Phase 1: every carrier that can transmit adds its hazards to the eligible
     // agents it reaches. Nothing changes state until events_run(), so this sees
     // the model as it was at the start of the step, as pulling does.
     //
@@ -23022,8 +23087,30 @@ inline void Model::transmission_push_impl()
                 const bool admitted = layer->admits(*v);
                 const int layer_id = static_cast< int >(layer->get_id());
 
-                // The agent i reached through the layer
-                auto reach = [&](size_t i_id) -> void {
+                // The agents the carrier reaches through the layer. A
+                // network: its ties. Another layer: the agents it meets this
+                // step, drawn as likely as their pulls would draw it (see
+                // ContactLayer::sample_reverse()). One loop over both keeps
+                // the body inlined.
+                const size_t * reached;
+                size_t n_reached;
+                if (auto * net = layer->as_network())
+                {
+                    reached = net->ties[j_id].data();
+                    n_reached = net->ties[j_id].size();
+                }
+                else
+                {
+                    push_reached.clear();
+                    layer->sample_reverse(j_id, *this, push_reached);
+                    reached = push_reached.data();
+                    n_reached = push_reached.size();
+                }
+
+                for (size_t r = 0u; r < n_reached; ++r)
+                {
+
+                    const size_t i_id = reached[r];
 
                     // Most agents reached are usually not susceptible; the
                     // compact copy of the states rules them out without
@@ -23031,18 +23118,18 @@ inline void Model::transmission_push_impl()
                     const size_t t = agent_state[i_id];
 
                     if (!push_pushable[t] || ((out != nullptr) && (*out)[t]))
-                        return;
+                        continue;
 
                     Agent & i = population[i_id];
 
                     // An agent with a virus is not susceptible (pulling would
                     // refuse it; update_state() reports it).
                     if (i.virus != nullptr)
-                        return;
+                        continue;
 
                     // Pulling only updates queued agents.
                     if (queue_filter && (queue[i_id] <= 0))
-                        return;
+                        continue;
 
                     // The post-sampling callback and the layer's log see every
                     // eligible contact, also the ones that cannot transmit, as
@@ -23059,22 +23146,19 @@ inline void Model::transmission_push_impl()
                     // A layer of weight 0, or closed to this virus, transmits
                     // nothing (its contacts were still reported above)
                     if (!admitted || (weighted && (weight <= 0.0)))
-                        return;
+                        continue;
 
                     // Exactly the expression the pull uses, in the same order.
-                    epiworld_double p =
+                    const epiworld_double h = exposure_hazard(
                         (1.0 - i.get_susceptibility_reduction(v, *this, layer_id)) *
                         nh_infection_prob(i, *v, tracks[0u]) *
-                        (1.0 - j.get_transmission_reduction(v, *this, layer_id))
-                        ;
-
-                    // The weight scales the odds; a certain exposure stays so
-                    if (weighted && (p < 1.0))
-                        p = weight * p / (1.0 - p + weight * p);
+                        (1.0 - j.get_transmission_reduction(v, *this, layer_id)),
+                        weight
+                    );
 
                     // No chance of transmission (also catches NaN)
-                    if (!(p > 0.0))
-                        return;
+                    if (!(h > 0.0))
+                        continue;
 
                     int & slot = push_slot[i_id];
                     if (slot < 0)
@@ -23092,7 +23176,7 @@ inline void Model::transmission_push_impl()
                     PushTarget & target = push_targets[static_cast< size_t >(slot)];
 
                     // Certain transmission: uniform reservoir among these
-                    if (p >= 1.0)
+                    if (std::isinf(h))
                     {
 
                         if (
@@ -23104,45 +23188,27 @@ inline void Model::transmission_push_impl()
                             target.layer = layer_id;
                         }
 
-                        return;
+                        continue;
 
                     }
 
                     // A certain transmission wins outright
                     if (target.n_certain > 0u)
-                        return;
+                        continue;
 
                     // Weighted reservoir: keep this infector with probability
-                    // r / (sum of odds so far).
-                    const double odds = static_cast< double >(p) /
-                        (1.0 - static_cast< double >(p));
-                    target.odds += odds;
+                    // h / (sum of hazards so far).
+                    target.hazard += static_cast< double >(h);
 
                     if (
                         (target.candidate == nullptr) ||
-                        (runif() * target.odds < odds)
+                        (runif() * target.hazard < static_cast< double >(h))
                     )
                     {
                         target.candidate = &(*v);
                         target.layer = layer_id;
                     }
 
-                };
-
-                // A network: the carrier's ties. Another layer: the agents it
-                // meets this step, drawn as likely as their pulls would draw
-                // it (see ContactLayer::sample_reverse()).
-                if (auto * net = layer->as_network())
-                {
-                    for (size_t i_id : net->ties[j_id])
-                        reach(i_id);
-                }
-                else
-                {
-                    push_reached.clear();
-                    layer->sample_reverse(j_id, *this, push_reached);
-                    for (size_t i_id : push_reached)
-                        reach(i_id);
                 }
 
             }
@@ -23151,7 +23217,7 @@ inline void Model::transmission_push_impl()
 
     }
 
-    // Phase 2: one draw per touched agent. P(no infection) = 1 / (1 + R).
+    // Phase 2: one draw per touched agent. P(no infection) = exp(-H).
     for (auto & target : push_targets)
     {
 
@@ -23162,7 +23228,7 @@ inline void Model::transmission_push_impl()
 
         if (
             (target.n_certain == 0u) &&
-            (runif() < 1.0 / (1.0 + target.odds))
+            (runif() < std::exp(-target.hazard))
         )
             continue;
 

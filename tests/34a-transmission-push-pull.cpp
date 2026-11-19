@@ -2,22 +2,27 @@
 
 using namespace epiworld;
 
-// Pushing and pulling must draw the same outcome for a susceptible agent.
+// The exposures of a susceptible agent are independent, and pushing and pulling
+// draw the same outcome.
 //
 // A susceptible agent at the centre of a star, surrounded by agents that carry
-// a virus, is exposed for one day, many times over. Pulling (roulette) and
-// pushing (odds + reservoir) should both give
+// a virus, is exposed for one day, many times over. Pulling (one draw over the
+// contacts) and pushing (hazards + reservoir) should both give
 //
-//     P(no infection)   = 1 / (1 + R),   P(infected by j) = r_j / (1 + R),
+//     P(no infection) = prod_j (1 - p_j) = exp(-H),
+//     P(infected by j) = (h_j / H) (1 - exp(-H)),
 //
-// with r_j = p_j / (1 - p_j), R = sum of r_j, and p_j the per-contact
-// probability after the tools of both agents. Carriers in a stage that is not
-// infectious never transmit, and contacts with p = 1 make infection certain, the infector
-// drawn uniformly among them.
+// with h_j = -log(1 - p_j) times the weight of the contact's layer, H the sum
+// of h_j, and p_j the per-contact probability after the tools of both agents.
+// (Before 1.0.0 the draw was conditioned on at most one success:
+// P(no infection) = 1 / (1 + R), R the sum of the odds p_j / (1 - p_j), which
+// the counts below rule out.) Carriers in a stage that is not infectious never
+// transmit, and contacts with p = 1 make infection certain, the infector drawn
+// uniformly among them.
 //
 // Why a star: the formula above is about one susceptible agent exposed to
 // several infectious contacts at once -- the case where push and pull differ
-// in how they get there (one draw over all contacts vs. odds added one contact
+// in how they get there (one draw over all contacts vs. hazards added one contact
 // at a time plus a reservoir sample). The star isolates exactly that: its
 // centre is the only susceptible, and every leaf is a source with a known
 // probability, so each run is one draw with a closed-form answer. In a ring
@@ -30,19 +35,37 @@ namespace {
 
 constexpr int E_ = 1, I_ = 2; // stage 0 is Susceptible
 
+// A layer that ties agent 0 to the agents `leaves` (of `n`)
+std::shared_ptr< layer::Network > star_layer(
+    std::string name, std::vector< int > leaves, int n
+)
+{
+    std::vector< int > source(leaves.size(), 0);
+    return layer::network(name, AdjList(source, leaves, n, false));
+}
+
 // Star: agent 0 at the centre, agents 1..nleaves around it (the model has
 // nleaves + 1 agents).
 void make_star(Model & model, int nleaves)
 {
-    std::vector< int > source, target;
+    std::vector< int > leaves;
     for (int k = 1; k <= nleaves; ++k)
-    {
-        source.push_back(0);
-        target.push_back(k);
-    }
-    model.add_layer(layer::network(
-        "network", AdjList(source, target, nleaves + 1, false)
-    ));
+        leaves.push_back(k);
+    model.add_layer(star_layer("network", leaves, nleaves + 1));
+}
+
+// The expected infectors of the centre (-1 = nobody) from the hazards of its
+// contacts
+std::map< int, double > expected_from(const std::map< int, double > & hazard)
+{
+    double H = 0.0;
+    for (const auto & kv : hazard)
+        H += kv.second;
+
+    std::map< int, double > expected = {{-1, std::exp(-H)}};
+    for (const auto & kv : hazard)
+        expected[kv.first] = kv.second / H * (1.0 - std::exp(-H));
+    return expected;
 }
 
 // The disease: only I transmits (E carries the virus but does not); E and I
@@ -123,7 +146,7 @@ void check_probs(
 
 EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[transmission]") {
 
-    const int nsims = 40000;
+    const int nsims = EPI_TEST_SIZE(40000, 10000);
 
     // Two viruses, tools on both ends, and an excluded carrier -------------
     //  leaf 1, 2: virus A (p = 0.2)
@@ -140,13 +163,10 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
         {4, (1 - vax) * 0.6 * (1 - mask)}
     };
 
-    double R = 0.0;
+    std::map< int, double > hazard;
     for (auto & kv : p_contact)
-        R += kv.second / (1.0 - kv.second);
-
-    std::map< int, double > expected = {{-1, 1.0 / (1.0 + R)}};
-    for (auto & kv : p_contact)
-        expected[kv.first] = kv.second / (1.0 - kv.second) / (1.0 + R);
+        hazard[kv.first] = -std::log1p(-kv.second);
+    const auto expected = expected_from(hazard);
 
     for (auto mode : {"pull", "push"})
     {
@@ -194,8 +214,7 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
 
     // Certain transmission ----------------------------------------------------
     // Leaves 1 and 3 transmit with p = 1 and leaf 2 with p = 0.3: the centre is
-    // always infected, by leaf 1 or 3 with equal chance, never by leaf 2. With
-    // pulling this relies on roulette() treating p = 1 as certain.
+    // always infected, by leaf 1 or 3 with equal chance, never by leaf 2.
     std::map< int, double > expected_certain = {{1, 0.5}, {3, 0.5}};
 
     for (auto mode : {"pull", "push"})
@@ -211,6 +230,32 @@ EPIWORLD_TEST_CASE("Transmission - push and pull draw the same infector", "[tran
         auto counts = count_infectors(model, nsims / 4, 77);
 
         check_probs(counts, expected_certain, nsims / 4, std::string("certain/") + mode);
+
+    }
+
+    // Two layers and a weight -------------------------------------------------
+    // Leaves 1 and 2 meet the centre at work and leaf 3 at home, a layer of
+    // weight 2, all with p = 0.3: hazards h, h and 2h, so the centre escapes
+    // with probability 0.7^4 = 0.24 (the odds rule gave 0.37), and leaf 3
+    // infects it half the times it is infected.
+    const double h = -std::log1p(-0.3);
+    const auto expected_layers = expected_from({{1, h}, {2, h}, {3, 2.0 * h}});
+
+    for (auto mode : {"pull", "push"})
+    {
+
+        Model model(4);
+        model.add_layer(star_layer("work", {1, 2}, 4));
+        auto home = star_layer("home", {3}, 4);
+        model.add_param(2.0, "Home weight");
+        home->set_weight("Home weight");
+        model.add_layer(home);
+        model.add_virus(make_virus(model, make_base(), "A", 0.3), at({1u, 2u, 3u}, I_, 4u));
+
+        model.set_transmission_mode(mode);
+        auto counts = count_infectors(model, nsims / 4, 99);
+
+        check_probs(counts, expected_layers, nsims / 4, std::string("layers/") + mode);
 
     }
 

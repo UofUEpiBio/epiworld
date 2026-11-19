@@ -19,7 +19,7 @@ using namespace epiworld;
 // Assignment: in groups, scaling and uniform
 //
 // One test case; each former test file is a block below, with the name it had.
-EPIWORLD_TEST_CASE("Assignment: in groups, scaling and uniform", "[assign][groups][scaling][uniform]") {
+EPIWORLD_TEST_CASE("Assignment: in groups; scaling and uniform", "[assign][groups][scaling][uniform]") {
 
     // ---- 09b-assign-in-groups.cpp: Assign within the groups of a layer
     {

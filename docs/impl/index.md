@@ -20,8 +20,8 @@ you can extend it with your own modules and code.
 - [Core Simulation Models](core-simulation-models.md) — pre-built models (SIS, SIR, SEIR, quarantine, and more) and their diagrams.
 - [Mixing by Group](mixing-and-entity-distribution.md) — contact matrices, groupings, and mixing within groups.
 - [Sampling Contacts](sampling-contacts.md) — binomial contact sampling optimization in mixing models.
-- [Combining Exposures](combining-exposures.md) — roulette versus independent exposures when an agent has several infectious contacts.
-- [Push and Pull Transmission](transmission-sampling.md) — why pushing infection odds from infectious agents gives the same outcomes as susceptibles pulling from their neighbors, and how `epiworld` picks the cheaper of the two at each step.
+- [Combining Exposures](combining-exposures.md) — independent exposures (1.0.0) versus the roulette of 0.x when an agent has several infectious contacts.
+- [Push and Pull Transmission](transmission-sampling.md) — why pushing infection hazards from infectious agents gives the same outcomes as susceptibles pulling from their neighbors, and how `epiworld` picks the cheaper of the two at each step.
 - [Quarantine, Isolation, and Contact Tracing](quarantine-isolation-and-contact-tracing.md) — statuses, reactions and the layers' contact logs.
 - [Virus and Tool Distribution Functions](virus-and-tool-distribution.md) — placing viruses, tools, initial stages and groups with `assign`.
 

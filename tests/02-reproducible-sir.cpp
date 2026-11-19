@@ -5,7 +5,7 @@ using namespace epiworld;
 // Reproducible SIR, with and without a network
 //
 // One test case; each former test file is a block below, with the name it had.
-EPIWORLD_TEST_CASE("Reproducible SIR, with and without a network", "[SIR parallel][SIRCONN parallel]") {
+EPIWORLD_TEST_CASE("Reproducible SIR with and without a network", "[SIR parallel][SIRCONN parallel]") {
 
     // ---- 02-reproducible-sir.cpp: SIR parallel
     {

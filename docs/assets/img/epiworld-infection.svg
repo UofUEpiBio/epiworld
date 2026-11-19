@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img"
-     aria-label="Where an infection comes from in epiworld 1.0: a susceptible agent i pulls today's contacts from every contact layer; each contact j carrying a virus in an infectious stage gives a probability p_ij, the virus's infection probability reduced by i's and j's tools (a tool may act in some layers only); the layer's weight scales its odds, and a closed layer carries nothing; one draw over the summed odds picks no infection or a single infector, whose virus or strain infects i, and the layer is recorded."
+     aria-label="Where an infection comes from in epiworld 1.0: a susceptible agent i pulls today's contacts from every contact layer; each contact j carrying a virus in an infectious stage gives a probability p_ij, the virus's infection probability reduced by i's and j's tools (a tool may act in some layers only); the layer's weight multiplies its hazard -log(1 - p_ij), and a closed layer carries nothing; the exposures are independent, and one draw over the summed hazards picks no infection or a single infector, whose virus or strain infects i, and the layer is recorded."
      font-family="Source Sans Pro, Helvetica Neue, Helvetica, Arial, sans-serif" fill="#1f2937">
   <title>Where an infection comes from in epiworld 1.0</title>
   <!-- Read from epiworld v1-layers (Phase 4): Model::nh_step_infection(),
@@ -91,7 +91,7 @@
     <text x="682" y="298">in some layers only</text>
   </g>
   <line x1="660" y1="313" x2="890" y2="313" stroke="#e5e7eb"/>
-  <text x="775" y="339" font-size="15" text-anchor="middle">odds  <tspan font-style="italic">r</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">ij</tspan> = <tspan font-style="italic">w</tspan> · <tspan font-style="italic">p</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">ij</tspan> / (1 − <tspan font-style="italic">p</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">ij</tspan>)</text>
+  <text x="775" y="339" font-size="15" text-anchor="middle">hazard  <tspan font-style="italic">h</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">ij</tspan> = −<tspan font-style="italic">w</tspan> · log(1 − <tspan font-style="italic">p</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">ij</tspan>)</text>
   <g font-size="13" fill="#4b5563">
     <text x="660" y="367"><tspan font-style="italic" fill="#1f2937">w</tspan>  the layer's weight (1 if unset);</text>
     <text x="660" y="387">a layer carries only the diseases</text>
@@ -104,12 +104,12 @@
   <!-- D: one draw -->
   <rect x="950" y="130" width="230" height="170" rx="10" fill="#e0f0f1" stroke="#00707a" stroke-width="2"/>
   <text x="1065" y="158" font-size="15" font-weight="700" text-anchor="middle" fill="#00707a">One draw, all layers</text>
-  <text x="1065" y="190" font-size="15" text-anchor="middle"><tspan font-style="italic">R</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">i</tspan> = Σ <tspan font-style="italic">r</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">ij</tspan></text>
+  <text x="1065" y="190" font-size="15" text-anchor="middle"><tspan font-style="italic">H</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">i</tspan> = Σ <tspan font-style="italic">h</tspan><tspan font-style="italic" font-size="11" baseline-shift="sub">ij</tspan></text>
   <g font-size="14" text-anchor="middle">
     <text x="1065" y="222">no infection:</text>
-    <text x="1065" y="240">1 / (1 + <tspan font-style="italic">R</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub">i</tspan>)</text>
+    <text x="1065" y="240">exp(−<tspan font-style="italic">H</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub">i</tspan>)</text>
     <text x="1065" y="266">infected by <tspan font-style="italic">j</tspan>:</text>
-    <text x="1065" y="284"><tspan font-style="italic">r</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub">ij</tspan> / (1 + <tspan font-style="italic">R</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub">i</tspan>)</text>
+    <text x="1065" y="284">(<tspan font-style="italic">h</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub">ij</tspan> / <tspan font-style="italic">H</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub">i</tspan>) · (1 − exp(−<tspan font-style="italic">H</tspan><tspan font-style="italic" font-size="10" baseline-shift="sub">i</tspan>))</text>
   </g>
 
   <!-- D -> outcome -->

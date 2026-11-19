@@ -652,7 +652,25 @@ inline void tests_heterogeneous_network(epiworld::Model & model, size_t n)
     #define REQUIRE_THAT(...) (void)0
     #define REQUIRE_THROWS_AS(...) (void)0
 #else
-    #define EPIWORLD_TEST_CASE(desc, tag) TEST_CASE(desc, tag)
+    // The suite runs each test case by its name (see GNUmakefile), and Catch2
+    // reads some characters of a name as test-spec syntax: a name with a comma
+    // (an "or"), for example, matches no test case, which then runs "0 tests"
+    // and passes. Such names do not compile.
+    constexpr bool epiworld_test_name_ok(const char * s)
+    {
+        for (; *s != '\0'; ++s)
+            for (const char * c = ",[]*~\\/\""; *c != '\0'; ++c)
+                if (*s == *c)
+                    return false;
+        return true;
+    }
+    #define EPIWORLD_TEST_CASE(desc, tag) \
+        static_assert( \
+            epiworld_test_name_ok(desc), \
+            "A test name cannot contain , [ ] * ~ \\ / or \" (the suite " \
+            "selects test cases by name, and Catch2 reads them as test specs)" \
+        ); \
+        TEST_CASE(desc, tag)
 #endif
 
 #endif
