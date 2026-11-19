@@ -82,6 +82,10 @@ Each day, for each agent:
 
 The changes take effect at the end of the day, so an agent entering a stage on day `t` is first evaluated in it on day `t + 1`, and an `after()` of `d` days moves it on day `t + d`.
 
+![How a run proceeds: at the start of each run the agents are reset, the layers drawn, the viruses, tools and initial stages placed and the global events set up; every day each agent proposes an infection, a stage change in each disease and a status change, in that order and from its state at the start of the day; the proposals are applied together and reactions fire, global events run, tomorrow's parameters and layer schedules apply, the layers are updated, the day is recorded and viruses may mutate.](../assets/img/epiworld-day.svg)
+
+*A run, day by day (`Model::run()`): every agent decides from the same start-of-day state, and the proposals are applied together at the end of the step.*
+
 ### How competing rates are drawn
 
 When several rates leave a stage, one draw (`roulette()`) picks at most one. With rates `p_1, ..., p_k`, it uses their odds, `o_i = p_i / (1 - p_i)`:

@@ -37,6 +37,10 @@ $$
 
 `roulette()` computes these terms and makes one uniform draw to pick "none" or one $k$.
 
+![Where an infection comes from: a susceptible agent i pulls the day's contacts from every contact layer; each contact j in an infectious stage gives a probability p_ij, the virus's infection probability reduced by both agents' tools (a tool may act in some layers only); the layer's weight scales its odds, a layer carries only the diseases it targets and none while closed, and agents with contact 0 or in a status the layer leaves out are not sampled; one draw over the summed odds picks no infection or one infector, and the transmission records its layer.](../assets/img/epiworld-infection.svg)
+
+*The same draw with several contact layers (here the susceptible agent is $i$ and its contacts are $j$): every layer feeds one draw, not one chance per layer, and the transmission records the layer it came through (`get_transmissions()`).*
+
 ## The odds form
 
 Divide the numerators and $Z_j$ by $\prod_{k}(1 - p_{kj})$. With the **odds** $r_{kj} = p_{kj} / (1 - p_{kj})$ and their sum $R_j = \sum_{k \in K_j} r_{kj}$:
