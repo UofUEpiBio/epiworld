@@ -8,7 +8,7 @@ using namespace epiworld;
 // - math::log1m(p) = log(1 - p): relative error below 1e-14 against
 //   std::log1p(-p) for p from 1e-300 to 1 - 1e-16 and for negative p, on both
 //   sides of the two range boundaries (1 - sqrt(2) and 1 - sqrt(2) / 2); the
-//   special values (p = 0, 1, > 1, NaN).
+//   special values (p = 0, 1, > 1, -inf, NaN) and subnormal p (exactly -p).
 // - math::logistic() and math::logit() are inverses.
 // - math::geometric_skip() has the geometric mean q / (1 - q).
 // - math::log_factorial() matches std::lgamma(n + 1).
@@ -54,6 +54,13 @@ EPIWORLD_TEST_CASE("Math functions", "[math]") {
     REQUIRE(math::log1m(1.0) < 0.0);
     REQUIRE(std::isnan(math::log1m(1.5)));
     REQUIRE(std::isnan(math::log1m(std::numeric_limits< double >::quiet_NaN())));
+    REQUIRE(math::log1m(-std::numeric_limits< double >::infinity()) ==
+        std::numeric_limits< double >::infinity());
+
+    // Subnormal p: log(1 - p) = -p exactly
+    const double tiny = std::numeric_limits< double >::denorm_min();
+    for (double p : {tiny, 3.0 * tiny, -tiny, 1000.0 * tiny})
+        REQUIRE(math::log1m(p) == -p);
 
     // -- logistic and logit ---------------------------------------------------
     // (Beyond |x| = 10, logistic(x) is so close to 0 or 1 that the spacing

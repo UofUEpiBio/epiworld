@@ -1998,7 +1998,8 @@ namespace math {
  * contraction; build with `-ffp-contract=off` to prevent it).
  *
  * @param p A number no greater than 1.
- * @return `log(1 - p)`: `-inf` for `p = 1`, NaN for `p > 1` or NaN.
+ * @return `log(1 - p)`: `-inf` for `p = 1`, `inf` for `p = -inf`, NaN for
+ * `p > 1` or NaN.
  */
 inline double log1m(double p)
 {
@@ -2012,9 +2013,15 @@ inline double log1m(double p)
             -std::numeric_limits< double >::infinity() :
             std::numeric_limits< double >::quiet_NaN();
 
-    // 2 atanh(s) / s - 2 = the series' tail after its first term, in Horner
-    // form over z = s^2: 1/3 z + 1/5 z^2 + ... + 1/17 z^8
-    auto atanh2 = [](double s) -> double {
+    if (std::isinf(p)) // p = -inf
+        return std::numeric_limits< double >::infinity();
+
+    // 2 atanh(s) from u = 2 s, by the series in Horner form over z = s^2:
+    // u (1 + z / 3 + z^2 / 5 + ... + z^8 / 17). Taking 2 s rather than s keeps
+    // subnormal p exact: p / (2 - p) would underflow, 2 p / (2 - p) does not
+    // (and for normal p the two are the same bits, as doubling is exact).
+    auto atanh2 = [](double u) -> double {
+        const double s = 0.5 * u;
         const double z = s * s;
         double t = 1.0 / 17.0;
         t = 1.0 / 15.0 + z * t;
@@ -2025,12 +2032,12 @@ inline double log1m(double p)
         t = 1.0 / 5.0 + z * t;
         t = 1.0 / 3.0 + z * t;
         t = 1.0 + z * t;
-        return 2.0 * s * t; // 2 atanh(s)
+        return u * t; // 2 atanh(s)
     };
 
     // 1 - sqrt(2) and 1 - sqrt(2) / 2
     if ((p >= -0.41421356237309503) && (p <= 0.29289321881345248))
-        return -atanh2(p / (2.0 - p));
+        return -atanh2(2.0 * p / (2.0 - p));
 
     // log(2) = ln2_hi + ln2_lo, where ln2_hi has trailing zero bits, so that
     // e * ln2_hi is exact for every exponent e
@@ -2047,7 +2054,7 @@ inline double log1m(double p)
     }
 
     const double ed = static_cast< double >(e);
-    return ed * ln2_hi + (atanh2((m - 1.0) / (m + 1.0)) + ed * ln2_lo);
+    return ed * ln2_hi + (atanh2(2.0 * (m - 1.0) / (m + 1.0)) + ed * ln2_lo);
 
 }
 
@@ -7671,9 +7678,11 @@ public:
      * with `examples/20-transmission-benchmark`.
      *
      * A model with a directed network, or a layer type without push, always
-     * pulls; so do states with other update functions. Set `"pull"` to
-     * reproduce the random streams of epiworld <= 0.15 (and, for models with
-     * mixing layers, of epiworld 1.0 before its Phase 5).
+     * pulls; so do states with other update functions. No mode reproduces runs
+     * of earlier versions: since Phase 6a every exposure is independent (see
+     * "Combining Exposures" in the docs), which changes results in both
+     * directions. `"pull"` still draws every contact from the susceptible
+     * side, as epiworld 0.x did.
      *
      * @param mode `"auto"`, `"push"`, or `"pull"` (or the enum).
      * @param kappa Relative cost threshold used by `"auto"`: a finite,

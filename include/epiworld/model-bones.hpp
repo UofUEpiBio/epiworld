@@ -1140,9 +1140,11 @@ public:
      * with `examples/20-transmission-benchmark`.
      *
      * A model with a directed network, or a layer type without push, always
-     * pulls; so do states with other update functions. Set `"pull"` to
-     * reproduce the random streams of epiworld <= 0.15 (and, for models with
-     * mixing layers, of epiworld 1.0 before its Phase 5).
+     * pulls; so do states with other update functions. No mode reproduces runs
+     * of earlier versions: since Phase 6a every exposure is independent (see
+     * "Combining Exposures" in the docs), which changes results in both
+     * directions. `"pull"` still draws every contact from the susceptible
+     * side, as epiworld 0.x did.
      *
      * @param mode `"auto"`, `"push"`, or `"pull"` (or the enum).
      * @param kappa Relative cost threshold used by `"auto"`: a finite,
