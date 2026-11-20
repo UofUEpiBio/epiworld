@@ -151,6 +151,14 @@ protected:
     /// Call it from `reset()` once the baseline has been restored.
     void mark_clean() { dirty = false; }
 
+    /**
+     * @brief Whether agent `contact` is a source for `sample()`: it carries a
+     * virus and its state is not flagged in `exclude` (the mask `sample()`
+     * receives). For layer types of your own; the layer must belong to a
+     * model.
+     */
+    bool is_source(size_t contact, const std::vector< bool > * exclude) const;
+
     /// Whether the model runs (settings are made between runs).
     bool in_a_run() const { return in_run; }
 

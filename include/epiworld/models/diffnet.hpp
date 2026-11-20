@@ -129,9 +129,9 @@ inline ModelDiffNet::ModelDiffNet(
             const double p = m.par(
                 std::string("Prob. Adopting ") + m.get_viruses()[i]->get_name()
             );
-            exposure[i] += std::log(p) - std::log(1.0 - p);
+            exposure[i] += math::logit(p);
 
-            exposure[i] = 1.0 / (1.0 + std::exp(-exposure[i]));
+            exposure[i] = math::logistic(exposure[i]);
 
         }
 

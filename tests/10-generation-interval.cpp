@@ -80,7 +80,7 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
     double mean = stats::mean(sim_days);
 
     // Using the math model
-    double expected_mean = epiworld::gen_int_mean(
+    double expected_mean = epiworld::math::gen_int_mean(
         S, p_c, p_i, p_r, max_days, max_contacts
     );
 
@@ -95,7 +95,7 @@ EPIWORLD_TEST_CASE("Generation interval", "[gen-int]")
     double normalizing_constant = -1.0;
     for (size_t i = 0u; i < (max_days * 5); ++i)
     {
-        distribution_expected[i] = epiworld::dgenint(
+        distribution_expected[i] = epiworld::math::dgenint(
             i + 1.0, S, p_c, p_i, p_r, p_0_approx_analy_global, 
             normalizing_constant, max_contacts, max_days
         );

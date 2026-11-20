@@ -147,7 +147,7 @@ inline int Duration::draw(Agent & agent, Model & model) const
             return 1;
         const epiworld_double u = 1.0 - model.runif(); // in (0, 1]
         return whole(
-            1.0 + std::floor(std::log(u) / std::log1p(-1.0 / m))
+            1.0 + math::geometric_skip(u, math::log1m(1.0 / m))
         );
     }
 
@@ -166,7 +166,7 @@ inline int Duration::draw(Agent & agent, Model & model) const
         const epiworld_double z  = std::sqrt(-2.0 * std::log(u1)) *
             std::cos(2.0 * pi * u2);
 
-        const epiworld_double s2 = std::log(1.0 + (s * s) / (m * m));
+        const epiworld_double s2 = std::log1p((s * s) / (m * m));
         return whole(std::exp(std::log(m) - s2 / 2.0 + std::sqrt(s2) * z));
     }
 
