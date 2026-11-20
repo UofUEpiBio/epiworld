@@ -75,6 +75,7 @@ namespace epiworld {
     #include "rng-utils.hpp"
     #include "modeldiagram-meat.hpp"
 
+    #include "math/functions.hpp"
     #include "math/distributions.hpp"
 
     #include "math/lfmcmc.hpp"

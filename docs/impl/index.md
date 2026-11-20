@@ -22,6 +22,7 @@ you can extend it with your own modules and code.
 - [Sampling Contacts](sampling-contacts.md) — binomial contact sampling optimization in mixing models.
 - [Contact Layers](contact-layers.md) — where contacts come from: networks, mixing by group, layers of your own, and how they combine.
 - [Migrating to 1.0](migrating-to-1.0.md) — the changes from epiworld 0.x, with the old code next to the new.
+- [Math Functions](math-functions.md) — `epiworld::math`: `log1m()` (the hazard of an exposure, computed by epiworld itself), the logistic and logit, geometric skipping, and the distributions.
 - [Combining Exposures](combining-exposures.md) — independent exposures (1.0.0) versus the roulette of 0.x when an agent has several infectious contacts.
 - [Push and Pull Transmission](transmission-sampling.md) — why pushing infection hazards from infectious agents gives the same outcomes as susceptibles pulling from their neighbors, and how `epiworld` picks the cheaper of the two at each step.
 - [Quarantine, Isolation, and Contact Tracing](quarantine-isolation-and-contact-tracing.md) — statuses, reactions and the layers' contact logs.

@@ -1949,6 +1949,151 @@ inline void ModelDiagram::draw_from_data(
 /*//////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+ Start of -./include/epiworld/math/functions.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+#ifndef EPIWORLD_MATH_FUNCTIONS_HPP
+#define EPIWORLD_MATH_FUNCTIONS_HPP
+
+/**
+ * @file functions.hpp
+ * @brief Elementary functions used across the library: `math::log1m()`,
+ * `math::logistic()`, `math::logit()` and `math::geometric_skip()`.
+ *
+ * @details These are plain functions of numbers: they need no model, so any
+ * part of the library (and user code) can call them. The distributions of
+ * `math/distributions.hpp` live in the same namespace.
+ *
+ * The docs page "Math Functions" (docs/impl/math-functions.md) derives
+ * `log1m()` and gives its error bound and references.
+ */
+
+namespace math {
+
+/**
+ * @brief The natural logarithm of one minus `p`, `log(1 - p)`, accurate for
+ * every `p <= 1` (in particular for `p` near 0, where `std::log(1 - p)` loses
+ * the low digits of `p`).
+ *
+ * @details The hazard of an exposure of probability `p` is `-log1m(p)`.
+ * Write `1 - p = (1 - s) / (1 + s)`, so that
+ * `log(1 - p) = -2 atanh(s) = -2 (s + s^3 / 3 + s^5 / 5 + ...)`:
+ *
+ * - For `p` in `[1 - sqrt(2), 1 - sqrt(2) / 2]`, `s = p / (2 - p)` directly,
+ *   with `|s| <= 3 - 2 sqrt(2) = 0.1716`; there is no cancellation, so the
+ *   relative error is uniform down to the smallest `p`.
+ * - Otherwise `x = 1 - p` (exact for `p >= 1/2`) is split as `x = m 2^e` with
+ *   `m` in `[sqrt(2) / 2, sqrt(2))`, so that `log(x) = e log(2) + log(m)` and
+ *   `log(m)` uses the same series with `s = (m - 1) / (m + 1)`, again
+ *   `|s| <= 0.1716`. `log(2)` is split in two parts so that `e log(2)` is
+ *   exact (the range reduction of fdlibm's `log1p`).
+ *
+ * The series is cut after the `s^17 / 17` term: the rest is below
+ * `s^18 / 19 < 1e-15` relative to the result. The function uses only
+ * `+`, `-`, `*`, `/` and `std::frexp`, so it gives the same result on every
+ * platform, unless the compiler fuses a multiplication and an addition (FMA
+ * contraction; build with `-ffp-contract=off` to prevent it).
+ *
+ * @param p A number no greater than 1.
+ * @return `log(1 - p)`: `-inf` for `p = 1`, NaN for `p > 1` or NaN.
+ */
+inline double log1m(double p)
+{
+
+    #if defined(__clang__)
+    #pragma STDC FP_CONTRACT OFF
+    #endif
+
+    if (!(p < 1.0))
+        return (p == 1.0) ?
+            -std::numeric_limits< double >::infinity() :
+            std::numeric_limits< double >::quiet_NaN();
+
+    // 2 atanh(s) / s - 2 = the series' tail after its first term, in Horner
+    // form over z = s^2: 1/3 z + 1/5 z^2 + ... + 1/17 z^8
+    auto atanh2 = [](double s) -> double {
+        const double z = s * s;
+        double t = 1.0 / 17.0;
+        t = 1.0 / 15.0 + z * t;
+        t = 1.0 / 13.0 + z * t;
+        t = 1.0 / 11.0 + z * t;
+        t = 1.0 / 9.0 + z * t;
+        t = 1.0 / 7.0 + z * t;
+        t = 1.0 / 5.0 + z * t;
+        t = 1.0 / 3.0 + z * t;
+        t = 1.0 + z * t;
+        return 2.0 * s * t; // 2 atanh(s)
+    };
+
+    // 1 - sqrt(2) and 1 - sqrt(2) / 2
+    if ((p >= -0.41421356237309503) && (p <= 0.29289321881345248))
+        return -atanh2(p / (2.0 - p));
+
+    // log(2) = ln2_hi + ln2_lo, where ln2_hi has trailing zero bits, so that
+    // e * ln2_hi is exact for every exponent e
+    constexpr double ln2_hi = 6.93147180369123816490e-01;
+    constexpr double ln2_lo = 1.90821492927058770002e-10;
+    constexpr double sqrt2_half = 0.70710678118654752440;
+
+    int e = 0;
+    double m = std::frexp(1.0 - p, &e); // 1 - p = m 2^e, m in [1/2, 1)
+    if (m < sqrt2_half)
+    {
+        m *= 2.0;
+        --e;
+    }
+
+    const double ed = static_cast< double >(e);
+    return ed * ln2_hi + (atanh2((m - 1.0) / (m + 1.0)) + ed * ln2_lo);
+
+}
+
+/// The logistic function, `1 / (1 + exp(-x))`.
+inline double logistic(double x)
+{
+    return 1.0 / (1.0 + std::exp(-x));
+}
+
+/// The log-odds of `p`, `log(p / (1 - p))` (the inverse of `logistic()`).
+inline double logit(double p)
+{
+    return std::log(p) - log1m(p);
+}
+
+/**
+ * @brief The number of failures before the first success in Bernoulli trials
+ * that fail with probability `q`, drawn by inversion from a uniform `u`.
+ * @details `floor(log(u) / log(q))`: geometric skipping, which visits only the
+ * successes of a long sequence of trials (Batagelj and Brandes, 2005).
+ * @param u A uniform draw in `(0, 1]`.
+ * @param log_q `log(q)`, negative (precomputed: e.g., `log1m(p)` for
+ * successes of probability `p`).
+ * @return The number of failures, as a `double` (it can exceed any integer
+ * type when `q` is near 1).
+ */
+inline double geometric_skip(double u, double log_q)
+{
+    return std::floor(std::log(u) / log_q);
+}
+
+}
+
+#endif
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ End of -./include/epiworld/math/functions.hpp-
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+/*//////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
  Start of -./include/epiworld/math/distributions.hpp-
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1958,19 +2103,21 @@ inline void ModelDiagram::draw_from_data(
 #ifndef EPIWORLD_MATH_DISTRIBUTIONS_HPP
 #define EPIWORLD_MATH_DISTRIBUTIONS_HPP
 
-// Implementing the factorial function
+namespace math {
+
 /**
  * @brief Compute the log of the factorial
  * 
  * @param n Number
  * 
- * @return The log of the factorial
+ * @return The log of the factorial, `log(1) + log(2) + ... + log(n)`
  */
 inline double log_factorial(int n)
 {
-    if (n == 0)
-        return 0.0;
-    return std::log(static_cast<double>(n)) + log_factorial(n-1);
+    double res = 0.0;
+    for (int k = 1; k <= n; ++k)
+        res = std::log(static_cast<double>(k)) + res;
+    return res;
 }
 
 /**
@@ -2119,6 +2266,8 @@ inline double gen_int_mean(
     }
 
     return mean;
+
+}
 
 }
 
@@ -9853,7 +10002,7 @@ inline AdjList rgraph_bernoulli(
 
     // Batagelj-Brandes: use geometric skipping to enumerate edges.
     // log(1 - p) is precomputed; each skip is 1 + floor(log(U) / lp).
-    double lp = std::log(1.0 - p);
+    double lp = math::log1m(p);
 
     if (!directed)
     {
@@ -9871,7 +10020,7 @@ inline AdjList rgraph_bernoulli(
                 r = std::numeric_limits<double>::min();
 
             j += 1 + static_cast<long long>(
-                std::floor(std::log(r) / lp)
+                math::geometric_skip(r, lp)
             );
 
             // Advance to the next row if j >= i.
@@ -9933,7 +10082,7 @@ inline AdjList rgraph_bernoulli(
                 r = std::numeric_limits<double>::min();
 
             k += 1 + static_cast<long long>(
-                std::floor(std::log(r) / lp)
+                math::geometric_skip(r, lp)
             );
 
             if (k >= total)
@@ -10377,7 +10526,7 @@ inline AdjList rgraph_sbm(
                 continue;
             }
 
-            double lp = std::log(1.0 - p_gh);
+            double lp = math::log1m(p_gh);
 
             if (g == h)
             {
@@ -10394,7 +10543,7 @@ inline AdjList rgraph_sbm(
                         r = std::numeric_limits<double>::min();
 
                     j += 1 + static_cast<long long>(
-                        std::floor(std::log(r) / lp)
+                        math::geometric_skip(r, lp)
                     );
 
                     // Hybrid row-advance (see BB_FPU_THRESHOLD
@@ -10451,7 +10600,7 @@ inline AdjList rgraph_sbm(
                         r = std::numeric_limits<double>::min();
 
                     k += 1 + static_cast<long long>(
-                        std::floor(std::log(r) / lp)
+                        math::geometric_skip(r, lp)
                     );
 
                     if (k >= total)
@@ -11359,7 +11508,7 @@ inline void Mixing::draw_groups(Model & model)
             while (true)
             {
                 const double u = model.runif();
-                const double skip = std::floor(std::log(1.0 - u) / log_q);
+                const double skip = math::geometric_skip(1.0 - u, log_q);
                 if (skip >= static_cast< double >(movable.size() - pos))
                     break;
 
@@ -21319,7 +21468,7 @@ inline ToolFun tool_fun_logit(
         for (size_t i = 0u; i < K; ++i)
             res += agent->operator()(vars.at(i), *model) * coefs_f.at(i);
 
-        return 1.0/(1.0 + std::exp(-res));
+        return math::logistic(res);
 
     };
 
@@ -22769,7 +22918,7 @@ inline epiworld_double Model::exposure_hazard(epiworld_double p, epiworld_double
     if (p != hazard_p)
     {
         hazard_p = p;
-        hazard_h = -std::log1p(-p);
+        hazard_h = -math::log1m(p);
     }
     return weight * hazard_h;
 }
@@ -23569,7 +23718,7 @@ inline int Duration::draw(Agent & agent, Model & model) const
             return 1;
         const epiworld_double u = 1.0 - model.runif(); // in (0, 1]
         return whole(
-            1.0 + std::floor(std::log(u) / std::log1p(-1.0 / m))
+            1.0 + math::geometric_skip(u, math::log1m(1.0 / m))
         );
     }
 
@@ -23588,7 +23737,7 @@ inline int Duration::draw(Agent & agent, Model & model) const
         const epiworld_double z  = std::sqrt(-2.0 * std::log(u1)) *
             std::cos(2.0 * pi * u2);
 
-        const epiworld_double s2 = std::log(1.0 + (s * s) / (m * m));
+        const epiworld_double s2 = std::log1p((s * s) / (m * m));
         return whole(std::exp(std::log(m) - s2 / 2.0 + std::sqrt(s2) * z));
     }
 
@@ -26800,7 +26949,7 @@ inline std::function<void(Model*)> globalevent_tool_logit(
             for (size_t i = 0u; i < coefs.size(); ++i)
                 p += coefs.at(i) * agent(vars[i], *model);
 
-            p = 1.0 / (1.0 + std::exp(-p));
+            p = math::logistic(p);
 
             // Adding the tool
             if (model->runif() < p)
@@ -28164,7 +28313,7 @@ inline ModelSIRLogit::ModelSIRLogit(
                     (1.0 - neighbor->get_transmission_reduction(v, m, layer_id)) *
                     coef_exposure;
 
-                m.array_double_tmp[nviruses_tmp] = 1.0 / (1.0 + std::exp(-x));
+                m.array_double_tmp[nviruses_tmp] = math::logistic(x);
                 m.array_virus_tmp[nviruses_tmp++] = &(*v);
 
             }
@@ -28189,7 +28338,7 @@ inline ModelSIRLogit::ModelSIRLogit(
         for (size_t i = 0u; i < _m->coefs_recover.size(); ++i)
             prob += p(i, m) * _m->coefs_recover[i];
 
-        return 1.0 / (1.0 + std::exp(-prob));
+        return math::logistic(prob);
 
     };
 
@@ -28357,9 +28506,9 @@ inline ModelDiffNet::ModelDiffNet(
             const double p = m.par(
                 std::string("Prob. Adopting ") + m.get_viruses()[i]->get_name()
             );
-            exposure[i] += std::log(p) - std::log(1.0 - p);
+            exposure[i] += math::logit(p);
 
-            exposure[i] = 1.0 / (1.0 + std::exp(-exposure[i]));
+            exposure[i] = math::logistic(exposure[i]);
 
         }
 

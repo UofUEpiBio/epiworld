@@ -120,6 +120,10 @@ Model statuses (Free, Quarantined, Isolated, Hospitalized, ...) are separate fro
 
 The model no longer keeps one contact log. Each layer keeps its own: `layer.enable_tracing(max_contacts)` replaces `Model::contact_tracing_on()`, and `layer.get_tracing()` replaces `Model::get_contact_tracing()`. A mixing layer within groups can also list who shared a group with an agent (`groupmates_of()`). `ModelSEIRQuarantine` turns tracing on for you.
 
+## Math functions
+
+`log_factorial()`, `dpois()`, `dgenint()` and `gen_int_mean()` moved into `epiworld::math` (`math::gen_int_mean(...)`), next to the new `math::log1m()`, `math::logistic()`, `math::logit()` and `math::geometric_skip()`. See [Math Functions](math-functions.md).
+
 ## Outputs
 
 - `get_transmissions()` gains the layer of each transmission (-1 for an infection not drawn from a layer).

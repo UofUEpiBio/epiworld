@@ -1,19 +1,21 @@
 #ifndef EPIWORLD_MATH_DISTRIBUTIONS_HPP
 #define EPIWORLD_MATH_DISTRIBUTIONS_HPP
 
-// Implementing the factorial function
+namespace math {
+
 /**
  * @brief Compute the log of the factorial
  * 
  * @param n Number
  * 
- * @return The log of the factorial
+ * @return The log of the factorial, `log(1) + log(2) + ... + log(n)`
  */
 inline double log_factorial(int n)
 {
-    if (n == 0)
-        return 0.0;
-    return std::log(static_cast<double>(n)) + log_factorial(n-1);
+    double res = 0.0;
+    for (int k = 1; k <= n; ++k)
+        res = std::log(static_cast<double>(k)) + res;
+    return res;
 }
 
 /**
@@ -162,6 +164,8 @@ inline double gen_int_mean(
     }
 
     return mean;
+
+}
 
 }
 

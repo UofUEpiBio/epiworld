@@ -73,6 +73,8 @@ With a single network, an agent rarely has many infectious contacts at once, and
 
 The hazard needs a `log1p` per infectious contact and one `exp` per agent with any, against a division for the odds. A microbenchmark gave about 4 ns extra per contact. On real models (SEIR on small-world and heterogeneous household networks in pull and push, and SEIR with mixing; 100,000 to 1,000,000 agents, CPU time, variants interleaved), the cost per infectious contact was indistinguishable from the roulette's, with a median ratio of 1.01 and differences within the noise (below about 5–10%) of the benchmark machine. Nothing in the choice of rule is driven by speed.
 
+The hazard is computed by `math::log1m()`, epiworld's own $\log(1-p)$, and reused when consecutive contacts share their probability; see [Math Functions](math-functions.md).
+
 ## What changes for users
 
 - Results of models with more than one infectious contact per agent change: infection is more likely, by the amount in the table above, and epidemics grow faster at the same parameters.

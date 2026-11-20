@@ -150,7 +150,7 @@ inline epiworld_double Model::exposure_hazard(epiworld_double p, epiworld_double
     if (p != hazard_p)
     {
         hazard_p = p;
-        hazard_h = -std::log1p(-p);
+        hazard_h = -math::log1m(p);
     }
     return weight * hazard_h;
 }

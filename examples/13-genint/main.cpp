@@ -18,7 +18,7 @@ void add_random_mixing(Model & model, double contact_rate)
 }
 
 // Expected generation interval on each of the first `ndays` days, from that
-// day's susceptible agents (gen_int_mean()); the latent period, if any, adds
+// day's susceptible agents (math::gen_int_mean()); the latent period, if any, adds
 // to it.
 std::vector< double > expected_gentime(
     Model & model, size_t ndays, double latent_period
@@ -37,7 +37,7 @@ std::vector< double > expected_gentime(
     const double p_c = model("Contact rate") / static_cast< double >(model.size());
     std::vector< double > res(ndays);
     for (size_t d = 0u; d < ndays; ++d)
-        res[d] = latent_period + gen_int_mean(
+        res[d] = latent_period + math::gen_int_mean(
             S[d], p_c, model("Transmission probability"), model("Recovery rate")
         );
 

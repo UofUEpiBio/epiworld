@@ -108,6 +108,7 @@ nav:
     - Sampling Contacts: impl/sampling-contacts.md
     - Push and Pull Transmission: impl/transmission-sampling.md
     - Combining Exposures: impl/combining-exposures.md
+    - Math Functions: impl/math-functions.md
   - API Reference:
     - Overview: api/index.md
     - Classes: epiworld/annotated.md

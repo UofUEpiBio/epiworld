@@ -7,7 +7,7 @@ Epiworld provides a set of statistical functions and random distributions that a
 For preforming inference in scenarios where the likelihood function is intractable or unavailable, refer to the documentation for *Likelihood-Free Markov Chain Monte Carlo (LFMCMC)*.
 
 ### Poisson Distribution
-The Poisson distribution is used to model the number of events occurring within a fixed interval of time or space, given a constant average rate of occurrence. In Epiworld, the `dpois` function computes the Poisson probability for a given number of events `k` and rate parameter `lambda`.
+The Poisson distribution is used to model the number of events occurring within a fixed interval of time or space, given a constant average rate of occurrence. In Epiworld, the `math::dpois` function computes the Poisson probability for a given number of events `k` and rate parameter `lambda`.
 
 ```cpp
 #include <iostream>
@@ -17,7 +17,7 @@ int main() {
     int k = 5; /* Number of events. */
     double lambda = 3.0; /* Average rate of occurrence. */
 
-    double probability = dpois(k, lambda);
+    double probability = math::dpois(k, lambda);
     std::cout << "Poisson probability: " << probability << "\n";
 
     return 0;
@@ -42,7 +42,7 @@ int main() {
     double p_0_approx = -1.0; /* Approximation of the probability of not being infected. */
     double normalizing = -1.0; /* Normalizing constant. */
 
-    double probability = dgenint(g, S, p_c, p_i, p_r, p_0_approx, normalizing);
+    double probability = math::dgenint(g, S, p_c, p_i, p_r, p_0_approx, normalizing);
     std::cout << "Generation interval probability: " << probability << "\n";
 
     return 0;
@@ -64,7 +64,7 @@ int main() {
     double p_i = 0.05; // Probability of infection
     double p_r = 0.02; // Probability of recovery
 
-    double mean = gen_int_mean(S, p_c, p_i, p_r);
+    double mean = math::gen_int_mean(S, p_c, p_i, p_r);
     std::cout << "Mean generation interval: " << mean << std::endl;
 
     return 0;

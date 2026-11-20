@@ -70,7 +70,7 @@ inline ToolFun tool_fun_logit(
         for (size_t i = 0u; i < K; ++i)
             res += agent->operator()(vars.at(i), *model) * coefs_f.at(i);
 
-        return 1.0/(1.0 + std::exp(-res));
+        return math::logistic(res);
 
     };
 

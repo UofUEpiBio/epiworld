@@ -1551,7 +1551,15 @@ As built, in two PRs:
   contact to be its new cost (scenario_04: 34M instructions, simulate ratio
   1.06 to 1.28), and contacts usually share their probability, so one
   `log1p` per distinct probability gives identical results at 39M fewer
-  instructions.
+  instructions. And the library gets `epiworld::math` (`math/functions.hpp`):
+  `log1m()`, epiworld's own `log(1 - p)` (the atanh series with fdlibm's
+  range reduction, relative error below 1e-15, about 1.7 times as fast as
+  `std::log1p` for small p, and the same bits on every platform without FMA
+  contraction), `logistic()`, `logit()` and `geometric_skip()`, which replace
+  the copies in the random graphs, the mixing layer, the natural history,
+  tools, global events, `ModelDiffNet` and `ModelSIRLogit`; the distributions
+  (`dpois()`, `dgenint()`, `gen_int_mean()`, `log_factorial()`) move there
+  too. `docs/impl/math-functions.md` derives `log1m()`; test 61a checks it.
 
 ### Phase 7 -- measles as presets (the final step before 1.0.0; settled 2026-11-16)
 
