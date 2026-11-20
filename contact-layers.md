@@ -721,6 +721,14 @@ merged into `v1-layers` regularly). `v1-layers` merges into `master` and is
 released as 1.0.0 when Phase 7 is done. Version bumps: none per phase on
 `v1-layers`; the first commit there sets the development version to 1.0.0.
 
+**No version bumps until the release, in any repository.** epiworld stays at
+1.0.0, epiworldR, epiworldpy and epiworldjs at `1.0.0-0`, and measles at
+`0.5.0-0` until each is released; no phase or port bumps them, not even to
+let one package require another's newer build (e.g., measles requiring the
+epiworldR build with a new rule). Express that ordering instead: merge the
+dependent PR after the one it needs, say so in both PR bodies, and rely on
+`Remotes: ...@v1-layers` and the `VERSIONS` files to name the commit.
+
 **Wrappers follow the core, one merged phase at a time.** epiworldR,
 epiworldpy, epiworldjs and the measles R package each keep a `v1-layers`
 branch (version `1.0.0-0`; measles its own next minor, depending on
