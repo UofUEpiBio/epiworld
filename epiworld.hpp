@@ -6620,8 +6620,13 @@ protected:
      * @brief The hazard of an exposure of probability `p` through a layer of
      * weight `weight`: `-weight * log(1 - p)` (infinite if `p >= 1`, 0 if
      * `p <= 0`).
+     * @details Contacts often share their probability (no tools, one
+     * virus), so the last `-log(1 - p)` is kept and reused: one `log1p`
+     * per distinct probability instead of per contact.
      */
-    static epiworld_double exposure_hazard(epiworld_double p, epiworld_double weight);
+    epiworld_double exposure_hazard(epiworld_double p, epiworld_double weight);
+    epiworld_double hazard_p = -1.0; ///< Last probability (see exposure_hazard())
+    epiworld_double hazard_h = 0.0;  ///< Its `-log(1 - p)`
     void layers_attach(); ///< Points the layers at this model, lists the networks
     void layers_classify(); ///< Sets `pull_only`, `queue_blind` and `group_layers`
     void layers_detach(); ///< Leaves the layers without a model (they may outlive it)
@@ -8101,6 +8106,14 @@ protected:
     /// Call it from `reset()` once the baseline has been restored.
     void mark_clean() { dirty = false; }
 
+    /**
+     * @brief Whether agent `contact` is a source for `sample()`: it carries a
+     * virus and its state is not flagged in `exclude` (the mask `sample()`
+     * receives). For layer types of your own; the layer must belong to a
+     * model.
+     */
+    bool is_source(size_t contact, const std::vector< bool > * exclude) const;
+
     /// Whether the model runs (settings are made between runs).
     bool in_a_run() const { return in_run; }
 
@@ -8467,6 +8480,16 @@ inline bool ContactLayer::excludes(epiworld_fast_uint state) const
 inline bool ContactLayer::excludes_agent(size_t agent_id) const
 {
     return excludes(model->agent_state[agent_id]);
+}
+
+inline bool ContactLayer::is_source(
+    size_t contact,
+    const std::vector< bool > * exclude
+) const
+{
+    if (model->get_agent(contact).get_virus() == nullptr)
+        return false;
+    return (exclude == nullptr) || !(*exclude)[model->agent_state[contact]];
 }
 
 inline const std::vector< bool > * ContactLayer::silent() const
@@ -22743,7 +22766,12 @@ inline epiworld_double Model::exposure_hazard(epiworld_double p, epiworld_double
         return std::numeric_limits< epiworld_double >::infinity();
     if (!(p > 0.0))
         return 0.0;
-    return -weight * std::log1p(-p);
+    if (p != hazard_p)
+    {
+        hazard_p = p;
+        hazard_h = -std::log1p(-p);
+    }
+    return weight * hazard_h;
 }
 
 inline Virus * Model::draw_exposure(size_t n_exposures)

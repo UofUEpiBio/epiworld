@@ -97,6 +97,16 @@ inline bool ContactLayer::excludes_agent(size_t agent_id) const
     return excludes(model->agent_state[agent_id]);
 }
 
+inline bool ContactLayer::is_source(
+    size_t contact,
+    const std::vector< bool > * exclude
+) const
+{
+    if (model->get_agent(contact).get_virus() == nullptr)
+        return false;
+    return (exclude == nullptr) || !(*exclude)[model->agent_state[contact]];
+}
+
 inline const std::vector< bool > * ContactLayer::silent() const
 {
     if (!state_silent.empty())
