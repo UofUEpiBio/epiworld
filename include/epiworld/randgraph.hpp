@@ -244,7 +244,7 @@ inline AdjList rgraph_bernoulli(
 
     // Batagelj-Brandes: use geometric skipping to enumerate edges.
     // log(1 - p) is precomputed; each skip is 1 + floor(log(U) / lp).
-    double lp = std::log(1.0 - p);
+    double lp = math::log1m(p);
 
     if (!directed)
     {
@@ -262,7 +262,7 @@ inline AdjList rgraph_bernoulli(
                 r = std::numeric_limits<double>::min();
 
             j += 1 + static_cast<long long>(
-                std::floor(std::log(r) / lp)
+                math::geometric_skip(r, lp)
             );
 
             // Advance to the next row if j >= i.
@@ -324,7 +324,7 @@ inline AdjList rgraph_bernoulli(
                 r = std::numeric_limits<double>::min();
 
             k += 1 + static_cast<long long>(
-                std::floor(std::log(r) / lp)
+                math::geometric_skip(r, lp)
             );
 
             if (k >= total)
@@ -768,7 +768,7 @@ inline AdjList rgraph_sbm(
                 continue;
             }
 
-            double lp = std::log(1.0 - p_gh);
+            double lp = math::log1m(p_gh);
 
             if (g == h)
             {
@@ -785,7 +785,7 @@ inline AdjList rgraph_sbm(
                         r = std::numeric_limits<double>::min();
 
                     j += 1 + static_cast<long long>(
-                        std::floor(std::log(r) / lp)
+                        math::geometric_skip(r, lp)
                     );
 
                     // Hybrid row-advance (see BB_FPU_THRESHOLD
@@ -842,7 +842,7 @@ inline AdjList rgraph_sbm(
                         r = std::numeric_limits<double>::min();
 
                     k += 1 + static_cast<long long>(
-                        std::floor(std::log(r) / lp)
+                        math::geometric_skip(r, lp)
                     );
 
                     if (k >= total)

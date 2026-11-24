@@ -147,7 +147,12 @@ inline epiworld_double Model::exposure_hazard(epiworld_double p, epiworld_double
         return std::numeric_limits< epiworld_double >::infinity();
     if (!(p > 0.0))
         return 0.0;
-    return -weight * std::log1p(-p);
+    if (p != hazard_p)
+    {
+        hazard_p = p;
+        hazard_h = -math::log1m(p);
+    }
+    return weight * hazard_h;
 }
 
 inline Virus * Model::draw_exposure(size_t n_exposures)

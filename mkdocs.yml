@@ -88,6 +88,8 @@ nav:
     - Post-Sampling Benchmark: examples/22-post-sampling-benchmark.md
   - Implementation:
     - Overview: impl/index.md
+    - Migrating to 1.0: impl/migrating-to-1.0.md
+    - Contact Layers: impl/contact-layers.md
     - Library Architecture: impl/library-architecture.md
     - Performance Optimization: impl/performance-optimization.md
     - Extending the Library: impl/extending-the-library.md
@@ -106,6 +108,7 @@ nav:
     - Sampling Contacts: impl/sampling-contacts.md
     - Push and Pull Transmission: impl/transmission-sampling.md
     - Combining Exposures: impl/combining-exposures.md
+    - Math Functions: impl/math-functions.md
   - API Reference:
     - Overview: api/index.md
     - Classes: epiworld/annotated.md

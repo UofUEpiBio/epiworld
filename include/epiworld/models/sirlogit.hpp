@@ -210,7 +210,7 @@ inline ModelSIRLogit::ModelSIRLogit(
                     (1.0 - neighbor->get_transmission_reduction(v, m, layer_id)) *
                     coef_exposure;
 
-                m.array_double_tmp[nviruses_tmp] = 1.0 / (1.0 + std::exp(-x));
+                m.array_double_tmp[nviruses_tmp] = math::logistic(x);
                 m.array_virus_tmp[nviruses_tmp++] = &(*v);
 
             }
@@ -235,7 +235,7 @@ inline ModelSIRLogit::ModelSIRLogit(
         for (size_t i = 0u; i < _m->coefs_recover.size(); ++i)
             prob += p(i, m) * _m->coefs_recover[i];
 
-        return 1.0 / (1.0 + std::exp(-prob));
+        return math::logistic(prob);
 
     };
 

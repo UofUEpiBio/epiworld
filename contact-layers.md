@@ -721,6 +721,14 @@ merged into `v1-layers` regularly). `v1-layers` merges into `master` and is
 released as 1.0.0 when Phase 7 is done. Version bumps: none per phase on
 `v1-layers`; the first commit there sets the development version to 1.0.0.
 
+**No version bumps until the release, in any repository.** epiworld stays at
+1.0.0, epiworldR, epiworldpy and epiworldjs at `1.0.0-0`, and measles at
+`0.5.0-0` until each is released; no phase or port bumps them, not even to
+let one package require another's newer build (e.g., measles requiring the
+epiworldR build with a new rule). Express that ordering instead: merge the
+dependent PR after the one it needs, say so in both PR bodies, and rely on
+`Remotes: ...@v1-layers` and the `VERSIONS` files to name the commit.
+
 **Wrappers follow the core, one merged phase at a time.** epiworldR,
 epiworldpy, epiworldjs and the measles R package each keep a `v1-layers`
 branch (version `1.0.0-0`; measles its own next minor, depending on
@@ -1538,8 +1546,28 @@ As built, in two PRs:
   4d with the fix). It also rejects test names that Catch2 reads as test
   specs, which had made the suite run "0 tests" for 47a and for four files
   merged in #387.
-- **6b, the docs.** `docs/impl/contact-layers.md`, the remaining pages, and
-  the migration guide.
+- **6b, the docs.** `docs/impl/contact-layers.md` (the kinds of layers, one
+  draw over all of them, who takes part, layers and runs, tracing, push and
+  the queue by kind, and a layer of your own), the migration guide
+  `docs/impl/migrating-to-1.0.md` (0.x code next to 1.0's), and links from
+  the mixing, queueing and index pages. Writing the custom-layer example
+  showed that a layer type of your own could not apply the `exclude` mask
+  `sample()` receives (the agent's engine state is not public):
+  `ContactLayer::is_source()` does it, and `tests/60a-custom-layer.cpp` runs
+  the page's example end to end. The same PR caches the last hazard
+  (`Model::exposure_hazard()`): the benchmark rerun at 6a found `log1p` per
+  contact to be its new cost (scenario_04: 34M instructions, simulate ratio
+  1.06 to 1.28), and contacts usually share their probability, so one
+  `log1p` per distinct probability gives identical results at 39M fewer
+  instructions. And the library gets `epiworld::math` (`math/functions.hpp`):
+  `log1m()`, epiworld's own `log(1 - p)` (the atanh series with fdlibm's
+  range reduction, relative error below 1e-15, about 1.7 times as fast as
+  `std::log1p` for small p, and the same bits on every platform without FMA
+  contraction), `logistic()`, `logit()` and `geometric_skip()`, which replace
+  the copies in the random graphs, the mixing layer, the natural history,
+  tools, global events, `ModelDiffNet` and `ModelSIRLogit`; the distributions
+  (`dpois()`, `dgenint()`, `gen_int_mean()`, `log_factorial()`) move there
+  too. `docs/impl/math-functions.md` derives `log1m()`; test 61a checks it.
 
 ### Phase 7 -- measles as presets (the final step before 1.0.0; settled 2026-11-16)
 
@@ -1960,7 +1988,7 @@ Updated by every epiworld PR into `v1-layers` (last: 2026-11-16).
 | MSVC: `M_PI` (not standard) in the lognormal draw broke the Windows wheels since #363 | #376 merged | #234 merged (re-vendor) | with #46 (merged) | with NH-5c | with NH-5c |
 | Phase 4 (split into 4a-4d, Section 6) | 4a (exclusion by status per layer, closing a layer, the order of interventions; identical results for every registered model): #380 merged; benchmark rerun at #380 (stage `4a`): UofUEpiBio/epiworld-benchmark#42 merged; 4b (tools that target layers, `add_layer_target()`; identical results): #381 merged; benchmark rerun at #381 (stage `4b`; two ratios grew by more than 10%, profiled: +0.1% instructions, noise): UofUEpiBio/epiworld-benchmark#43; 4c (schedules, persistence, parameter cycles, the transit example; identical results): #383 merged; benchmark rerun at #383 (stage `4c`, reports re-rendered): UofUEpiBio/epiworld-benchmark#44 merged; 4d (the STERGM rewirer example; the `is_running()` fix): #384 merged; benchmark rerun at #384 (stage `4d`): UofUEpiBio/epiworld-benchmark#45 | 4a, 4b: #236; 4c: #237 | 4a, 4b: #48; 4c: #49 | 4a, 4b: #33 (re-vendor only); 4c: #34 (re-vendor only) | 4a, 4b: #75 (re-vendor; the measles models refuse exclusions and layer targets until Phase 7); 4c: #76 (a schedule test on the measles mixing layer) |
 | Phase 5 (push for mixing layers; one push/pull choice per step) | #386 merged; benchmark rerun at #386 (stage `5`, reports re-rendered; scenario_00 at 10,000 +6% instructions: the push loop's lambda no longer inlined, fixed in 6a): UofUEpiBio/epiworld-benchmark#46 | #238 merged (with 4d) | #50 merged (with 4d) | #35 merged (with 4d) | #76 (with 4c and 4d; the measles models keep pulling) |
-| Phase 6 (split: 6a the combination rule, 6b the layer docs and the migration guide) | 6a (independent exposures for transmission, pull and push; the push loop over a span instead of a lambda; test names that Catch2 reads as test specs, which made the suite skip 47a and four tests merged by #387, are now rejected at compile time): this PR (branch `phase-6a`); 6b: not started | | | | |
+| Phase 6 (split: 6a the combination rule, 6b the layer docs and the migration guide) | 6a (independent exposures for transmission, pull and push; the push loop over a span instead of a lambda; test names that Catch2 reads as test specs, which made the suite skip 47a and four tests merged by #387, are now rejected at compile time): #388 merged; benchmark rerun at #388 (stage `6a`; attack rates within the other engines', no calibration factor; `log1p` per contact profiled, fixed in 6b): UofUEpiBio/epiworld-benchmark#47; 6b (`docs/impl/contact-layers.md`, the migration guide `docs/impl/migrating-to-1.0.md`, links from the mixing, queueing and index pages; `ContactLayer::is_source()`, so a layer type of your own can apply the mask `sample()` receives, with a test of such a layer): this PR (branch `phase-6b`) | #239 (6a) | #51 (6a) | #36 (6a) | #77 (6a) |
 | Phase 7 (measles as presets: the generic sampler, one contact-tracing intervention; the final step before 1.0.0) | not started | | | | |
 
 epiworldRShiny (Section 6): the one port (to epiworldR and measles 1.0.0:

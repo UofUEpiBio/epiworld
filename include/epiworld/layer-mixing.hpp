@@ -860,7 +860,7 @@ inline void Mixing::draw_groups(Model & model)
             while (true)
             {
                 const double u = model.runif();
-                const double skip = std::floor(std::log(1.0 - u) / log_q);
+                const double skip = math::geometric_skip(1.0 - u, log_q);
                 if (skip >= static_cast< double >(movable.size() - pos))
                     break;
 
