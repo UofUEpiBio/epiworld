@@ -2018,8 +2018,9 @@ inline double log1m(double p)
 
     // 2 atanh(s) from u = 2 s, by the series in Horner form over z = s^2:
     // u (1 + z / 3 + z^2 / 5 + ... + z^8 / 17). Taking 2 s rather than s keeps
-    // subnormal p exact: p / (2 - p) would underflow, 2 p / (2 - p) does not
-    // (and for normal p the two are the same bits, as doubling is exact).
+    // tiny p exact: p / (2 - p) is subnormal, and rounds, for p below about
+    // 2^-1021, while 2 p / (2 - p) is not (above that the two give the same
+    // bits, as doubling is exact).
     auto atanh2 = [](double u) -> double {
         const double s = 0.5 * u;
         const double z = s * s;

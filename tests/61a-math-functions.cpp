@@ -57,9 +57,12 @@ EPIWORLD_TEST_CASE("Math functions", "[math]") {
     REQUIRE(math::log1m(-std::numeric_limits< double >::infinity()) ==
         std::numeric_limits< double >::infinity());
 
-    // Subnormal p: log(1 - p) = -p exactly
+    // Subnormal p, and the smallest normal p (where p / (2 - p) would be
+    // subnormal): log(1 - p) = -p exactly
     const double tiny = std::numeric_limits< double >::denorm_min();
-    for (double p : {tiny, 3.0 * tiny, -tiny, 1000.0 * tiny})
+    const double small = std::numeric_limits< double >::min();
+    for (double p : {tiny, 3.0 * tiny, -tiny, 1000.0 * tiny, small,
+        std::nextafter(small, 1.0), 3.0 * small, -small})
         REQUIRE(math::log1m(p) == -p);
 
     // -- logistic and logit ---------------------------------------------------

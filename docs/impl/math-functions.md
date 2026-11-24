@@ -38,7 +38,7 @@ $$
 
 The series has only odd powers, so each term costs one multiplication by $z = s^2$, and it converges fast when $|s|$ is small. Two cases keep $|s| \le 3 - 2\sqrt{2} \approx 0.1716$:
 
-1. **$1 - \sqrt{2} \le p \le 1 - \sqrt{2}/2$** (that is, $-0.414 \le p \le 0.293$, which covers almost every transmission probability): use $s = p/(2-p)$ directly. Computing $s$ has no cancellation, so the relative error is the same for $p = 10^{-300}$ as for $p = 0.2$. (The code computes $2s = 2p/(2-p)$, which is the same number doubled exactly, so that a subnormal $p$ does not underflow: $\log(1 - p) = -p$ there.)
+1. **$1 - \sqrt{2} \le p \le 1 - \sqrt{2}/2$** (that is, $-0.414 \le p \le 0.293$, which covers almost every transmission probability): use $s = p/(2-p)$ directly. Computing $s$ has no cancellation, so the relative error is the same for $p = 10^{-300}$ as for $p = 0.2$. (The code computes $2s = 2p/(2-p)$, which is the same number doubled exactly, so that a tiny $p$ (subnormal, or normal below about $2^{-1021}$) does not underflow: $\log(1 - p) = -p$ there.)
 2. **Otherwise**: compute $x = 1 - p$ (exact for $p \ge 1/2$, by Sterbenz's lemma), split it as $x = m\,2^e$ with $m \in [\sqrt{2}/2, \sqrt{2})$ (`std::frexp`, then one doubling), and use
    $$\log x = e \log 2 + \log m, \qquad \log m = 2 \operatorname{atanh}\!\left(\frac{m - 1}{m + 1}\right),$$
    with the same bound on $|s|$. $\log 2$ is stored in two parts, $\log 2 = h + l$, where $h$ has its last bits zero, so that $e\,h$ is exact for every exponent $e$ and $e\,l$ is added as a correction. This is the range reduction of fdlibm's `log1p` (Sun Microsystems, 1993), which glibc still uses.
